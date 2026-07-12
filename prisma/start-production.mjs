@@ -13,6 +13,7 @@ let shuttingDown = false;
 
 function startScript(script) {
   const child = spawn(npmCommand, ["run", script], {
+    detached: process.platform !== "win32",
     env: process.env,
     stdio: "inherit",
   });
@@ -31,6 +32,27 @@ function startScript(script) {
   return child;
 }
 
+function terminateChild(child, signal) {
+  if (child.killed) {
+    return;
+  }
+
+  try {
+    if (process.platform !== "win32" && child.pid) {
+      process.kill(-child.pid, signal);
+      return;
+    }
+  } catch {
+    // El proceso o su grupo puede haber terminado entre el chequeo y la señal.
+  }
+
+  try {
+    child.kill(signal);
+  } catch {
+    // El proceso puede haber terminado mientras se apagaba el supervisor.
+  }
+}
+
 function shutdown(exitCode = 0) {
   if (shuttingDown) {
     return;
@@ -39,16 +61,12 @@ function shutdown(exitCode = 0) {
   shuttingDown = true;
 
   for (const child of children) {
-    if (!child.killed) {
-      child.kill("SIGTERM");
-    }
+    terminateChild(child, "SIGTERM");
   }
 
   const forceTimer = setTimeout(() => {
     for (const child of children) {
-      if (!child.killed) {
-        child.kill("SIGKILL");
-      }
+      terminateChild(child, "SIGKILL");
     }
   }, 5_000);
   forceTimer.unref();

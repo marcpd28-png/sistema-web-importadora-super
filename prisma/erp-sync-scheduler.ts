@@ -214,7 +214,7 @@ function isThrottleError(error: unknown) {
   return (
     error instanceof FacturadorApiError &&
     error.status === 500 &&
-    /ThrottleRequests/i.test(error.message)
+    /ThrottleRequests|Too Many Attempts/i.test(error.message)
   );
 }
 
