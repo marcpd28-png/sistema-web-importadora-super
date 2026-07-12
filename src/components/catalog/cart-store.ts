@@ -31,6 +31,7 @@ type CartState = {
   hydrated: boolean;
   setHydrated: (value: boolean) => void;
   addItem: (product: CatalogProduct, mode: SaleMode, quantity?: number) => void;
+  reconcileProducts: (products: CatalogProduct[]) => void;
   setQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
   clear: () => void;
@@ -46,6 +47,49 @@ function getMaxQuantity(product: CatalogProduct, mode: SaleMode) {
   }
 
   return product.stockUnits;
+}
+
+export function reconcileCartItems(
+  items: CartItem[],
+  products: CatalogProduct[],
+) {
+  const productsByCode = new Map(
+    products.map((product) => [product.code, product]),
+  );
+
+  return items.flatMap((item) => {
+    const product = productsByCode.get(item.code);
+
+    if (!product || !product.isVisible || product.stockUnits <= 0) {
+      return [];
+    }
+
+    const maxQuantity = getMaxQuantity(product, item.mode);
+
+    if (maxQuantity <= 0) {
+      return [];
+    }
+
+    return [
+      {
+        ...item,
+        boxPrice: product.boxPrice,
+        id: product.id,
+        imageAlt:
+          product.primaryMedia?.altText ??
+          getPublicProductName(product.name),
+        imageUrl: product.primaryMedia?.url ?? product.imageUrl,
+        name: getPublicProductName(product.name),
+        quantity: Math.min(item.quantity, maxQuantity),
+        stockUnits: product.stockUnits,
+        unitLabel: product.unitLabel,
+        unitPrice: product.unitPrice,
+        unitsPerBox: product.unitsPerBox,
+        wholesaleMinQty: product.wholesaleMinQty,
+        wholesalePrice: product.wholesalePrice,
+      },
+    ];
+  });
 }
 
 export const useCartStore = create<CartState>()(
@@ -72,9 +116,18 @@ export const useCartStore = create<CartState>()(
                 item.key === key
                   ? {
                       ...item,
+                      boxPrice: product.boxPrice,
+                      code: product.code,
                       imageAlt: product.primaryMedia?.altText ?? product.name,
                       imageUrl: product.primaryMedia?.url ?? product.imageUrl,
+                      name: getPublicProductName(product.name),
                       quantity: Math.min(item.quantity + safeQuantity, maxQuantity),
+                      stockUnits: product.stockUnits,
+                      unitLabel: product.unitLabel,
+                      unitPrice: product.unitPrice,
+                      unitsPerBox: product.unitsPerBox,
+                      wholesaleMinQty: product.wholesaleMinQty,
+                      wholesalePrice: product.wholesalePrice,
                     }
                   : item,
               ),
@@ -104,6 +157,10 @@ export const useCartStore = create<CartState>()(
             ],
           };
         }),
+      reconcileProducts: (products) =>
+        set((state) => ({
+          items: reconcileCartItems(state.items, products),
+        })),
       setQuantity: (key, quantity) =>
         set((state) => ({
           items: state.items

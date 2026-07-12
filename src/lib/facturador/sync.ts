@@ -167,6 +167,7 @@ function buildProductQuickSyncHash(
     | "externalSource"
     | "externalId"
     | "externalCode"
+    | "imageUrl"
     | "stockUnits"
     | "unitPrice"
     | "wholesalePrice"
@@ -183,6 +184,7 @@ function buildProductQuickSyncHash(
     externalCode: product.externalCode ?? null,
     externalId: product.externalId,
     externalSource: product.externalSource,
+    imageUrl: product.imageUrl ?? null,
     isVisible: product.isVisible,
     stockUnits: product.stockUnits,
     syncEnabled: product.syncEnabled,
@@ -287,6 +289,32 @@ function chunkArray<T>(items: T[], size: number) {
   return chunks;
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+) {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(Math.max(1, concurrency), items.length) },
+      () => worker(),
+    ),
+  );
+
+  return results;
+}
+
 function getStoredLocalImageUrl(value: string | null | undefined) {
   const trimmed = value?.trim() ?? "";
 
@@ -317,17 +345,24 @@ async function resolveWritableProductImages(
   const sourceImageUrl = product.sourceImageUrl?.trim() ?? product.imageUrl?.trim() ?? null;
   const imageVersionKey = product.syncHash ?? product.syncQuickHash ?? product.code;
   const mirrored = await mirrorProductImageToLocal({
+    clearWhenSourceMissing: true,
     code: product.code,
+    previousContentHash: existingSnapshot?.sourceImageContentHash,
     sourceUrl: sourceImageUrl,
     versionKey: imageVersionKey ?? product.code,
     previousLocalUrl,
+    previousSourceFingerprint: existingSnapshot?.sourceImageFingerprint,
+    previousSourceUrl: existingSnapshot?.sourceImageUrl,
   });
-  const localImageUrl = mirrored.localUrl ?? previousLocalUrl ?? null;
+  const localImageUrl = mirrored.localUrl;
 
   return {
     sourceImageUrl,
     localImageUrl,
     imageUrl: localImageUrl ?? sourceImageUrl ?? null,
+    sourceImageContentHash: mirrored.contentHash,
+    sourceImageFingerprint: mirrored.sourceFingerprint,
+    imageMetadataChanged: mirrored.metadataChanged,
   };
 }
 
@@ -342,6 +377,8 @@ type PreparedWritableProduct = SyncableProduct & {
   categoryId: string | null;
   sourceImageUrl: string | null;
   localImageUrl: string | null;
+  sourceImageContentHash: string | null;
+  sourceImageFingerprint: string | null;
   syncHash: string | null;
   syncQuickHash: string | null;
   syncStockHash: string | null;
@@ -352,6 +389,9 @@ type ExistingProductSnapshot = {
   id: string;
   imageUrl: string | null;
   localImageUrl: string | null;
+  sourceImageContentHash: string | null;
+  sourceImageFingerprint: string | null;
+  sourceImageUrl: string | null;
   syncEnabled: boolean;
   syncHash: string | null;
   syncQuickHash: string | null;
@@ -452,6 +492,9 @@ async function loadExistingProductMap(products: PreparedSyncableProduct[]) {
       externalId: true,
       imageUrl: true,
       localImageUrl: true,
+      sourceImageContentHash: true,
+      sourceImageFingerprint: true,
+      sourceImageUrl: true,
       syncEnabled: true,
       syncHash: true,
       syncQuickHash: true,
@@ -467,6 +510,9 @@ async function loadExistingProductMap(products: PreparedSyncableProduct[]) {
       id: product.id,
       imageUrl: product.imageUrl,
       localImageUrl: product.localImageUrl ?? getStoredLocalImageUrl(product.imageUrl),
+      sourceImageContentHash: product.sourceImageContentHash,
+      sourceImageFingerprint: product.sourceImageFingerprint,
+      sourceImageUrl: product.sourceImageUrl,
       syncEnabled: product.syncEnabled,
       syncHash: product.syncHash,
       syncQuickHash: product.syncQuickHash,
@@ -659,8 +705,10 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
       await ensureSyncNotCancelled(syncLog.id);
 
       const resolvedProducts = (
-        await Promise.all(
-          chunk.map(async (product) => {
+        await mapWithConcurrency(
+          chunk,
+          10,
+          async (product) => {
             const categoryId = product.categoryName
               ? categoryIdsByName.get(product.categoryName) ?? null
               : null;
@@ -683,11 +731,13 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
                 categoryId,
                 imageUrl: product.imageUrl ?? null,
                 isVisible: false,
-                sourceImageUrl: existingSnapshot.imageUrl ?? product.imageUrl ?? null,
+                sourceImageUrl: existingSnapshot.sourceImageUrl ?? product.imageUrl ?? null,
                 localImageUrl:
                   existingSnapshot.localImageUrl ??
                   getStoredLocalImageUrl(existingSnapshot.imageUrl) ??
                   null,
+                sourceImageContentHash: existingSnapshot.sourceImageContentHash,
+                sourceImageFingerprint: existingSnapshot.sourceImageFingerprint,
                 stockUnits: 0,
                 syncEnabled: false,
               };
@@ -720,7 +770,8 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
             if (isStockOnlyMode) {
               const syncStockHash = buildProductStockSyncHash(product);
-              const sourceImageUrl = existingSnapshot?.imageUrl ?? product.imageUrl ?? null;
+              const sourceImageUrl =
+                existingSnapshot?.sourceImageUrl ?? product.imageUrl ?? null;
               const localImageUrl =
                 existingSnapshot?.localImageUrl ??
                 getStoredLocalImageUrl(existingSnapshot?.imageUrl) ??
@@ -740,6 +791,10 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
                 sourceImageUrl,
                 localImageUrl,
                 imageUrl: localImageUrl ?? sourceImageUrl,
+                sourceImageContentHash:
+                  existingSnapshot?.sourceImageContentHash ?? null,
+                sourceImageFingerprint:
+                  existingSnapshot?.sourceImageFingerprint ?? null,
                 syncHash: existingSnapshot?.syncHash ?? null,
                 syncQuickHash: existingSnapshot?.syncQuickHash ?? null,
                 syncStockHash,
@@ -749,11 +804,6 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
             if (isQuickMode) {
               const syncQuickHash = buildProductQuickSyncHash(product);
-              const sourceImageUrl = existingSnapshot?.imageUrl ?? product.imageUrl ?? null;
-              const localImageUrl =
-                existingSnapshot?.localImageUrl ??
-                getStoredLocalImageUrl(existingSnapshot?.imageUrl) ??
-                null;
 
               if (existingSnapshot && existingSnapshot.syncQuickHash === syncQuickHash) {
                 summary.skipped.push({
@@ -763,13 +813,44 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
                 return null;
               }
 
+              const sourceImageChanged =
+                (existingSnapshot?.sourceImageUrl?.trim() ?? "") !==
+                (product.imageUrl?.trim() ?? "");
+              const imageResolution = sourceImageChanged
+                ? await resolveWritableProductImages(
+                    {
+                      ...product,
+                      syncHash: existingSnapshot?.syncHash ?? null,
+                      syncQuickHash,
+                    },
+                    existingSnapshot ?? null,
+                  )
+                : {
+                    imageUrl:
+                      existingSnapshot?.localImageUrl ??
+                      existingSnapshot?.sourceImageUrl ??
+                      product.imageUrl ??
+                      null,
+                    localImageUrl: existingSnapshot?.localImageUrl ?? null,
+                    sourceImageContentHash:
+                      existingSnapshot?.sourceImageContentHash ?? null,
+                    sourceImageFingerprint:
+                      existingSnapshot?.sourceImageFingerprint ?? null,
+                    sourceImageUrl:
+                      existingSnapshot?.sourceImageUrl ?? product.imageUrl ?? null,
+                  };
+
               return {
                 ...product,
                 categoryId,
-                sourceImageUrl,
-                localImageUrl,
-                imageUrl: localImageUrl ?? sourceImageUrl,
-                syncHash: null,
+                sourceImageUrl: imageResolution.sourceImageUrl,
+                localImageUrl: imageResolution.localImageUrl,
+                imageUrl: imageResolution.imageUrl,
+                sourceImageContentHash:
+                  imageResolution.sourceImageContentHash,
+                sourceImageFingerprint:
+                  imageResolution.sourceImageFingerprint,
+                syncHash: existingSnapshot?.syncHash ?? null,
                 syncQuickHash,
                 syncStockHash: buildProductStockSyncHash(product),
                 writeAction: "updated" as const,
@@ -781,15 +862,6 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
               categoryId,
             });
             const syncQuickHash = buildProductQuickSyncHash(product);
-
-            if (existingSnapshot && existingSnapshot.syncHash === syncHash) {
-              summary.skipped.push({
-                externalId: product.externalId,
-                reason: "Sin cambios reales respecto al último sync.",
-              });
-              return null;
-            }
-
             const writeAction: WriteAction = existingSnapshot ? "updated" : "created";
             const imageResolution = await resolveWritableProductImages(
               {
@@ -800,18 +872,34 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
               existingSnapshot ?? null,
             );
 
+            if (
+              existingSnapshot &&
+              existingSnapshot.syncHash === syncHash &&
+              !imageResolution.imageMetadataChanged
+            ) {
+              summary.skipped.push({
+                externalId: product.externalId,
+                reason: "Sin cambios reales respecto al último sync.",
+              });
+              return null;
+            }
+
             return {
               ...product,
               categoryId,
               sourceImageUrl: imageResolution.sourceImageUrl,
               localImageUrl: imageResolution.localImageUrl,
               imageUrl: imageResolution.imageUrl,
+              sourceImageContentHash:
+                imageResolution.sourceImageContentHash,
+              sourceImageFingerprint:
+                imageResolution.sourceImageFingerprint,
               syncHash,
               syncQuickHash,
               syncStockHash: buildProductStockSyncHash(product),
               writeAction,
             };
-          }),
+          },
         )
       ).filter(Boolean) as PreparedWritableProduct[];
 
@@ -938,6 +1026,8 @@ async function upsertProductChunk(
         "imageUrl",
         "sourceImageUrl",
         "localImageUrl",
+        "sourceImageFingerprint",
+        "sourceImageContentHash",
         "unitLabel",
         "unitPrice",
         "wholesalePrice",
@@ -978,6 +1068,11 @@ async function upsertProductChunk(
               "boxPrice" = EXCLUDED."boxPrice",
               "unitsPerBox" = EXCLUDED."unitsPerBox",
               "stockUnits" = EXCLUDED."stockUnits",
+              "imageUrl" = EXCLUDED."imageUrl",
+              "sourceImageUrl" = EXCLUDED."sourceImageUrl",
+              "localImageUrl" = EXCLUDED."localImageUrl",
+              "sourceImageFingerprint" = EXCLUDED."sourceImageFingerprint",
+              "sourceImageContentHash" = EXCLUDED."sourceImageContentHash",
               "isVisible" = EXCLUDED."isVisible",
               "syncEnabled" = EXCLUDED."syncEnabled",
               "lastSyncedAt" = EXCLUDED."lastSyncedAt",
@@ -995,6 +1090,8 @@ async function upsertProductChunk(
               "imageUrl" = EXCLUDED."imageUrl",
               "sourceImageUrl" = EXCLUDED."sourceImageUrl",
               "localImageUrl" = EXCLUDED."localImageUrl",
+              "sourceImageFingerprint" = EXCLUDED."sourceImageFingerprint",
+              "sourceImageContentHash" = EXCLUDED."sourceImageContentHash",
               "unitLabel" = EXCLUDED."unitLabel",
               "unitPrice" = EXCLUDED."unitPrice",
               "wholesalePrice" = EXCLUDED."wholesalePrice",
@@ -1068,6 +1165,8 @@ function buildProductRow(
     ${product.imageUrl},
     ${product.sourceImageUrl ?? product.imageUrl ?? null},
     ${product.localImageUrl ?? null},
+    ${product.sourceImageFingerprint},
+    ${product.sourceImageContentHash},
     ${product.unitLabel},
     ${product.unitPrice},
     ${product.wholesalePrice},
@@ -1102,6 +1201,8 @@ function buildPrismaProductCreateData(product: PreparedWritableProduct) {
     imageUrl: product.imageUrl,
     sourceImageUrl: product.sourceImageUrl ?? product.imageUrl ?? null,
     localImageUrl: product.localImageUrl ?? null,
+    sourceImageFingerprint: product.sourceImageFingerprint,
+    sourceImageContentHash: product.sourceImageContentHash,
     unitLabel: product.unitLabel,
     unitPrice: new Prisma.Decimal(product.unitPrice),
     wholesalePrice: product.wholesalePrice === null ? null : new Prisma.Decimal(product.wholesalePrice),
@@ -1135,6 +1236,11 @@ function buildPrismaProductUpdateData(
       boxPrice: product.boxPrice === null ? null : new Prisma.Decimal(product.boxPrice),
       unitsPerBox: product.unitsPerBox,
       stockUnits: product.stockUnits,
+      imageUrl: product.imageUrl,
+      sourceImageUrl: product.sourceImageUrl,
+      localImageUrl: product.localImageUrl,
+      sourceImageFingerprint: product.sourceImageFingerprint,
+      sourceImageContentHash: product.sourceImageContentHash,
       isVisible: product.isVisible,
       syncEnabled: product.syncEnabled,
       lastSyncedAt: product.lastSyncedAt,

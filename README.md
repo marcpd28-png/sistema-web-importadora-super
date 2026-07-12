@@ -123,15 +123,24 @@ Para mantener el stock actualizado cada minuto sin tocar precios en cada corrida
 * * * * * cd /ruta/de/IMPORTADORA && set -a && . ./.env && set +a && ERP_SYNC_TRIGGER=AUTOMATIC ERP_SYNC_MODE=STOCK_ONLY npm run sync:facturador-products >> /var/log/importadora-sync-stock.log 2>&1
 ```
 
-Si quieres una capa adicional de precios cada 5 minutos, puedes mantener un cron extra con `ERP_SYNC_MODE=STOCK_PRICE`, pero no es obligatorio para la operación base.
+Si usas cron en lugar del scheduler persistente, ejecuta `STOCK_PRICE` para refrescar stock y precios juntos.
 
-El cron horario refresca todo el catálogo. El cron de cada minuto actualiza stock y disponibilidad. Si activas el cron adicional de 5 minutos, este refresca stock, precio unitario y precio mayorista con un pequeño desfase para reducir solapes.
+El cron horario refresca todo el catálogo. El cron rápido actualiza stock, precio unitario, precio mayorista y cambios de URL de imagen.
 
 Si prefieres un proceso persistente en vez de `cron`, puedes correr el scheduler del proyecto:
 
 ```bash
 npm run sync:facturador-scheduler
 ```
+
+En producción, `npm start` aplica las migraciones e inicia tanto Next.js como el
+scheduler. Para desarrollo con sincronización automática usa:
+
+```bash
+npm run dev:with-erp
+```
+
+`npm run dev` inicia únicamente Next.js.
 
 Ese worker lee las variables:
 
@@ -141,14 +150,27 @@ Ese worker lee las variables:
 - `ERP_SYNC_SCHEDULER_TIME_ZONE` para fijar la ventana horaria
 - `ERP_SYNC_WINDOW_PAGES` para cuántas páginas leer por tick
 - `ERP_SYNC_THROTTLE_COOLDOWN_MINUTES` para enfriar si el ERP responde con throttle
+- `ERP_IMAGE_CHECK_BATCH_SIZE` para cuántas imágenes validar por minuto
+- `ERP_IMAGE_CHECK_CONCURRENCY` para limitar solicitudes simultáneas al host de imágenes
 
 El scheduler mantiene cursor por modo en `.erp-sync-scheduler-state.json` y avanza por ventanas para no saturar al ERP.
 
 La prioridad del scheduler es:
 
 1. `FULL` en el minuto configurado para carga completa
-2. `STOCK_PRICE` en los minutos múltiples de 5
-3. `STOCK_ONLY` en los demás minutos
+2. `STOCK_PRICE` cada minuto restante
+3. `STOCK_ONLY` únicamente si se configura una cadencia sin `STOCK_PRICE`
+
+Por defecto se procesan 10 páginas del ERP por minuto. Como el ERP actual no
+filtra por fecha de modificación, el barrido paginado es necesario para detectar
+cualquier cambio de precio o stock sin saturar su límite de solicitudes. Las
+imágenes se validan de forma independiente mediante `ETag`, `Last-Modified` y
+hash SHA-256; por eso también se detecta una foto reemplazada conservando la
+misma URL.
+
+Las páginas públicas consultan una versión liviana del catálogo cada 10 segundos.
+Al detectar cambios refrescan los componentes del servidor y reconcilian precio,
+stock e imagen de los productos persistidos en el carrito.
 
 Cada ejecución deja bitácora en `ErpSyncLog`, visible desde `/admin/settings`, con estado, origen, disparador, cantidades procesadas y error si algo falla.
 
@@ -160,7 +182,7 @@ Modos de sincronización:
 - `NEW_ONLY`: lee todo el ERP pero solo crea productos que todavía no están vinculados.
 - `INCREMENTAL`: requiere que el ERP exponga un filtro por fecha en `FACTURADOR_SYNC_UPDATED_SINCE_PARAM`. Con ese parámetro el cliente lee solo los cambios desde el último checkpoint exitoso registrado en `ErpSyncLog`. Si todavía no hay checkpoint previo, la primera corrida hace carga completa.
 - `STOCK_ONLY`: refresca solo stock y disponibilidad. Es el modo recomendado para la sincronización silenciosa de cada minuto.
-- `STOCK_PRICE`: refresca stock, precio unitario, precio mayorista y disponibilidad.
+- `STOCK_PRICE`: refresca stock, precio unitario, precio mayorista, disponibilidad y cambios de URL de imagen.
 
 Para el modo incremental puedes ajustar el formato del valor enviado al ERP con `FACTURADOR_SYNC_UPDATED_SINCE_FORMAT`:
 

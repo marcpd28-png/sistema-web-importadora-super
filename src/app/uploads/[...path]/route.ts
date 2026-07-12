@@ -3,7 +3,11 @@ import path from "node:path";
 
 export const runtime = "nodejs";
 
-const UPLOAD_ROOT = path.join(process.cwd(), "public", "uploads");
+const UPLOAD_ROOT = path.join(
+  /* turbopackIgnore: true */ process.cwd(),
+  "public",
+  "uploads",
+);
 
 const CONTENT_TYPES: Record<string, string> = {
   ".avif": "image/avif",
@@ -24,7 +28,10 @@ function safeJoinUploadPath(parts: string[]) {
     .filter(Boolean)
     .filter((part) => part !== "." && part !== "..");
 
-  const resolvedPath = path.resolve(UPLOAD_ROOT, ...normalizedParts);
+  const resolvedPath = path.resolve(
+    /* turbopackIgnore: true */ UPLOAD_ROOT,
+    ...normalizedParts,
+  );
 
   if (!resolvedPath.startsWith(`${UPLOAD_ROOT}${path.sep}`) && resolvedPath !== UPLOAD_ROOT) {
     return null;
@@ -38,13 +45,13 @@ function getContentType(filePath: string) {
 }
 
 async function readUploadFile(filePath: string) {
-  const fileStats = await stat(filePath);
+  const fileStats = await stat(/* turbopackIgnore: true */ filePath);
 
   if (!fileStats.isFile()) {
     return null;
   }
 
-  const body = await readFile(filePath);
+  const body = await readFile(/* turbopackIgnore: true */ filePath);
   const headers = new Headers();
 
   headers.set("Content-Type", getContentType(filePath));
@@ -94,7 +101,7 @@ export async function HEAD(
   }
 
   try {
-    const fileStats = await stat(filePath);
+    const fileStats = await stat(/* turbopackIgnore: true */ filePath);
 
     if (!fileStats.isFile()) {
       return new Response(null, { status: 404 });

@@ -9,6 +9,7 @@ import {
   syncFacturadorProducts,
   type FacturadorSyncMode,
 } from "../src/lib/facturador/sync";
+import { refreshErpProductImages } from "../src/lib/product-image-refresh";
 import { prisma } from "../src/lib/prisma";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -26,13 +27,17 @@ type SchedulerConfig = {
   fullEveryMinutes: number;
   windowPages: number;
   throttleCooldownMinutes: number;
+  imageBatchSize: number;
+  imageConcurrency: number;
 };
 
 type SchedulerState = {
   stockPage: number;
   stockPricePage: number;
   fullPage: number;
+  imageCursorCode: string | null;
   lastKnownPage: number | null;
+  lastPageProbedAt: number | null;
   cooldownUntil: number | null;
 };
 
@@ -44,6 +49,16 @@ function parsePositiveInt(value: string | undefined, fallback: number) {
   const parsed = Number(value ?? fallback);
 
   if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+
+  return fallback;
+}
+
+function parseIntervalMinutes(value: string | undefined, fallback: number) {
+  const parsed = Number(value ?? fallback);
+
+  if (Number.isInteger(parsed) && parsed >= 0) {
     return parsed;
   }
 
@@ -73,14 +88,16 @@ function getSchedulerConfig(): SchedulerConfig {
     enabled: parseBoolean(process.env.ERP_SYNC_SCHEDULER_ENABLED, true),
     runOnStart: parseBoolean(process.env.ERP_SYNC_SCHEDULER_RUN_ON_START, false),
     timeZone: process.env.ERP_SYNC_SCHEDULER_TIME_ZONE?.trim() || "America/Lima",
-    stockEveryMinutes: parsePositiveInt(process.env.ERP_SYNC_STOCK_EVERY_MINUTES, 1),
-    stockPriceEveryMinutes: parsePositiveInt(process.env.ERP_SYNC_PRICE_EVERY_MINUTES, 5),
-    fullEveryMinutes: parsePositiveInt(process.env.ERP_SYNC_FULL_EVERY_MINUTES, 60),
-    windowPages: parsePositiveInt(process.env.ERP_SYNC_WINDOW_PAGES, 1),
+    stockEveryMinutes: parseIntervalMinutes(process.env.ERP_SYNC_STOCK_EVERY_MINUTES, 1),
+    stockPriceEveryMinutes: parseIntervalMinutes(process.env.ERP_SYNC_PRICE_EVERY_MINUTES, 1),
+    fullEveryMinutes: parseIntervalMinutes(process.env.ERP_SYNC_FULL_EVERY_MINUTES, 60),
+    windowPages: parsePositiveInt(process.env.ERP_SYNC_WINDOW_PAGES, 10),
     throttleCooldownMinutes: parsePositiveInt(
       process.env.ERP_SYNC_THROTTLE_COOLDOWN_MINUTES,
       10,
     ),
+    imageBatchSize: parsePositiveInt(process.env.ERP_IMAGE_CHECK_BATCH_SIZE, 100),
+    imageConcurrency: parsePositiveInt(process.env.ERP_IMAGE_CHECK_CONCURRENCY, 10),
   };
 }
 
@@ -89,7 +106,9 @@ function defaultState(): SchedulerState {
     stockPage: 1,
     stockPricePage: 1,
     fullPage: 1,
+    imageCursorCode: null,
     lastKnownPage: null,
+    lastPageProbedAt: null,
     cooldownUntil: null,
   };
 }
@@ -105,10 +124,18 @@ async function loadSchedulerState() {
       stockPage: parsePositiveInt(String(parsed.stockPage ?? 1), 1),
       stockPricePage: parsePositiveInt(String(parsed.stockPricePage ?? 1), 1),
       fullPage: parsePositiveInt(String(parsed.fullPage ?? 1), 1),
+      imageCursorCode:
+        typeof parsed.imageCursorCode === "string" && parsed.imageCursorCode
+          ? parsed.imageCursorCode
+          : null,
       lastKnownPage:
         parsed.lastKnownPage === null || parsed.lastKnownPage === undefined
           ? null
           : Number(parsed.lastKnownPage),
+      lastPageProbedAt:
+        parsed.lastPageProbedAt === null || parsed.lastPageProbedAt === undefined
+          ? null
+          : Number(parsed.lastPageProbedAt),
       cooldownUntil:
         parsed.cooldownUntil === null || parsed.cooldownUntil === undefined
           ? null
@@ -263,22 +290,30 @@ async function runSync(
 
   let lastKnownPage = state.lastKnownPage;
 
-  try {
-    const probedLastPage = await probeLastPage(baseClient);
-    if (probedLastPage) {
-      lastKnownPage = probedLastPage;
-    }
-  } catch (error) {
-    if (isThrottleError(error)) {
-      state.cooldownUntil = Date.now() + config.throttleCooldownMinutes * 60_000;
-      await saveSchedulerState(state);
-      console.error(
-        `[ERP scheduler] Throttle detectado al sondear la página 1. Enfriando durante ${config.throttleCooldownMinutes} minutos.`,
-      );
-      return;
-    }
+  const shouldProbeLastPage =
+    !lastKnownPage ||
+    !state.lastPageProbedAt ||
+    Date.now() - state.lastPageProbedAt >= 6 * 60 * 60 * 1000;
 
-    throw error;
+  if (shouldProbeLastPage) {
+    try {
+      const probedLastPage = await probeLastPage(baseClient);
+      if (probedLastPage) {
+        lastKnownPage = probedLastPage;
+        state.lastPageProbedAt = Date.now();
+      }
+    } catch (error) {
+      if (isThrottleError(error)) {
+        state.cooldownUntil = Date.now() + config.throttleCooldownMinutes * 60_000;
+        await saveSchedulerState(state);
+        console.error(
+          `[ERP scheduler] Throttle detectado al sondear la página 1. Enfriando durante ${config.throttleCooldownMinutes} minutos.`,
+        );
+        return;
+      }
+
+      throw error;
+    }
   }
 
   const pageWindow = Math.max(1, config.windowPages);
@@ -338,6 +373,27 @@ async function runSync(
   }
 }
 
+async function runImageRefresh(
+  config: SchedulerConfig,
+  state: SchedulerState,
+) {
+  try {
+    const result = await refreshErpProductImages({
+      afterCode: state.imageCursorCode,
+      batchSize: config.imageBatchSize,
+      concurrency: config.imageConcurrency,
+    });
+    state.imageCursorCode = result.nextCursor;
+    await saveSchedulerState(state);
+
+    console.log(
+      `[ERP scheduler] Imágenes verificadas=${result.checked} Actualizadas=${result.refreshed} Metadatos=${result.metadataUpdated} Errores=${result.errors}`,
+    );
+  } catch (error) {
+    console.error("[ERP scheduler] Error al verificar imágenes:", error);
+  }
+}
+
 async function main() {
   const config = getSchedulerConfig();
   const state = await loadSchedulerState();
@@ -388,6 +444,7 @@ async function main() {
       console.log("[ERP scheduler] Sin modo due para este minuto; esperando siguiente tick.");
     }
 
+    await runImageRefresh(config, state);
     await sleep(getTickDelayMs(new Date()));
     state.cooldownUntil = state.cooldownUntil && Date.now() < state.cooldownUntil ? state.cooldownUntil : null;
   }

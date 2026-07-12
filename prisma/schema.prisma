@@ -113,6 +113,8 @@ model Product {
   imageUrl        String?        @db.Text
   sourceImageUrl  String?        @db.Text
   localImageUrl   String?        @db.Text
+  sourceImageFingerprint String?        @db.VarChar(64)
+  sourceImageContentHash String?        @db.VarChar(64)
   unitLabel       String         @default("unidad") @db.VarChar(40)
   unitPrice       Decimal        @db.Decimal(10, 2)
   wholesalePrice  Decimal?       @db.Decimal(10, 2)
@@ -140,6 +142,7 @@ model Product {
   @@index([category, isVisible])
   @@index([brand, isVisible])
   @@index([isVisible, updatedAt(sort: Desc)])
+  @@index([updatedAt(sort: Desc)])
   @@index([stockUnits])
   @@index([categoryId])
   @@index([externalSource, externalId])

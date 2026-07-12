@@ -1,0 +1,12 @@
+.git
+.next
+node_modules
+.env
+.env.*
+!.env.example
+.codex-captures
+exports
+.erp-sync-scheduler-state.json
+*.log
+.DS_Store
+tsconfig.tsbuildinfo

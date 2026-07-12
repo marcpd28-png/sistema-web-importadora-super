@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:with-erp": "prisma migrate deploy && node prisma/start-production.mjs dev",
     "build": "prisma generate && next build",
-    "start": "PORT=${PORT:-4000} HOSTNAME=0.0.0.0 next start",
+    "start": "prisma migrate deploy && node prisma/start-production.mjs",
+    "start:web": "node prisma/start-web.mjs",
     "lint": "eslint .",
     "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts",
+    "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -26,10 +29,12 @@
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "nodemailer": "^8.0.7",
+    "prisma": "^6.19.0",
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
+    "tsx": "^4.21.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
@@ -41,8 +46,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
-    "prisma": "^6.19.0",
-    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "prisma": {

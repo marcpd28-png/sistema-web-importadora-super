@@ -153,7 +153,12 @@ export async function POST(request: Request) {
   const uploadedAt = Date.now();
   const baseName = sanitizeBaseName(fileEntry.name) || "archivo";
   const fileBase = `${uploadedAt}-${randomUUID().slice(0, 8)}-${baseName}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+  const uploadDir = path.join(
+    /* turbopackIgnore: true */ process.cwd(),
+    "public",
+    "uploads",
+    folder,
+  );
   const buffer = Buffer.from(await fileEntry.arrayBuffer());
 
   await mkdir(uploadDir, { recursive: true });
@@ -174,7 +179,10 @@ export async function POST(request: Request) {
   }
 
   const fileName = `${fileBase}${getExtension(fileEntry)}`;
-  await writeFile(path.join(uploadDir, fileName), buffer);
+  await writeFile(
+    path.join(/* turbopackIgnore: true */ uploadDir, fileName),
+    buffer,
+  );
 
   return NextResponse.json({
     fileName,
