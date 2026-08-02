@@ -20,6 +20,7 @@ loadEnvConfig(process.cwd());
 
 type SchedulerConfig = {
   enabled: boolean;
+  fullComplete: boolean;
   runOnStart: boolean;
   timeZone: string;
   stockEveryMinutes: number;
@@ -86,6 +87,7 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
 function getSchedulerConfig(): SchedulerConfig {
   return {
     enabled: parseBoolean(process.env.ERP_SYNC_SCHEDULER_ENABLED, true),
+    fullComplete: parseBoolean(process.env.ERP_SYNC_FULL_COMPLETE, false),
     runOnStart: parseBoolean(process.env.ERP_SYNC_SCHEDULER_RUN_ON_START, false),
     timeZone: process.env.ERP_SYNC_SCHEDULER_TIME_ZONE?.trim() || "America/Lima",
     stockEveryMinutes: parseIntervalMinutes(process.env.ERP_SYNC_STOCK_EVERY_MINUTES, 1),
@@ -317,19 +319,28 @@ async function runSync(
   }
 
   const pageWindow = Math.max(1, config.windowPages);
-  const effectiveClient = new FacturadorClient({
-    ...baseConfig,
-    startProductPage: cursor,
-    maxProductPages: pageWindow,
-    productPageConcurrency: 1,
-    productPageDelayMs: 2000,
-    maxRetries: 3,
-    retryDelayMs: 10_000,
-  });
+  const runCompleteFull = mode === "FULL" && config.fullComplete;
+  const effectiveClient = runCompleteFull
+    ? new FacturadorClient({
+        ...baseConfig,
+        startProductPage: 1,
+        maxProductPages: null,
+      })
+    : new FacturadorClient({
+        ...baseConfig,
+        startProductPage: cursor,
+        maxProductPages: pageWindow,
+        productPageConcurrency: 1,
+        productPageDelayMs: 2000,
+        maxRetries: 3,
+        retryDelayMs: 10_000,
+      });
 
   const startedAt = new Date();
   console.log(
-    `[ERP scheduler] Iniciando sync ${getModeLabel(mode)} en página ${cursor}${lastKnownPage ? ` de ${lastKnownPage}` : ""} a las ${startedAt.toISOString()}`,
+    runCompleteFull
+      ? `[ERP scheduler] Iniciando sync completa total desde página 1${lastKnownPage ? ` de ${lastKnownPage}` : ""} a las ${startedAt.toISOString()}`
+      : `[ERP scheduler] Iniciando sync ${getModeLabel(mode)} en página ${cursor}${lastKnownPage ? ` de ${lastKnownPage}` : ""} a las ${startedAt.toISOString()}`,
   );
 
   try {
@@ -339,7 +350,9 @@ async function runSync(
       syncMode: mode,
     });
 
-    state[cursorKey] = advanceCursor(cursor, pageWindow, lastKnownPage);
+    state[cursorKey] = runCompleteFull
+      ? 1
+      : advanceCursor(cursor, pageWindow, lastKnownPage);
     state.lastKnownPage = lastKnownPage;
     state.cooldownUntil = null;
     await saveSchedulerState(state);

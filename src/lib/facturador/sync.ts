@@ -375,6 +375,8 @@ type WriteAction = "created" | "updated";
 type PreparedWritableProduct = SyncableProduct & {
   categoryName: string | null;
   categoryId: string | null;
+  existingCode: string | null;
+  existingProductId: string | null;
   sourceImageUrl: string | null;
   localImageUrl: string | null;
   sourceImageContentHash: string | null;
@@ -387,6 +389,7 @@ type PreparedWritableProduct = SyncableProduct & {
 
 type ExistingProductSnapshot = {
   id: string;
+  code: string;
   imageUrl: string | null;
   localImageUrl: string | null;
   sourceImageContentHash: string | null;
@@ -406,6 +409,13 @@ type ChunkUpsertResult = {
     reason: string;
   }>;
 };
+
+function buildExistingWriteMetadata(existingSnapshot: ExistingProductSnapshot | null | undefined) {
+  return {
+    existingCode: existingSnapshot?.code ?? null,
+    existingProductId: existingSnapshot?.id ?? null,
+  };
+}
 
 async function updateSyncProgress(
   syncLogId: string,
@@ -508,6 +518,7 @@ async function loadExistingProductMap(products: PreparedSyncableProduct[]) {
   for (const product of existingProducts) {
     const snapshot = {
       id: product.id,
+      code: product.code,
       imageUrl: product.imageUrl,
       localImageUrl: product.localImageUrl ?? getStoredLocalImageUrl(product.imageUrl),
       sourceImageContentHash: product.sourceImageContentHash,
@@ -744,6 +755,7 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
               return {
                 ...hiddenProduct,
+                ...buildExistingWriteMetadata(existingSnapshot),
                 imageUrl: hiddenProduct.localImageUrl ?? hiddenProduct.sourceImageUrl ?? null,
                 syncHash: buildProductSyncHash(hiddenProduct),
                 syncQuickHash: buildProductQuickSyncHash(hiddenProduct),
@@ -787,6 +799,7 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
               return {
                 ...product,
+                ...buildExistingWriteMetadata(existingSnapshot),
                 categoryId: null,
                 sourceImageUrl,
                 localImageUrl,
@@ -842,6 +855,7 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
               return {
                 ...product,
+                ...buildExistingWriteMetadata(existingSnapshot),
                 categoryId,
                 sourceImageUrl: imageResolution.sourceImageUrl,
                 localImageUrl: imageResolution.localImageUrl,
@@ -886,6 +900,7 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
             return {
               ...product,
+              ...buildExistingWriteMetadata(existingSnapshot),
               categoryId,
               sourceImageUrl: imageResolution.sourceImageUrl,
               localImageUrl: imageResolution.localImageUrl,
@@ -997,6 +1012,76 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 }
 
 async function upsertProductChunk(
+  products: Array<PreparedWritableProduct>,
+  syncMode: FacturadorSyncMode,
+): Promise<ChunkUpsertResult> {
+  if (!products.length) {
+    return {
+      created: 0,
+      updated: 0,
+      skipped: [],
+    };
+  }
+
+  const updateByExistingId = products.filter(
+    (product) =>
+      product.existingProductId &&
+      product.existingCode &&
+      product.existingCode !== product.code,
+  );
+  const updateByExistingIdKeys = new Set(
+    updateByExistingId.map((product) => product.existingProductId),
+  );
+  const upsertByCode = products.filter(
+    (product) => !updateByExistingIdKeys.has(product.existingProductId),
+  );
+  const externalIdentityResult = await updateProductsByExistingId(
+    updateByExistingId,
+    syncMode,
+  );
+  const codeResult = await upsertProductsByCode(upsertByCode, syncMode);
+
+  return {
+    created: codeResult.created,
+    updated: externalIdentityResult.updated + codeResult.updated,
+    skipped: [...externalIdentityResult.skipped, ...codeResult.skipped],
+  };
+}
+
+async function updateProductsByExistingId(
+  products: Array<PreparedWritableProduct>,
+  syncMode: FacturadorSyncMode,
+): Promise<ChunkUpsertResult> {
+  const skipped: ChunkUpsertResult["skipped"] = [];
+  let updated = 0;
+
+  for (const product of products) {
+    if (!product.existingProductId) {
+      continue;
+    }
+
+    try {
+      await prisma.product.update({
+        where: { id: product.existingProductId },
+        data: buildPrismaProductUpdateData(product, syncMode),
+      });
+      updated += 1;
+    } catch (error) {
+      skipped.push({
+        externalId: product.externalId,
+        reason: normalizeErrorMessage(error),
+      });
+    }
+  }
+
+  return {
+    created: 0,
+    updated,
+    skipped,
+  };
+}
+
+async function upsertProductsByCode(
   products: Array<PreparedWritableProduct>,
   syncMode: FacturadorSyncMode,
 ): Promise<ChunkUpsertResult> {

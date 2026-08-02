@@ -22,6 +22,7 @@ const UNIT_LABELS: Record<string, string> = {
 };
 
 const DEFAULT_WHOLESALE_MIN_QTY = 3;
+const MAX_PRODUCT_SLUG_LENGTH = 140;
 
 export function buildCategoryLookup(categories: FacturadorCategory[]) {
   return buildLookup(categories);
@@ -107,7 +108,7 @@ export function mapFacturadorProduct(
     categoryName,
     product: {
       code: code.slice(0, 64),
-      slug: slugify(`${name}-${code}-${stableExternalId}`).slice(0, 140),
+      slug: buildProductSlug(name, code, stableExternalId),
       name: name.slice(0, 180),
       description: getFirstString(product, ["description", "full_description", "details"]) ?? null,
       brand: brandName,
@@ -130,6 +131,27 @@ export function mapFacturadorProduct(
       lastSyncedAt: syncedAt,
     },
   };
+}
+
+function buildProductSlug(name: string, code: string, externalId: string) {
+  const suffix = slugify(`${code}-${externalId}`).slice(0, 72);
+  const base = slugify(name);
+  const fullSlug = [base, suffix].filter(Boolean).join("-");
+
+  if (fullSlug.length <= MAX_PRODUCT_SLUG_LENGTH) {
+    return fullSlug;
+  }
+
+  if (!suffix) {
+    return base.slice(0, MAX_PRODUCT_SLUG_LENGTH);
+  }
+
+  const maxBaseLength = Math.max(0, MAX_PRODUCT_SLUG_LENGTH - suffix.length - 1);
+  const trimmedBase = base.slice(0, maxBaseLength).replace(/-+$/g, "");
+
+  return trimmedBase
+    ? `${trimmedBase}-${suffix}`
+    : suffix.slice(0, MAX_PRODUCT_SLUG_LENGTH);
 }
 
 function buildLookup(records: FacturadorRecord[]) {
