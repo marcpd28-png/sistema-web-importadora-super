@@ -70,6 +70,8 @@ type SuggestionProduct = Pick<
   | "slug"
   | "code"
   | "name"
+  | "description"
+  | "technicalSpecs"
   | "brand"
   | "category"
   | "externalCode"
@@ -243,12 +245,17 @@ export function getProductSearchTokenGroups(query: string) {
 function buildProductSearchConditions(term: string): Prisma.ProductWhereInput[] {
   return [
     { name: { contains: term, mode: "insensitive" } },
+    { description: { contains: term, mode: "insensitive" } },
+    { technicalSpecs: { contains: term, mode: "insensitive" } },
     { code: { contains: term, mode: "insensitive" } },
     { brand: { contains: term, mode: "insensitive" } },
     { category: { contains: term, mode: "insensitive" } },
+    { categoryRef: { is: { name: { contains: term, mode: "insensitive" } } } },
+    { categoryRef: { is: { slug: { contains: term, mode: "insensitive" } } } },
     { externalCode: { contains: term, mode: "insensitive" } },
     { externalId: { contains: term, mode: "insensitive" } },
     { slug: { contains: term, mode: "insensitive" } },
+    { media: { some: { altText: { contains: term, mode: "insensitive" } } } },
   ];
 }
 
@@ -637,6 +644,8 @@ export function getSuggestionScore(product: SuggestionProduct, query: string) {
     { value: product.brand, exact: 90, starts: 82, includes: 60 },
     { value: product.category, exact: 84, starts: 78, includes: 56 },
     { value: product.slug, exact: 70, starts: 62, includes: 50 },
+    { value: product.description, exact: 54, starts: 48, includes: 38 },
+    { value: product.technicalSpecs, exact: 54, starts: 48, includes: 38 },
   ];
   let score = 0;
 

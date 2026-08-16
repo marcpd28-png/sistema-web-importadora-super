@@ -15,6 +15,8 @@ function candidate(overrides: Partial<SuggestionCandidate>): SuggestionCandidate
     slug: "product-1",
     code: "SKU-1",
     name: "Producto base",
+    description: null,
+    technicalSpecs: null,
     brand: null,
     category: null,
     externalCode: null,
@@ -29,12 +31,16 @@ test("construye el filtro compartido de búsqueda parcial", () => {
   const serializedWhere = JSON.stringify(where);
 
   assert.match(serializedWhere, /"name"/);
+  assert.match(serializedWhere, /"description"/);
+  assert.match(serializedWhere, /"technicalSpecs"/);
   assert.match(serializedWhere, /"code"/);
   assert.match(serializedWhere, /"brand"/);
   assert.match(serializedWhere, /"category"/);
+  assert.match(serializedWhere, /"categoryRef"/);
   assert.match(serializedWhere, /"externalCode"/);
   assert.match(serializedWhere, /"externalId"/);
   assert.match(serializedWhere, /"slug"/);
+  assert.match(serializedWhere, /"media"/);
   assert.match(serializedWhere, /"contains":"jbl"/);
   assert.match(serializedWhere, /"mode":"insensitive"/);
 });
@@ -117,4 +123,27 @@ test("ordena sugerencias cuando la consulta viene en plural y el producto en sin
 
   assert.equal(results.length, 1);
   assert.equal(results[0].code, "PROY-1");
+});
+
+test("ordena sugerencias por descripcion y ficha tecnica", () => {
+  const results = mapSuggestionResults(
+    [
+      candidate({
+        id: "description",
+        code: "DESC-1",
+        name: "Producto comun",
+        description: "Compatible con asistente de voz Alexa",
+      }),
+      candidate({
+        id: "specs",
+        code: "SPEC-1",
+        name: "Producto tecnico",
+        technicalSpecs: "Modelo HY300 para proyector",
+      }),
+    ],
+    "alexa",
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].code, "DESC-1");
 });

@@ -309,15 +309,27 @@ export async function getCatalogSearchDestination(query: string): Promise<Catalo
 
   const normalizedQuery = normalizeCatalogSearchText(trimmedQuery);
   const singularQuery = singularizeCatalogSearchText(normalizedQuery);
+  const matchingProductCount = await prisma.product.count({
+    where: buildWhere(trimmedQuery),
+  });
+
+  if (matchingProductCount > 1) {
+    return null;
+  }
+
+  if (matchingProductCount === 1) {
+    const exactProductSlug = await getExactCatalogProductSlug(trimmedQuery);
+
+    if (exactProductSlug) {
+      return { href: `/producto/${exactProductSlug}`, kind: "product" };
+    }
+
+    return null;
+  }
 
   const brandMatch = await getBrandSearchDestination(trimmedQuery);
   if (brandMatch) {
     return brandMatch;
-  }
-
-  const exactProductSlug = await getExactCatalogProductSlug(trimmedQuery);
-  if (exactProductSlug) {
-    return { href: `/producto/${exactProductSlug}`, kind: "product" };
   }
 
   const categories = await prisma.category.findMany({
@@ -693,6 +705,7 @@ export async function getCatalogSuggestions(query: string) {
   const rows = await prisma.$queryRaw<CatalogSuggestionRow[]>(Prisma.sql`
     SELECT p.id, p.slug, p.code, p.name, p.brand, p.category
     FROM "Product" p
+    LEFT JOIN "Category" c ON c.id = p."categoryId"
     WHERE p."isVisible" = true
       ${buildBlockedPublicProductCodesSql()}
       AND ${buildSuggestionPhotoSql()}
@@ -823,16 +836,18 @@ function buildSuggestionPhotoSql() {
 }
 
 const SUGGESTION_NAME_COLUMNS = [Prisma.sql`p.name`];
+const SUGGESTION_DESCRIPTION_COLUMNS = [Prisma.sql`p.description`, Prisma.sql`p."technicalSpecs"`];
 const SUGGESTION_BRAND_COLUMNS = [Prisma.sql`p.brand`];
 const SUGGESTION_CODE_COLUMNS = [
   Prisma.sql`p.code`,
   Prisma.sql`p."externalCode"`,
   Prisma.sql`p."externalId"`,
 ];
-const SUGGESTION_CATEGORY_COLUMNS = [Prisma.sql`p.category`];
+const SUGGESTION_CATEGORY_COLUMNS = [Prisma.sql`p.category`, Prisma.sql`c.name`, Prisma.sql`c.slug`];
 const SUGGESTION_SLUG_COLUMNS = [Prisma.sql`p.slug`];
 const SUGGESTION_SEARCH_COLUMNS = [
   ...SUGGESTION_NAME_COLUMNS,
+  ...SUGGESTION_DESCRIPTION_COLUMNS,
   ...SUGGESTION_CODE_COLUMNS,
   ...SUGGESTION_BRAND_COLUMNS,
   ...SUGGESTION_CATEGORY_COLUMNS,
