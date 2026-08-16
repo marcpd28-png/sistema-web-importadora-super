@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ChartNoAxesCombined,
   DatabaseZap,
@@ -76,6 +76,13 @@ type AdminNavProps = {
 
 export function AdminNav({ badges }: AdminNavProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handlePrefetch = (href?: string) => {
+    if (href) {
+      router.prefetch(href);
+    }
+  };
 
   return (
     <nav className="admin-nav" aria-label="Navegación administrativa">
@@ -117,6 +124,9 @@ export function AdminNav({ badges }: AdminNavProps) {
                     isActive && "is-active",
                   )}
                   href={link.href}
+                  onFocus={() => handlePrefetch(link.href)}
+                  onMouseEnter={() => handlePrefetch(link.href)}
+                  onTouchStart={() => handlePrefetch(link.href)}
                 >
                   <span className="admin-nav-icon">
                     <Icon size={18} />
