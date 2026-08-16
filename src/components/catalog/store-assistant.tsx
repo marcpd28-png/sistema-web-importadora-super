@@ -8,7 +8,7 @@ import {
   rehydrateCartStore,
   useCartStore,
 } from "@/components/catalog/cart-store";
-import { getSafeMediaUrl } from "@/lib/media-url";
+import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getPublicProductName } from "@/lib/product-name";
 import { formatCurrency } from "@/lib/utils";
 import type {
@@ -352,7 +352,7 @@ function AssistantProductCard({ product }: AssistantProductCardProps) {
             decoding="async"
             loading="lazy"
             referrerPolicy="no-referrer"
-            src={safeImageUrl}
+            src={getOptimizedImageUrl(safeImageUrl, 128) ?? undefined}
           />
         </div>
       ) : null}

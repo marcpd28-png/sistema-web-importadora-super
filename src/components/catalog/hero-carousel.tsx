@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getSafeMediaUrl } from "@/lib/media-url";
+import { getOptimizedImageUrl } from "@/lib/media-url";
 import type { HeroSlideView } from "@/lib/store";
 import { useHorizontalCarousel } from "@/components/catalog/use-horizontal-carousel";
 
@@ -27,7 +27,7 @@ export function HeroCarousel({ slides, intervalSeconds }: HeroCarouselProps) {
             decoding="async"
             loading={index === 0 ? "eager" : "lazy"}
             referrerPolicy="no-referrer"
-            src={getSafeMediaUrl(slide.imageUrl) ?? slide.imageUrl}
+            src={getOptimizedImageUrl(slide.imageUrl, 1200) ?? slide.imageUrl}
           />
         </article>
       ))}

@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "25mb",
   },
   output: "standalone",
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "original.negocioserp.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { getSafeMediaUrl } from "@/lib/media-url";
+import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogProduct } from "@/lib/store";
 import { useHorizontalCarousel } from "@/components/catalog/use-horizontal-carousel";
@@ -59,7 +59,7 @@ export function HeroProductCarousel({ products, intervalSeconds }: HeroProductCa
                   decoding="async"
                   loading={index === 0 ? "eager" : "lazy"}
                   referrerPolicy="no-referrer"
-                  src={mediaUrl}
+                  src={getOptimizedImageUrl(mediaUrl, 640) ?? mediaUrl}
                 />
               </Link>
             );

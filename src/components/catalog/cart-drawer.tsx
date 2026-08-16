@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
 import { rehydrateCartStore } from "@/components/catalog/cart-store";
-import { getSafeMediaUrl } from "@/lib/media-url";
+import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getLinePricing } from "@/lib/pricing";
 import type { StoreSettingsView } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
@@ -139,7 +139,7 @@ function CartList({
                   decoding="async"
                   loading="lazy"
                   referrerPolicy="no-referrer"
-                  src={getSafeMediaUrl(item.imageUrl) ?? undefined}
+                  src={getOptimizedImageUrl(item.imageUrl, 96) ?? undefined}
                 />
               ) : (
                 <span>{item.name.slice(0, 2).toUpperCase()}</span>

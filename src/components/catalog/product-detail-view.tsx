@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CircleX, ImageIcon, Minus, Plus, ShoppingCart, ZoomIn } from "lucide-react";
 import { CartStoreBootstrap } from "@/components/catalog/cart-store-bootstrap";
 import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "@/components/catalog/cart-store";
-import { getSafeMediaUrl } from "@/lib/media-url";
+import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogProduct, ProductMediaView, StoreSettingsView } from "@/lib/store";
 import { isGenericProductPhotoUrl } from "@/lib/store-shared";
@@ -211,7 +211,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
                       }))
                     }
                     referrerPolicy="no-referrer"
-                    src={activeMediaUrl}
+                    src={getOptimizedImageUrl(activeMediaUrl, 828) ?? undefined}
                   />
                   <span className="product-detail-stage-zoom">
                     <ZoomIn size={16} />
@@ -253,7 +253,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
                         decoding="async"
                         loading="lazy"
                         referrerPolicy="no-referrer"
-                        src={getSafeMediaUrl(media.url) ?? media.url}
+                        src={getOptimizedImageUrl(media.url, 96) ?? media.url}
                       />
                     ) : (
                       <span>{media.type === "VIDEO" ? "Video" : "Vista"}</span>
@@ -388,7 +388,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
               <img
                 alt={fullscreenMedia.altText ?? displayName}
                 className="product-detail-lightbox-media"
-                src={fullscreenMediaUrl}
+                src={getOptimizedImageUrl(fullscreenMediaUrl, 1200) ?? undefined}
               />
             ) : (
               <video

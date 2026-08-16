@@ -3,7 +3,7 @@
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { ImageIcon } from "lucide-react";
 import { useState } from "react";
-import { getSafeMediaUrl } from "@/lib/media-url";
+import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import type { CatalogProduct } from "@/lib/store";
 
 type ProductMediaFrameProps = {
@@ -33,7 +33,7 @@ export function ProductMediaFrame({ product, displayName, href }: ProductMediaFr
                 loading="lazy"
                 onError={() => setImageFailed(true)}
                 referrerPolicy="no-referrer"
-                src={primaryMediaUrl}
+                src={getOptimizedImageUrl(primaryMediaUrl, 384) ?? undefined}
               />
             ) : (
               <video muted playsInline preload="metadata" src={primaryMediaUrl} />

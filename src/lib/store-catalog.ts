@@ -114,25 +114,8 @@ export async function getCatalogPageData(input: {
           })
         : [],
       prisma.product.count({ where }),
-      prisma.category.findMany({
-        where: {
-          products: {
-            some: {
-              AND: [buildSellableProductWhere()],
-            },
-          },
-        },
-        orderBy: { name: "asc" },
-      }),
-      prisma.product.findMany({
-        where: {
-          ...buildSellableProductWhere(),
-          brand: { not: null },
-        },
-        distinct: ["brand"],
-        orderBy: { brand: "asc" },
-        select: { brand: true },
-      }),
+      getActiveCategories(),
+      getBrandOptions(),
       prisma.product.count({ where: buildSellableProductWhere() }),
       prisma.product.count({
         where: { AND: [buildSellableProductWhere(), { isFeatured: true }] },
@@ -171,10 +154,7 @@ export async function getCatalogPageData(input: {
     selectedBrand: input.brand?.trim() || "all",
     selectedSort: input.sort?.trim() || "featured",
     categories: categoryRows.map(mapCategory),
-    brands: brandRows
-      .map((item) => item.brand?.trim())
-      .filter((value): value is string => Boolean(value))
-      .map((name) => ({ name })) satisfies BrandOption[],
+    brands: brandRows,
     stats: {
       visibleCount,
       featuredCount,
@@ -955,6 +935,23 @@ export const getCategoryOptions = unstable_cache(
     return categories.map(mapCategory);
   },
   ["category-options-key"],
+  { revalidate: 60, tags: ["categories"] },
+);
+
+export const getActiveCategories = unstable_cache(
+  async () => {
+    return prisma.category.findMany({
+      where: {
+        products: {
+          some: {
+            AND: [buildSellableProductWhere()],
+          },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+  },
+  ["active-categories-key"],
   { revalidate: 60, tags: ["categories"] },
 );
 
