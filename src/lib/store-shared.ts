@@ -167,11 +167,62 @@ function compactProductSearchText(value: string) {
     .replace(/[^a-z0-9]+/g, "");
 }
 
+function getProductSearchTokenVariants(token: string) {
+  const normalizedToken = normalizeProductSearchText(token);
+  const variants = [normalizedToken];
+
+  if (normalizedToken.length > 3) {
+    if (normalizedToken.endsWith("ces")) {
+      variants.push(`${normalizedToken.slice(0, -3)}z`);
+    }
+
+    if (normalizedToken.endsWith("es")) {
+      variants.push(normalizedToken.slice(0, -2));
+    }
+
+    if (normalizedToken.endsWith("s")) {
+      variants.push(normalizedToken.slice(0, -1));
+    }
+  }
+
+  return Array.from(new Set(variants.filter((variant) => variant.length > 1)));
+}
+
+function getProductSearchTextVariants(value: string) {
+  const normalizedValue = normalizeProductSearchText(value);
+
+  if (!normalizedValue) {
+    return [];
+  }
+
+  const tokens = normalizedValue.split(" ").filter(Boolean);
+  const tokenGroups = tokens.map(getProductSearchTokenVariants);
+  const variants = new Set<string>([normalizedValue]);
+
+  for (let index = 0; index < tokenGroups.length; index += 1) {
+    for (const tokenVariant of tokenGroups[index]) {
+      const nextTokens = [...tokens];
+      nextTokens[index] = tokenVariant;
+      variants.add(nextTokens.join(" "));
+    }
+  }
+
+  const fullySingularTokens = tokenGroups.map((group) => group.at(-1) ?? "");
+
+  if (fullySingularTokens.every(Boolean)) {
+    variants.add(fullySingularTokens.join(" "));
+  }
+
+  return Array.from(variants);
+}
+
 export function getProductSearchTerms(query: string) {
   const trimmedQuery = query.trim();
   const normalizedQuery = normalizeProductSearchText(trimmedQuery);
   const compactQuery = compactProductSearchText(trimmedQuery);
-  const terms = [trimmedQuery, normalizedQuery, compactQuery]
+  const variantTerms = getProductSearchTextVariants(trimmedQuery);
+  const compactVariantTerms = variantTerms.map(compactProductSearchText);
+  const terms = [trimmedQuery, normalizedQuery, compactQuery, ...variantTerms, ...compactVariantTerms]
     .map((term) => term.trim())
     .filter(Boolean);
 
@@ -179,9 +230,14 @@ export function getProductSearchTerms(query: string) {
 }
 
 export function getProductSearchTokens(query: string) {
+  return getProductSearchTokenGroups(query).map((group) => group[0]).filter(Boolean);
+}
+
+export function getProductSearchTokenGroups(query: string) {
   return normalizeProductSearchText(query)
     .split(" ")
-    .filter((token) => token.length > 1);
+    .filter((token) => token.length > 1)
+    .map(getProductSearchTokenVariants);
 }
 
 function buildProductSearchConditions(term: string): Prisma.ProductWhereInput[] {
@@ -204,13 +260,13 @@ export function buildProductSearchWhere(query?: string): Prisma.ProductWhereInpu
   }
 
   const terms = getProductSearchTerms(trimmedQuery);
-  const normalizedTokens = getProductSearchTokens(trimmedQuery);
+  const tokenGroups = getProductSearchTokenGroups(trimmedQuery);
   const searchConditions = terms.flatMap(buildProductSearchConditions);
 
-  if (normalizedTokens.length > 1) {
+  if (tokenGroups.length > 1) {
     searchConditions.push({
-      AND: normalizedTokens.map((token) => ({
-        OR: buildProductSearchConditions(token),
+      AND: tokenGroups.map((group) => ({
+        OR: group.flatMap(buildProductSearchConditions),
       })),
     });
   }
@@ -569,11 +625,10 @@ function mapSuggestion(product: SuggestionProduct): CatalogSuggestion {
 }
 
 export function getSuggestionScore(product: SuggestionProduct, query: string) {
-  const normalizedQuery = normalizeProductSearchText(query);
-  const compactQuery = compactProductSearchText(query);
-  const normalizedTokens = normalizedQuery
-    .split(" ")
-    .filter((token) => token.length > 1);
+  const searchTerms = getProductSearchTerms(query);
+  const normalizedQueries = searchTerms.map(normalizeProductSearchText);
+  const compactQueries = searchTerms.map(compactProductSearchText);
+  const tokenGroups = getProductSearchTokenGroups(query);
   const values = [
     { value: product.code, exact: 100, starts: 92, includes: 76 },
     { value: product.externalCode, exact: 98, starts: 90, includes: 74 },
@@ -593,35 +648,41 @@ export function getSuggestionScore(product: SuggestionProduct, query: string) {
       continue;
     }
 
-    if (normalizedQuery && normalizedValue === normalizedQuery) {
-      score = Math.max(score, item.exact);
+    for (const normalizedQuery of normalizedQueries) {
+      if (normalizedQuery && normalizedValue === normalizedQuery) {
+        score = Math.max(score, item.exact);
+      }
+
+      if (normalizedQuery && normalizedValue.startsWith(normalizedQuery)) {
+        score = Math.max(score, item.starts);
+      }
+
+      if (normalizedQuery && normalizedValue.includes(normalizedQuery)) {
+        score = Math.max(score, item.includes);
+      }
     }
 
-    if (compactQuery && compactValue === compactQuery) {
-      score = Math.max(score, item.exact);
-    }
+    for (const compactQuery of compactQueries) {
+      if (compactQuery && compactValue === compactQuery) {
+        score = Math.max(score, item.exact);
+      }
 
-    if (normalizedQuery && normalizedValue.startsWith(normalizedQuery)) {
-      score = Math.max(score, item.starts);
-    }
+      if (compactQuery && compactValue.startsWith(compactQuery)) {
+        score = Math.max(score, item.starts);
+      }
 
-    if (compactQuery && compactValue.startsWith(compactQuery)) {
-      score = Math.max(score, item.starts);
-    }
-
-    if (normalizedQuery && normalizedValue.includes(normalizedQuery)) {
-      score = Math.max(score, item.includes);
-    }
-
-    if (compactQuery && compactValue.includes(compactQuery)) {
-      score = Math.max(score, item.includes);
+      if (compactQuery && compactValue.includes(compactQuery)) {
+        score = Math.max(score, item.includes);
+      }
     }
   }
 
   if (
-    normalizedTokens.length > 1 &&
-    normalizedTokens.every((token) =>
-      values.some((item) => normalizeProductSearchText(item.value ?? "").includes(token)),
+    tokenGroups.length > 1 &&
+    tokenGroups.every((group) =>
+      group.some((token) =>
+        values.some((item) => normalizeProductSearchText(item.value ?? "").includes(token)),
+      ),
     )
   ) {
     score = Math.max(score, 54);

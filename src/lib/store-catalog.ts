@@ -9,7 +9,7 @@ import {
   buildRealProductPhotoWhere,
   buildSellableProductWhere,
   getProductSearchTerms,
-  getProductSearchTokens,
+  getProductSearchTokenGroups,
   getHeroBannerViews,
   getStoreSettings,
   mapCategory,
@@ -682,16 +682,19 @@ export async function getCatalogSuggestions(query: string) {
     return [] satisfies CatalogSuggestion[];
   }
 
-  const searchTokens = getProductSearchTokens(trimmedQuery).slice(0, CATALOG_SUGGESTION_MAX_TOKENS);
+  const searchTokenGroups = getProductSearchTokenGroups(trimmedQuery).slice(
+    0,
+    CATALOG_SUGGESTION_MAX_TOKENS,
+  );
   const rows = await prisma.$queryRaw<CatalogSuggestionRow[]>(Prisma.sql`
     SELECT p.id, p.slug, p.code, p.name, p.brand, p.category
     FROM "Product" p
     WHERE p."isVisible" = true
       ${buildBlockedPublicProductCodesSql()}
       AND ${buildSuggestionPhotoSql()}
-      AND ${buildSuggestionSearchSql(searchTerms, searchTokens)}
+      AND ${buildSuggestionSearchSql(searchTerms, searchTokenGroups)}
     ORDER BY
-      ${buildSuggestionRelevanceSql(searchTerms, searchTokens)} DESC,
+      ${buildSuggestionRelevanceSql(searchTerms, searchTokenGroups)} DESC,
       p."isFeatured" DESC,
       p."updatedAt" DESC,
       p.id ASC
@@ -746,27 +749,27 @@ function buildAnyIlikeSql(
   return Prisma.sql`(${Prisma.join(conditions, " OR ")})`;
 }
 
-function buildTokenSearchSql(tokens: string[]) {
-  if (tokens.length <= 1) {
+function buildTokenSearchSql(tokenGroups: string[][]) {
+  if (tokenGroups.length <= 1) {
     return null;
   }
 
   return Prisma.sql`(${Prisma.join(
-    tokens.map((token) => buildAnyIlikeSql(SUGGESTION_SEARCH_COLUMNS, [token], "contains")),
+    tokenGroups.map((group) => buildAnyIlikeSql(SUGGESTION_SEARCH_COLUMNS, group, "contains")),
     " AND ",
   )})`;
 }
 
-function buildSuggestionSearchSql(terms: string[], tokens: string[]) {
+function buildSuggestionSearchSql(terms: string[], tokenGroups: string[][]) {
   const searchConditions = [
     buildAnyIlikeSql(SUGGESTION_SEARCH_COLUMNS, terms, "contains"),
-    buildTokenSearchSql(tokens),
+    buildTokenSearchSql(tokenGroups),
   ].filter((condition): condition is Prisma.Sql => Boolean(condition));
 
   return Prisma.sql`(${Prisma.join(searchConditions, " OR ")})`;
 }
 
-function buildSuggestionRelevanceSql(terms: string[], tokens: string[]) {
+function buildSuggestionRelevanceSql(terms: string[], tokenGroups: string[][]) {
   return Prisma.sql`
     CASE
       WHEN ${buildAnyIlikeSql(SUGGESTION_CODE_COLUMNS, terms, "exact")} THEN 110
@@ -780,7 +783,7 @@ function buildSuggestionRelevanceSql(terms: string[], tokens: string[]) {
       WHEN ${buildAnyIlikeSql(SUGGESTION_CATEGORY_COLUMNS, terms, "starts")} THEN 62
       WHEN ${buildAnyIlikeSql(SUGGESTION_CATEGORY_COLUMNS, terms, "contains")} THEN 58
       WHEN ${buildAnyIlikeSql(SUGGESTION_SLUG_COLUMNS, terms, "contains")} THEN 48
-      WHEN ${buildTokenSearchSql(tokens) ?? Prisma.sql`false`} THEN 42
+      WHEN ${buildTokenSearchSql(tokenGroups) ?? Prisma.sql`false`} THEN 42
       ELSE 0
     END
   `;

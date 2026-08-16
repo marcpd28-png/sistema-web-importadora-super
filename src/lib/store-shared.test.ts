@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildProductSearchWhere,
+  getProductSearchTerms,
+  getProductSearchTokenGroups,
   mapSuggestionResults,
 } from "@/lib/store-shared";
 
@@ -83,4 +85,36 @@ test("acepta categoria plural para consulta singular", () => {
 
   assert.equal(results.length, 1);
   assert.equal(results[0].code, "T16-BLACK");
+});
+
+test("genera variantes singular/plural sin depender de palabras fijas", () => {
+  assert.ok(getProductSearchTerms("alexas").includes("alexa"));
+  assert.ok(getProductSearchTerms("proyectores").includes("proyector"));
+  assert.deepEqual(getProductSearchTokenGroups("proyectores jbl"), [
+    ["proyectores", "proyector", "proyectore"],
+    ["jbl"],
+  ]);
+});
+
+test("ordena sugerencias cuando la consulta viene en plural y el producto en singular", () => {
+  const results = mapSuggestionResults(
+    [
+      candidate({
+        id: "alexa",
+        code: "ALEXA-1",
+        name: "Parlante inteligente Alexa Echo Dot",
+        category: "ASISTENTES DE VOZ",
+      }),
+      candidate({
+        id: "projector",
+        code: "PROY-1",
+        name: "Proyector LED portatil",
+        category: "VIDEO",
+      }),
+    ],
+    "proyectores",
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].code, "PROY-1");
 });
