@@ -12,11 +12,13 @@ import {
   MessageSquareHeart,
   PackagePlus,
   PackageSearch,
+  Settings,
   ShieldAlert,
-  UsersRound,
   Store,
+  UsersRound,
 } from "lucide-react";
 import { logoutAction } from "@/app/admin/actions";
+import type { AdminNavBadges } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 
 type AdminNavLink = {
@@ -24,6 +26,7 @@ type AdminNavLink = {
   label: string;
   icon: typeof ChartNoAxesCombined;
   kind?: "link" | "action";
+  badgeKey?: keyof AdminNavBadges;
 };
 
 type AdminNavSection = {
@@ -33,49 +36,45 @@ type AdminNavSection = {
 
 const sections: AdminNavSection[] = [
   {
-    title: "Acceso",
+    title: "Principal",
     links: [
-      { href: "/", label: "Ver catálogo", icon: Store, kind: "link" },
+      { href: "/admin", label: "Dashboard", icon: ChartNoAxesCombined },
+      { href: "/", label: "Ver catálogo", icon: Store },
+    ],
+  },
+  {
+    title: "Gestión Comercial",
+    links: [
+      { href: "/admin/products", label: "Productos", icon: PackageSearch, badgeKey: "lowStockProductsCount" },
+      { href: "/admin/categories", label: "Categorías", icon: FolderTree },
+      { href: "/admin/products/new", label: "Nuevo producto", icon: PackagePlus },
+      { href: "/admin/quotes", label: "Cotizaciones", icon: FileText, badgeKey: "pendingQuotesCount" },
+      { href: "/admin/banners", label: "Banners y campañas", icon: ImagePlus },
+    ],
+  },
+  {
+    title: "Clientes y Atención",
+    links: [
+      { href: "/admin/users", label: "Usuarios", icon: UsersRound },
+      { href: "/admin/opiniones", label: "Opiniones", icon: MessageSquareHeart },
+      { href: "/admin/reclamos", label: "Reclamos", icon: ShieldAlert, badgeKey: "newComplaintsCount" },
+    ],
+  },
+  {
+    title: "Integraciones y Sistema",
+    links: [
+      { href: "/admin/erp", label: "Sincronización ERP", icon: DatabaseZap },
+      { href: "/admin/settings", label: "Configuración general", icon: Settings },
       { label: "Cerrar sesión", icon: LogOut, kind: "action" },
     ],
   },
-  {
-    title: "General",
-    links: [
-      { href: "/admin", label: "Dashboard", icon: ChartNoAxesCombined },
-      { href: "/admin/users", label: "Usuarios", icon: UsersRound },
-    ],
-  },
-  {
-    title: "Catálogo",
-    links: [
-      { href: "/admin/products", label: "Productos", icon: PackageSearch },
-      { href: "/admin/categories", label: "Categorías", icon: FolderTree },
-      { href: "/admin/products/new", label: "Nuevo producto", icon: PackagePlus },
-    ],
-  },
-  {
-    title: "Ventas",
-    links: [{ href: "/admin/quotes", label: "Cotizaciones", icon: FileText }],
-  },
-  {
-    title: "Marketing",
-    links: [{ href: "/admin/banners", label: "Banners y campañas", icon: ImagePlus }],
-  },
-  {
-    title: "Atención",
-    links: [
-      { href: "/admin/opiniones", label: "Opiniones", icon: MessageSquareHeart },
-      { href: "/admin/reclamos", label: "Reclamos", icon: ShieldAlert },
-    ],
-  },
-  {
-    title: "ERP",
-    links: [{ href: "/admin/erp", label: "Sincronización ERP", icon: DatabaseZap }],
-  },
 ];
 
-export function AdminNav() {
+type AdminNavProps = {
+  badges?: AdminNavBadges;
+};
+
+export function AdminNav({ badges }: AdminNavProps) {
   const pathname = usePathname();
 
   return (
@@ -90,7 +89,8 @@ export function AdminNav() {
               const isActive =
                 isLink &&
                 (pathname === link.href ||
-                  (link.href !== "/admin" && pathname.startsWith(`${link.href}/`)));
+                  (link.href !== "/admin" && link.href !== "/" && pathname.startsWith(`${link.href}/`)));
+              const badgeCount = link.badgeKey && badges ? badges[link.badgeKey] : 0;
 
               if (link.kind === "action") {
                 return (
@@ -122,6 +122,9 @@ export function AdminNav() {
                     <Icon size={18} />
                   </span>
                   <span>{link.label}</span>
+                  {badgeCount > 0 ? (
+                    <span className="admin-nav-badge">{badgeCount}</span>
+                  ) : null}
                 </Link>
               );
             })}
@@ -131,3 +134,4 @@ export function AdminNav() {
     </nav>
   );
 }
+

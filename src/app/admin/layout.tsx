@@ -2,6 +2,7 @@ import { ShieldCheck } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { AdminNav } from "@/components/admin/admin-nav";
+import { getAdminNavBadges } from "@/lib/admin";
 
 export default async function AdminLayout({
   children,
@@ -9,6 +10,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireAdmin();
+  const badges = await getAdminNavBadges();
 
   return (
     <main className="admin-shell">
@@ -29,7 +31,7 @@ export default async function AdminLayout({
             </div>
           </div>
 
-          <AdminNav />
+          <AdminNav badges={badges} />
         </div>
       </aside>
 

@@ -9425,6 +9425,29 @@ body[data-admin-theme="dark"] .admin-nav-link:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.admin-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  background: #ef4444;
+  color: #ffffff;
+  margin-left: auto;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+.admin-nav-link.is-active .admin-nav-badge {
+  background: #ffffff;
+  color: var(--brand-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
 .admin-content {
   padding: 1rem;
 }
