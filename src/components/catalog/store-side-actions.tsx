@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  House,
   ShoppingCart,
 } from "lucide-react";
 import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
@@ -20,7 +21,6 @@ export function StoreSideActions({
   showHomeShortcut = false,
   showNormalViewShortcut = false,
 }: StoreSideActionsProps) {
-  void showHomeShortcut;
   void showNormalViewShortcut;
 
   const itemCount = useCartStore((state) =>
@@ -43,6 +43,17 @@ export function StoreSideActions({
         {itemCount > 0 ? <strong className="store-side-action-badge">{itemCount}</strong> : null}
         <span>Carrito</span>
       </button>
+
+      {showHomeShortcut ? (
+        <a
+          aria-label="Volver al inicio"
+          className="store-side-action store-side-action-home"
+          href="/"
+        >
+          <House size={24} />
+          <span>Inicio</span>
+        </a>
+      ) : null}
 
       <StoreAssistantLauncher businessName={settings.businessName} />
 

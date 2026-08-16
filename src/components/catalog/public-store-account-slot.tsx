@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { House, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import { shopperLogoutAction } from "@/app/acceso/actions";
@@ -16,32 +15,16 @@ type AccountLinkItem = {
   icon: typeof UserRound;
 };
 
-function AccountHomeLink({
-  handleStartClick,
-  pathname,
-}: {
-  handleStartClick: () => void;
-  pathname: string;
-}) {
-  return pathname === "/" ? (
-    <button
-      className="public-store-quick-link public-store-home-link public-store-account-switch-link public-store-account-switch-home-link"
-      type="button"
-      aria-label="Volver al inicio"
-      onClick={handleStartClick}
-    >
-      <House size={16} />
-      <span>Inicio</span>
-    </button>
-  ) : (
-    <Link
+function AccountHomeLink() {
+  return (
+    <a
       className="public-store-quick-link public-store-home-link public-store-account-switch-link public-store-account-switch-home-link"
       href="/"
       aria-label="Volver al inicio"
     >
       <House size={16} />
       <span>Inicio</span>
-    </Link>
+    </a>
   );
 }
 
@@ -84,7 +67,6 @@ function AccountPopover({
 
 export function PublicStoreAccountSlot({ role }: { role?: AccountRole }) {
   const { collapsed } = usePublicStoreHeaderState();
-  const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -101,12 +83,6 @@ export function PublicStoreAccountSlot({ role }: { role?: AccountRole }) {
       media.removeEventListener("change", updateMobileState);
     };
   }, []);
-
-  const handleStartClick = () => {
-    if (pathname === "/") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
 
   const primaryAction =
     role === "ADMIN" ? (
@@ -134,14 +110,14 @@ export function PublicStoreAccountSlot({ role }: { role?: AccountRole }) {
     <div className="public-store-account-shell">
       <div className={`public-store-account-switch public-store-account-switch-desktop${collapsed ? " is-collapsed" : ""}`}>
         <div className="public-store-account-switch-row">
-          <AccountHomeLink handleStartClick={handleStartClick} pathname={pathname} />
+          <AccountHomeLink />
           {primaryAction}
         </div>
       </div>
 
       {isMobile ? (
         <div className="public-store-account-mobile-rail">
-          <AccountHomeLink handleStartClick={handleStartClick} pathname={pathname} />
+          <AccountHomeLink />
           {primaryAction}
         </div>
       ) : null}

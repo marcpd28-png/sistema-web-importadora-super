@@ -55,9 +55,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               <Link className="button button-secondary" href="/acceso">
                 Acceso comprador
               </Link>
-              <Link className="button button-ghost auth-home-link" href="/" aria-label="Volver al catálogo">
+              <a className="button button-ghost auth-home-link" href="/" aria-label="Volver al catálogo">
                 <House size={18} />
-              </Link>
+              </a>
             </div>
           </div>
         </section>

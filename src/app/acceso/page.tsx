@@ -131,9 +131,9 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
               <Link className="button button-secondary" href="/login">
                 Ingreso admin
               </Link>
-              <Link className="button button-ghost auth-home-link" href="/" aria-label="Volver a la tienda">
+              <a className="button button-ghost auth-home-link" href="/" aria-label="Volver a la tienda">
                 <House size={18} />
-              </Link>
+              </a>
             </div>
           </div>
         </section>
