@@ -64,6 +64,19 @@ type ProductWithMedia = Product & {
   media: PrismaProductMedia[];
 };
 
+type SuggestionProduct = Pick<
+  Product,
+  | "id"
+  | "slug"
+  | "code"
+  | "name"
+  | "brand"
+  | "category"
+  | "externalCode"
+  | "externalId"
+  | "updatedAt"
+>;
+
 type ProductPhotoSource = {
   imageUrl: string | null;
   localImageUrl?: string | null;
@@ -135,6 +148,74 @@ export function buildSellableProductWhere(): Prisma.ProductWhereInput {
     },
     AND: [buildRealProductPhotoWhere()],
   };
+}
+
+function normalizeProductSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function compactProductSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+export function getProductSearchTerms(query: string) {
+  const trimmedQuery = query.trim();
+  const normalizedQuery = normalizeProductSearchText(trimmedQuery);
+  const compactQuery = compactProductSearchText(trimmedQuery);
+  const terms = [trimmedQuery, normalizedQuery, compactQuery]
+    .map((term) => term.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(terms));
+}
+
+export function getProductSearchTokens(query: string) {
+  return normalizeProductSearchText(query)
+    .split(" ")
+    .filter((token) => token.length > 1);
+}
+
+function buildProductSearchConditions(term: string): Prisma.ProductWhereInput[] {
+  return [
+    { name: { contains: term, mode: "insensitive" } },
+    { code: { contains: term, mode: "insensitive" } },
+    { brand: { contains: term, mode: "insensitive" } },
+    { category: { contains: term, mode: "insensitive" } },
+    { externalCode: { contains: term, mode: "insensitive" } },
+    { externalId: { contains: term, mode: "insensitive" } },
+    { slug: { contains: term, mode: "insensitive" } },
+  ];
+}
+
+export function buildProductSearchWhere(query?: string): Prisma.ProductWhereInput | null {
+  const trimmedQuery = query?.trim();
+
+  if (!trimmedQuery) {
+    return null;
+  }
+
+  const terms = getProductSearchTerms(trimmedQuery);
+  const normalizedTokens = getProductSearchTokens(trimmedQuery);
+  const searchConditions = terms.flatMap(buildProductSearchConditions);
+
+  if (normalizedTokens.length > 1) {
+    searchConditions.push({
+      AND: normalizedTokens.map((token) => ({
+        OR: buildProductSearchConditions(token),
+      })),
+    });
+  }
+
+  return { OR: searchConditions };
 }
 
 export function buildMissingProductPhotoWhere(): Prisma.ProductWhereInput {
@@ -466,20 +547,17 @@ export function buildWhere(
   }
 
   if (trimmedQuery) {
-    conditions.push({
-      OR: [
-        { name: { contains: trimmedQuery, mode: "insensitive" } },
-        { code: { contains: trimmedQuery, mode: "insensitive" } },
-        { brand: { contains: trimmedQuery, mode: "insensitive" } },
-        { category: { contains: trimmedQuery, mode: "insensitive" } },
-      ],
-    });
+    const searchWhere = buildProductSearchWhere(trimmedQuery);
+
+    if (searchWhere) {
+      conditions.push(searchWhere);
+    }
   }
 
   return conditions.length ? { AND: conditions } : {};
 }
 
-function mapSuggestion(product: Product): CatalogSuggestion {
+function mapSuggestion(product: SuggestionProduct): CatalogSuggestion {
   return {
     id: product.id,
     slug: product.slug,
@@ -490,24 +568,66 @@ function mapSuggestion(product: Product): CatalogSuggestion {
   };
 }
 
-export function getSuggestionScore(product: Product, query: string) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const code = product.code.toLowerCase();
-  const name = product.name.toLowerCase();
-  const brand = product.brand?.toLowerCase() ?? "";
-  const category = product.category?.toLowerCase() ?? "";
+export function getSuggestionScore(product: SuggestionProduct, query: string) {
+  const normalizedQuery = normalizeProductSearchText(query);
+  const compactQuery = compactProductSearchText(query);
+  const normalizedTokens = normalizedQuery
+    .split(" ")
+    .filter((token) => token.length > 1);
+  const values = [
+    { value: product.code, exact: 100, starts: 92, includes: 76 },
+    { value: product.externalCode, exact: 98, starts: 90, includes: 74 },
+    { value: product.externalId, exact: 96, starts: 88, includes: 72 },
+    { value: product.name, exact: 94, starts: 86, includes: 66 },
+    { value: product.brand, exact: 90, starts: 82, includes: 60 },
+    { value: product.category, exact: 84, starts: 78, includes: 56 },
+    { value: product.slug, exact: 70, starts: 62, includes: 50 },
+  ];
+  let score = 0;
 
-  if (code === normalizedQuery) return 100;
-  if (name === normalizedQuery) return 96;
-  if (code.startsWith(normalizedQuery)) return 92;
-  if (name.startsWith(normalizedQuery)) return 88;
-  if (brand.startsWith(normalizedQuery)) return 80;
-  if (category.startsWith(normalizedQuery)) return 74;
-  if (name.includes(normalizedQuery)) return 66;
-  if (brand.includes(normalizedQuery)) return 58;
-  if (category.includes(normalizedQuery)) return 52;
-  if (code.includes(normalizedQuery)) return 48;
-  return 0;
+  for (const item of values) {
+    const normalizedValue = normalizeProductSearchText(item.value ?? "");
+    const compactValue = compactProductSearchText(item.value ?? "");
+
+    if (!normalizedValue && !compactValue) {
+      continue;
+    }
+
+    if (normalizedQuery && normalizedValue === normalizedQuery) {
+      score = Math.max(score, item.exact);
+    }
+
+    if (compactQuery && compactValue === compactQuery) {
+      score = Math.max(score, item.exact);
+    }
+
+    if (normalizedQuery && normalizedValue.startsWith(normalizedQuery)) {
+      score = Math.max(score, item.starts);
+    }
+
+    if (compactQuery && compactValue.startsWith(compactQuery)) {
+      score = Math.max(score, item.starts);
+    }
+
+    if (normalizedQuery && normalizedValue.includes(normalizedQuery)) {
+      score = Math.max(score, item.includes);
+    }
+
+    if (compactQuery && compactValue.includes(compactQuery)) {
+      score = Math.max(score, item.includes);
+    }
+  }
+
+  if (
+    normalizedTokens.length > 1 &&
+    normalizedTokens.every((token) =>
+      values.some((item) => normalizeProductSearchText(item.value ?? "").includes(token)),
+    )
+  ) {
+    score = Math.max(score, 54);
+  }
+
+  return score;
 }
 
 export function mapCatalogMovementProduct(
@@ -532,12 +652,20 @@ export function mapCatalogMovementProduct(
   };
 }
 
-export function mapSuggestionResults(products: Product[], query: string) {
+export function mapSuggestionResults(products: SuggestionProduct[], query: string, limit = 6) {
   return products
-    .slice()
-    .sort(
-      (left, right) => getSuggestionScore(right, query) - getSuggestionScore(left, query),
-    )
-    .slice(0, 6)
+    .map((product) => ({ product, score: getSuggestionScore(product, query) }))
+    .filter((item) => item.score > 0)
+    .sort((left, right) => {
+      const scoreDelta = right.score - left.score;
+
+      if (scoreDelta !== 0) {
+        return scoreDelta;
+      }
+
+      return right.product.updatedAt.getTime() - left.product.updatedAt.getTime();
+    })
+    .slice(0, limit)
+    .map((item) => item.product)
     .map(mapSuggestion);
 }

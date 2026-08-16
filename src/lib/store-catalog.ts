@@ -1,17 +1,19 @@
 import { getErpBestSellerSnapshot } from "@/lib/erp-sales";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { BLOCKED_PUBLIC_PRODUCT_CODES } from "@/lib/public-product-blocklist";
 import {
+  GENERIC_PRODUCT_PHOTO_URLS,
   PUBLIC_PAGE_SIZE,
   buildWhere,
   buildRealProductPhotoWhere,
   buildSellableProductWhere,
+  getProductSearchTerms,
+  getProductSearchTokens,
   getHeroBannerViews,
   getStoreSettings,
   mapCategory,
   mapProduct,
-  mapSuggestionResults,
 } from "@/lib/store-shared";
 import type {
   BrandOption,
@@ -49,6 +51,19 @@ const EMPTY_SALES_SUMMARY: CatalogSalesSummary = {
     { label: "Rotación", value: "Sin unidades" },
   ],
   source: "fallback",
+};
+
+const CATALOG_SUGGESTION_LIMIT = 6;
+const CATALOG_SUGGESTION_MAX_QUERY_LENGTH = 80;
+const CATALOG_SUGGESTION_MAX_TOKENS = 4;
+
+type CatalogSuggestionRow = {
+  id: string;
+  slug: string;
+  code: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
 };
 
 export async function getCatalogPageData(input: {
@@ -655,31 +670,167 @@ function getProductRank(
 }
 
 export async function getCatalogSuggestions(query: string) {
-  const trimmedQuery = query.trim();
+  const trimmedQuery = query.trim().slice(0, CATALOG_SUGGESTION_MAX_QUERY_LENGTH);
 
   if (trimmedQuery.length < 2) {
     return [] satisfies CatalogSuggestion[];
   }
 
-  const products = await prisma.product.findMany({
-    where: {
-      NOT: {
-        code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
-      },
-      isVisible: true,
-      OR: [
-        { code: { contains: trimmedQuery, mode: "insensitive" } },
-        { name: { contains: trimmedQuery, mode: "insensitive" } },
-        { brand: { contains: trimmedQuery, mode: "insensitive" } },
-        { category: { contains: trimmedQuery, mode: "insensitive" } },
-      ],
-    },
-    orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
-    take: 10,
-  });
+  const searchTerms = getProductSearchTerms(trimmedQuery);
 
-  return mapSuggestionResults(products, trimmedQuery);
+  if (!searchTerms.length) {
+    return [] satisfies CatalogSuggestion[];
+  }
+
+  const searchTokens = getProductSearchTokens(trimmedQuery).slice(0, CATALOG_SUGGESTION_MAX_TOKENS);
+  const rows = await prisma.$queryRaw<CatalogSuggestionRow[]>(Prisma.sql`
+    SELECT p.id, p.slug, p.code, p.name, p.brand, p.category
+    FROM "Product" p
+    WHERE p."isVisible" = true
+      ${buildBlockedPublicProductCodesSql()}
+      AND ${buildSuggestionPhotoSql()}
+      AND ${buildSuggestionSearchSql(searchTerms, searchTokens)}
+    ORDER BY
+      ${buildSuggestionRelevanceSql(searchTerms, searchTokens)} DESC,
+      p."isFeatured" DESC,
+      p."updatedAt" DESC,
+      p.id ASC
+    LIMIT ${CATALOG_SUGGESTION_LIMIT}
+  `);
+
+  return rows.map((product) => ({
+    id: product.id,
+    slug: product.slug,
+    code: product.code,
+    name: product.name,
+    brand: product.brand,
+    category: product.category,
+  }));
 }
+
+function escapeLikePattern(value: string) {
+  return value.replace(/[\\%_]/g, "\\$&");
+}
+
+function buildLikePattern(term: string, match: "exact" | "starts" | "contains") {
+  const escapedTerm = escapeLikePattern(term);
+
+  switch (match) {
+    case "exact":
+      return escapedTerm;
+    case "starts":
+      return `${escapedTerm}%`;
+    case "contains":
+    default:
+      return `%${escapedTerm}%`;
+  }
+}
+
+function buildIlikeSql(column: Prisma.Sql, term: string, match: "exact" | "starts" | "contains") {
+  return Prisma.sql`${column} ILIKE ${buildLikePattern(term, match)} ESCAPE '\\'`;
+}
+
+function buildAnyIlikeSql(
+  columns: Prisma.Sql[],
+  terms: string[],
+  match: "exact" | "starts" | "contains",
+) {
+  const conditions = terms.flatMap((term) =>
+    columns.map((column) => buildIlikeSql(column, term, match)),
+  );
+
+  if (!conditions.length) {
+    return Prisma.sql`false`;
+  }
+
+  return Prisma.sql`(${Prisma.join(conditions, " OR ")})`;
+}
+
+function buildTokenSearchSql(tokens: string[]) {
+  if (tokens.length <= 1) {
+    return null;
+  }
+
+  return Prisma.sql`(${Prisma.join(
+    tokens.map((token) => buildAnyIlikeSql(SUGGESTION_SEARCH_COLUMNS, [token], "contains")),
+    " AND ",
+  )})`;
+}
+
+function buildSuggestionSearchSql(terms: string[], tokens: string[]) {
+  const searchConditions = [
+    buildAnyIlikeSql(SUGGESTION_SEARCH_COLUMNS, terms, "contains"),
+    buildTokenSearchSql(tokens),
+  ].filter((condition): condition is Prisma.Sql => Boolean(condition));
+
+  return Prisma.sql`(${Prisma.join(searchConditions, " OR ")})`;
+}
+
+function buildSuggestionRelevanceSql(terms: string[], tokens: string[]) {
+  return Prisma.sql`
+    CASE
+      WHEN ${buildAnyIlikeSql(SUGGESTION_CODE_COLUMNS, terms, "exact")} THEN 110
+      WHEN ${buildAnyIlikeSql(SUGGESTION_NAME_COLUMNS, terms, "starts")} THEN 100
+      WHEN ${buildAnyIlikeSql(SUGGESTION_NAME_COLUMNS, terms, "contains")} THEN 90
+      WHEN ${buildAnyIlikeSql(SUGGESTION_BRAND_COLUMNS, terms, "exact")} THEN 86
+      WHEN ${buildAnyIlikeSql(SUGGESTION_BRAND_COLUMNS, terms, "starts")} THEN 82
+      WHEN ${buildAnyIlikeSql(SUGGESTION_BRAND_COLUMNS, terms, "contains")} THEN 76
+      WHEN ${buildAnyIlikeSql(SUGGESTION_CODE_COLUMNS, terms, "starts")} THEN 72
+      WHEN ${buildAnyIlikeSql(SUGGESTION_CODE_COLUMNS, terms, "contains")} THEN 68
+      WHEN ${buildAnyIlikeSql(SUGGESTION_CATEGORY_COLUMNS, terms, "starts")} THEN 62
+      WHEN ${buildAnyIlikeSql(SUGGESTION_CATEGORY_COLUMNS, terms, "contains")} THEN 58
+      WHEN ${buildAnyIlikeSql(SUGGESTION_SLUG_COLUMNS, terms, "contains")} THEN 48
+      WHEN ${buildTokenSearchSql(tokens) ?? Prisma.sql`false`} THEN 42
+      ELSE 0
+    END
+  `;
+}
+
+function buildBlockedPublicProductCodesSql() {
+  if (!BLOCKED_PUBLIC_PRODUCT_CODES.length) {
+    return Prisma.empty;
+  }
+
+  return Prisma.sql`AND p.code NOT IN (${Prisma.join(BLOCKED_PUBLIC_PRODUCT_CODES)})`;
+}
+
+function buildSuggestionPhotoSql() {
+  const genericPhotoUrls = [...GENERIC_PRODUCT_PHOTO_URLS, ""];
+
+  return Prisma.sql`(
+    (
+      p."localImageUrl" IS NOT NULL
+      AND p."localImageUrl" NOT IN (${Prisma.join(genericPhotoUrls)})
+    )
+    OR (
+      p."imageUrl" IS NOT NULL
+      AND p."imageUrl" NOT IN (${Prisma.join(genericPhotoUrls)})
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM "ProductMedia" pm
+      WHERE pm."productId" = p.id
+        AND pm.url NOT IN (${Prisma.join(genericPhotoUrls)})
+    )
+  )`;
+}
+
+const SUGGESTION_NAME_COLUMNS = [Prisma.sql`p.name`];
+const SUGGESTION_BRAND_COLUMNS = [Prisma.sql`p.brand`];
+const SUGGESTION_CODE_COLUMNS = [
+  Prisma.sql`p.code`,
+  Prisma.sql`p."externalCode"`,
+  Prisma.sql`p."externalId"`,
+];
+const SUGGESTION_CATEGORY_COLUMNS = [Prisma.sql`p.category`];
+const SUGGESTION_SLUG_COLUMNS = [Prisma.sql`p.slug`];
+const SUGGESTION_SEARCH_COLUMNS = [
+  ...SUGGESTION_NAME_COLUMNS,
+  ...SUGGESTION_CODE_COLUMNS,
+  ...SUGGESTION_BRAND_COLUMNS,
+  ...SUGGESTION_CATEGORY_COLUMNS,
+  ...SUGGESTION_SLUG_COLUMNS,
+];
 
 function normalizeCatalogSearchText(value: string) {
   return value

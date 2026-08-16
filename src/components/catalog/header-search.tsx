@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LoaderCircle, Search } from "lucide-react";
 import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogSuggestion } from "@/lib/store";
@@ -11,6 +11,55 @@ type HeaderSearchProps = {
   autoFocus?: boolean;
 };
 
+const SEARCH_DEBOUNCE_MS = 280;
+const SUGGESTION_CACHE_TTL_MS = 45_000;
+const SUGGESTION_CACHE_LIMIT = 20;
+
+type SuggestionCacheEntry = {
+  createdAt: number;
+  suggestions: CatalogSuggestion[];
+};
+
+function getSuggestionCacheKey(query: string) {
+  return query.trim().toLowerCase();
+}
+
+function readCachedSuggestions(
+  cache: Map<string, SuggestionCacheEntry>,
+  key: string,
+) {
+  const entry = cache.get(key);
+
+  if (!entry) {
+    return null;
+  }
+
+  if (Date.now() - entry.createdAt > SUGGESTION_CACHE_TTL_MS) {
+    cache.delete(key);
+    return null;
+  }
+
+  return entry.suggestions;
+}
+
+function rememberSuggestions(
+  cache: Map<string, SuggestionCacheEntry>,
+  key: string,
+  suggestions: CatalogSuggestion[],
+) {
+  cache.set(key, { createdAt: Date.now(), suggestions });
+
+  if (cache.size <= SUGGESTION_CACHE_LIMIT) {
+    return;
+  }
+
+  const oldestKey = cache.keys().next().value;
+
+  if (oldestKey) {
+    cache.delete(oldestKey);
+  }
+}
+
 export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -18,15 +67,18 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<CatalogSuggestion[]>([]);
+  const requestIdRef = useRef(0);
+  const suggestionsCacheRef = useRef(new Map<string, SuggestionCacheEntry>());
 
-  function resetSearchState() {
+  const resetSearchState = useCallback(() => {
+    requestIdRef.current += 1;
     setQuery("");
     setSuggestions([]);
     setOpen(false);
     setLoading(false);
-  }
+  }, []);
 
-  function focusSearchInput(shouldScroll = false) {
+  const focusSearchInput = useCallback((shouldScroll = false) => {
     const input = inputRef.current;
 
     if (!input) {
@@ -39,7 +91,7 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
 
     input.focus({ preventScroll: true });
     setOpen(true);
-  }
+  }, []);
 
   useEffect(() => {
     const handleFocusSearch = () => {
@@ -51,12 +103,21 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
     return () => {
       window.removeEventListener("catalog:focus-search", handleFocusSearch);
     };
-  }, []);
+  }, [focusSearchInput]);
 
   useEffect(() => {
     const trimmed = query.trim();
+    const requestId = requestIdRef.current + 1;
+
+    requestIdRef.current = requestId;
 
     if (trimmed.length < 2) {
+      return;
+    }
+
+    const cacheKey = getSuggestionCacheKey(trimmed);
+
+    if (readCachedSuggestions(suggestionsCacheRef.current, cacheKey)) {
       return;
     }
 
@@ -67,16 +128,32 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
         const response = await fetch(`/api/catalog-suggest?q=${encodeURIComponent(trimmed)}`, {
           signal: controller.signal,
         });
+
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar sugerencias.");
+        }
+
         const data = (await response.json()) as { suggestions?: CatalogSuggestion[] };
-        setSuggestions(data.suggestions ?? []);
+        const nextSuggestions = data.suggestions ?? [];
+        rememberSuggestions(suggestionsCacheRef.current, cacheKey, nextSuggestions);
+
+        if (requestIdRef.current === requestId && !controller.signal.aborted) {
+          setSuggestions(nextSuggestions);
+        }
       } catch (error) {
-        if ((error as Error).name !== "AbortError") {
+        if (
+          requestIdRef.current === requestId &&
+          !controller.signal.aborted &&
+          (error as Error).name !== "AbortError"
+        ) {
           setSuggestions([]);
         }
       } finally {
-        setLoading(false);
+        if (requestIdRef.current === requestId && !controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    }, 160);
+    }, SEARCH_DEBOUNCE_MS);
 
     return () => {
       controller.abort();
@@ -123,15 +200,16 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
           return;
         }
 
-      setLoading(true);
+        requestIdRef.current += 1;
+        setLoading(true);
 
-      try {
-        const destination = await resolveSearchDestination(trimmedQuery);
-        resetSearchState();
-        router.push(destination);
-      } finally {
-        setLoading(false);
-      }
+        try {
+          const destination = await resolveSearchDestination(trimmedQuery);
+          resetSearchState();
+          router.push(destination);
+        } finally {
+          setLoading(false);
+        }
       }}
       role="search"
     >
@@ -149,10 +227,22 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
           onChange={(event) => {
             const nextValue = event.target.value;
+            requestIdRef.current += 1;
             setQuery(nextValue);
 
             if (nextValue.trim().length < 2) {
               setSuggestions([]);
+              setLoading(false);
+              return;
+            }
+
+            const cachedSuggestions = readCachedSuggestions(
+              suggestionsCacheRef.current,
+              getSuggestionCacheKey(nextValue),
+            );
+
+            if (cachedSuggestions) {
+              setSuggestions(cachedSuggestions);
               setLoading(false);
             }
           }}
