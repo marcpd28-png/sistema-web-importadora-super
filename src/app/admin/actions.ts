@@ -1,8 +1,17 @@
 "use server";
 
 import bcrypt from "bcryptjs";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+
+function invalidateAdminCaches() {
+  try {
+    revalidateTag("admin-dashboard", "max");
+    revalidateTag("admin-product-stats", "max");
+  } catch {
+    // safe fallback
+  }
+}
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -241,6 +250,7 @@ export async function createProductFormAction(
 
   revalidatePath("/");
   revalidatePath("/admin");
+  invalidateAdminCaches();
   redirect("/admin/products?status=created");
 }
 
@@ -279,11 +289,13 @@ export async function updateProductFormAction(
 
   revalidatePath("/");
   revalidatePath("/admin");
+  invalidateAdminCaches();
   redirect(`/admin/products/${productId}?status=updated`);
 }
 
 export async function logoutAction() {
   await clearSession();
+  invalidateAdminCaches();
   redirect("/");
 }
 
@@ -362,6 +374,7 @@ export async function toggleProductVisibilityAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/products");
+  invalidateAdminCaches();
 }
 
 export async function deleteProductAction(formData: FormData) {
@@ -374,6 +387,7 @@ export async function deleteProductAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/products");
+  invalidateAdminCaches();
   redirect("/admin/products?status=deleted");
 }
 
@@ -393,6 +407,7 @@ export async function bulkProductAction(formData: FormData) {
     });
     revalidatePath("/");
     revalidatePath("/admin/products");
+    invalidateAdminCaches();
     redirect("/admin/products?status=bulk-hidden");
   }
 
@@ -402,6 +417,7 @@ export async function bulkProductAction(formData: FormData) {
     });
     revalidatePath("/");
     revalidatePath("/admin/products");
+    invalidateAdminCaches();
     redirect("/admin/products?status=bulk-deleted");
   }
 
@@ -425,6 +441,7 @@ export async function hideProductsWithoutPhotoAction() {
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/products");
+  invalidateAdminCaches();
   redirect("/admin/products?status=photo-hidden&visibility=hidden&photo=missing");
 }
 
@@ -448,6 +465,7 @@ export async function updateSettingsAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin");
+  invalidateAdminCaches();
   redirect("/admin/settings?status=updated");
 }
 
@@ -543,6 +561,7 @@ export async function createCategoryAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin/categories");
   revalidatePath("/admin/products/new");
+  invalidateAdminCaches();
   redirect("/admin/categories?status=created");
 }
 
@@ -574,6 +593,7 @@ export async function updateCategoryAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin/categories");
   revalidatePath("/admin/products");
+  invalidateAdminCaches();
   redirect("/admin/categories?status=updated");
 }
 
@@ -598,6 +618,7 @@ export async function deleteCategoryAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin/categories");
   revalidatePath("/admin/products");
+  invalidateAdminCaches();
   redirect("/admin/categories?status=deleted");
 }
 

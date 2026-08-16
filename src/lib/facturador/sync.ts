@@ -974,6 +974,17 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
       throw new ErpSyncCancelledError();
     }
 
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { revalidateTag, revalidatePath } = require("next/cache");
+      revalidateTag("admin-dashboard", "max");
+      revalidateTag("admin-product-stats", "max");
+      revalidatePath("/admin");
+      revalidatePath("/admin/products");
+    } catch {
+      // Ignorar errores al ejecutarse en script standalone CLI
+    }
+
     return summary;
   } catch (error) {
     if (error instanceof ErpSyncCancelledError) {

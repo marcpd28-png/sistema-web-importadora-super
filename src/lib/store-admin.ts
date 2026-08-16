@@ -1,4 +1,5 @@
 import type { ComplaintStatus, Prisma, QuoteStatus } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   ADMIN_PAGE_SIZE,
@@ -363,7 +364,7 @@ export async function getAdminComplaintById(
   };
 }
 
-export async function getAdminDashboardData(period: DashboardPeriod = "MONTH") {
+async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
   const startedAt = Date.now();
   const currentRange = getDashboardPeriodRange(period, 0);
   const previousRange = getDashboardPeriodRange(period, -1);
@@ -608,6 +609,73 @@ export async function getAdminDashboardData(period: DashboardPeriod = "MONTH") {
   return payload;
 }
 
+export const getAdminDashboardData = unstable_cache(
+  async (period: DashboardPeriod = "MONTH") => {
+    return getAdminDashboardDataRaw(period);
+  },
+  ["admin-dashboard-key"],
+  { revalidate: 600, tags: ["admin-dashboard"] }
+);
+
+export const getAdminProductStatsCached = unstable_cache(
+  async (staleDateMs: number) => {
+    const staleDate = new Date(staleDateMs);
+    const [
+      totalProducts,
+      visibleProductsCount,
+      hiddenProductsCount,
+      withPhotoProductsCount,
+      withoutPhotoProductsCount,
+      needsReviewProductsCount,
+      lowStockProductsCount,
+      outOfStockProductsCount,
+      syncedProductsCount,
+      unsyncedProductsCount,
+      staleSyncedProductsCount,
+      featuredProductsCount,
+      hiddenWithStockProductsCount,
+    ] = await Promise.all([
+      prisma.product.count(),
+      prisma.product.count({ where: buildSellableProductWhere() }),
+      prisma.product.count({ where: { isVisible: false } }),
+      prisma.product.count({ where: buildRealProductPhotoWhere() }),
+      prisma.product.count({ where: buildMissingProductPhotoWhere() }),
+      prisma.product.count({
+        where: {
+          isVisible: true,
+          OR: [{ stockUnits: { lte: 0 } }, buildMissingProductPhotoWhere()],
+        },
+      }),
+      prisma.product.count({ where: { stockUnits: { gt: 0, lte: 12 } } }),
+      prisma.product.count({ where: { stockUnits: { lte: 0 } } }),
+      prisma.product.count({ where: { syncEnabled: true } }),
+      prisma.product.count({ where: { syncEnabled: false } }),
+      prisma.product.count({ where: { syncEnabled: true, lastSyncedAt: { lt: staleDate } } }),
+      prisma.product.count({ where: { isFeatured: true } }),
+      prisma.product.count({ where: { isVisible: false, stockUnits: { gt: 0 } } }),
+    ]);
+
+    return {
+      totalProducts,
+      visibleProductsCount,
+      hiddenProductsCount,
+      withPhotoProductsCount,
+      withoutPhotoProductsCount,
+      needsReviewProductsCount,
+      lowStockProductsCount,
+      outOfStockProductsCount,
+      syncedProductsCount,
+      unsyncedProductsCount,
+      staleSyncedProductsCount,
+      featuredProductsCount,
+      hiddenWithStockProductsCount,
+    };
+  },
+  ["admin-product-stats-key"],
+  { revalidate: 600, tags: ["admin-product-stats"] }
+);
+
+
 export async function getAdminProducts(input: {
   query?: string;
   category?: string;
@@ -663,23 +731,13 @@ export async function getAdminProducts(input: {
     AND: baseConditions,
   };
 
+  const roundedStaleTime = Math.floor(staleDate.getTime() / 600000) * 600000;
+  const stats = await getAdminProductStatsCached(roundedStaleTime);
+
   const [
     products,
     categories,
     brands,
-    totalProducts,
-    visibleProductsCount,
-    hiddenProductsCount,
-    withPhotoProductsCount,
-    withoutPhotoProductsCount,
-    needsReviewProductsCount,
-    lowStockProductsCount,
-    outOfStockProductsCount,
-    syncedProductsCount,
-    unsyncedProductsCount,
-    staleSyncedProductsCount,
-    featuredProductsCount,
-    hiddenWithStockProductsCount,
     totalResults,
   ] = await Promise.all([
     profileAdminStep("products.page", () =>
@@ -729,36 +787,24 @@ export async function getAdminProducts(input: {
         orderBy: { brand: "asc" },
         select: { brand: true },
       })),
-    profileAdminStep("products.total", () => prisma.product.count()),
-    profileAdminStep("products.visible", () => prisma.product.count({ where: buildSellableProductWhere() })),
-    profileAdminStep("products.hidden", () => prisma.product.count({ where: { isVisible: false } })),
-    profileAdminStep("products.with-photo", () =>
-      prisma.product.count({ where: buildRealProductPhotoWhere() })),
-    profileAdminStep("products.without-photo", () =>
-      prisma.product.count({ where: buildMissingProductPhotoWhere() })),
-    profileAdminStep("products.needs-review", () =>
-      prisma.product.count({
-        where: {
-          isVisible: true,
-          OR: [{ stockUnits: { lte: 0 } }, buildMissingProductPhotoWhere()],
-        },
-      })),
-    profileAdminStep("products.low-stock", () =>
-      prisma.product.count({ where: { stockUnits: { gt: 0, lte: 12 } } })),
-    profileAdminStep("products.out-of-stock", () =>
-      prisma.product.count({ where: { stockUnits: { lte: 0 } } })),
-    profileAdminStep("products.synced", () =>
-      prisma.product.count({ where: { syncEnabled: true } })),
-    profileAdminStep("products.unsynced", () =>
-      prisma.product.count({ where: { syncEnabled: false } })),
-    profileAdminStep("products.stale-synced", () =>
-      prisma.product.count({ where: { syncEnabled: true, lastSyncedAt: { lt: staleDate } } })),
-    profileAdminStep("products.featured", () =>
-      prisma.product.count({ where: { isFeatured: true } })),
-    profileAdminStep("products.hidden-with-stock", () =>
-      prisma.product.count({ where: { isVisible: false, stockUnits: { gt: 0 } } })),
     profileAdminStep("products.filtered", () => prisma.product.count({ where: filtersWhere })),
   ]);
+
+  const {
+    totalProducts,
+    visibleProductsCount,
+    hiddenProductsCount,
+    withPhotoProductsCount,
+    withoutPhotoProductsCount,
+    needsReviewProductsCount,
+    lowStockProductsCount,
+    outOfStockProductsCount,
+    syncedProductsCount,
+    unsyncedProductsCount,
+    staleSyncedProductsCount,
+    featuredProductsCount,
+    hiddenWithStockProductsCount,
+  } = stats;
 
   const payload = {
     products: products.map((product) => {
