@@ -99,7 +99,7 @@ export function AdminNav({ badges }: AdminNavProps) {
                       <span className="admin-nav-icon">
                         <Icon size={18} />
                       </span>
-                      <span>{link.label}</span>
+                      <span className="admin-nav-label">{link.label}</span>
                     </button>
                   </form>
                 );
@@ -121,7 +121,7 @@ export function AdminNav({ badges }: AdminNavProps) {
                   <span className="admin-nav-icon">
                     <Icon size={18} />
                   </span>
-                  <span>{link.label}</span>
+                  <span className="admin-nav-label">{link.label}</span>
                   {badgeCount > 0 ? (
                     <span className="admin-nav-badge">{badgeCount}</span>
                   ) : null}
