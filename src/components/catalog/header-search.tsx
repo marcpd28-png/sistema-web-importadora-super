@@ -171,7 +171,7 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
       return normalizedQuery === code || normalizedQuery === slug || normalizedQuery === name;
     });
 
-    if (localMatch) {
+    if (localMatch && suggestions.length === 1) {
       return `/producto/${localMatch.slug}`;
     }
 

@@ -286,6 +286,10 @@ export async function getExactCatalogProductSlug(query: string) {
     return null;
   }
 
+  if (scoredCandidates.length > 1) {
+    return null;
+  }
+
   const topScore = scoredCandidates[0].score;
   const topCandidates = scoredCandidates.filter((item) => item.score === topScore);
 
