@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { ImageIcon } from "lucide-react";
 import { useState } from "react";
 import { getSafeMediaUrl } from "@/lib/media-url";
@@ -23,7 +23,7 @@ export function ProductMediaFrame({ product, displayName, href }: ProductMediaFr
   return (
     <div className="product-media">
       {primaryMedia && shouldShowMedia ? (
-        <Link aria-label={`Ver detalle de ${displayName}`} className="product-media-link" href={href}>
+        <CatalogPrefetchLink aria-label={`Ver detalle de ${displayName}`} className="product-media-link" href={href}>
           <div className="product-media-preview product-media-preview--detail-safe">
             {primaryMedia.type === "IMAGE" ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -39,15 +39,15 @@ export function ProductMediaFrame({ product, displayName, href }: ProductMediaFr
               <video muted playsInline preload="metadata" src={primaryMediaUrl} />
             )}
           </div>
-        </Link>
+        </CatalogPrefetchLink>
       ) : (
-        <Link aria-label={`Ver detalle de ${displayName}`} className="product-media-link" href={href}>
+        <CatalogPrefetchLink aria-label={`Ver detalle de ${displayName}`} className="product-media-link" href={href}>
           <div className="product-media-preview product-media-placeholder">
             <ImageIcon size={28} />
             <strong>{product.category ?? "Catálogo"}</strong>
             <span>{displayName}</span>
           </div>
-        </Link>
+        </CatalogPrefetchLink>
       )}
     </div>
   );

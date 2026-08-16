@@ -512,8 +512,16 @@ function mapStoreSettings(
   };
 }
 
+import { unstable_cache } from "next/cache";
+
+const getCachedStoreSettings = unstable_cache(
+  async () => mapStoreSettings(await readStoreSettingsRecord()),
+  ["store-settings-record"],
+  { revalidate: 60, tags: ["settings"] },
+);
+
 export async function getStoreSettings(): Promise<StoreSettingsView> {
-  return mapStoreSettings(await readStoreSettingsRecord());
+  return getCachedStoreSettings();
 }
 
 export function calculateDeltaPercent(currentValue: number, previousValue: number | null) {

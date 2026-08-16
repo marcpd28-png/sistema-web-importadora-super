@@ -1,5 +1,7 @@
-import { readFile, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
 
 export const runtime = "nodejs";
 
@@ -44,29 +46,50 @@ function getContentType(filePath: string) {
   return CONTENT_TYPES[path.extname(filePath).toLowerCase()] ?? "application/octet-stream";
 }
 
-async function readUploadFile(filePath: string) {
+async function readUploadFile(filePath: string, requestHeaders?: Headers) {
   const fileStats = await stat(/* turbopackIgnore: true */ filePath);
 
   if (!fileStats.isFile()) {
     return null;
   }
 
-  const body = await readFile(/* turbopackIgnore: true */ filePath);
-  const headers = new Headers();
+  const etag = `W/"${fileStats.size.toString(16)}-${fileStats.mtimeMs.toString(16)}"`;
+  const lastModified = fileStats.mtime.toUTCString();
 
+  if (requestHeaders) {
+    const ifNoneMatch = requestHeaders.get("if-none-match");
+    const ifModifiedSince = requestHeaders.get("if-modified-since");
+
+    if (ifNoneMatch === etag || (ifModifiedSince && new Date(ifModifiedSince) >= fileStats.mtime)) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          ETag: etag,
+          "Last-Modified": lastModified,
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    }
+  }
+
+  const headers = new Headers();
   headers.set("Content-Type", getContentType(filePath));
-  headers.set("Content-Length", String(body.byteLength));
-  headers.set("Cache-Control", "public, max-age=15552000, immutable");
+  headers.set("Content-Length", String(fileStats.size));
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("ETag", etag);
+  headers.set("Last-Modified", lastModified);
   headers.set("Accept-Ranges", "bytes");
 
-  return new Response(body, {
+  const stream = Readable.toWeb(createReadStream(filePath)) as ReadableStream;
+
+  return new Response(stream, {
     status: 200,
     headers,
   });
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: RouteContext<"/uploads/[...path]">,
 ) {
   const { path: uploadPath } = await params;
@@ -77,7 +100,7 @@ export async function GET(
   }
 
   try {
-    const response = await readUploadFile(filePath);
+    const response = await readUploadFile(filePath, request.headers);
 
     if (!response) {
       return new Response("Not found", { status: 404 });

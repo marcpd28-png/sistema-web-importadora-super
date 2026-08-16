@@ -944,31 +944,41 @@ export async function getCatalogProductBySlug(slug: string) {
   };
 }
 
-export async function getCategoryOptions() {
-  const categories = await prisma.category.findMany({
-    orderBy: [{ name: "asc" }, { id: "asc" }],
-  });
+import { unstable_cache } from "next/cache";
 
-  return categories.map(mapCategory);
-}
+export const getCategoryOptions = unstable_cache(
+  async () => {
+    const categories = await prisma.category.findMany({
+      orderBy: [{ name: "asc" }, { id: "asc" }],
+    });
 
-export async function getBrandOptions() {
-  const brands = await prisma.product.findMany({
-    where: {
-      NOT: {
-        code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
+    return categories.map(mapCategory);
+  },
+  ["category-options-key"],
+  { revalidate: 60, tags: ["categories"] },
+);
+
+export const getBrandOptions = unstable_cache(
+  async () => {
+    const brands = await prisma.product.findMany({
+      where: {
+        NOT: {
+          code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
+        },
+        isVisible: true,
+        brand: { not: null },
+        AND: [buildRealProductPhotoWhere()],
       },
-      isVisible: true,
-      brand: { not: null },
-      AND: [buildRealProductPhotoWhere()],
-    },
-    distinct: ["brand"],
-    orderBy: [{ brand: "asc" }, { id: "asc" }],
-    select: { brand: true },
-  });
+      distinct: ["brand"],
+      orderBy: [{ brand: "asc" }, { id: "asc" }],
+      select: { brand: true },
+    });
 
-  return brands
-    .map((item) => item.brand?.trim())
-    .filter((value): value is string => Boolean(value))
-    .map((name) => ({ name })) satisfies BrandOption[];
-}
+    return brands
+      .map((item) => item.brand?.trim())
+      .filter((value): value is string => Boolean(value))
+      .map((name) => ({ name })) satisfies BrandOption[];
+  },
+  ["brand-options-key"],
+  { revalidate: 60, tags: ["brands"] },
+);

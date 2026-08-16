@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { useState } from "react";
 import { Bot, Minus, Plus, ShoppingCart } from "lucide-react";
 import {
@@ -49,9 +49,9 @@ export function ProductCard({ product, settings }: ProductCardProps) {
         <div className="stack-sm product-copy-shell">
           <div className="stack-xs product-copy">
             <h3>
-              <Link className="product-title-link" href={`/producto/${product.slug}`}>
+              <CatalogPrefetchLink className="product-title-link" href={`/producto/${product.slug}`}>
                 {displayName}
-              </Link>
+              </CatalogPrefetchLink>
             </h3>
           </div>
         </div>
