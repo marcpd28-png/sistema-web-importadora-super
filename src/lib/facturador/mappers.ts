@@ -65,7 +65,7 @@ export function mapFacturadorProduct(
   }
 
   const stableExternalId = externalId ?? code;
-  const name = getFirstString(product, ["name", "description", "second_name"]);
+  const name = getFirstString(product, ["description", "name", "second_name"]);
 
   if (!name || name.length < 3) {
     return {
