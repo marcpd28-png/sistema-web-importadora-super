@@ -488,6 +488,18 @@ export class FacturadorClient {
     return this.config.runningSyncTimeoutMs;
   }
 
+  async getProductRealTime(code: string, externalId?: string | null): Promise<FacturadorProduct | null> {
+    try {
+      const products = await this.searchProducts(code);
+      const exact = products.find((product) =>
+        matchesProductCode(product, { code, externalId, name: "", quantity: 1, unitPrice: 0 })
+      );
+      return exact ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async createQuotation(input: {
     customer: FacturadorQuoteCustomer;
     items: FacturadorQuoteItem[];

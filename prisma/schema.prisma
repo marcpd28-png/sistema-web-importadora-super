@@ -129,6 +129,7 @@ model Product {
   externalCode    String?        @db.VarChar(120)
   syncEnabled     Boolean        @default(false)
   lastSyncedAt    DateTime?
+  erpUpdatedAt    DateTime?
   syncHash        String?        @db.VarChar(64)
   syncQuickHash   String?        @db.VarChar(64)
   syncStockHash   String?        @db.VarChar(64)
@@ -411,4 +412,19 @@ model ErpSyncLog {
 
   @@index([createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+}
+
+model SyncEventQueue {
+  id           String    @id @default(cuid())
+  sku          String    @db.VarChar(64)
+  eventType    String    @db.VarChar(64) // PRODUCT_CREATED, PRODUCT_STOCK_UPDATED, etc.
+  payload      Json
+  status       String    @default("PENDING") @db.VarChar(20) // PENDING, PROCESSING, COMPLETED, FAILED
+  attempts     Int       @default(0)
+  errorMessage String?   @db.Text
+  createdAt    DateTime  @default(now())
+  processedAt  DateTime?
+
+  @@index([status, createdAt])
+  @@index([sku])
 }

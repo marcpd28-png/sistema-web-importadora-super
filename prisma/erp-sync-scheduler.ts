@@ -171,8 +171,14 @@ function getTimePartsInTimeZone(date: Date, timeZone: string) {
 }
 
 function resolveDueMode(config: SchedulerConfig, date: Date): SchedulerMode {
-  const { totalMinutes } = getTimePartsInTimeZone(date, config.timeZone);
+  const { hour, minute, totalMinutes } = getTimePartsInTimeZone(date, config.timeZone);
 
+  // Reconciliación completa diaria a la medianoche (00:00)
+  if (hour === 0 && minute === 0) {
+    return "FULL";
+  }
+
+  // Fallbacks de polling opcionales en minutos específicos
   if (config.fullEveryMinutes > 0 && totalMinutes % config.fullEveryMinutes === 0) {
     return "FULL";
   }
@@ -455,6 +461,20 @@ async function main() {
       await runSync(mode, config, state);
     } else {
       console.log("[ERP scheduler] Sin modo due para este minuto; esperando siguiente tick.");
+    }
+
+    // Procesar cola de eventos pendientes como red de seguridad redundante
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { processSyncQueue } = require("../src/lib/facturador/sync-processor");
+      const queueResult = await processSyncQueue();
+      if (queueResult.processed > 0) {
+        console.log(
+          `[ERP scheduler] Cola de eventos procesada: Total=${queueResult.processed} Completados=${queueResult.completed} Fallidos=${queueResult.failed}`,
+        );
+      }
+    } catch (queueErr) {
+      console.error("[ERP scheduler] Error al procesar cola de eventos pendientes:", queueErr);
     }
 
     await runImageRefresh(config, state);

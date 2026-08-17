@@ -107,6 +107,33 @@ export async function POST(request: Request) {
         wholesalePrice: true,
       },
     });
+
+    // Real-time stock check against the ERP to prevent overselling
+    try {
+      const client = new FacturadorClient();
+      await Promise.all(
+        catalogProducts.map(async (product) => {
+          const erpProduct = await client.getProductRealTime(product.code, product.externalId);
+          if (erpProduct) {
+            const rawStock = erpProduct.stock ?? erpProduct.stock_units ?? erpProduct.quantity ?? 0;
+            const erpStock = Math.max(0, Math.floor(Number(rawStock)));
+            
+            // If database stock is out of sync, update in background and override local check
+            if (product.stockUnits !== erpStock) {
+              prisma.product.update({
+                where: { id: product.id },
+                data: { stockUnits: erpStock, isVisible: erpStock > 0 }
+              }).catch(() => null);
+              
+              product.stockUnits = erpStock;
+            }
+          }
+        })
+      );
+    } catch (erpError) {
+      console.warn("[ERP quote validation] Error al consultar stock en tiempo real del ERP, usando base de datos local:", erpError);
+    }
+
     const items = prepareQuoteLines({
       requestedItems,
       products: catalogProducts.map((product) => ({
