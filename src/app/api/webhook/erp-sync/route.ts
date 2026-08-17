@@ -3,9 +3,17 @@ import { enqueueSyncEvent, processSyncQueue, type ErpSyncEventPayload } from "@/
 
 export async function POST(request: Request) {
   try {
-    // 1. Validar Clave de API de Seguridad
-    const apiKey = request.headers.get("x-api-key") || request.headers.get("x-erp-key");
-    const expectedKey = process.env.ERP_SYNC_WEBHOOK_KEY || "erp-sync-secret-2026";
+    // 1. Validar Clave de API de Seguridad (soporta x-api-key, x-erp-key o Authorization: Bearer <token>)
+    const apiKey = (
+      request.headers.get("x-api-key") ||
+      request.headers.get("x-erp-key") ||
+      request.headers.get("Authorization")?.replace("Bearer ", "")
+    )?.trim();
+    const expectedKey = (
+      process.env.ERP_SYNC_WEBHOOK_KEY ||
+      process.env.FACTURADOR_API_TOKEN ||
+      "erp-sync-secret-2026"
+    ).trim();
 
     if (!apiKey || apiKey !== expectedKey) {
       return NextResponse.json({ error: "No autorizado." }, { status: 401 });
