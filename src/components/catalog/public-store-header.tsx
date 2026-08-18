@@ -7,7 +7,6 @@ import {
   PackageSearch,
   Plane,
   Sparkles,
-  BookOpen,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getSession } from "@/lib/auth";
@@ -86,34 +85,7 @@ export async function PublicStoreHeader({
           </div>
           <HeaderSearch autoFocus={focusSearch} />
 
-          <div className="public-store-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <style>{`
-              .libro-reclamaciones-header-btn {
-                display: inline-flex !important;
-                align-items: center !important;
-                gap: 6px !important;
-                border: 2px solid #fbbf24 !important;
-                border-radius: 20px !important;
-                padding: 6px 14px !important;
-                font-size: 12px !important;
-                font-weight: 700 !important;
-                color: #1e293b !important;
-                background-color: #ffffff !important;
-                transition: all 0.2s !important;
-                text-decoration: none !important;
-              }
-              .libro-reclamaciones-header-btn:hover {
-                background-color: #fefcbf !important;
-                border-color: #d97706 !important;
-              }
-            `}</style>
-            <CatalogPrefetchLink 
-              href="/libro-reclamaciones" 
-              className="libro-reclamaciones-header-btn"
-            >
-              <BookOpen size={14} style={{ color: "#fbbf24" }} />
-              <span className="desktop-only">Libro Reclamaciones</span>
-            </CatalogPrefetchLink>
+          <div className="public-store-actions">
             <div className="public-store-account-slot">
               <PublicStoreAccountSlot role={session?.role} />
             </div>
