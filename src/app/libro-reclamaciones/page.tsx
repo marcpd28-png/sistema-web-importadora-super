@@ -19,6 +19,9 @@ import {
   Home,
   Check,
   CalendarClock,
+  Search,
+  Scale,
+  Mail,
 } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 
@@ -94,6 +97,9 @@ export default function LibroReclamacionesPage() {
     createdAt: string;
     expiryDate: string;
   } | null>(null);
+
+  // Estado para modales de información legal
+  const [activeLegalModal, setActiveLegalModal] = useState<number | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -477,6 +483,28 @@ export default function LibroReclamacionesPage() {
           padding: 16px;
           border-radius: 8px;
           margin-bottom: 16px;
+          position: relative;
+          padding-right: 48px;
+        }
+        .legal-declaration-lupita {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          background: transparent;
+          border: none;
+          color: #2320da;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .legal-declaration-lupita:hover {
+          background: #e0e7ff;
+          color: #1d4ed8;
+          transform: scale(1.1);
         }
         .legal-declaration-box input[type="checkbox"] {
           width: 18px;
@@ -719,6 +747,111 @@ export default function LibroReclamacionesPage() {
             margin: 0 !important;
             padding: 0 !important;
           }
+        }
+
+        /* Estilos del Modal Legal */
+        .legal-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          padding: 20px;
+        }
+        .legal-modal-content {
+          background: #ffffff;
+          border-radius: 16px;
+          width: 100%;
+          max-width: 550px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          animation: modalAppear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalAppear {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        .legal-modal-close {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background: #f1f5f9;
+          border: none;
+          color: #475569;
+          cursor: pointer;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .legal-modal-close:hover {
+          background: #e2e8f0;
+          color: #0f172a;
+          transform: rotate(90deg);
+        }
+        .legal-modal-header {
+          padding: 24px 24px 16px 24px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .legal-modal-header h2 {
+          font-size: 15px;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+        .legal-modal-body {
+          padding: 24px;
+          max-height: 60vh;
+          overflow-y: auto;
+          font-size: 13.5px;
+          line-height: 1.6;
+          color: #334155;
+        }
+        .legal-modal-body hr {
+          border: 0;
+          border-top: 1px solid #f1f5f9;
+          margin: 16px 0;
+        }
+        .legal-modal-body ul {
+          margin: 16px 0 0 0;
+          padding-left: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .legal-modal-body li {
+          font-size: 13px;
+          color: #475569;
+        }
+        .legal-modal-footer {
+          padding: 16px 24px;
+          border-top: 1px solid #e2e8f0;
+          background: #f8fafc;
+          display: flex;
+          justify-content: flex-end;
         }
       `}</style>
 
@@ -1079,6 +1212,14 @@ export default function LibroReclamacionesPage() {
                         <label htmlFor="acceptDeclaration" style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>DECLARACIÓN DEL CONSUMIDOR *</label>
                         <p>Declaro que la información proporcionada en la presente Hoja de Reclamación es verdadera y corresponde a los hechos que motivan mi queja o reclamo. Asimismo, declaro haber leído y aceptado las condiciones correspondientes al registro de la presente queja o reclamo.</p>
                       </div>
+                      <button 
+                        type="button" 
+                        className="legal-declaration-lupita" 
+                        onClick={() => setActiveLegalModal(1)}
+                        title="Ver base legal"
+                      >
+                        <Search size={16} />
+                      </button>
                     </div>
 
                     <div className="legal-declaration-box">
@@ -1087,6 +1228,14 @@ export default function LibroReclamacionesPage() {
                         <label htmlFor="acceptNotifications" style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>AUTORIZACIÓN PARA NOTIFICACIONES *</label>
                         <p>Autorizo a ORIGINAL J J S.A.C. a utilizar el correo electrónico y/o número telefónico proporcionado en esta Hoja de Reclamación para realizar las comunicaciones relacionadas con la atención de mi queja o reclamo.</p>
                       </div>
+                      <button 
+                        type="button" 
+                        className="legal-declaration-lupita" 
+                        onClick={() => setActiveLegalModal(2)}
+                        title="Ver base legal"
+                      >
+                        <Search size={16} />
+                      </button>
                     </div>
 
                     <div className="legal-declaration-box">
@@ -1095,6 +1244,14 @@ export default function LibroReclamacionesPage() {
                         <label htmlFor="acceptPrivacy" style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", cursor: "pointer" }}>TRATAMIENTO DE DATOS PERSONALES *</label>
                         <p>He leído y acepto la Política de Privacidad de ORIGINAL J J S.A.C. y autorizo el tratamiento de mis datos personales conforme a la Ley N° 29733 (Ley de Protección de Datos Personales del Perú).</p>
                       </div>
+                      <button 
+                        type="button" 
+                        className="legal-declaration-lupita" 
+                        onClick={() => setActiveLegalModal(3)}
+                        title="Ver base legal"
+                      >
+                        <Search size={16} />
+                      </button>
                     </div>
 
                     {submitError && (
@@ -1347,6 +1504,76 @@ export default function LibroReclamacionesPage() {
             ¹ <strong>Reclamo:</strong> Disconformidad relacionada a los productos expendidos o servicios prestados; o disconformidad sobre la calidad del servicio posventa.<br />
             ² <strong>Queja:</strong> Disconformidad que no se encuentra relacionada a los productos o servicios defectuosos; sino al malestar o descontento respecto a la atención al cliente.<br />
             * Plazo de atención del reclamo: De acuerdo con la Ley N° 31435, el plazo máximo de atención de quejas y reclamos es de <strong>15 días hábiles no prorrogables</strong>, contados a partir del día siguiente del registro.
+          </div>
+        </div>
+      )}
+      {/* Modal de Información Legal (INDECOPI/Perú) */}
+      {activeLegalModal !== null && (
+        <div className="legal-modal-overlay no-print" onClick={() => setActiveLegalModal(null)}>
+          <div className="legal-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="legal-modal-close" onClick={() => setActiveLegalModal(null)} type="button">
+              <X size={18} />
+            </button>
+            
+            {activeLegalModal === 1 && (
+              <div>
+                <div className="legal-modal-header">
+                  <Scale size={20} style={{ color: "#2320da" }} />
+                  <h2>DECLARACIÓN DEL CONSUMIDOR</h2>
+                </div>
+                <div className="legal-modal-body">
+                  <p><strong>Base Legal:</strong> Ley N° 29571 (Código de Protección y Defensa del Consumidor) y Ley N° 27444 (Ley del Procedimiento Administrativo General).</p>
+                  <hr />
+                  <p>Al marcar esta casilla y firmar de manera electrónica, usted declara bajo juramento que toda la información consignada en su reclamo o queja es completamente verídica y corresponde fielmente a los hechos acontecidos.</p>
+                  <ul>
+                    <li><strong>Responsabilidad Legal:</strong> La falsedad o inexactitud de lo declarado en esta hoja constituye una falta al principio de presunción de veracidad y puede acarrear responsabilidades administrativas o civiles.</li>
+                    <li><strong>Plazo Improrrogable (Ley N° 31435):</strong> Conforme a la legislación vigente de protección al consumidor en el Perú, el proveedor está obligado a responder este reclamo en un plazo máximo de <strong>15 días hábiles</strong> no prorrogables.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {activeLegalModal === 2 && (
+              <div>
+                <div className="legal-modal-header">
+                  <Mail size={20} style={{ color: "#2320da" }} />
+                  <h2>AUTORIZACIÓN PARA NOTIFICACIONES</h2>
+                </div>
+                <div className="legal-modal-body">
+                  <p><strong>Base Legal:</strong> Artículo 20.4 del Texto Único Ordenado de la Ley N° 27444 y Directivas del INDECOPI.</p>
+                  <hr />
+                  <p>Al marcar esta casilla, autoriza voluntariamente a ORIGINAL J J S.A.C. a remitir la respuesta formal a su reclamo o queja directamente a la dirección de correo electrónico o número de teléfono (WhatsApp) indicados en esta hoja.</p>
+                  <ul>
+                    <li><strong>Validez y Plazos:</strong> La notificación digital se considera válida y surte plenos efectos legales el mismo día en que el proveedor envía el correo.</li>
+                    <li><strong>Seguridad:</strong> Garantiza que la respuesta sea entregada en el menor tiempo posible y que quede constancia digital de su envío y recepción conforme.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {activeLegalModal === 3 && (
+              <div>
+                <div className="legal-modal-header">
+                  <ShieldCheck size={20} style={{ color: "#2320da" }} />
+                  <h2>TRATAMIENTO DE DATOS PERSONALES</h2>
+                </div>
+                <div className="legal-modal-body">
+                  <p><strong>Base Legal:</strong> Ley N° 29733 (Ley de Protección de Datos Personales del Perú) y su Reglamento (D.S. 003-2013-JUS).</p>
+                  <hr />
+                  <p>El tratamiento de los datos personales ingresados en esta hoja de reclamación cumple de forma estricta con los principios de finalidad y seguridad establecidos por el Ministerio de Justicia del Perú.</p>
+                  <ul>
+                    <li><strong>Uso Exclusivo:</strong> Sus datos personales serán incorporados temporalmente en nuestro Banco de Datos denominado "Libro de Reclamaciones" y se usarán <strong>única y exclusivamente</strong> para dar trámite, investigar y responder a su reclamo o queja ante INDECOPI.</li>
+                    <li><strong>Derechos ARCO:</strong> Como titular de sus datos, usted tiene el derecho legal de ejercer sus derechos de Acceso, Rectificación, Cancelación y Oposición (ARCO) escribiendo de forma gratuita a nuestros canales de atención al cliente.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+            
+            <div className="legal-modal-footer">
+              <button className="button button-primary" onClick={() => setActiveLegalModal(null)} type="button">
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}
