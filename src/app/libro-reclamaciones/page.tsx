@@ -101,6 +101,9 @@ export default function LibroReclamacionesPage() {
   // Estado para modales de información legal
   const [activeLegalModal, setActiveLegalModal] = useState<number | null>(null);
 
+  // Estado para alertas personalizadas
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const val = type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
@@ -118,7 +121,7 @@ export default function LibroReclamacionesPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.size > 10 * 1024 * 1024) {
-        alert(`El archivo ${file.name} supera el límite de 10MB.`);
+        setAlertMessage(`El archivo ${file.name} supera el límite de 10MB.`);
         continue;
       }
 
@@ -135,11 +138,11 @@ export default function LibroReclamacionesPage() {
           uploadedList.push({ name: file.name, size: file.size, url: data.url });
           newAttachments.push(data.url);
         } else {
-          alert(`Error al subir ${file.name}: ${data.message}`);
+          setAlertMessage(`Error al subir ${file.name}: ${data.message}`);
         }
       } catch (err) {
         console.error(err);
-        alert(`Error al conectar para subir ${file.name}`);
+        setAlertMessage(`Error al conectar para subir ${file.name}`);
       }
     }
 
@@ -159,27 +162,27 @@ export default function LibroReclamacionesPage() {
   const validateStep = () => {
     if (step === 1) {
       if (!formData.names || !formData.lastNames || !formData.documentNumber || !formData.email || !formData.phone || !formData.address || !formData.district) {
-        alert("Por favor completa todos los campos personales obligatorios.");
+        setAlertMessage("Por favor completa todos los campos personales obligatorios.");
         return false;
       }
       if (formData.isMinor && (!formData.repNames || !formData.repDocumentNumber)) {
-        alert("Por favor completa los datos del representante legal.");
+        setAlertMessage("Por favor completa los datos del representante legal.");
         return false;
       }
     }
     if (step === 2 && formData.isPurchaseRelated) {
       if (!formData.productName) {
-        alert("Por favor indica el nombre del producto o servicio contratado.");
+        setAlertMessage("Por favor indica el nombre del producto o servicio contratado.");
         return false;
       }
     }
     if (step === 3) {
       if (!formData.facts || formData.facts.length < 10) {
-        alert("Por favor describe el detalle de los hechos (mínimo 10 caracteres).");
+        setAlertMessage("Por favor describe el detalle de los hechos (mínimo 10 caracteres).");
         return false;
       }
       if (!formData.request || formData.request.length < 5) {
-        alert("Por favor indica el pedido concreto del consumidor (mínimo 5 caracteres).");
+        setAlertMessage("Por favor indica el pedido concreto del consumidor (mínimo 5 caracteres).");
         return false;
       }
     }
@@ -198,7 +201,7 @@ export default function LibroReclamacionesPage() {
 
   const handleSubmit = async () => {
     if (!formData.acceptDeclaration || !formData.acceptNotifications || !formData.acceptPrivacy) {
-      alert("Debes aceptar todas las declaraciones de ley para enviar el reclamo.");
+      setAlertMessage("Debes aceptar todas las declaraciones de ley para enviar el reclamo.");
       return;
     }
 
@@ -1572,6 +1575,41 @@ export default function LibroReclamacionesPage() {
             <div className="legal-modal-footer">
               <button className="button button-primary" onClick={() => setActiveLegalModal(null)} type="button">
                 Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alerta Personalizada (Centro de la Pantalla con Check para Aceptar) */}
+      {alertMessage !== null && (
+        <div className="legal-modal-overlay no-print" onClick={() => setAlertMessage(null)}>
+          <div className="legal-modal-content" style={{ maxWidth: "420px", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+            <button className="legal-modal-close" onClick={() => setAlertMessage(null)} type="button">
+              <X size={18} />
+            </button>
+            
+            <div style={{ padding: "30px 24px 20px 24px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ backgroundColor: "#fef3c7", borderRadius: "50%", width: "56px", height: "56px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+                <AlertTriangle size={28} style={{ color: "#d97706" }} />
+              </div>
+              <h2 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "0 0 10px 0", textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                Atención
+              </h2>
+              <p style={{ fontSize: "13.5px", lineHeight: "1.5", color: "#475569", margin: 0 }}>
+                {alertMessage}
+              </p>
+            </div>
+            
+            <div className="legal-modal-footer" style={{ justifyContent: "center", background: "#f8fafc", padding: "16px 24px" }}>
+              <button 
+                className="button button-primary" 
+                onClick={() => setAlertMessage(null)} 
+                type="button"
+                style={{ display: "inline-flex", alignItems: "center", gap: "8px", backgroundColor: "#2320da", color: "#ffffff", padding: "10px 24px", borderRadius: "20px" }}
+              >
+                <Check size={16} />
+                Aceptar
               </button>
             </div>
           </div>
