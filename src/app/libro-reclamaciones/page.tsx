@@ -1339,28 +1339,7 @@ export default function LibroReclamacionesPage() {
             </tbody>
           </table>
 
-          {/* Sección 4: Declaraciones y Plazos */}
-          <h4>4. Firmas y Compromisos</h4>
-          <table style={{ marginBottom: "5px" }}>
-            <tbody>
-              <tr>
-                <td style={{ width: "50%", height: "80px", verticalAlign: "bottom", textAlign: "center", borderRight: "1px dashed #000" }}>
-                  <div style={{ borderTop: "1px solid #000", margin: "0 auto", width: "80%", padding: "4px 0", fontSize: "9px" }}>
-                    Firma del Consumidor o Representante
-                    <br />
-                    <small style={{ color: "#64748b" }}>(Aceptado de forma virtual bajo firma digital)</small>
-                  </div>
-                </td>
-                <td style={{ width: "50%", height: "80px", verticalAlign: "bottom", textAlign: "center" }}>
-                  <div style={{ borderTop: "1px solid #000", margin: "0 auto", width: "80%", padding: "4px 0", fontSize: "9px" }}>
-                    Firma del Proveedor (IMPORTADORA SUPER)
-                    <br />
-                    <small style={{ color: "#64748b" }}>(Recepción conforme electrónica de hoja)</small>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+
 
           {/* Notas Legales al Pie */}
           <div style={{ fontSize: "7.5px", color: "#475569", lineHeight: "1.4", border: "1px solid #000", padding: "10px", background: "#f8fafc" }}>
