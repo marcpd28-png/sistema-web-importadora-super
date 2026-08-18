@@ -10,7 +10,7 @@ export function StoreFooter() {
 
   return (
     <footer className="store-footer-v3">
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .store-footer-v3 {
           background-color: #2320da;
           color: #cbd5e1;
@@ -169,7 +169,7 @@ export function StoreFooter() {
             gap: 8px;
           }
         }
-      `}</style>
+      ` }} />
 
       {/* Fila Principal del Footer */}
       <div className="store-footer-main">

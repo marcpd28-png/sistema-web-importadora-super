@@ -237,7 +237,7 @@ export default function LibroReclamacionesPage() {
   return (
     <main className="complaints-layout-shell">
       {/* Estilos Propios de la Página - Encapsulados */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .complaints-layout-shell {
           background-color: #f7f9fc;
           min-height: 100vh;
@@ -856,7 +856,7 @@ export default function LibroReclamacionesPage() {
           display: flex;
           justify-content: flex-end;
         }
-      `}</style>
+      ` }} />
 
       {/* Barra de Navegación Superior */}
       <header className="complaints-topbar-wrapper no-print">
