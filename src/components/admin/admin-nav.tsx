@@ -57,7 +57,7 @@ const sections: AdminNavSection[] = [
     links: [
       { href: "/admin/users", label: "Usuarios", icon: UsersRound },
       { href: "/admin/opiniones", label: "Opiniones", icon: MessageSquareHeart },
-      { href: "/admin/reclamos", label: "Reclamos", icon: ShieldAlert, badgeKey: "newComplaintsCount" },
+      { href: "/admin/reclamos", label: "Libro Reclam.", icon: ShieldAlert, badgeKey: "newComplaintsCount" },
     ],
   },
   {
