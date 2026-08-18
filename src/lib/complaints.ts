@@ -1,17 +1,17 @@
-import type { ComplaintStatus, ComplaintType } from "@prisma/client";
+import { prisma } from "./prisma";
+import type { ComplaintStatus } from "@prisma/client";
+import { calculateExpiryDate } from "./business-days";
 
 type ComplaintContact = {
   customerName: string;
   customerEmail: string | null;
   customerPhone: string | null;
-  claimCode: string;
+  sheetNumber: string;
 };
 
-export function buildComplaintCode(date = new Date()) {
-  const stamp = date.toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
-  return `LR-${stamp}`;
-}
-
+/**
+ * Normaliza el teléfono para enlaces de WhatsApp agregando prefijo de Perú (51) si es de 9 dígitos.
+ */
 export function normalizeComplaintPhone(phone: string | null | undefined) {
   if (!phone) {
     return null;
@@ -34,58 +34,107 @@ export function normalizeComplaintPhone(phone: string | null | undefined) {
   return digits;
 }
 
+/**
+ * Genera el siguiente número de hoja correlativo anual de forma segura
+ */
+export async function generateNextSheetNumber(year: number): Promise<{
+  sheetNumber: string;
+  serialNumber: number;
+}> {
+  // Bucle de reintento simple para mitigar condiciones de carrera concurrentes
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  while (attempts < maxAttempts) {
+    try {
+      const latestComplaint = await prisma.complaint.findFirst({
+        where: { year },
+        orderBy: { serialNumber: "desc" },
+        select: { serialNumber: true },
+      });
+
+      const nextSerial = (latestComplaint?.serialNumber ?? 0) + 1;
+      const sheetNumber = `LR-${year}-${String(nextSerial).padStart(6, "0")}`;
+
+      return {
+        sheetNumber,
+        serialNumber: nextSerial,
+      };
+    } catch (error) {
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        throw error;
+      }
+      // Pequeña espera asíncrona antes de reintentar
+      await new Promise((resolve) => setTimeout(resolve, 50 * attempts));
+    }
+  }
+
+  throw new Error("No se pudo generar un número correlativo único.");
+}
+
+/**
+ * Redacta el cuerpo de respuesta en texto plano
+ */
 export function buildComplaintResponseText(input: {
-  claimCode: string;
+  sheetNumber: string;
   customerName: string;
-  subject: string;
-  kind: ComplaintType | ComplaintStatus | string;
+  type: string;
+  reason: string;
   responseText: string;
 }) {
   const lines = [
     `Hola ${input.customerName},`,
     "",
-    `Hemos registrado una respuesta para tu ${input.kind.toString().toLowerCase()}.`,
-    `Código: ${input.claimCode}`,
-    `Asunto: ${input.subject}`,
+    `Hemos registrado la respuesta formal para tu ${input.type.toLowerCase()} con código ${input.sheetNumber}.`,
+    `Detalle del motivo: ${input.reason}`,
     "",
     input.responseText.trim(),
     "",
-    "Saludos,",
-    "Importaciones Super",
+    "Saludos cordiales,",
+    "Importaciones Super S.A.C.",
   ];
 
   return lines.join("\n");
 }
 
+/**
+ * Genera un enlace mailto para responder por correo
+ */
 export function buildComplaintEmailHref(
   contact: ComplaintContact,
   responseText: string,
-  subject: string,
+  type: string,
+  reason: string,
 ) {
   if (!contact.customerEmail) {
     return null;
   }
 
   const body = buildComplaintResponseText({
-    claimCode: contact.claimCode,
+    sheetNumber: contact.sheetNumber,
     customerName: contact.customerName,
-    kind: "reclamo",
-    subject,
+    type,
+    reason,
     responseText,
   });
 
   const params = new URLSearchParams({
-    subject: `Respuesta Libro de Reclamaciones ${contact.claimCode}`,
+    subject: `Respuesta a tu ${type} en Libro de Reclamaciones - ${contact.sheetNumber}`,
     body,
   });
 
   return `mailto:${contact.customerEmail}?${params.toString()}`;
 }
 
+/**
+ * Genera un enlace de WhatsApp para enviar la respuesta
+ */
 export function buildComplaintWhatsappHref(
   contact: ComplaintContact,
   responseText: string,
-  subject: string,
+  type: string,
+  reason: string,
 ) {
   const phone = normalizeComplaintPhone(contact.customerPhone);
 
@@ -94,10 +143,10 @@ export function buildComplaintWhatsappHref(
   }
 
   const message = buildComplaintResponseText({
-    claimCode: contact.claimCode,
+    sheetNumber: contact.sheetNumber,
     customerName: contact.customerName,
-    kind: "reclamo",
-    subject,
+    type,
+    reason,
     responseText,
   });
 

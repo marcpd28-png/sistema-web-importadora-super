@@ -15,7 +15,7 @@ function invalidateAdminCaches() {
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
-import { clearSession, requireAdmin } from "@/lib/auth";
+import { clearSession, getSession, requireAdmin } from "@/lib/auth";
 import { FacturadorApiError, FacturadorClient } from "@/lib/facturador/client";
 import { parseFacturadorSyncMode, syncFacturadorProducts } from "@/lib/facturador/sync";
 import { sendComplaintResponseEmail } from "@/lib/complaints-email";
@@ -313,26 +313,29 @@ export async function updateComplaintAction(formData: FormData) {
   const status = parseComplaintStatus(String(formData.get("status") ?? ""));
   const responseText = String(formData.get("responseText") ?? "").trim();
   const responseChannel = String(formData.get("responseChannel") ?? "").trim();
-  const claimCode = String(formData.get("claimCode") ?? "");
 
   if (!complaintId) {
     redirect("/admin/reclamos?status=error&error=No se encontró el reclamo.");
   }
 
+  const session = await getSession();
+  const repliedByEmail = session?.email || "admin@tiendavirtualsuper.com";
+
   const complaint = await prisma.complaint.update({
     where: { id: complaintId },
     data: {
       status,
-      responseText: responseText || null,
-      responseChannel: responseText ? (responseChannel || null) : null,
-      respondedAt: responseText && (status === "RESPONDED" || status === "CLOSED") ? new Date() : null,
+      adminReply: responseText || null,
+      repliedAt: responseText && (status === "RESPONDED" || status === "CLOSED") ? new Date() : null,
+      repliedByEmail: responseText ? repliedByEmail : null,
     },
     select: {
-      claimCode: true,
-      customerName: true,
-      customerEmail: true,
-      customerPhone: true,
-      subject: true,
+      sheetNumber: true,
+      names: true,
+      lastNames: true,
+      email: true,
+      phone: true,
+      reason: true,
     },
   });
 
@@ -341,13 +344,13 @@ export async function updateComplaintAction(formData: FormData) {
   if (responseText && (responseChannel === "EMAIL" || responseChannel === "BOTH")) {
     const emailResult = await sendComplaintResponseEmail({
       contact: {
-        claimCode: complaint.claimCode,
-        customerName: complaint.customerName,
-        customerEmail: complaint.customerEmail,
-        customerPhone: complaint.customerPhone,
+        claimCode: complaint.sheetNumber,
+        customerName: `${complaint.names} ${complaint.lastNames}`,
+        customerEmail: complaint.email,
+        customerPhone: complaint.phone,
       },
       responseText,
-      subject: complaint.subject,
+      subject: complaint.reason,
     });
 
     emailNotice = emailResult.ok ? "sent" : `error-${encodeURIComponent(emailResult.message)}`;
@@ -358,7 +361,9 @@ export async function updateComplaintAction(formData: FormData) {
   revalidatePath("/admin/reclamos");
   revalidatePath(`/admin/reclamos/${complaintId}`);
   redirect(
-    `/admin/reclamos/${complaintId}?status=updated${claimCode ? `&claimCode=${encodeURIComponent(claimCode)}` : ""}&emailStatus=${emailNotice}`,
+    `/admin/reclamos/${complaintId}?status=updated&emailStatus=${encodeURIComponent(
+      emailNotice,
+    )}`,
   );
 }
 

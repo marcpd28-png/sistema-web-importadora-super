@@ -388,6 +388,38 @@ export type AdminComplaintDetailView = AdminComplaintView & {
   productReference: string | null;
   detail: string;
   updatedAt: string;
+
+  // Nuevos campos detallados para Libro de Reclamaciones
+  names: string;
+  lastNames: string;
+  email: string;
+  phone: string;
+  address: string;
+  department: string;
+  province: string;
+  district: string;
+  isMinor: boolean;
+  repNames: string | null;
+  repDocumentType: string | null;
+  repDocumentNumber: string | null;
+  isPurchaseRelated: boolean;
+  invoiceNumber: string | null;
+  purchaseDate: string | null;
+  productName: string | null;
+  productBrand: string | null;
+  productModel: string | null;
+  productSku: string | null;
+  productSerial: string | null;
+  purchaseAmount: number | null;
+  purchaseChannel: string | null;
+  paymentMethod: string | null;
+  type: ComplaintType;
+  reason: string;
+  subReason: string | null;
+  facts: string;
+  request: string;
+  expiryDate: string;
+  attachments: string[];
 };
 
 export type AdminComplaintsData = {

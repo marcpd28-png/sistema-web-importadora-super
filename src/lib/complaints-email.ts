@@ -80,10 +80,10 @@ export async function sendComplaintResponseEmail(input: {
     to: input.contact.customerEmail,
     subject: `Respuesta Libro de Reclamaciones ${input.contact.claimCode}`,
     text: buildComplaintResponseText({
-      claimCode: input.contact.claimCode,
+      sheetNumber: input.contact.claimCode,
       customerName: input.contact.customerName,
-      kind: "reclamo",
-      subject: input.subject,
+      type: "reclamo",
+      reason: input.subject,
       responseText: input.responseText,
     }),
     html,

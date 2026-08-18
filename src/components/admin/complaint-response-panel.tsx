@@ -37,10 +37,10 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
     () =>
       responseText.trim()
         ? buildComplaintResponseText({
-            claimCode: complaint.claimCode,
+            sheetNumber: complaint.claimCode,
             customerName: complaint.customerName,
-            kind: complaint.kind,
-            subject: complaint.subject,
+            type: complaint.kind,
+            reason: complaint.subject,
             responseText,
           })
         : "",
@@ -52,12 +52,13 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
       responseText.trim()
         ? buildComplaintEmailHref(
             {
-              claimCode: complaint.claimCode,
+              sheetNumber: complaint.claimCode,
               customerEmail: complaint.customerEmail,
               customerName: complaint.customerName,
               customerPhone: complaint.customerPhone,
             },
             responseText,
+            complaint.kind,
             complaint.subject,
           )
         : null,
@@ -69,12 +70,13 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
       responseText.trim()
         ? buildComplaintWhatsappHref(
             {
-              claimCode: complaint.claimCode,
+              sheetNumber: complaint.claimCode,
               customerEmail: complaint.customerEmail,
               customerName: complaint.customerName,
               customerPhone: complaint.customerPhone,
             },
             responseText,
+            complaint.kind,
             complaint.subject,
           )
         : null,

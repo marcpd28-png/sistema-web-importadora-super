@@ -2,29 +2,47 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ComplaintType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { buildComplaintCode } from "@/lib/complaints";
+import { generateNextSheetNumber } from "@/lib/complaints";
+import { calculateExpiryDate } from "@/lib/business-days";
 
-const complaintCreateSchema = z
-  .object({
-    kind: z.enum(["RECLAMO", "QUEJA"]),
-    subject: z.string().trim().min(2).max(80),
-    customerName: z.string().trim().min(3).max(180),
-    customerPhone: z.string().trim().max(32).optional().or(z.literal("")),
-    customerEmail: z.string().trim().email().max(180).optional().or(z.literal("")),
-    documentNumber: z.string().trim().min(3).max(40),
-    orderNumber: z.string().trim().max(80).optional().or(z.literal("")),
-    productReference: z.string().trim().max(120).optional().or(z.literal("")),
-    detail: z.string().trim().min(10).max(4000),
-  })
-  .superRefine((value, context) => {
-    if (!value.customerPhone?.trim() && !value.customerEmail?.trim()) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Debes dejar un teléfono o correo para seguimiento.",
-        path: ["customerPhone"],
-      });
-    }
-  });
+const complaintCreateSchema = z.object({
+  type: z.enum(["RECLAMO", "QUEJA"]),
+  documentType: z.string().trim().min(1),
+  documentNumber: z.string().trim().min(3),
+  names: z.string().trim().min(2),
+  lastNames: z.string().trim().min(2),
+  email: z.string().trim().email(),
+  phone: z.string().trim().min(5),
+  address: z.string().trim().min(3),
+  department: z.string().trim().min(1),
+  province: z.string().trim().min(1),
+  district: z.string().trim().min(1),
+
+  isMinor: z.boolean(),
+  repNames: z.string().trim().optional().nullable(),
+  repDocumentType: z.string().trim().optional().nullable(),
+  repDocumentNumber: z.string().trim().optional().nullable(),
+
+  isPurchaseRelated: z.boolean(),
+  orderNumber: z.string().trim().optional().nullable(),
+  invoiceNumber: z.string().trim().optional().nullable(),
+  purchaseDate: z.string().optional().nullable(), // ISO String or null
+  productName: z.string().trim().optional().nullable(),
+  productBrand: z.string().trim().optional().nullable(),
+  productModel: z.string().trim().optional().nullable(),
+  productSku: z.string().trim().optional().nullable(),
+  productSerial: z.string().trim().optional().nullable(),
+  purchaseAmount: z.coerce.number().optional().nullable(),
+  purchaseChannel: z.string().trim().optional().nullable(),
+  paymentMethod: z.string().trim().optional().nullable(),
+
+  reason: z.string().trim().min(1),
+  subReason: z.string().trim().optional().nullable(),
+  facts: z.string().trim().min(10).max(3000),
+  request: z.string().trim().min(5).max(2000),
+
+  attachments: z.array(z.string()).default([]),
+});
 
 const complaintRateWindowMs = 10 * 60 * 1000;
 const complaintRateLimit = 6;
@@ -65,36 +83,79 @@ export async function POST(request: Request) {
       );
     }
 
-    const payload = complaintCreateSchema.parse(await request.json());
+    const json = await request.json();
+    const payload = complaintCreateSchema.parse(json);
+
     const createdAt = new Date();
-    const claimCode = buildComplaintCode(createdAt);
+    const year = createdAt.getFullYear();
+
+    // Generar correlativo anual único y seguro
+    const { sheetNumber, serialNumber } = await generateNextSheetNumber(year);
+
+    // Calcular fecha de vencimiento legal (15 días hábiles de Perú)
+    const expiryDate = calculateExpiryDate(createdAt, 15);
+
+    const parsedPurchaseDate = payload.purchaseDate ? new Date(payload.purchaseDate) : null;
 
     const complaint = await prisma.complaint.create({
       data: {
-        claimCode,
-        kind: payload.kind as ComplaintType,
-        subject: payload.subject,
-        customerName: payload.customerName,
-        customerPhone: payload.customerPhone?.trim() || null,
-        customerEmail: payload.customerEmail?.trim() || null,
-        documentType: "Documento",
+        sheetNumber,
+        serialNumber,
+        year,
+        documentType: payload.documentType,
         documentNumber: payload.documentNumber,
-        orderNumber: payload.orderNumber?.trim() || null,
-        productReference: payload.productReference?.trim() || null,
-        detail: payload.detail,
+        names: payload.names,
+        lastNames: payload.lastNames,
+        email: payload.email,
+        phone: payload.phone,
+        address: payload.address,
+        department: payload.department,
+        province: payload.province,
+        district: payload.district,
+        isMinor: payload.isMinor,
+        repNames: payload.repNames || null,
+        repDocumentType: payload.repDocumentType || null,
+        repDocumentNumber: payload.repDocumentNumber || null,
+        isPurchaseRelated: payload.isPurchaseRelated,
+        orderNumber: payload.orderNumber || null,
+        invoiceNumber: payload.invoiceNumber || null,
+        purchaseDate: parsedPurchaseDate,
+        productName: payload.productName || null,
+        productBrand: payload.productBrand || null,
+        productModel: payload.productModel || null,
+        productSku: payload.productSku || null,
+        productSerial: payload.productSerial || null,
+        purchaseAmount: payload.purchaseAmount || null,
+        purchaseChannel: payload.purchaseChannel || null,
+        paymentMethod: payload.paymentMethod || null,
+        type: payload.type as ComplaintType,
+        reason: payload.reason,
+        subReason: payload.subReason || null,
+        facts: payload.facts,
+        request: payload.request,
+        expiryDate,
+        attachments: payload.attachments,
+        status: "NEW",
       },
       select: {
-        claimCode: true,
+        id: true,
+        sheetNumber: true,
         createdAt: true,
+        expiryDate: true,
       },
     });
 
+    // TODO: Generación de PDF y envío de correos asíncrono
+    // En el futuro, llamaremos a una función para generar y enviar el correo con el PDF aquí
+
     return NextResponse.json({
       ok: true,
-      claimCode: complaint.claimCode,
+      sheetNumber: complaint.sheetNumber,
       createdAt: complaint.createdAt.toISOString(),
+      expiryDate: complaint.expiryDate.toISOString(),
     });
   } catch (error) {
+    console.error("Error al registrar reclamo:", error);
     const message = error instanceof z.ZodError ? error.issues[0]?.message : "No se pudo registrar el reclamo.";
     return NextResponse.json(
       {

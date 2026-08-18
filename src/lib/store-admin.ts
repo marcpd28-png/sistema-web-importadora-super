@@ -213,32 +213,33 @@ export async function getRecentErpSyncLogs(limit = 5): Promise<ErpSyncLogView[]>
 function mapComplaintView(
   complaint: {
     id: string;
-    claimCode: string;
-    kind: string;
-    subject: string;
-    customerName: string;
-    customerPhone: string | null;
-    customerEmail: string | null;
+    sheetNumber: string;
+    type: any;
+    reason: string;
+    names: string;
+    lastNames: string;
+    phone: string;
+    email: string;
     status: ComplaintStatus;
     createdAt: Date;
-    respondedAt: Date | null;
-    responseText: string | null;
-    responseChannel: string | null;
+    repliedAt: Date | null;
+    adminReply: string | null;
+    repliedByEmail: string | null;
   },
 ): AdminComplaintView {
   return {
     id: complaint.id,
-    claimCode: complaint.claimCode,
-    kind: complaint.kind as AdminComplaintView["kind"],
-    subject: complaint.subject,
-    customerName: complaint.customerName,
-    customerPhone: complaint.customerPhone,
-    customerEmail: complaint.customerEmail,
+    claimCode: complaint.sheetNumber,
+    kind: complaint.type,
+    subject: complaint.reason,
+    customerName: `${complaint.names} ${complaint.lastNames}`,
+    customerPhone: complaint.phone,
+    customerEmail: complaint.email,
     status: complaint.status,
     createdAt: complaint.createdAt.toISOString(),
-    respondedAt: complaint.respondedAt?.toISOString() ?? null,
-    responseText: complaint.responseText,
-    responseChannel: complaint.responseChannel,
+    respondedAt: complaint.repliedAt?.toISOString() ?? null,
+    responseText: complaint.adminReply,
+    responseChannel: complaint.repliedByEmail ? "Email" : null,
   };
 }
 
@@ -272,17 +273,18 @@ export async function getAdminComplaints(input: {
         take: ADMIN_COMPLAINTS_PAGE_SIZE,
         select: {
           id: true,
-          claimCode: true,
-          kind: true,
-          subject: true,
-          customerName: true,
-          customerPhone: true,
-          customerEmail: true,
+          sheetNumber: true,
+          type: true,
+          reason: true,
+          names: true,
+          lastNames: true,
+          phone: true,
+          email: true,
           status: true,
           createdAt: true,
-          respondedAt: true,
-          responseText: true,
-          responseChannel: true,
+          repliedAt: true,
+          adminReply: true,
+          repliedByEmail: true,
         },
       }),
     ),
@@ -327,40 +329,72 @@ export async function getAdminComplaintById(
 ): Promise<AdminComplaintDetailView | null> {
   const complaint = await prisma.complaint.findFirst({
     where: { id: complaintId },
-    select: {
-      id: true,
-      claimCode: true,
-      kind: true,
-      subject: true,
-      customerName: true,
-      customerPhone: true,
-      customerEmail: true,
-      documentType: true,
-      documentNumber: true,
-      orderNumber: true,
-      productReference: true,
-      detail: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      respondedAt: true,
-      responseText: true,
-      responseChannel: true,
-    },
   });
 
   if (!complaint) {
     return null;
   }
 
+  const parsedAttachments = Array.isArray(complaint.attachments)
+    ? (complaint.attachments as string[])
+    : typeof complaint.attachments === "string"
+    ? JSON.parse(complaint.attachments)
+    : [];
+
   return {
-    ...mapComplaintView(complaint),
+    ...mapComplaintView({
+      id: complaint.id,
+      sheetNumber: complaint.sheetNumber,
+      type: complaint.type,
+      reason: complaint.reason,
+      names: complaint.names,
+      lastNames: complaint.lastNames,
+      phone: complaint.phone,
+      email: complaint.email,
+      status: complaint.status,
+      createdAt: complaint.createdAt,
+      repliedAt: complaint.repliedAt,
+      adminReply: complaint.adminReply,
+      repliedByEmail: complaint.repliedByEmail,
+    }),
     documentType: complaint.documentType,
     documentNumber: complaint.documentNumber,
     orderNumber: complaint.orderNumber,
-    productReference: complaint.productReference,
-    detail: complaint.detail,
+    productReference: complaint.productName,
+    detail: complaint.facts,
     updatedAt: complaint.updatedAt.toISOString(),
+
+    // Nuevos campos detallados del Libro de Reclamaciones
+    names: complaint.names,
+    lastNames: complaint.lastNames,
+    email: complaint.email,
+    phone: complaint.phone,
+    address: complaint.address,
+    department: complaint.department,
+    province: complaint.province,
+    district: complaint.district,
+    isMinor: complaint.isMinor,
+    repNames: complaint.repNames,
+    repDocumentType: complaint.repDocumentType,
+    repDocumentNumber: complaint.repDocumentNumber,
+    isPurchaseRelated: complaint.isPurchaseRelated,
+    invoiceNumber: complaint.invoiceNumber,
+    purchaseDate: complaint.purchaseDate?.toISOString() ?? null,
+    productName: complaint.productName,
+    productBrand: complaint.productBrand,
+    productModel: complaint.productModel,
+    productSku: complaint.productSku,
+    productSerial: complaint.productSerial,
+    purchaseAmount: complaint.purchaseAmount ? Number(complaint.purchaseAmount) : null,
+    purchaseChannel: complaint.purchaseChannel,
+    paymentMethod: complaint.paymentMethod,
+    type: complaint.type,
+    reason: complaint.reason,
+    subReason: complaint.subReason,
+    facts: complaint.facts,
+    request: complaint.request,
+    expiryDate: complaint.expiryDate.toISOString(),
+    attachments: parsedAttachments,
   };
 }
 

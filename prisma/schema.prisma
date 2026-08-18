@@ -291,28 +291,65 @@ model QuoteItem {
 }
 
 model Complaint {
-  id               String          @id @default(cuid())
-  claimCode        String          @unique @db.VarChar(40)
-  kind             ComplaintType   @default(RECLAMO)
-  subject          String          @db.VarChar(80)
-  customerName     String          @db.VarChar(180)
-  customerPhone    String?         @db.VarChar(32)
-  customerEmail    String?         @db.VarChar(180)
-  documentType     String?         @db.VarChar(20)
-  documentNumber   String?         @db.VarChar(40)
-  orderNumber      String?         @db.VarChar(80)
-  productReference String?         @db.VarChar(120)
-  detail           String          @db.Text
-  status           ComplaintStatus @default(NEW)
-  responseText     String?         @db.Text
-  responseChannel  String?         @db.VarChar(20)
-  respondedAt      DateTime?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id                      String          @id @default(cuid())
+  sheetNumber             String          @unique @db.VarChar(32) // Formato: LR-YYYY-XXXXXX
+  serialNumber            Int             // Número correlativo dentro del año
+  year                    Int             // Año del reclamo (ej: 2026)
+  
+  // Datos del Consumidor
+  documentType            String          @db.VarChar(16) // DNI, CE, RUC, PASAPORTE
+  documentNumber          String          @db.VarChar(32)
+  names                   String          @db.VarChar(100)
+  lastNames               String          @db.VarChar(100)
+  email                   String          @db.VarChar(150)
+  phone                   String          @db.VarChar(32)
+  address                 String          @db.VarChar(255)
+  department              String          @db.VarChar(64)
+  province                String          @db.VarChar(64)
+  district                String          @db.VarChar(64)
+  
+  // Representante (Si es menor de edad)
+  isMinor                 Boolean         @default(false)
+  repNames                String?         @db.VarChar(200)
+  repDocumentType         String?         @db.VarChar(16)
+  repDocumentNumber       String?         @db.VarChar(32)
+  
+  // Datos de la Compra / Bien Contratado
+  isPurchaseRelated       Boolean         @default(false)
+  orderNumber             String?         @db.VarChar(64)
+  invoiceNumber           String?         @db.VarChar(64)
+  purchaseDate            DateTime?
+  productName             String?         @db.VarChar(200)
+  productBrand            String?         @db.VarChar(100)
+  productModel            String?         @db.VarChar(100)
+  productSku              String?         @db.VarChar(100)
+  productSerial           String?         @db.VarChar(100)
+  purchaseAmount          Decimal?        @db.Decimal(10, 2)
+  purchaseChannel         String?         @db.VarChar(64) // Web, Físico, WhatsApp, etc.
+  paymentMethod           String?         @db.VarChar(64) // Transferencia, Efectivo, Tarjeta
+  
+  // Detalles del Reclamo/Queja
+  type                    ComplaintType   @default(RECLAMO)
+  reason                  String          @db.VarChar(100)
+  subReason               String?         @db.VarChar(150)
+  facts                   String          @db.Text
+  request                 String          @db.Text
+  
+  // Gestión Administrativa
+  status                  ComplaintStatus @default(NEW)
+  adminReply              String?         @db.Text
+  repliedAt               DateTime?
+  repliedByEmail          String?         @db.VarChar(150)
+  expiryDate              DateTime        // Fecha límite de 15 días hábiles
+  
+  // Adjuntos
+  attachments             Json            @default("[]") // Listado de URLs de archivos subidos
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
 
   @@index([status, createdAt(sort: Desc)])
-  @@index([customerEmail])
-  @@index([customerPhone])
+  @@index([email])
+  @@index([phone])
 }
 
 model ServiceFeedback {
