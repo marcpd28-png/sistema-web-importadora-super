@@ -5,7 +5,7 @@ import { ComplaintResponsePanel } from "@/components/admin/complaint-response-pa
 import { getAdminComplaintById } from "@/lib/store";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { updateComplaintStatusOnlyAction, addComplaintInternalNoteAction } from "@/app/admin/actions";
+import { addComplaintInternalNoteAction } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -111,9 +111,6 @@ export default async function AdminComplaintDetailPage({
           <ArrowLeft size={16} />
           Volver
         </Link>
-        <span className={`admin-complaint-status is-${complaint.status.toLowerCase()}`}>
-          {getStatusLabel(complaint.status)}
-        </span>
       </div>
 
       <section className="panel admin-quote-detail-hero">
@@ -202,90 +199,65 @@ export default async function AdminComplaintDetailPage({
         </section>
       </div>
 
-      <div className="admin-quote-detail-grid">
-        {/* Flujo de atención manual */}
-        <section className="panel admin-quote-detail-card">
-          <div className="admin-quote-card-title">
-            <CalendarClock size={18} />
-            <h2>Flujo de atención</h2>
-          </div>
-          <form action={updateComplaintStatusOnlyAction} className="stack-sm" style={{ marginTop: "12px" }}>
-            <input type="hidden" name="complaintId" value={complaint.id} />
-            <label className="field">
-              <span>Estado actual del reclamo</span>
-              <select name="status" defaultValue={complaint.status} className="select" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "14px" }}>
-                <option value="NEW">Nuevo</option>
-                <option value="IN_REVIEW">En revisión</option>
-                <option value="RESPONDED">Respondido</option>
-                <option value="CLOSED">Cerrado</option>
-              </select>
-            </label>
-            <button type="submit" className="button button-primary" style={{ width: "100%", marginTop: "8px" }}>
-              Actualizar estado
-            </button>
-          </form>
-        </section>
-
-        {/* Bitácora y Notas Internas */}
-        <section className="panel admin-quote-detail-card">
-          <div className="admin-quote-card-title">
-            <FileText size={18} />
-            <h2>Bitácora y Notas Internas</h2>
-          </div>
-          
-          <div className="stack-md" style={{ maxHeight: "220px", overflowY: "auto", margin: "16px 0", paddingRight: "8px" }}>
-            {complaint.internalNotes && complaint.internalNotes.length > 0 ? (
-              complaint.internalNotes.map((note) => {
-                const isSystem = note.authorName === "Sistema";
-                return (
-                  <div key={note.id} style={{ 
-                    backgroundColor: isSystem ? "#f1f5f9" : "#f8fafc", 
-                    padding: "12px 16px", 
-                    borderRadius: "8px", 
-                    borderLeft: isSystem ? "4px solid #94a3b8" : "4px solid #2320da", 
-                    marginBottom: "8px" 
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", marginBottom: "4px" }}>
-                      <strong>{note.authorName} {isSystem ? "" : `(${note.authorEmail})`}</strong>
-                      <span>{formatDate(note.createdAt)}</span>
-                    </div>
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: "13px", 
-                      color: isSystem ? "#475569" : "#1e293b", 
-                      fontStyle: isSystem ? "italic" : "normal", 
-                      whiteSpace: "pre-wrap" 
-                    }}>
-                      {note.content}
-                    </p>
+      {/* Bitácora y Notas Internas */}
+      <section className="panel admin-quote-detail-card" style={{ width: "100%" }}>
+        <div className="admin-quote-card-title">
+          <FileText size={18} />
+          <h2>Bitácora y Notas Internas</h2>
+        </div>
+        
+        <div className="stack-md" style={{ maxHeight: "250px", overflowY: "auto", margin: "16px 0", paddingRight: "8px" }}>
+          {complaint.internalNotes && complaint.internalNotes.length > 0 ? (
+            complaint.internalNotes.map((note) => {
+              const isSystem = note.authorName === "Sistema";
+              return (
+                <div key={note.id} style={{ 
+                  backgroundColor: isSystem ? "#f1f5f9" : "#f8fafc", 
+                  padding: "12px 16px", 
+                  borderRadius: "8px", 
+                  borderLeft: isSystem ? "4px solid #94a3b8" : "4px solid #2320da", 
+                  marginBottom: "8px" 
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", marginBottom: "4px" }}>
+                    <strong>{note.authorName} {isSystem ? "" : `(${note.authorEmail})`}</strong>
+                    <span>{formatDate(note.createdAt)}</span>
                   </div>
-                );
-              })
-            ) : (
-              <p className="muted" style={{ fontSize: "13px", fontStyle: "italic", margin: "10px 0" }}>
-                No hay anotaciones registradas.
-              </p>
-            )}
-          </div>
+                  <p style={{ 
+                    margin: 0, 
+                    fontSize: "13px", 
+                    color: isSystem ? "#475569" : "#1e293b", 
+                    fontStyle: isSystem ? "italic" : "normal", 
+                    whiteSpace: "pre-wrap" 
+                  }}>
+                    {note.content}
+                  </p>
+                </div>
+              );
+            })
+          ) : (
+            <p className="muted" style={{ fontSize: "13px", fontStyle: "italic", margin: "10px 0" }}>
+              No hay anotaciones registradas.
+            </p>
+          )}
+        </div>
 
-          <form action={addComplaintInternalNoteAction} className="stack-sm" style={{ borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
-            <input type="hidden" name="complaintId" value={complaint.id} />
-            <label className="field">
-              <span>Agregar anotación de seguimiento</span>
-              <textarea
-                name="content"
-                rows={2}
-                placeholder="Ej. El cliente no responde; falta boleta; coordinando envío..."
-                required
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", resize: "vertical", fontSize: "13px" }}
-              />
-            </label>
-            <button type="submit" className="button button-secondary" style={{ width: "100%", marginTop: "8px" }}>
-              Guardar anotación
-            </button>
-          </form>
-        </section>
-      </div>
+        <form action={addComplaintInternalNoteAction} className="stack-sm" style={{ borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
+          <input type="hidden" name="complaintId" value={complaint.id} />
+          <label className="field">
+            <span>Agregar anotación de seguimiento</span>
+            <textarea
+              name="content"
+              rows={2}
+              placeholder="Ej. El cliente no responde; falta boleta; coordinando envío..."
+              required
+              style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", resize: "vertical", fontSize: "13px" }}
+            />
+          </label>
+          <button type="submit" className="button button-secondary" style={{ width: "100%", marginTop: "8px" }}>
+            Guardar anotación
+          </button>
+        </form>
+      </section>
 
       <ComplaintResponsePanel complaint={complaint} />
     </section>
