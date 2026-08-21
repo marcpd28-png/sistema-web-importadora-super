@@ -15,7 +15,7 @@ function invalidateAdminCaches() {
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
-import { clearSession, getSession, requireAdmin } from "@/lib/auth";
+import { clearSession, getSession, requireAdmin, createSession } from "@/lib/auth";
 import { FacturadorApiError, FacturadorClient } from "@/lib/facturador/client";
 import { parseFacturadorSyncMode, syncFacturadorProducts } from "@/lib/facturador/sync";
 import { sendComplaintResponseEmail } from "@/lib/complaints-email";
@@ -748,4 +748,50 @@ export async function deleteAdminUserAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/users");
   redirect("/admin/users?status=deleted");
+}
+
+export async function changeRequiredPasswordAction(prevState: any, formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== "ADMIN") {
+    return { error: "No autorizado.", success: false };
+  }
+
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  if (!password || password.length < 6) {
+    return { error: "La contraseña debe tener al menos 6 caracteres.", success: false };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: "Las contraseñas no coinciden.", success: false };
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // Actualizar en base de datos
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: {
+        passwordHash,
+        requirePasswordChange: false,
+      },
+    });
+
+    // Actualizar la sesión
+    await createSession({
+      userId: session.userId,
+      email: session.email,
+      name: session.name,
+      role: "ADMIN",
+      requirePasswordChange: false,
+    });
+
+    revalidatePath("/admin");
+    return { success: true, error: "" };
+  } catch (error) {
+    console.error(error);
+    return { error: "Ocurrió un error al actualizar la contraseña.", success: false };
+  }
 }

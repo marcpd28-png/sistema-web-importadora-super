@@ -23,6 +23,7 @@ export async function loginAction(formData: FormData) {
     email: user.email,
     name: user.name,
     role: "ADMIN",
+    requirePasswordChange: user.requirePasswordChange,
   });
 
   redirect("/admin");

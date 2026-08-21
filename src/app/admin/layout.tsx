@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { getAdminNavBadges } from "@/lib/admin";
+import { ForcePasswordChange } from "@/components/admin/force-password-change";
 
 export default async function AdminLayout({
   children,
@@ -10,6 +11,15 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireAdmin();
+
+  if (session.requirePasswordChange) {
+    return (
+      <main className="admin-shell" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "20px", background: "#f8fafc" }}>
+        <ForcePasswordChange />
+      </main>
+    );
+  }
+
   const badges = await getAdminNavBadges();
 
   return (

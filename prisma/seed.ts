@@ -539,6 +539,34 @@ async function main() {
     },
   });
 
+  // 3 usuarios administrativos adicionales solicitados
+  const defaultAdminPassword = "Cambiar12345!";
+  const defaultAdminPasswordHash = await bcrypt.hash(defaultAdminPassword, 10);
+  const additionalAdmins = [
+    { email: "candy@importadora.com", name: "Candy" },
+    { email: "kimberlin@importadora.com", name: "Kimberlin" },
+    { email: "geydy@importadora.com", name: "Geydy" },
+  ];
+
+  for (const admin of additionalAdmins) {
+    await prisma.user.upsert({
+      where: { email: admin.email },
+      update: {
+        name: admin.name,
+        passwordHash: defaultAdminPasswordHash,
+        role: "ADMIN",
+        requirePasswordChange: true,
+      },
+      create: {
+        email: admin.email,
+        name: admin.name,
+        passwordHash: defaultAdminPasswordHash,
+        role: "ADMIN",
+        requirePasswordChange: true,
+      },
+    });
+  }
+
   await prisma.storeSettings.upsert({
     where: { id: 1 },
     update: {

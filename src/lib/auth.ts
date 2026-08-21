@@ -13,6 +13,7 @@ export type SessionUser = {
   email: string;
   name: string;
   role: "ADMIN" | "USERSHOP";
+  requirePasswordChange?: boolean;
 };
 
 function getSecret() {
@@ -120,6 +121,7 @@ export async function getSession() {
       email: payload.email,
       name: payload.name,
       role: payload.role,
+      requirePasswordChange: Boolean(payload.requirePasswordChange),
     } satisfies SessionUser;
   } catch {
     return null;

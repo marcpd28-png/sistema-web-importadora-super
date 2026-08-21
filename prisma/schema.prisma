@@ -88,15 +88,16 @@ enum ComplaintStatus {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  phone        String?  @db.VarChar(32)
-  passwordHash String
-  role         UserRole @default(ADMIN)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  quotes       Quote[]  @relation("UserQuotes")
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  name                  String
+  phone                 String?  @db.VarChar(32)
+  passwordHash          String
+  role                  UserRole @default(ADMIN)
+  requirePasswordChange Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  quotes                Quote[]  @relation("UserQuotes")
 }
 
 model Product {
