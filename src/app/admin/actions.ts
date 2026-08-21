@@ -867,3 +867,75 @@ export async function changeRequiredPasswordAction(prevState: any, formData: For
     return { error: "Ocurrió un error al actualizar la contraseña.", success: false };
   }
 }
+
+export async function updateFeedbackStatusAction(formData: FormData) {
+  const session = await requireAdmin();
+  const feedbackId = String(formData.get("feedbackId") ?? "");
+  const statusStr = String(formData.get("status") ?? "");
+  
+  if (!feedbackId) {
+    redirect("/admin/opiniones?status=error&error=No se encontró la opinión.");
+  }
+
+  const status = parseComplaintStatus(statusStr);
+
+  const existing = await prisma.serviceFeedback.findUnique({
+    where: { id: feedbackId },
+    select: { status: true },
+  });
+
+  if (existing && existing.status !== status) {
+    await prisma.serviceFeedback.update({
+      where: { id: feedbackId },
+      data: { status },
+    });
+
+    const statusMap: Record<string, string> = {
+      NEW: "Nuevo",
+      IN_REVIEW: "En revisión",
+      RESPONDED: "Respondido",
+      CLOSED: "Cerrado",
+    };
+    const fromLabel = statusMap[existing.status] || existing.status;
+    const toLabel = statusMap[status] || status;
+
+    await prisma.serviceFeedbackInternalNote.create({
+      data: {
+        serviceFeedbackId: feedbackId,
+        authorName: "Sistema",
+        authorEmail: "sistema@importadora.com",
+        content: `El asesor ${session.name} cambió el estado de "${fromLabel}" a "${toLabel}".`,
+      },
+    });
+  }
+
+  revalidatePath(`/admin/opiniones/${feedbackId}`);
+  revalidatePath("/admin/opiniones");
+  redirect(`/admin/opiniones/${feedbackId}?status=updated`);
+}
+
+export async function addFeedbackInternalNoteAction(formData: FormData) {
+  const session = await requireAdmin();
+  const feedbackId = String(formData.get("feedbackId") ?? "");
+  const content = String(formData.get("content") ?? "").trim();
+
+  if (!feedbackId) {
+    redirect("/admin/opiniones?status=error&error=No se encontró la opinión.");
+  }
+
+  if (!content) {
+    redirect(`/admin/opiniones/${feedbackId}?status=error&error=La nota no puede estar vacía.`);
+  }
+
+  await prisma.serviceFeedbackInternalNote.create({
+    data: {
+      serviceFeedbackId: feedbackId,
+      authorName: session.name,
+      authorEmail: session.email,
+      content,
+    },
+  });
+
+  revalidatePath(`/admin/opiniones/${feedbackId}`);
+  redirect(`/admin/opiniones/${feedbackId}?status=updated`);
+}

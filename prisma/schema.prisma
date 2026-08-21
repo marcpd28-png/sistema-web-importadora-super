@@ -369,19 +369,35 @@ model ComplaintInternalNote {
 }
 
 model ServiceFeedback {
-  id              String   @id @default(cuid())
-  rating          String   @db.VarChar(20)
-  attendedBy      String?  @db.VarChar(180)
-  improvement     String?  @db.Text
+  id              String                        @id @default(cuid())
+  rating          String                        @db.VarChar(20)
+  attendedBy      String?                       @db.VarChar(180)
+  improvement     String?                       @db.Text
   hadProblem      Boolean
-  problemDetail   String?  @db.Text
+  problemDetail   String?                       @db.Text
   wouldRecommend  Boolean
-  customerContact String?  @db.VarChar(180)
-  createdAt       DateTime @default(now())
+  customerContact String?                       @db.VarChar(180)
+  status          ComplaintStatus               @default(NEW)
+  assignedToName  String?                       @db.VarChar(180)
+  assignedToEmail String?                       @db.VarChar(180)
+  createdAt       DateTime                      @default(now())
+  internalNotes   ServiceFeedbackInternalNote[]
 
   @@index([createdAt(sort: Desc)])
   @@index([rating])
   @@index([hadProblem])
+}
+
+model ServiceFeedbackInternalNote {
+  id                String          @id @default(cuid())
+  serviceFeedbackId String
+  serviceFeedback   ServiceFeedback @relation(fields: [serviceFeedbackId], references: [id], onDelete: Cascade)
+  authorName        String          @db.VarChar(180)
+  authorEmail       String          @db.VarChar(180)
+  content           String          @db.Text
+  createdAt         DateTime        @default(now())
+
+  @@index([serviceFeedbackId, createdAt(sort: Desc)])
 }
 
 model ShopAssistantLog {

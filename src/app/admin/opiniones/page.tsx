@@ -27,6 +27,13 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+function getStatusLabel(status: string) {
+  if (status === "IN_REVIEW") return "En revisión";
+  if (status === "RESPONDED") return "Respondido";
+  if (status === "CLOSED") return "Cerrado";
+  return "Nuevo";
+}
+
 export default async function AdminServiceFeedbackPage() {
   const [feedback, ratingGroups, total, recommendCount, problemCount] = await Promise.all([
     prisma.serviceFeedback.findMany({
@@ -141,6 +148,9 @@ export default async function AdminServiceFeedbackPage() {
                   <th>Comentario</th>
                   <th>Recomienda</th>
                   <th>Contacto</th>
+                  <th>Asesor</th>
+                  <th>Estado</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -174,6 +184,26 @@ export default async function AdminServiceFeedbackPage() {
                     </td>
                     <td data-label="Contacto">
                       {entry.customerContact ?? <span className="muted">Anónimo</span>}
+                    </td>
+                    <td data-label="Asesor">
+                      {entry.assignedToName ? (
+                        <strong style={{ fontSize: "13px", color: "#2320da" }}>{entry.assignedToName}</strong>
+                      ) : (
+                        <span className="muted" style={{ fontStyle: "italic", fontSize: "12px" }}>Sin asignar</span>
+                      )}
+                    </td>
+                    <td data-label="Estado">
+                      <span className={`admin-complaint-status is-${entry.status.toLowerCase()}`}>
+                        {getStatusLabel(entry.status)}
+                      </span>
+                    </td>
+                    <td data-label="Acciones">
+                      <div className="table-actions">
+                        <Link className="icon-button" href={`/admin/opiniones/${entry.id}`}>
+                          <UserRoundSearch size={16} />
+                          <span>Ver</span>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
