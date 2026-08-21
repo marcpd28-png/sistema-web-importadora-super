@@ -546,6 +546,7 @@ async function main() {
     { email: "candy@importadora.com", name: "Candy" },
     { email: "kimberlin@importadora.com", name: "Kimberlin" },
     { email: "geydy@importadora.com", name: "Geydy" },
+    { email: "adminmark@importadora.com", name: "Admin Mark" },
   ];
 
   for (const admin of additionalAdmins) {
