@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarClock, Mail, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarClock, Mail, UserRound, FileText, ShieldAlert } from "lucide-react";
 import { ComplaintResponsePanel } from "@/components/admin/complaint-response-panel";
 import { getAdminComplaintById } from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
+import { updateComplaintStatusOnlyAction, addComplaintInternalNoteAction } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,11 +41,29 @@ export default async function AdminComplaintDetailPage({
   searchParams,
 }: AdminComplaintDetailPageProps) {
   const { id } = await params;
+  const session = await requireAdmin();
   const query = searchParams ? await searchParams : undefined;
   const complaint = await getAdminComplaintById(id);
 
   if (!complaint) {
     notFound();
+  }
+
+  // Asignación automática al abrir el reclamo por primera vez
+  if (!complaint.assignedToEmail || complaint.status === "NEW") {
+    await prisma.complaint.update({
+      where: { id },
+      data: {
+        assignedToEmail: session.email,
+        assignedToName: session.name,
+        status: complaint.status === "NEW" ? "IN_REVIEW" : complaint.status as any,
+      },
+    });
+    complaint.assignedToEmail = session.email;
+    complaint.assignedToName = session.name;
+    if (complaint.status === "NEW") {
+      complaint.status = "IN_REVIEW";
+    }
   }
 
   const updated = query?.status === "updated";
@@ -128,6 +149,12 @@ export default async function AdminComplaintDetailPage({
               <dt>Producto</dt>
               <dd>{complaint.productReference ?? "No registrado"}</dd>
             </div>
+            <div>
+              <dt>Asesor asignado</dt>
+              <dd style={{ color: "#2320da", fontWeight: "bold" }}>
+                {complaint.assignedToName ? `${complaint.assignedToName} (${complaint.assignedToEmail})` : "No asignado"}
+              </dd>
+            </div>
           </dl>
         </section>
 
@@ -137,6 +164,76 @@ export default async function AdminComplaintDetailPage({
             <h2>Detalle del caso</h2>
           </div>
           <p className="muted admin-complaint-detail-text">{complaint.detail}</p>
+        </section>
+      </div>
+
+      <div className="admin-quote-detail-grid">
+        {/* Flujo de atención manual */}
+        <section className="panel admin-quote-detail-card">
+          <div className="admin-quote-card-title">
+            <CalendarClock size={18} />
+            <h2>Flujo de atención</h2>
+          </div>
+          <form action={updateComplaintStatusOnlyAction} className="stack-sm" style={{ marginTop: "12px" }}>
+            <input type="hidden" name="complaintId" value={complaint.id} />
+            <label className="field">
+              <span>Estado actual del reclamo</span>
+              <select name="status" defaultValue={complaint.status} className="select" style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "14px" }}>
+                <option value="NEW">Nuevo</option>
+                <option value="IN_REVIEW">En revisión</option>
+                <option value="RESPONDED">Respondido</option>
+                <option value="CLOSED">Cerrado</option>
+              </select>
+            </label>
+            <button type="submit" className="button button-primary" style={{ width: "100%", marginTop: "8px" }}>
+              Actualizar estado
+            </button>
+          </form>
+        </section>
+
+        {/* Bitácora y Notas Internas */}
+        <section className="panel admin-quote-detail-card">
+          <div className="admin-quote-card-title">
+            <FileText size={18} />
+            <h2>Bitácora y Notas Internas</h2>
+          </div>
+          
+          <div className="stack-md" style={{ maxHeight: "220px", overflowY: "auto", margin: "16px 0", paddingRight: "8px" }}>
+            {complaint.internalNotes && complaint.internalNotes.length > 0 ? (
+              complaint.internalNotes.map((note) => (
+                <div key={note.id} style={{ backgroundColor: "#f8fafc", padding: "12px 16px", borderRadius: "8px", borderLeft: "4px solid #2320da", marginBottom: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", marginBottom: "4px" }}>
+                    <strong>{note.authorName} ({note.authorEmail})</strong>
+                    <span>{formatDate(note.createdAt)}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#1e293b", whiteSpace: "pre-wrap" }}>
+                    {note.content}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="muted" style={{ fontSize: "13px", fontStyle: "italic", margin: "10px 0" }}>
+                No hay anotaciones registradas.
+              </p>
+            )}
+          </div>
+
+          <form action={addComplaintInternalNoteAction} className="stack-sm" style={{ borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
+            <input type="hidden" name="complaintId" value={complaint.id} />
+            <label className="field">
+              <span>Agregar anotación de seguimiento</span>
+              <textarea
+                name="content"
+                rows={2}
+                placeholder="Ej. El cliente no responde; falta boleta; coordinando envío..."
+                required
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", resize: "vertical", fontSize: "13px" }}
+              />
+            </label>
+            <button type="submit" className="button button-secondary" style={{ width: "100%", marginTop: "8px" }}>
+              Guardar anotación
+            </button>
+          </form>
         </section>
       </div>
 

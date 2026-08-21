@@ -367,6 +367,53 @@ export async function updateComplaintAction(formData: FormData) {
   );
 }
 
+export async function updateComplaintStatusOnlyAction(formData: FormData) {
+  await requireAdmin();
+  const complaintId = String(formData.get("complaintId") ?? "");
+  const statusStr = String(formData.get("status") ?? "");
+  
+  if (!complaintId) {
+    redirect("/admin/reclamos?status=error&error=No se encontró el reclamo.");
+  }
+
+  const status = parseComplaintStatus(statusStr);
+
+  await prisma.complaint.update({
+    where: { id: complaintId },
+    data: { status },
+  });
+
+  revalidatePath(`/admin/reclamos/${complaintId}`);
+  revalidatePath("/admin/reclamos");
+  redirect(`/admin/reclamos/${complaintId}?status=updated`);
+}
+
+export async function addComplaintInternalNoteAction(formData: FormData) {
+  const session = await requireAdmin();
+  const complaintId = String(formData.get("complaintId") ?? "");
+  const content = String(formData.get("content") ?? "").trim();
+
+  if (!complaintId) {
+    redirect("/admin/reclamos?status=error&error=No se encontró el reclamo.");
+  }
+
+  if (!content) {
+    redirect(`/admin/reclamos/${complaintId}?status=error&error=La nota no puede estar vacía.`);
+  }
+
+  await prisma.complaintInternalNote.create({
+    data: {
+      complaintId,
+      authorName: session.name,
+      authorEmail: session.email,
+      content,
+    },
+  });
+
+  revalidatePath(`/admin/reclamos/${complaintId}`);
+  redirect(`/admin/reclamos/${complaintId}?status=updated`);
+}
+
 export async function toggleProductVisibilityAction(formData: FormData) {
   await requireAdmin();
   const productId = String(formData.get("productId") ?? "");

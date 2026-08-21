@@ -329,6 +329,11 @@ export async function getAdminComplaintById(
 ): Promise<AdminComplaintDetailView | null> {
   const complaint = await prisma.complaint.findFirst({
     where: { id: complaintId },
+    include: {
+      internalNotes: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
   });
 
   if (!complaint) {
@@ -395,6 +400,15 @@ export async function getAdminComplaintById(
     request: complaint.request,
     expiryDate: complaint.expiryDate.toISOString(),
     attachments: parsedAttachments,
+    assignedToName: complaint.assignedToName,
+    assignedToEmail: complaint.assignedToEmail,
+    internalNotes: (complaint.internalNotes || []).map((note) => ({
+      id: note.id,
+      authorName: note.authorName,
+      authorEmail: note.authorEmail,
+      content: note.content,
+      createdAt: note.createdAt.toISOString(),
+    })),
   };
 }
 

@@ -341,7 +341,10 @@ model Complaint {
   adminReply              String?         @db.Text
   repliedAt               DateTime?
   repliedByEmail          String?         @db.VarChar(150)
+  assignedToName          String?         @db.VarChar(100)
+  assignedToEmail         String?         @db.VarChar(150)
   expiryDate              DateTime        // Fecha límite de 15 días hábiles
+  internalNotes           ComplaintInternalNote[]
   
   // Adjuntos
   attachments             Json            @default("[]") // Listado de URLs de archivos subidos
@@ -351,6 +354,18 @@ model Complaint {
   @@index([status, createdAt(sort: Desc)])
   @@index([email])
   @@index([phone])
+}
+
+model ComplaintInternalNote {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  authorName  String
+  authorEmail String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([complaintId, createdAt(sort: Desc)])
 }
 
 model ServiceFeedback {

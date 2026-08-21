@@ -420,6 +420,15 @@ export type AdminComplaintDetailView = AdminComplaintView & {
   request: string;
   expiryDate: string;
   attachments: string[];
+  assignedToName: string | null;
+  assignedToEmail: string | null;
+  internalNotes: {
+    id: string;
+    authorName: string;
+    authorEmail: string;
+    content: string;
+    createdAt: string;
+  }[];
 };
 
 export type AdminComplaintsData = {
