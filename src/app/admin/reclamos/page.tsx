@@ -180,6 +180,7 @@ export default async function AdminComplaintsPage({ searchParams }: AdminComplai
                 <th>Cliente</th>
                 <th>Caso</th>
                 <th>Contacto</th>
+                <th>Asesor</th>
                 <th>Estado</th>
                 <th />
               </tr>
@@ -202,6 +203,13 @@ export default async function AdminComplaintsPage({ searchParams }: AdminComplai
                     {complaint.responseChannel ? (
                       <p className="muted">Respuesta: {complaint.responseChannel}</p>
                     ) : null}
+                  </td>
+                  <td data-label="Asesor">
+                    {complaint.assignedToName ? (
+                      <strong style={{ fontSize: "13px", color: "#2320da" }}>{complaint.assignedToName}</strong>
+                    ) : (
+                      <span className="muted" style={{ fontStyle: "italic", fontSize: "12px" }}>Sin asignar</span>
+                    )}
                   </td>
                   <td data-label="Estado">
                     <span className={`admin-complaint-status is-${complaint.status.toLowerCase()}`}>

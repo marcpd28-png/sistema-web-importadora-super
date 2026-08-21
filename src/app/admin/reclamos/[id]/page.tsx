@@ -51,19 +51,54 @@ export default async function AdminComplaintDetailPage({
 
   // Asignación automática al abrir el reclamo por primera vez
   if (!complaint.assignedToEmail || complaint.status === "NEW") {
+    const oldStatus = complaint.status;
+    const nextStatus = oldStatus === "NEW" ? "IN_REVIEW" : oldStatus;
+    const isAutoAssigning = !complaint.assignedToEmail;
+
     await prisma.complaint.update({
       where: { id },
       data: {
         assignedToEmail: session.email,
         assignedToName: session.name,
-        status: complaint.status === "NEW" ? "IN_REVIEW" : complaint.status as any,
+        status: nextStatus as any,
       },
     });
+
+    let logMessage = "";
+    if (isAutoAssigning && oldStatus === "NEW") {
+      logMessage = `El reclamo fue abierto y asignado automáticamente a ${session.name}. El estado cambió a "En revisión".`;
+    } else if (isAutoAssigning) {
+      logMessage = `El reclamo fue abierto y asignado automáticamente a ${session.name}.`;
+    } else if (oldStatus === "NEW") {
+      logMessage = `El reclamo fue abierto. El estado cambió a "En revisión".`;
+    }
+
+    if (logMessage) {
+      const systemNote = await prisma.complaintInternalNote.create({
+        data: {
+          complaintId: id,
+          authorName: "Sistema",
+          authorEmail: "sistema@importadora.com",
+          content: logMessage,
+        },
+      });
+
+      // Insertar al inicio de las notas locales
+      complaint.internalNotes = [
+        {
+          id: systemNote.id,
+          authorName: systemNote.authorName,
+          authorEmail: systemNote.authorEmail,
+          content: systemNote.content,
+          createdAt: systemNote.createdAt.toISOString(),
+        },
+        ...(complaint.internalNotes || []),
+      ];
+    }
+
     complaint.assignedToEmail = session.email;
     complaint.assignedToName = session.name;
-    if (complaint.status === "NEW") {
-      complaint.status = "IN_REVIEW";
-    }
+    complaint.status = nextStatus;
   }
 
   const updated = query?.status === "updated";
@@ -200,17 +235,32 @@ export default async function AdminComplaintDetailPage({
           
           <div className="stack-md" style={{ maxHeight: "220px", overflowY: "auto", margin: "16px 0", paddingRight: "8px" }}>
             {complaint.internalNotes && complaint.internalNotes.length > 0 ? (
-              complaint.internalNotes.map((note) => (
-                <div key={note.id} style={{ backgroundColor: "#f8fafc", padding: "12px 16px", borderRadius: "8px", borderLeft: "4px solid #2320da", marginBottom: "8px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", marginBottom: "4px" }}>
-                    <strong>{note.authorName} ({note.authorEmail})</strong>
-                    <span>{formatDate(note.createdAt)}</span>
+              complaint.internalNotes.map((note) => {
+                const isSystem = note.authorName === "Sistema";
+                return (
+                  <div key={note.id} style={{ 
+                    backgroundColor: isSystem ? "#f1f5f9" : "#f8fafc", 
+                    padding: "12px 16px", 
+                    borderRadius: "8px", 
+                    borderLeft: isSystem ? "4px solid #94a3b8" : "4px solid #2320da", 
+                    marginBottom: "8px" 
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", marginBottom: "4px" }}>
+                      <strong>{note.authorName} {isSystem ? "" : `(${note.authorEmail})`}</strong>
+                      <span>{formatDate(note.createdAt)}</span>
+                    </div>
+                    <p style={{ 
+                      margin: 0, 
+                      fontSize: "13px", 
+                      color: isSystem ? "#475569" : "#1e293b", 
+                      fontStyle: isSystem ? "italic" : "normal", 
+                      whiteSpace: "pre-wrap" 
+                    }}>
+                      {note.content}
+                    </p>
                   </div>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#1e293b", whiteSpace: "pre-wrap" }}>
-                    {note.content}
-                  </p>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="muted" style={{ fontSize: "13px", fontStyle: "italic", margin: "10px 0" }}>
                 No hay anotaciones registradas.

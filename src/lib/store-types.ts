@@ -379,6 +379,8 @@ export type AdminComplaintView = {
   respondedAt: string | null;
   responseText: string | null;
   responseChannel: string | null;
+  assignedToName: string | null;
+  assignedToEmail: string | null;
 };
 
 export type AdminComplaintDetailView = AdminComplaintView & {

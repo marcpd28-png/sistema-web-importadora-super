@@ -368,7 +368,7 @@ export async function updateComplaintAction(formData: FormData) {
 }
 
 export async function updateComplaintStatusOnlyAction(formData: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const complaintId = String(formData.get("complaintId") ?? "");
   const statusStr = String(formData.get("status") ?? "");
   
@@ -378,10 +378,35 @@ export async function updateComplaintStatusOnlyAction(formData: FormData) {
 
   const status = parseComplaintStatus(statusStr);
 
-  await prisma.complaint.update({
+  const existing = await prisma.complaint.findUnique({
     where: { id: complaintId },
-    data: { status },
+    select: { status: true },
   });
+
+  if (existing && existing.status !== status) {
+    await prisma.complaint.update({
+      where: { id: complaintId },
+      data: { status },
+    });
+
+    const statusMap: Record<string, string> = {
+      NEW: "Nuevo",
+      IN_REVIEW: "En revisión",
+      RESPONDED: "Respondido",
+      CLOSED: "Cerrado",
+    };
+    const fromLabel = statusMap[existing.status] || existing.status;
+    const toLabel = statusMap[status] || status;
+
+    await prisma.complaintInternalNote.create({
+      data: {
+        complaintId,
+        authorName: "Sistema",
+        authorEmail: "sistema@importadora.com",
+        content: `El asesor ${session.name} cambió el estado de "${fromLabel}" a "${toLabel}".`,
+      },
+    });
+  }
 
   revalidatePath(`/admin/reclamos/${complaintId}`);
   revalidatePath("/admin/reclamos");

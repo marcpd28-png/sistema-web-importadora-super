@@ -225,6 +225,8 @@ function mapComplaintView(
     repliedAt: Date | null;
     adminReply: string | null;
     repliedByEmail: string | null;
+    assignedToName?: string | null;
+    assignedToEmail?: string | null;
   },
 ): AdminComplaintView {
   return {
@@ -240,6 +242,8 @@ function mapComplaintView(
     respondedAt: complaint.repliedAt?.toISOString() ?? null,
     responseText: complaint.adminReply,
     responseChannel: complaint.repliedByEmail ? "Email" : null,
+    assignedToName: complaint.assignedToName ?? null,
+    assignedToEmail: complaint.assignedToEmail ?? null,
   };
 }
 
@@ -285,6 +289,8 @@ export async function getAdminComplaints(input: {
           repliedAt: true,
           adminReply: true,
           repliedByEmail: true,
+          assignedToName: true,
+          assignedToEmail: true,
         },
       }),
     ),
