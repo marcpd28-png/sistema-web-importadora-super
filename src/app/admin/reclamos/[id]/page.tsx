@@ -106,29 +106,43 @@ export default async function AdminComplaintDetailPage({
 
   return (
     <section className="stack-lg">
-      <div className="admin-quote-detail-top">
-        <Link className="button button-secondary" href="/admin/reclamos">
-          <ArrowLeft size={16} />
-          Volver
-        </Link>
-      </div>
-
-      <section className="panel admin-quote-detail-hero">
-        <div>
-          <p className="eyebrow">Libro de reclamaciones</p>
-          <h1>{complaint.claimCode}</h1>
-          <p className="muted">
-            {formatDate(complaint.createdAt)} · {formatDate(complaint.updatedAt)}
-          </p>
-        </div>
-        <div className="admin-quote-detail-total">
-          <span className={`admin-complaint-status is-${complaint.status.toLowerCase()}`}>
+      <div className="admin-quote-detail-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Link className="button button-secondary" href="/admin/reclamos">
+            <ArrowLeft size={16} />
+            Volver
+          </Link>
+          <span className={`admin-complaint-status is-${complaint.status.toLowerCase()}`} style={{ margin: 0 }}>
             {getStatusLabel(complaint.status)}
           </span>
-          <strong>{complaint.kind}</strong>
-          <span>{complaint.subject}</span>
         </div>
-      </section>
+        <div style={{ fontSize: "13px", color: "#64748b" }}>
+          Código: <strong>{complaint.claimCode}</strong>
+        </div>
+      </div>
+
+      <div className="panel" style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", gap: "16px", flexWrap: "wrap" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, color: "#2563eb", backgroundColor: "#eff6ff", padding: "2px 8px", borderRadius: "4px" }}>
+              {complaint.kind}
+            </span>
+            <span style={{ fontSize: "13px", fontWeight: 500, color: "#475569" }}>
+              {complaint.subject}
+            </span>
+          </div>
+          <h1 style={{ fontSize: "20px", fontWeight: 700, margin: "6px 0 0 0", color: "#0f172a" }}>
+            {complaint.claimCode}
+          </h1>
+        </div>
+        
+        <div style={{ textAlign: "right", fontSize: "12px", color: "#64748b" }}>
+          <div><strong>Registrado:</strong> {formatDate(complaint.createdAt)}</div>
+          {complaint.createdAt !== complaint.updatedAt && (
+            <div style={{ marginTop: "2px" }}><strong>Actualizado:</strong> {formatDate(complaint.updatedAt)}</div>
+          )}
+        </div>
+      </div>
 
       {updated ? (
         <article className="panel panel-slim empty-state">
