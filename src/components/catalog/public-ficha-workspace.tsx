@@ -15,7 +15,7 @@ import {
   MessageCircle,
   HelpCircle
 } from "lucide-react";
-import { useCartStore } from "@/components/catalog/cart-store";
+import { useCartStore, rehydrateCartStore } from "@/components/catalog/cart-store";
 import { CartDrawer } from "@/components/catalog/cart-drawer";
 import { StoreSideActions } from "@/components/catalog/store-side-actions";
 import { formatCurrency } from "@/lib/utils";
@@ -67,7 +67,7 @@ export function PublicFichaWorkspace({
 
   // Rehydrate cart on mount
   useEffect(() => {
-    // track QR_OPEN is registered server side
+    rehydrateCartStore();
   }, []);
 
   async function trackEvent(eventType: string) {
