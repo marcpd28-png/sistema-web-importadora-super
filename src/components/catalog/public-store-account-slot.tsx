@@ -17,14 +17,14 @@ type AccountLinkItem = {
 
 function AccountHomeLink() {
   return (
-    <a
+    <Link
       className="public-store-quick-link public-store-home-link public-store-account-switch-link public-store-account-switch-home-link"
       href="/"
       aria-label="Volver al inicio"
     >
       <House size={16} />
       <span>Inicio</span>
-    </a>
+    </Link>
   );
 }
 

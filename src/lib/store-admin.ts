@@ -1,13 +1,13 @@
-import type { ComplaintStatus, Prisma, QuoteStatus } from "@prisma/client";
+import { Prisma, type ComplaintStatus, type ComplaintType, type QuoteStatus } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   ADMIN_PAGE_SIZE,
+  GENERIC_PRODUCT_PHOTO_URLS,
   buildComparisonMetric,
   buildWhere,
   buildMissingProductPhotoWhere,
   buildRealProductPhotoWhere,
-  buildSellableProductWhere,
   calculateDeltaPercent,
   mapCatalogMovementProduct,
   mapErpSyncLog,
@@ -15,6 +15,7 @@ import {
   hasRealProductPhoto,
 } from "@/lib/store-shared";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
+import { BLOCKED_PUBLIC_PRODUCT_CODES } from "@/lib/public-product-blocklist";
 import type {
   AdminProductListItem,
   AdminCategory,
@@ -35,6 +36,29 @@ import type {
 
 const ADMIN_QUOTES_PAGE_SIZE = 10;
 const ADMIN_COMPLAINTS_PAGE_SIZE = 10;
+const ADMIN_GENERIC_PRODUCT_PHOTO_URLS = [...GENERIC_PRODUCT_PHOTO_URLS, ""];
+
+type AdminInventoryStats = {
+  totalProducts: number;
+  visibleProductsCount: number;
+  hiddenProductsCount: number;
+  withPhotoProductsCount: number;
+  withoutPhotoProductsCount: number;
+  needsReviewProductsCount: number;
+  lowStockProductsCount: number;
+  outOfStockProductsCount: number;
+  syncedProductsCount: number;
+  unsyncedProductsCount: number;
+  neverSyncedProductsCount: number;
+  staleSyncedProductsCount: number;
+  featuredProductsCount: number;
+  hiddenWithStockProductsCount: number;
+  visibleWithPhotoProductsCount: number;
+  hiddenOutOfStockProductsCount: number;
+  visibleOutOfStockProductsCount: number;
+  hiddenWithoutPhotoProductsCount: number;
+  visibleWithoutPhotoProductsCount: number;
+};
 
 function shouldLogAdminPerf() {
   return process.env.NODE_ENV !== "production" || process.env.ADMIN_PERF_LOGS === "true";
@@ -67,6 +91,93 @@ function logAdminPayload(
   console.info(
     `[admin-perf] ${scope}: total=${Date.now() - startedAt}ms records=${recordCount ?? "n/a"} size=${sizeKb.toFixed(1)}KB`,
   );
+}
+
+function buildBlockedAdminProductCodesSql() {
+  if (!BLOCKED_PUBLIC_PRODUCT_CODES.length) {
+    return Prisma.sql`true`;
+  }
+
+  return Prisma.sql`pf.code NOT IN (${Prisma.join(BLOCKED_PUBLIC_PRODUCT_CODES)})`;
+}
+
+async function getAdminInventoryStats(staleDate: Date): Promise<AdminInventoryStats> {
+  const [stats] = await prisma.$queryRaw<AdminInventoryStats[]>(Prisma.sql`
+    WITH product_flags AS (
+      SELECT
+        p.id,
+        p.code,
+        p."isVisible",
+        p."stockUnits",
+        p."syncEnabled",
+        p."lastSyncedAt",
+        p."isFeatured",
+        (
+          (
+            p."localImageUrl" IS NOT NULL
+            AND p."localImageUrl" NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
+          )
+          OR (
+            p."imageUrl" IS NOT NULL
+            AND p."imageUrl" NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM "ProductMedia" pm
+            WHERE pm."productId" = p.id
+              AND pm.url NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
+          )
+        ) AS "hasRealPhoto",
+        (
+          (
+            p."localImageUrl" IS NULL
+            OR p."localImageUrl" = ''
+            OR p."localImageUrl" IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
+            OR lower(p."localImageUrl") LIKE '%imagen-no-disponible%'
+            OR lower(p."localImageUrl") LIKE '%no-image%'
+          )
+          OR (
+            p."imageUrl" IS NULL
+            OR p."imageUrl" = ''
+            OR p."imageUrl" IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
+            OR lower(p."imageUrl") LIKE '%imagen-no-disponible%'
+            OR lower(p."imageUrl") LIKE '%no-image%'
+            OR lower(p."imageUrl") LIKE '%placeholder%'
+            OR lower(p."imageUrl") LIKE '%sin-foto%'
+          )
+        )
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "ProductMedia" pm
+          WHERE pm."productId" = p.id
+            AND pm.url NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
+        ) AS "isMissingPhoto"
+      FROM "Product" p
+    )
+    SELECT
+      (COUNT(*))::int AS "totalProducts",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = true AND ${buildBlockedAdminProductCodesSql()} AND pf."hasRealPhoto"))::int AS "visibleProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = false))::int AS "hiddenProductsCount",
+      (COUNT(*) FILTER (WHERE pf."hasRealPhoto"))::int AS "withPhotoProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isMissingPhoto"))::int AS "withoutPhotoProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = true AND (pf."stockUnits" <= 0 OR pf."isMissingPhoto")))::int AS "needsReviewProductsCount",
+      (COUNT(*) FILTER (WHERE pf."stockUnits" > 0 AND pf."stockUnits" <= 12))::int AS "lowStockProductsCount",
+      (COUNT(*) FILTER (WHERE pf."stockUnits" <= 0))::int AS "outOfStockProductsCount",
+      (COUNT(*) FILTER (WHERE pf."syncEnabled" = true))::int AS "syncedProductsCount",
+      (COUNT(*) FILTER (WHERE pf."syncEnabled" = false))::int AS "unsyncedProductsCount",
+      (COUNT(*) FILTER (WHERE pf."lastSyncedAt" IS NULL))::int AS "neverSyncedProductsCount",
+      (COUNT(*) FILTER (WHERE pf."syncEnabled" = true AND pf."lastSyncedAt" < ${staleDate}))::int AS "staleSyncedProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isFeatured" = true))::int AS "featuredProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = false AND pf."stockUnits" > 0))::int AS "hiddenWithStockProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = true AND pf."hasRealPhoto"))::int AS "visibleWithPhotoProductsCount",
+      (COUNT(*) FILTER (WHERE pf."syncEnabled" = true AND pf."isVisible" = false AND pf."stockUnits" <= 0))::int AS "hiddenOutOfStockProductsCount",
+      (COUNT(*) FILTER (WHERE pf."syncEnabled" = true AND pf."isVisible" = true AND pf."stockUnits" <= 0))::int AS "visibleOutOfStockProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = false AND pf."isMissingPhoto"))::int AS "hiddenWithoutPhotoProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = true AND pf."isMissingPhoto"))::int AS "visibleWithoutPhotoProductsCount"
+    FROM product_flags pf
+  `);
+
+  return stats;
 }
 
 function mapQuoteStatusSteps(value: Prisma.JsonValue | null): AdminQuoteStatusStepView[] {
@@ -214,7 +325,7 @@ function mapComplaintView(
   complaint: {
     id: string;
     sheetNumber: string;
-    type: any;
+    type: ComplaintType;
     reason: string;
     names: string;
     lastNames: string;
@@ -424,78 +535,16 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
   const previousRange = getDashboardPeriodRange(period, -1);
   const staleDate = new Date(Date.now() - 48 * 60 * 60 * 1000);
   const [
-    totalProducts,
-    visibleProducts,
-    visibleWithPhotoProducts,
-    needsReviewProducts,
-    hiddenProducts,
-    lowStockProducts,
-    outOfStockProducts,
-    hiddenOutOfStockProducts,
-    visibleOutOfStockProducts,
-    hiddenWithoutPhotoProducts,
-    visibleWithoutPhotoProducts,
-    productsWithoutPhoto,
+    inventoryStats,
     totalCategories,
     settings,
     currentSyncAggregate,
     previousSyncAggregate,
     lastSync,
-    syncedProducts,
-    neverSyncedProducts,
-    staleSyncedProducts,
     recentlySyncedProducts,
     lowAvailabilityProducts,
   ] = await Promise.all([
-    profileAdminStep("dashboard.total-products", () => prisma.product.count()),
-    profileAdminStep("dashboard.visible-products", () =>
-      prisma.product.count({ where: buildSellableProductWhere() }),
-    ),
-    profileAdminStep("dashboard.visible-with-photo-products", () =>
-      prisma.product.count({
-        where: {
-          AND: [{ isVisible: true }, buildRealProductPhotoWhere()],
-        },
-      }),
-    ),
-    profileAdminStep("dashboard.needs-review-products", () =>
-      prisma.product.count({
-        where: {
-          isVisible: true,
-          OR: [{ stockUnits: { lte: 0 } }, buildMissingProductPhotoWhere()],
-        },
-      }),
-    ),
-    profileAdminStep("dashboard.hidden-products", () => prisma.product.count({ where: { isVisible: false } })),
-    profileAdminStep("dashboard.low-stock-products", () =>
-      prisma.product.count({ where: { stockUnits: { gt: 0, lte: 12 } } }),
-    ),
-    profileAdminStep("dashboard.out-of-stock-products", () =>
-      prisma.product.count({ where: { stockUnits: { lte: 0 } } }),
-    ),
-    profileAdminStep("dashboard.hidden-oos-products", () =>
-      prisma.product.count({
-        where: { syncEnabled: true, isVisible: false, stockUnits: { lte: 0 } },
-      }),
-    ),
-    profileAdminStep("dashboard.visible-oos-products", () =>
-      prisma.product.count({
-        where: { syncEnabled: true, isVisible: true, stockUnits: { lte: 0 } },
-      }),
-    ),
-    profileAdminStep("dashboard.hidden-without-photo", () =>
-      prisma.product.count({
-        where: { AND: [{ isVisible: false }, buildMissingProductPhotoWhere()] },
-      }),
-    ),
-    profileAdminStep("dashboard.visible-without-photo", () =>
-      prisma.product.count({
-        where: { AND: [{ isVisible: true }, buildMissingProductPhotoWhere()] },
-      }),
-    ),
-    profileAdminStep("dashboard.products-without-photo", () =>
-      prisma.product.count({ where: buildMissingProductPhotoWhere() }),
-    ),
+    profileAdminStep("dashboard.inventory-stats", () => getAdminInventoryStats(staleDate)),
     profileAdminStep("dashboard.total-categories", () => prisma.category.count()),
     profileAdminStep("dashboard.settings", () => prisma.storeSettings.findUnique({ where: { id: 1 } })),
     profileAdminStep("dashboard.current-sync-aggregate", () =>
@@ -533,15 +582,6 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
         orderBy: { startedAt: "desc" },
       }),
     ),
-    profileAdminStep("dashboard.synced-products", () =>
-      prisma.product.count({ where: { syncEnabled: true } }),
-    ),
-    profileAdminStep("dashboard.never-synced-products", () =>
-      prisma.product.count({ where: { lastSyncedAt: null } }),
-    ),
-    profileAdminStep("dashboard.stale-synced-products", () =>
-      prisma.product.count({ where: { syncEnabled: true, lastSyncedAt: { lt: staleDate } } }),
-    ),
     profileAdminStep("dashboard.recently-synced-products", () =>
       prisma.product.findMany({
         where: { syncEnabled: true, lastSyncedAt: { not: null } },
@@ -571,6 +611,23 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
       }),
     ),
   ]);
+  const {
+    totalProducts,
+    visibleProductsCount: visibleProducts,
+    visibleWithPhotoProductsCount: visibleWithPhotoProducts,
+    needsReviewProductsCount: needsReviewProducts,
+    hiddenProductsCount: hiddenProducts,
+    lowStockProductsCount: lowStockProducts,
+    outOfStockProductsCount: outOfStockProducts,
+    hiddenOutOfStockProductsCount: hiddenOutOfStockProducts,
+    visibleOutOfStockProductsCount: visibleOutOfStockProducts,
+    hiddenWithoutPhotoProductsCount: hiddenWithoutPhotoProducts,
+    visibleWithoutPhotoProductsCount: visibleWithoutPhotoProducts,
+    withoutPhotoProductsCount: productsWithoutPhoto,
+    syncedProductsCount: syncedProducts,
+    neverSyncedProductsCount: neverSyncedProducts,
+    staleSyncedProductsCount: staleSyncedProducts,
+  } = inventoryStats;
 
   const currentFetched = currentSyncAggregate._sum.fetchedCount ?? 0;
   const previousFetched =
@@ -674,55 +731,22 @@ export const getAdminDashboardData = unstable_cache(
 export const getAdminProductStatsCached = unstable_cache(
   async (staleDateMs: number) => {
     const staleDate = new Date(staleDateMs);
-    const [
-      totalProducts,
-      visibleProductsCount,
-      hiddenProductsCount,
-      withPhotoProductsCount,
-      withoutPhotoProductsCount,
-      needsReviewProductsCount,
-      lowStockProductsCount,
-      outOfStockProductsCount,
-      syncedProductsCount,
-      unsyncedProductsCount,
-      staleSyncedProductsCount,
-      featuredProductsCount,
-      hiddenWithStockProductsCount,
-    ] = await Promise.all([
-      prisma.product.count(),
-      prisma.product.count({ where: buildSellableProductWhere() }),
-      prisma.product.count({ where: { isVisible: false } }),
-      prisma.product.count({ where: buildRealProductPhotoWhere() }),
-      prisma.product.count({ where: buildMissingProductPhotoWhere() }),
-      prisma.product.count({
-        where: {
-          isVisible: true,
-          OR: [{ stockUnits: { lte: 0 } }, buildMissingProductPhotoWhere()],
-        },
-      }),
-      prisma.product.count({ where: { stockUnits: { gt: 0, lte: 12 } } }),
-      prisma.product.count({ where: { stockUnits: { lte: 0 } } }),
-      prisma.product.count({ where: { syncEnabled: true } }),
-      prisma.product.count({ where: { syncEnabled: false } }),
-      prisma.product.count({ where: { syncEnabled: true, lastSyncedAt: { lt: staleDate } } }),
-      prisma.product.count({ where: { isFeatured: true } }),
-      prisma.product.count({ where: { isVisible: false, stockUnits: { gt: 0 } } }),
-    ]);
+    const stats = await getAdminInventoryStats(staleDate);
 
     return {
-      totalProducts,
-      visibleProductsCount,
-      hiddenProductsCount,
-      withPhotoProductsCount,
-      withoutPhotoProductsCount,
-      needsReviewProductsCount,
-      lowStockProductsCount,
-      outOfStockProductsCount,
-      syncedProductsCount,
-      unsyncedProductsCount,
-      staleSyncedProductsCount,
-      featuredProductsCount,
-      hiddenWithStockProductsCount,
+      totalProducts: stats.totalProducts,
+      visibleProductsCount: stats.visibleProductsCount,
+      hiddenProductsCount: stats.hiddenProductsCount,
+      withPhotoProductsCount: stats.withPhotoProductsCount,
+      withoutPhotoProductsCount: stats.withoutPhotoProductsCount,
+      needsReviewProductsCount: stats.needsReviewProductsCount,
+      lowStockProductsCount: stats.lowStockProductsCount,
+      outOfStockProductsCount: stats.outOfStockProductsCount,
+      syncedProductsCount: stats.syncedProductsCount,
+      unsyncedProductsCount: stats.unsyncedProductsCount,
+      staleSyncedProductsCount: stats.staleSyncedProductsCount,
+      featuredProductsCount: stats.featuredProductsCount,
+      hiddenWithStockProductsCount: stats.hiddenWithStockProductsCount,
     };
   },
   ["admin-product-stats-key"],

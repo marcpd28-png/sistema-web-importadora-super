@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   House,
   ShoppingCart,
@@ -45,14 +46,14 @@ export function StoreSideActions({
       </button>
 
       {showHomeShortcut ? (
-        <a
+        <Link
           aria-label="Volver al inicio"
           className="store-side-action store-side-action-home"
           href="/"
         >
           <House size={24} />
           <span>Inicio</span>
-        </a>
+        </Link>
       ) : null}
 
       <StoreAssistantLauncher businessName={settings.businessName} />

@@ -157,6 +157,8 @@ model Product {
   @@index([externalSource, externalId])
   @@index([externalSource, externalCode])
   @@index([syncEnabled, lastSyncedAt])
+  @@index([syncEnabled, lastSyncedAt(sort: Desc), stockUnits(sort: Desc)])
+  @@index([isVisible, stockUnits, lastSyncedAt])
   @@index([syncEnabled])
   @@index([lastSyncedAt])
   @@index([sourceImageUrl])
