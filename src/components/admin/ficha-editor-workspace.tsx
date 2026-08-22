@@ -71,8 +71,6 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
   // Preview interactive state
   const [selectedPreviewColorIndex, setSelectedPreviewColorIndex] = useState(0);
   const [previewVideoPlaying, setPreviewVideoPlaying] = useState<string | null>(null);
-  const [isEditingShortInPreview, setIsEditingShortInPreview] = useState(false);
-  const [isEditingFullInPreview, setIsEditingFullInPreview] = useState(false);
 
   // Helpers for Lists
   function addSpecification() {
@@ -916,25 +914,9 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
                   {product.name}
                   {activePreviewVariant ? ` - ${activePreviewVariant.name}` : ""}
                 </h3>
-                {isEditingShortInPreview ? (
-                  <input
-                    type="text"
-                    value={descriptionShort}
-                    onChange={(e) => setDescriptionShort(e.target.value)}
-                    onBlur={() => setIsEditingShortInPreview(false)}
-                    onKeyDown={(e) => e.key === "Enter" && setIsEditingShortInPreview(false)}
-                    autoFocus
-                    style={{ width: "100%", fontSize: "12px", border: "1px solid #2320DA", padding: "4px", borderRadius: "4px", fontStyle: "italic", marginTop: "4px" }}
-                  />
-                ) : (
-                  <p
-                    onClick={() => setIsEditingShortInPreview(true)}
-                    style={{ fontSize: "12px", color: "#475569", margin: "4px 0 0", fontStyle: "italic", cursor: "pointer", border: "1px dashed transparent", borderRadius: "4px", padding: "2px" }}
-                    title="Haz clic para editar inline"
-                    onMouseEnter={(e) => e.currentTarget.style.borderColor = "#2320DA"}
-                    onMouseLeave={(e) => e.currentTarget.style.borderColor = "transparent"}
-                  >
-                    "{descriptionShort ? descriptionShort : "Breve frase llamativa (haz clic para editar)"}"
+                {descriptionShort && (
+                  <p style={{ fontSize: "12px", color: "#475569", margin: "4px 0 0", fontStyle: "italic" }}>
+                    "{descriptionShort}"
                   </p>
                 )}
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "8px" }}>
@@ -975,34 +957,6 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
                   <p style={{ fontSize: "11px", color: "#475569", margin: "4px 0 0" }}>Seleccionado: <span style={{ fontWeight: "600" }}>{activePreviewVariant?.name || "Ninguno"}</span></p>
                 </div>
               )}
-
-              {/* Product Full Description */}
-              <div style={{ background: "white", padding: "10px", borderRadius: "10px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "6px" }}>
-                <p style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", margin: 0 }}>Descripción del Producto</p>
-                {isEditingFullInPreview ? (
-                  <textarea
-                    value={descriptionFull}
-                    onChange={(e) => setDescriptionFull(e.target.value)}
-                    onBlur={() => setIsEditingFullInPreview(false)}
-                    autoFocus
-                    rows={4}
-                    style={{ width: "100%", fontSize: "12px", border: "1px solid #2320DA", padding: "4px", borderRadius: "4px", resize: "vertical" }}
-                  />
-                ) : (
-                  <div
-                    onClick={() => setIsEditingFullInPreview(true)}
-                    style={{ fontSize: "12px", color: "#334155", cursor: "pointer", border: "1px dashed transparent", borderRadius: "4px", padding: "2px", minHeight: "24px" }}
-                    title="Haz clic para editar inline"
-                    onMouseEnter={(e) => e.currentTarget.style.borderColor = "#2320DA"}
-                    onMouseLeave={(e) => e.currentTarget.style.borderColor = "transparent"}
-                    dangerouslySetInnerHTML={{
-                      __html: descriptionFull
-                        ? descriptionFull.replace(/\n/g, "<br/>")
-                        : '<span style="color: #94a3b8; font-style: italic;">Añade una descripción completa (haz clic para editar)</span>'
-                    }}
-                  />
-                )}
-              </div>
 
               {/* Videos */}
               {videos.length > 0 && (
