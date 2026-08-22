@@ -958,6 +958,17 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
                 </div>
               )}
 
+              {/* Product Full Description */}
+              {descriptionFull && (
+                <div style={{ background: "white", padding: "10px", borderRadius: "10px", border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <p style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", margin: 0 }}>Descripción del Producto</p>
+                  <div
+                    style={{ fontSize: "12px", color: "#334155", lineHeight: "1.5" }}
+                    dangerouslySetInnerHTML={{ __html: descriptionFull.replace(/\n/g, "<br/>") }}
+                  />
+                </div>
+              )}
+
               {/* Videos */}
               {videos.length > 0 && (
                 <div className="stack-xxs">
