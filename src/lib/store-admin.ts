@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import {
   ADMIN_PAGE_SIZE,
   GENERIC_PRODUCT_PHOTO_URLS,
-  buildComparisonMetric,
   buildWhere,
   buildMissingProductPhotoWhere,
   buildRealProductPhotoWhere,
@@ -632,17 +631,6 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
   const currentFetched = currentSyncAggregate._sum.fetchedCount ?? 0;
   const previousFetched =
     previousSyncAggregate._count > 0 ? previousSyncAggregate._sum.fetchedCount ?? 0 : null;
-  const currentTouched =
-    (currentSyncAggregate._sum.createdCount ?? 0) +
-    (currentSyncAggregate._sum.updatedCount ?? 0);
-  const previousTouched =
-    previousSyncAggregate._count > 0
-      ? (previousSyncAggregate._sum.createdCount ?? 0) +
-        (previousSyncAggregate._sum.updatedCount ?? 0)
-      : null;
-  const currentSkipped = currentSyncAggregate._sum.skippedCount ?? 0;
-  const previousSkipped =
-    previousSyncAggregate._count > 0 ? previousSyncAggregate._sum.skippedCount ?? 0 : null;
   const risingProducts: DashboardTrendProduct[] = recentlySyncedProducts.map((product) =>
     mapCatalogMovementProduct(product, "RISING", new Date()),
   );
@@ -653,7 +641,6 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
   const maxUnitsSold = trendProducts.length
     ? Math.max(...trendProducts.map((product) => product.unitsSold))
     : 1;
-  const successfulSyncs = currentSyncAggregate._count;
   const payload = {
     totalProducts,
     visibleProducts,
@@ -694,16 +681,11 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
         completionRate:
           totalProducts > 0 ? Math.min(100, (syncedProducts / totalProducts) * 100) : null,
       },
-      comparisonMetrics: [
-        buildComparisonMetric("Traídos del ERP", currentFetched, previousFetched),
-        buildComparisonMetric("Creados/actualizados", currentTouched, previousTouched),
-        buildComparisonMetric(
-          "Sincronizaciones OK",
-          successfulSyncs,
-          previousSyncAggregate._count || null,
-        ),
-        buildComparisonMetric("Omitidos", currentSkipped, previousSkipped),
-      ],
+      erpFetched: {
+        currentValue: currentFetched,
+        previousValue: previousFetched,
+        deltaPercent: calculateDeltaPercent(currentFetched, previousFetched),
+      },
       topRisingProducts: risingProducts,
       topFallingProducts: fallingProducts,
       maxUnitsSold,

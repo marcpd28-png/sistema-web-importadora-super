@@ -10,7 +10,6 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { AdminKpiChart } from "@/components/admin/admin-kpi-chart";
 import type { DashboardPeriod, DashboardTrendProduct } from "@/lib/store";
 import { getAdminDashboardData } from "@/lib/store";
 import { CHANGE_CODES } from "@/lib/change-codes";
@@ -224,8 +223,6 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
         </div>
       </section>
 
-      <AdminKpiChart currencySymbol={data.currencySymbol} metrics={data.trendAnalysis.comparisonMetrics} />
-
       <section className="panel trend-dashboard-panel">
         <div className="panel-header">
           <div>
@@ -259,14 +256,14 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
             </div>
 
             <div className="trend-hero-value">
-              <strong>{formatCompactNumber(data.trendAnalysis.comparisonMetrics[0].currentValue)}</strong>
+              <strong>{formatCompactNumber(data.trendAnalysis.erpFetched.currentValue)}</strong>
               <span
                 className={cn(
                   "trend-delta-chip",
-                  getDeltaTone(data.trendAnalysis.comparisonMetrics[0].deltaPercent),
+                  getDeltaTone(data.trendAnalysis.erpFetched.deltaPercent),
                 )}
               >
-                {formatDelta(data.trendAnalysis.comparisonMetrics[0].deltaPercent)}
+                {formatDelta(data.trendAnalysis.erpFetched.deltaPercent)}
               </span>
             </div>
 
