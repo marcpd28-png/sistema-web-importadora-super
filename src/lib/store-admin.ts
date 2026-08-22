@@ -537,79 +537,98 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
     inventoryStats,
     totalCategories,
     settings,
-    currentSyncAggregate,
-    previousSyncAggregate,
-    lastSync,
-    recentlySyncedProducts,
-    lowAvailabilityProducts,
+    currentQuotes,
+    previousQuotes,
+    qrScansCurrent,
+    qrScansPrevious,
+    qrInteractionsCurrent,
+    topScannedProductsRaw,
+    topQuotedProductsRaw,
   ] = await Promise.all([
     profileAdminStep("dashboard.inventory-stats", () => getAdminInventoryStats(staleDate)),
     profileAdminStep("dashboard.total-categories", () => prisma.category.count()),
     profileAdminStep("dashboard.settings", () => prisma.storeSettings.findUnique({ where: { id: 1 } })),
-    profileAdminStep("dashboard.current-sync-aggregate", () =>
-      prisma.erpSyncLog.aggregate({
+    profileAdminStep("dashboard.current-quotes", () =>
+      prisma.quote.aggregate({
         where: {
-          startedAt: { gte: currentRange.start, lt: currentRange.end },
-          status: "SUCCESS",
-        },
-        _sum: {
-          fetchedCount: true,
-          createdCount: true,
-          updatedCount: true,
-          skippedCount: true,
+          createdAt: { gte: currentRange.start, lt: currentRange.end },
         },
         _count: true,
-      }),
+        _sum: { total: true },
+      })
     ),
-    profileAdminStep("dashboard.previous-sync-aggregate", () =>
-      prisma.erpSyncLog.aggregate({
+    profileAdminStep("dashboard.previous-quotes", () =>
+      prisma.quote.aggregate({
         where: {
-          startedAt: { gte: previousRange.start, lt: previousRange.end },
-          status: "SUCCESS",
-        },
-        _sum: {
-          fetchedCount: true,
-          createdCount: true,
-          updatedCount: true,
-          skippedCount: true,
+          createdAt: { gte: previousRange.start, lt: previousRange.end },
         },
         _count: true,
-      }),
+        _sum: { total: true },
+      })
     ),
-    profileAdminStep("dashboard.last-sync", () =>
-      prisma.erpSyncLog.findFirst({
-        orderBy: { startedAt: "desc" },
-      }),
-    ),
-    profileAdminStep("dashboard.recently-synced-products", () =>
-      prisma.product.findMany({
-        where: { syncEnabled: true, lastSyncedAt: { not: null } },
-        orderBy: [{ lastSyncedAt: "desc" }, { stockUnits: "desc" }],
-        take: 4,
-        select: {
-          code: true,
-          name: true,
-          stockUnits: true,
-          lastSyncedAt: true,
-          updatedAt: true,
+    profileAdminStep("dashboard.current-scans", () =>
+      prisma.qrAnalyticsLog.count({
+        where: {
+          eventType: "QR_OPEN",
+          timestamp: { gte: currentRange.start, lt: currentRange.end },
         },
-      }),
+      })
     ),
-    profileAdminStep("dashboard.low-availability-products", () =>
-      prisma.product.findMany({
-        where: { isVisible: true, stockUnits: { gt: 0, lte: 12 } },
-        orderBy: [{ stockUnits: "asc" }, { lastSyncedAt: "asc" }],
-        take: 4,
-        select: {
-          code: true,
-          name: true,
-          stockUnits: true,
-          lastSyncedAt: true,
-          updatedAt: true,
+    profileAdminStep("dashboard.previous-scans", () =>
+      prisma.qrAnalyticsLog.count({
+        where: {
+          eventType: "QR_OPEN",
+          timestamp: { gte: previousRange.start, lt: previousRange.end },
         },
-      }),
+      })
+    ),
+    profileAdminStep("dashboard.interactions", () =>
+      prisma.qrAnalyticsLog.groupBy({
+        by: ["eventType"],
+        where: {
+          eventType: { in: ["VIDEO_PLAY", "ADD_TO_CART_FROM_QR", "DOCUMENT_OPEN", "WHATSAPP_FROM_QR"] },
+          timestamp: { gte: currentRange.start, lt: currentRange.end },
+        },
+        _count: true,
+      })
+    ),
+    profileAdminStep("dashboard.top-scanned", () =>
+      prisma.qrAnalyticsLog.groupBy({
+        by: ["productId"],
+        where: {
+          eventType: "QR_OPEN",
+          timestamp: { gte: currentRange.start, lt: currentRange.end },
+        },
+        _count: true,
+        orderBy: {
+          _count: {
+            productId: "desc",
+          },
+        },
+        take: 5,
+      })
+    ),
+    profileAdminStep("dashboard.top-quoted", () =>
+      prisma.quoteItem.groupBy({
+        by: ["productId"],
+        where: {
+          quote: {
+            createdAt: { gte: currentRange.start, lt: currentRange.end },
+          },
+        },
+        _sum: {
+          quantity: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: "desc",
+          },
+        },
+        take: 5,
+      })
     ),
   ]);
+
   const {
     totalProducts,
     visibleProductsCount: visibleProducts,
@@ -628,19 +647,53 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
     staleSyncedProductsCount: staleSyncedProducts,
   } = inventoryStats;
 
-  const currentFetched = currentSyncAggregate._sum.fetchedCount ?? 0;
-  const previousFetched =
-    previousSyncAggregate._count > 0 ? previousSyncAggregate._sum.fetchedCount ?? 0 : null;
-  const risingProducts: DashboardTrendProduct[] = recentlySyncedProducts.map((product) =>
-    mapCatalogMovementProduct(product, "RISING", new Date()),
-  );
-  const fallingProducts: DashboardTrendProduct[] = lowAvailabilityProducts.map((product) =>
-    mapCatalogMovementProduct(product, "FALLING", new Date()),
-  );
-  const trendProducts = [...risingProducts, ...fallingProducts];
-  const maxUnitsSold = trendProducts.length
-    ? Math.max(...trendProducts.map((product) => product.unitsSold))
-    : 1;
+  // Resolve product info for top lists
+  const scannedProductIds = topScannedProductsRaw.map((p) => p.productId).filter((id): id is string => !!id);
+  const quotedProductIds = topQuotedProductsRaw.map((p) => p.productId).filter((id): id is string => !!id);
+
+  const [scannedProductsInfo, quotedProductsInfo] = await Promise.all([
+    prisma.product.findMany({
+      where: { id: { in: scannedProductIds } },
+      select: { id: true, name: true, code: true },
+    }),
+    prisma.product.findMany({
+      where: { id: { in: quotedProductIds } },
+      select: { id: true, name: true, code: true },
+    }),
+  ]);
+
+  const scannedProductsMap = new Map(scannedProductsInfo.map((p) => [p.id, p]));
+  const quotedProductsMap = new Map(quotedProductsInfo.map((p) => [p.id, p]));
+
+  const topScannedProducts = topScannedProductsRaw.map((item) => {
+    const info = scannedProductsMap.get(item.productId);
+    return {
+      id: item.productId,
+      name: info?.name ?? "Producto desconocido",
+      code: info?.code ?? "",
+      count: item._count,
+    };
+  });
+
+  const topQuotedProducts = topQuotedProductsRaw
+    .filter((item) => !!item.productId)
+    .map((item) => {
+      const productId = item.productId as string;
+      const info = quotedProductsMap.get(productId);
+      return {
+        id: productId,
+        name: info?.name ?? "Producto desconocido",
+        code: info?.code ?? "",
+        count: item._sum.quantity ?? 0,
+      };
+    });
+
+  const interactionsMap = new Map(qrInteractionsCurrent.map((i) => [i.eventType, i._count]));
+  const whatsappCount = interactionsMap.get("WHATSAPP_FROM_QR") ?? 0;
+  const videoPlayCount = interactionsMap.get("VIDEO_PLAY") ?? 0;
+  const documentOpenCount = interactionsMap.get("DOCUMENT_OPEN") ?? 0;
+  const addToCartCount = interactionsMap.get("ADD_TO_CART_FROM_QR") ?? 0;
+
   const payload = {
     totalProducts,
     visibleProducts,
@@ -653,9 +706,9 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
     currencySymbol: settings?.currencySymbol ?? "S/",
     selectedPeriod: period,
     dataFreshness: {
-      sourceLabel: lastSync?.source ?? "ERP",
-      lastSyncAt: lastSync?.startedAt.toISOString() ?? null,
-      lastSyncStatus: lastSync?.status ?? null,
+      sourceLabel: "Tienda y Comportamiento",
+      lastSyncAt: new Date().toISOString(),
+      lastSyncStatus: "Activo",
       syncedProducts,
       neverSyncedProducts,
       staleSyncedProducts,
@@ -667,28 +720,35 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
       needsReviewProducts,
       productsWithoutPhoto,
     },
-    trendAnalysis: {
+    storeAnalysis: {
       title: formatDashboardPeriodTitle(period, currentRange),
-      previousTitle:
-        previousSyncAggregate._count > 0
-          ? formatDashboardPeriodTitle(period, previousRange)
-          : null,
-      forecast: {
-        currentValue: syncedProducts,
-        previousValue: totalProducts,
-        deltaPercent: calculateDeltaPercent(syncedProducts, totalProducts || null),
-        gap: totalProducts - syncedProducts,
-        completionRate:
-          totalProducts > 0 ? Math.min(100, (syncedProducts / totalProducts) * 100) : null,
+      previousTitle: formatDashboardPeriodTitle(period, previousRange),
+      scans: {
+        currentValue: qrScansCurrent,
+        previousValue: qrScansPrevious,
+        deltaPercent: calculateDeltaPercent(qrScansCurrent, qrScansPrevious),
       },
-      erpFetched: {
-        currentValue: currentFetched,
-        previousValue: previousFetched,
-        deltaPercent: calculateDeltaPercent(currentFetched, previousFetched),
+      quotesCount: {
+        currentValue: currentQuotes._count,
+        previousValue: previousQuotes._count,
+        deltaPercent: calculateDeltaPercent(currentQuotes._count, previousQuotes._count),
       },
-      topRisingProducts: risingProducts,
-      topFallingProducts: fallingProducts,
-      maxUnitsSold,
+      quotesTotal: {
+        currentValue: Number(currentQuotes._sum.total ?? 0),
+        previousValue: previousQuotes._sum.total ? Number(previousQuotes._sum.total) : null,
+        deltaPercent: calculateDeltaPercent(
+          Number(currentQuotes._sum.total ?? 0),
+          previousQuotes._sum.total ? Number(previousQuotes._sum.total) : null
+        ),
+      },
+      interactions: {
+        whatsapp: whatsappCount,
+        videoPlay: videoPlayCount,
+        documentOpen: documentOpenCount,
+        addToCart: addToCartCount,
+      },
+      topScannedProducts,
+      topQuotedProducts,
     },
   };
 
@@ -696,7 +756,7 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
     "dashboard.payload",
     payload,
     startedAt,
-    recentlySyncedProducts.length + lowAvailabilityProducts.length,
+    topScannedProductsRaw.length + topQuotedProductsRaw.length,
   );
 
   return payload;
