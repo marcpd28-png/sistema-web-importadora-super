@@ -153,25 +153,116 @@ export function FichasListWorkspace({
   return (
     <div className="admin-workspace stack-lg">
       {/* Header */}
-      <header className="admin-workspace-header">
-        <div className="stack-xs">
-          <p className="eyebrow">MÓDULO COMERCIAL</p>
-          <h1>Fichas Digitales y Códigos QR</h1>
-          <p className="muted">
-            Gestiona fichas interactivas con videos, variantes y especificaciones accesibles vía código QR.
+      <header
+        style={{
+          background: "linear-gradient(135deg, #f0f4ff 0%, #e0f2fe 100%)",
+          padding: "24px 32px",
+          borderRadius: "16px",
+          border: "1px solid #c7d2fe",
+          boxShadow: "0 10px 20px -5px rgba(99, 102, 241, 0.05)",
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "24px",
+          marginBottom: "8px",
+          width: "100%"
+        }}
+      >
+        <style>{`
+          @keyframes pulse-dot {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+          }
+          @keyframes scan-line {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+          }
+        `}</style>
+
+        <div style={{ flex: "1 1 500px" }} className="stack-xs">
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "rgba(79, 70, 229, 0.08)",
+              border: "1px solid rgba(79, 70, 229, 0.15)",
+              padding: "4px 12px",
+              borderRadius: "100px",
+              color: "#4f46e5",
+              fontSize: "11px",
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              marginBottom: "8px",
+              alignSelf: "flex-start"
+            }}
+          >
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "#4f46e5",
+                display: "inline-block",
+                animation: "pulse-dot 2s infinite ease-in-out"
+              }}
+            ></span>
+            Módulo Comercial
+          </div>
+
+          <h1 style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", margin: 0, lineHeight: "1.2", border: "none", padding: 0 }}>
+            Fichas Digitales y <span style={{ background: "linear-gradient(to right, #4f46e5, #0ea5e9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Códigos QR</span>
+          </h1>
+
+          <p style={{ fontSize: "14px", color: "#475569", margin: "8px 0 0", maxWidth: "620px", lineHeight: "1.6" }}>
+            Digitaliza la experiencia de compra en tu tienda física. Vincula cada producto a una ficha técnica interactiva con fotos, especificaciones, videos y manuales descargables escaneando un código QR en góndola.
           </p>
         </div>
 
-        {selectedIds.length > 0 && (
-          <button
-            onClick={handlePrintSelected}
-            className="button button-primary"
-            style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handlePrintSelected}
+              className="button button-primary"
+              style={{ display: "flex", alignItems: "center", gap: "8px", height: "46px", padding: "0 20px" }}
+            >
+              <Printer size={18} />
+              Imprimir Tarjetas ({selectedIds.length})
+            </button>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "74px",
+              height: "74px",
+              background: "white",
+              borderRadius: "16px",
+              border: "1px solid #cbd5e1",
+              boxShadow: "0 8px 16px -4px rgba(0,0,0,0.05)",
+              position: "relative",
+              overflow: "hidden"
+            }}
           >
-            <Printer size={18} />
-            Imprimir Tarjetas ({selectedIds.length})
-          </button>
-        )}
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                width: "100%",
+                height: "2px",
+                background: "linear-gradient(to right, transparent, #4f46e5, transparent)",
+                animation: "scan-line 3s infinite ease-in-out"
+              }}
+            ></div>
+            <QrCode size={40} style={{ color: "#4f46e5" }} />
+          </div>
+        </div>
       </header>
 
       {/* Metrics Banner */}
