@@ -98,27 +98,33 @@ export function FichasPrintWorkspace({ products }: FichasPrintWorkspaceProps) {
           line-height: 1.4;
         }
         .print-actions {
-          padding: 16px 24px;
+          padding: 12px 24px;
           background: white;
           border-bottom: 1px solid #e2e8f0;
           display: flex;
           justify-content: center;
+          align-items: center;
           gap: 12px;
           position: sticky;
           top: 0;
           z-index: 10;
           width: 100%;
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          box-sizing: border-box;
         }
         .print-btn {
           background: #2320DA;
           color: white;
-          padding: 10px 24px;
-          border-radius: 6px;
+          padding: 0 20px;
+          height: 38px;
+          border-radius: 8px;
           border: none;
           cursor: pointer;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 13px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           transition: background 0.15s ease;
         }
         .print-btn:hover {
@@ -127,12 +133,16 @@ export function FichasPrintWorkspace({ products }: FichasPrintWorkspaceProps) {
         .close-btn {
           background: #f1f5f9;
           color: #334155;
-          padding: 10px 24px;
-          border-radius: 6px;
+          padding: 0 20px;
+          height: 38px;
+          border-radius: 8px;
           border: 1px solid #e2e8f0;
           cursor: pointer;
           font-weight: 600;
-          font-size: 14px;
+          font-size: 13px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           transition: background 0.15s ease;
         }
         .close-btn:hover {

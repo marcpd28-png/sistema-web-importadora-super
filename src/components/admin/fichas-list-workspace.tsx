@@ -241,7 +241,7 @@ export function FichasListWorkspace({
             <button
               onClick={handlePrintSelected}
               className="button button-primary"
-              style={{ display: "flex", alignItems: "center", gap: "8px", height: "46px", padding: "0 20px" }}
+              style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 16px", fontSize: "13px" }}
             >
               <Printer size={18} />
               Imprimir Tarjetas ({selectedIds.length})
@@ -329,7 +329,7 @@ export function FichasListWorkspace({
             <option value="missing">Sin ficha</option>
           </select>
 
-          <button className="button button-primary" type="submit" style={{ height: "42px", padding: "0 20px" }}>
+          <button className="button button-primary" type="submit" style={{ height: "42px", padding: "0 20px", fontSize: "13px", borderRadius: "8px" }}>
             Buscar
           </button>
         </form>
