@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   QrCode,
@@ -69,6 +69,11 @@ export function FichasListWorkspace({
   const [activeQrProduct, setActiveQrProduct] = useState<ProductWithFichaStats | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(filters.q);
+
+  useEffect(() => {
+    setSearchQuery(filters.q);
+  }, [filters.q]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -282,30 +287,44 @@ export function FichasListWorkspace({
       </section>
 
       {/* Search and Filters */}
-      <div className="admin-filters-bar panel" style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", gap: "12px", flex: 1, minWidth: "280px" }}>
-          <div className="search-input-wrapper" style={{ position: "relative", flex: 1 }}>
-            <Search size={18} className="search-icon" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+      <div className="admin-filters-bar panel" style={{ padding: "16px", marginBottom: "16px" }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateFilters({ q: searchQuery });
+          }}
+          style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", width: "100%" }}
+        >
+          <div style={{ position: "relative", flex: 1, minWidth: "260px" }}>
+            <Search
+              size={18}
+              onClick={() => updateFilters({ q: searchQuery })}
+              style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b", cursor: "pointer", zIndex: 10 }}
+            />
             <input
-              type="search"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nombre o SKU..."
-              defaultValue={filters.q}
-              onChange={(e) => updateFilters({ q: e.target.value })}
-              style={{ width: "100%", padding: "10px 12px 10px 38px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+              style={{ width: "100%", padding: "10px 12px 10px 38px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "14px", height: "42px", background: "white" }}
             />
           </div>
 
           <select
             value={filters.profileStatus}
             onChange={(e) => updateFilters({ profileStatus: e.target.value })}
-            style={{ padding: "10px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white" }}
+            style={{ padding: "10px 16px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "white", fontSize: "14px", height: "42px", minWidth: "180px", cursor: "pointer" }}
           >
             <option value="all">Todos los estados</option>
             <option value="published">Publicadas</option>
             <option value="draft">Borrador</option>
             <option value="missing">Sin ficha</option>
           </select>
-        </div>
+
+          <button className="button button-primary" type="submit" style={{ height: "42px", padding: "0 20px" }}>
+            Buscar
+          </button>
+        </form>
       </div>
 
       {/* Table */}
