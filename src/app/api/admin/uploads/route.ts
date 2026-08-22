@@ -7,7 +7,7 @@ import { createNormalizedProductImage } from "@/lib/product-image-normalization"
 
 export const runtime = "nodejs";
 
-const allowedFolders = new Set(["products", "hero", "categories"]);
+const allowedFolders = new Set(["products", "hero", "categories", "documents"]);
 const allowedMimeTypes = new Set([
   "image/jpeg",
   "image/png",
@@ -17,6 +17,7 @@ const allowedMimeTypes = new Set([
   "video/mp4",
   "video/webm",
   "video/quicktime",
+  "application/pdf",
 ]);
 const uploadRateWindowMs = 10 * 60 * 1000;
 const uploadRateLimit = 20;
@@ -55,6 +56,7 @@ function getExtension(file: File) {
     return ".video";
   }
 
+  if (file.type === "application/pdf") return ".pdf";
   return ".bin";
 }
 

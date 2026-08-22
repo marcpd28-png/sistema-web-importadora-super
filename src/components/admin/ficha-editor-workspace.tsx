@@ -266,6 +266,7 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "documents");
       const res = await fetch("/api/admin/uploads", {
         method: "POST",
         body: formData,
