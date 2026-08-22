@@ -138,6 +138,13 @@ model Product {
   updatedAt       DateTime       @updatedAt
   media           ProductMedia[]
   quoteItems      QuoteItem[]    @relation("ProductQuoteItems")
+  digitalProfile  DigitalProductProfile?
+  specifications  ProductSpecification[]
+  variants        ProductVariant[]
+  videos          ProductVideo[]
+  documents       ProductDocument[]
+  qr              ProductQr?
+  qrAnalyticsLogs QrAnalyticsLog[]
 
   @@index([name])
   @@index([code])
@@ -496,4 +503,102 @@ model SyncEventQueue {
 
   @@index([status, createdAt])
   @@index([sku])
+}
+
+model DigitalProductProfile {
+  id               String          @id @default(cuid())
+  productId        String          @unique
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  descriptionShort String?         @db.Text
+  descriptionFull  String?         @db.Text
+  status           String          @default("BORRADOR") @db.VarChar(20) // BORRADOR, PUBLICADA
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([productId])
+  @@index([status])
+}
+
+model ProductSpecification {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String   @db.VarChar(120)
+  value      String   @db.VarChar(255)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId, sortOrder])
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name        String   @db.VarChar(120)
+  hexColor    String?  @db.VarChar(16)
+  imageUrl    String?  @db.Text
+  sku         String?  @db.VarChar(64)
+  isAvailable Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId, sortOrder])
+}
+
+model ProductVideo {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title        String   @db.VarChar(180)
+  url          String   @db.Text
+  provider     String   @db.VarChar(40) // YOUTUBE, YOUTUBE_SHORTS
+  videoId      String   @db.VarChar(80)
+  thumbnailUrl String?  @db.Text
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([productId, sortOrder])
+}
+
+model ProductDocument {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title     String   @db.VarChar(180)
+  url       String   @db.Text
+  type      String   @db.VarChar(40) // PDF, WARRANTY, MANUAL, GUIDE
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId, sortOrder])
+}
+
+model ProductQr {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  destUrl   String   @db.Text
+  imageUrl  String?  @db.Text // Base64 del código QR generado localmente
+  size      Int      @default(400)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model QrAnalyticsLog {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  eventType String   @db.VarChar(64) // QR_OPEN, VIDEO_PLAY, ADD_TO_CART_FROM_QR, DOCUMENT_OPEN, WHATSAPP_FROM_QR
+  sessionId String?  @db.VarChar(128)
+  timestamp DateTime @default(now())
+
+  @@index([productId, eventType])
+  @@index([timestamp])
 }

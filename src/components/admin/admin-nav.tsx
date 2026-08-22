@@ -12,6 +12,7 @@ import {
   MessageSquareHeart,
   PackagePlus,
   PackageSearch,
+  QrCode,
   Settings,
   ShieldAlert,
   Store,
@@ -46,6 +47,7 @@ const sections: AdminNavSection[] = [
     title: "Gestión Comercial",
     links: [
       { href: "/admin/products", label: "Productos", icon: PackageSearch, badgeKey: "lowStockProductsCount" },
+      { href: "/admin/fichas", label: "Fichas digitales / QR", icon: QrCode },
       { href: "/admin/categories", label: "Categorías", icon: FolderTree },
       { href: "/admin/products/new", label: "Nuevo producto", icon: PackagePlus },
       { href: "/admin/quotes", label: "Cotizaciones", icon: FileText, badgeKey: "pendingQuotesCount" },
