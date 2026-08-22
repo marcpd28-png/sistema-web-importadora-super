@@ -13,7 +13,8 @@ import {
   Star,
   ExternalLink,
   MessageCircle,
-  HelpCircle
+  HelpCircle,
+  Search
 } from "lucide-react";
 import { useCartStore, rehydrateCartStore } from "@/components/catalog/cart-store";
 import { CartDrawer } from "@/components/catalog/cart-drawer";
@@ -64,6 +65,7 @@ export function PublicFichaWorkspace({
   const [quantity, setQuantity] = useState(1);
   const [isSpecsOpen, setIsSpecsOpen] = useState(false);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   // Rehydrate cart on mount
   useEffect(() => {
@@ -195,11 +197,37 @@ export function PublicFichaWorkspace({
         <section className="panel" style={{ background: "white", borderRadius: "16px", border: "1px solid #e2e8f0", padding: "16px", display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ position: "relative", height: "280px", display: "flex", alignItems: "center", justifyContent: "center", background: "#f8fafc", borderRadius: "12px", border: "1px solid #f1f5f9" }}>
             {currentImage ? (
-              <img
-                src={currentImage}
-                alt={product.name}
-                style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain" }}
-              />
+              <>
+                <img
+                  src={currentImage}
+                  alt={product.name}
+                  style={{ maxWidth: "90%", maxHeight: "90%", objectFit: "contain", cursor: "pointer" }}
+                  onClick={() => setIsZoomOpen(true)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsZoomOpen(true)}
+                  style={{
+                    position: "absolute",
+                    bottom: "12px",
+                    right: "12px",
+                    background: "white",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+                    cursor: "pointer",
+                    color: "#475569"
+                  }}
+                  title="Ver en pantalla completa"
+                >
+                  <Search size={18} />
+                </button>
+              </>
             ) : (
               <div style={{ color: "#94a3b8", fontSize: "14px" }}>Sin imagen disponible</div>
             )}
@@ -436,6 +464,65 @@ export function PublicFichaWorkspace({
               referrerPolicy="strict-origin-when-cross-origin"
             />
           </div>
+        </div>
+      )}
+
+      {/* Zoom Lightbox Modal */}
+      {isZoomOpen && currentImage && (
+        <div
+          onClick={() => setIsZoomOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.95)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 300,
+            padding: "16px",
+            cursor: "zoom-out"
+          }}
+        >
+          <button
+            onClick={() => setIsZoomOpen(false)}
+            style={{
+              position: "absolute",
+              top: "24px",
+              right: "24px",
+              background: "rgba(255, 255, 255, 0.15)",
+              border: "none",
+              color: "white",
+              fontSize: "24px",
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 310
+            }}
+          >
+            ✕
+          </button>
+          
+          <img
+            src={currentImage}
+            alt={product.name}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "85vh",
+              objectFit: "contain",
+              borderRadius: "8px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.5)"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          
+          <p style={{ color: "rgba(255, 255, 255, 0.7)", fontSize: "14px", marginTop: "16px", textAlign: "center", fontWeight: "600" }}>
+            {product.name} {selectedVariant ? ` - ${selectedVariant.name}` : ""}
+          </p>
         </div>
       )}
 
