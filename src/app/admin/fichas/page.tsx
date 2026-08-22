@@ -33,7 +33,14 @@ export default async function FichasPage({ searchParams }: FichasPageProps) {
     where.digitalProfile = null;
   }
 
-  const [products, total] = await Promise.all([
+  const [
+    products,
+    total,
+    globalPublishedCount,
+    globalTotalProducts,
+    globalTotalScans,
+    globalTotalPlays
+  ] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy: { updatedAt: "desc" },
@@ -53,36 +60,69 @@ export default async function FichasPage({ searchParams }: FichasPageProps) {
       },
     }),
     prisma.product.count({ where }),
+    prisma.digitalProductProfile.count({ where: { status: "PUBLICADA" } }),
+    prisma.product.count(),
+    prisma.qrAnalyticsLog.count({ where: { eventType: "QR_OPEN" } }),
+    prisma.qrAnalyticsLog.count({ where: { eventType: "VIDEO_PLAY" } }),
   ]);
 
-  const productsWithStats = await Promise.all(
-    products.map(async (p) => {
-      const [scans, last7Days, videoPlays, cartAdds, whatsappClicks] = await Promise.all([
-        prisma.qrAnalyticsLog.count({ where: { productId: p.id, eventType: "QR_OPEN" } }),
-        prisma.qrAnalyticsLog.count({
-          where: {
-            productId: p.id,
-            eventType: "QR_OPEN",
-            timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-          },
-        }),
-        prisma.qrAnalyticsLog.count({ where: { productId: p.id, eventType: "VIDEO_PLAY" } }),
-        prisma.qrAnalyticsLog.count({ where: { productId: p.id, eventType: "ADD_TO_CART_FROM_QR" } }),
-        prisma.qrAnalyticsLog.count({ where: { productId: p.id, eventType: "WHATSAPP_FROM_QR" } }),
-      ]);
+  const productIds = products.map((p) => p.id);
 
-      return {
-        ...p,
-        stats: {
-          scans,
-          last7Days,
-          videoPlays,
-          cartAdds,
-          whatsappClicks,
-        },
-      };
-    })
-  );
+  const [allLogsCount, last7DaysScans] = await Promise.all([
+    prisma.qrAnalyticsLog.groupBy({
+      by: ["productId", "eventType"],
+      where: { productId: { in: productIds } },
+      _count: { _all: true },
+    }),
+    prisma.qrAnalyticsLog.groupBy({
+      by: ["productId"],
+      where: {
+        productId: { in: productIds },
+        eventType: "QR_OPEN",
+        timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const countsMap = new Map<string, Record<string, number>>();
+  const last7DaysMap = new Map<string, number>();
+
+  allLogsCount.forEach((item) => {
+    if (!countsMap.has(item.productId)) {
+      countsMap.set(item.productId, {
+        QR_OPEN: 0,
+        VIDEO_PLAY: 0,
+        ADD_TO_CART_FROM_QR: 0,
+        WHATSAPP_FROM_QR: 0,
+      });
+    }
+    const productCounts = countsMap.get(item.productId)!;
+    productCounts[item.eventType] = item._count._all;
+  });
+
+  last7DaysScans.forEach((item) => {
+    last7DaysMap.set(item.productId, item._count._all);
+  });
+
+  const productsWithStats = products.map((p) => {
+    const pCounts = countsMap.get(p.id) || {
+      QR_OPEN: 0,
+      VIDEO_PLAY: 0,
+      ADD_TO_CART_FROM_QR: 0,
+      WHATSAPP_FROM_QR: 0,
+    };
+    return {
+      ...p,
+      stats: {
+        scans: pCounts.QR_OPEN || 0,
+        last7Days: last7DaysMap.get(p.id) || 0,
+        videoPlays: pCounts.VIDEO_PLAY || 0,
+        cartAdds: pCounts.ADD_TO_CART_FROM_QR || 0,
+        whatsappClicks: pCounts.WHATSAPP_FROM_QR || 0,
+      },
+    };
+  });
 
   return (
     <FichasListWorkspace
@@ -91,6 +131,12 @@ export default async function FichasPage({ searchParams }: FichasPageProps) {
       page={page}
       pageSize={pageSize}
       filters={{ q, profileStatus }}
+      globalStats={{
+        totalPublished: globalPublishedCount,
+        totalProducts: globalTotalProducts,
+        totalScans: globalTotalScans,
+        totalPlays: globalTotalPlays,
+      }}
     />
   );
 }

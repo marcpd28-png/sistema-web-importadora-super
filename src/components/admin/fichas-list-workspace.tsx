@@ -54,6 +54,12 @@ type FichasListWorkspaceProps = {
     q: string;
     profileStatus: string;
   };
+  globalStats: {
+    totalPublished: number;
+    totalProducts: number;
+    totalScans: number;
+    totalPlays: number;
+  };
 };
 
 export function FichasListWorkspace({
@@ -62,6 +68,7 @@ export function FichasListWorkspace({
   page,
   pageSize,
   filters,
+  globalStats,
 }: FichasListWorkspaceProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -79,7 +86,8 @@ export function FichasListWorkspace({
 
   function updateFilters(newFilters: Partial<typeof filters>) {
     const searchParams = new URLSearchParams(window.location.search);
-    Object.entries({ ...filters, ...newFilters }).forEach(([key, val]) => {
+    const merged = { q: searchQuery, profileStatus: filters.profileStatus, ...newFilters };
+    Object.entries(merged).forEach(([key, val]) => {
       if (val && val !== "all") {
         searchParams.set(key, val);
       } else {
@@ -150,10 +158,10 @@ export function FichasListWorkspace({
     window.open(`/admin/fichas/print?ids=${selectedIds.join(",")}`, "_blank");
   }
 
-  // Calc summary stats for the current list view page
-  const totalScans = products.reduce((acc, p) => acc + p.stats.scans, 0);
-  const totalPlays = products.reduce((acc, p) => acc + p.stats.videoPlays, 0);
-  const totalPublished = products.filter((p) => p.digitalProfile?.status === "PUBLICADA").length;
+  // Use global summary stats
+  const totalScans = globalStats.totalScans;
+  const totalPlays = globalStats.totalPlays;
+  const totalPublished = globalStats.totalPublished;
 
   return (
     <div className="admin-workspace stack-lg">
@@ -274,7 +282,7 @@ export function FichasListWorkspace({
       <section className="admin-dashboard-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
         <div className="metric-card panel">
           <p className="metric-label">Fichas Publicadas</p>
-          <h2 className="metric-value">{totalPublished} <span style={{ fontSize: "14px", fontWeight: "normal", color: "#64748b" }}>de {products.length} cargados</span></h2>
+          <h2 className="metric-value">{totalPublished} <span style={{ fontSize: "14px", fontWeight: "normal", color: "#64748b" }}>de {globalStats.totalProducts} productos</span></h2>
         </div>
         <div className="metric-card panel">
           <p className="metric-label">Escaneos Totales</p>
