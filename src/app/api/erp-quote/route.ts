@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { FacturadorClient } from "@/lib/facturador/client";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { downloadAndSaveQuotePdf } from "@/lib/pdf-sync";
 import {
   normalizeQuoteLineInputs,
   prepareQuoteLines,
@@ -252,6 +253,11 @@ export async function POST(request: Request) {
           ),
         ];
 
+        let pdfUrl: string | null = null;
+        if (quoteExternalId && quoteNumber) {
+          pdfUrl = await downloadAndSaveQuotePdf(quoteExternalId, quoteNumber);
+        }
+
         await prisma.quote.update({
           where: { id: localQuote.id },
           data: {
@@ -262,6 +268,7 @@ export async function POST(request: Request) {
             status: "ERP_REGISTERED",
             statusSteps: toJson(statusSteps),
             whatsappHref,
+            pdfUrl,
           },
         });
       } catch (error) {

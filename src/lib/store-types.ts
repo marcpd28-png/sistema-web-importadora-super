@@ -290,6 +290,7 @@ export type AdminQuoteDetailView = Omit<AdminQuoteView, "items" | "itemCount"> &
   whatsappHref: string | null;
   assignedToName: string | null;
   assignedToEmail: string | null;
+  pdfUrl: string | null;
 };
 
 export type AdminQuotesData = {

@@ -1344,5 +1344,6 @@ export async function getAdminQuoteById(id: string): Promise<AdminQuoteDetailVie
     whatsappHref: quote.whatsappHref,
     assignedToName: quote.assignedToName,
     assignedToEmail: quote.assignedToEmail,
+    pdfUrl: quote.pdfUrl,
   };
 }

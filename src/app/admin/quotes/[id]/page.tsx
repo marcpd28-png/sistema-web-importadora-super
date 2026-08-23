@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { ArrowLeft, ExternalLink, FileText, MessageCircle, UserRound } from "lucide-react";
 import { getAdminQuoteById } from "@/lib/store";
 import type { AdminQuoteDetailView, AdminQuoteStatusStepView } from "@/lib/store";
@@ -91,20 +92,39 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
   }
 
   const timeline = getTimeline(quote);
+
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const protocol = headersList.get("x-forwarded-proto") || "http";
+  const baseUrl = `${protocol}://${host}`;
+  const pdfLink = quote.pdfUrl ? `${baseUrl}${quote.pdfUrl}` : "";
+
   const customerWhatsappHref = buildWhatsappHrefFromPhone(
     quote.customerPhone,
     quote.quoteNumber
-      ? `Hola ${quote.customerName}, te contacto por tu cotización ${quote.quoteNumber}.`
-      : `Hola ${quote.customerName}, te contacto por tu cotización.`,
+      ? `Hola ${quote.customerName}, te contacto por tu cotización ${quote.quoteNumber}.${pdfLink ? ` Puedes ver el PDF oficial aquí: ${pdfLink}` : ""}`
+      : `Hola ${quote.customerName}, te contacto por tu cotización.${pdfLink ? ` Puedes ver el PDF oficial aquí: ${pdfLink}` : ""}`,
   );
 
   return (
     <section className="admin-quote-detail">
-      <div className="admin-quote-detail-top">
+      <div className="admin-quote-detail-top" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
         <Link className="button button-secondary" href="/admin/quotes">
           <ArrowLeft size={16} />
           Volver
         </Link>
+        {quote.pdfUrl ? (
+          <a
+            className="button button-secondary"
+            href={quote.pdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: "8px" }}
+          >
+            <FileText size={16} />
+            Ver PDF ERP
+          </a>
+        ) : null}
         {customerWhatsappHref ? (
           <a
             className="button button-primary"
