@@ -8,18 +8,24 @@ type QuoteCustomerMessageProps = {
   customerName: string;
   customerPhone: string;
   customerMessage: string;
+  pdfLink?: string;
+  quoteNumber?: string | null;
 };
 
 export function QuoteCustomerMessage({
   customerName,
   customerPhone,
   customerMessage,
+  pdfLink,
+  quoteNumber,
 }: QuoteCustomerMessageProps) {
-  const [replyText, setReplyText] = useState("");
+  const [replyText, setReplyText] = useState(
+    `Hola ${customerName}, te contacto sobre tu cotización ${quoteNumber || ""}. En respuesta a tu mensaje: "${customerMessage}".${pdfLink ? `\n\nPuedes ver tu cotización en PDF aquí: ${pdfLink}` : ""}`
+  );
 
   const whatsappHref = buildWhatsappHrefFromPhone(
     customerPhone,
-    replyText.trim() ? replyText : `Hola ${customerName}, te contacto sobre tu mensaje: "${customerMessage}"`
+    replyText.trim()
   );
 
   return (

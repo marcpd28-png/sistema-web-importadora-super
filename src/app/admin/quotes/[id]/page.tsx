@@ -319,6 +319,8 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
               customerName={quote.customerName}
               customerPhone={quote.customerPhone ?? ""}
               customerMessage={quote.note}
+              pdfLink={pdfLink}
+              quoteNumber={quote.quoteNumber}
             />
           )}
           <QuoteStatusNotesEditor
