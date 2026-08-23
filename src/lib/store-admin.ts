@@ -1345,5 +1345,6 @@ export async function getAdminQuoteById(id: string): Promise<AdminQuoteDetailVie
     assignedToName: quote.assignedToName,
     assignedToEmail: quote.assignedToEmail,
     pdfUrl: quote.pdfUrl,
+    adminNotes: quote.adminNotes,
   };
 }

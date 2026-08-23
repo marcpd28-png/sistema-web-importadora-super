@@ -306,6 +306,21 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             </div>
           )}
 
+
+
+          {/* Customer message/note */}
+          {quote.note && (
+            <section className="panel admin-quote-detail-card" style={{ borderLeft: "4px solid #2563eb", background: "#f8fafc" }}>
+              <div className="admin-quote-card-title">
+                <FileText size={18} style={{ color: "#2563eb" }} />
+                <h2 style={{ color: "#1e293b" }}>Mensaje / Nota del Cliente</h2>
+              </div>
+              <p style={{ color: "#334155", fontSize: "14px", lineHeight: "1.6", marginTop: "10px", fontStyle: "italic" }}>
+                "{quote.note}"
+              </p>
+            </section>
+          )}
+
         </div>
 
         {/* Right Side: Status and notes interactive sidebar */}
@@ -313,7 +328,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
           <QuoteStatusNotesEditor
             quoteId={quote.id}
             initialStatus={quote.status}
-            initialNote={quote.note}
+            initialAdminNotes={quote.adminNotes}
             assignedToName={quote.assignedToName}
             assignedToEmail={quote.assignedToEmail}
           />

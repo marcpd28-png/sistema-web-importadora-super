@@ -268,6 +268,7 @@ model Quote {
   currencySymbol         String      @default("S/") @db.VarChar(8)
   total                  Decimal     @db.Decimal(12, 2)
   note                   String?     @db.Text
+  adminNotes             String?     @db.Text
   errorMessage           String?     @db.Text
   statusSteps            Json?
   pdfNotification        Json?

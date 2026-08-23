@@ -7,7 +7,7 @@ import { MessageSquare, User, Save } from "lucide-react";
 type QuoteStatusNotesEditorProps = {
   quoteId: string;
   initialStatus: QuoteStatus;
-  initialNote: string | null;
+  initialAdminNotes: string | null;
   assignedToName: string | null;
   assignedToEmail: string | null;
 };
@@ -24,12 +24,12 @@ const statusMeta: Record<QuoteStatus, { label: string; color: string; bg: string
 export function QuoteStatusNotesEditor({
   quoteId,
   initialStatus,
-  initialNote,
+  initialAdminNotes,
   assignedToName,
   assignedToEmail,
 }: QuoteStatusNotesEditorProps) {
   const [status, setStatus] = useState<QuoteStatus>(initialStatus);
-  const [note, setNote] = useState(initialNote ?? "");
+  const [adminNotes, setAdminNotes] = useState(initialAdminNotes ?? "");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export function QuoteStatusNotesEditor({
       const res = await fetch(`/api/admin/quotes/${quoteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note }),
+        body: JSON.stringify({ adminNotes }),
       });
       if (!res.ok) throw new Error("Failed to save note");
       showSuccess("Nota guardada correctamente");
@@ -159,8 +159,8 @@ export function QuoteStatusNotesEditor({
         </div>
 
         <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
+          value={adminNotes}
+          onChange={(e) => setAdminNotes(e.target.value)}
           placeholder="Escribe notas de seguimiento aquí (ej. detalles de la llamada con el cliente, coordinaciones de despacho...)"
           style={{
             width: "100%",

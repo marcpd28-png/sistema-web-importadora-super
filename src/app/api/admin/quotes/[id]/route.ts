@@ -15,8 +15,8 @@ export async function PATCH(
     if (body.status) {
       data.status = body.status;
     }
-    if (body.note !== undefined) {
-      data.note = body.note;
+    if (body.adminNotes !== undefined) {
+      data.adminNotes = body.adminNotes;
     }
 
     const updated = await prisma.quote.update({
