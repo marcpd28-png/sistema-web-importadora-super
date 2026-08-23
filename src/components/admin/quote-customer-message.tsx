@@ -46,7 +46,7 @@ export function QuoteCustomerMessage({
           placeholder="Escribe tu respuesta para enviarla por WhatsApp..."
           style={{
             width: "100%",
-            minHeight: "80px",
+            minHeight: "160px",
             padding: "10px 12px",
             borderRadius: "8px",
             border: "1px solid #cbd5e1",
