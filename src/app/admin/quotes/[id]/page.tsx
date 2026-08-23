@@ -316,6 +316,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
         <div style={{ flex: "1 1 320px", maxWidth: "420px", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
           {quote.note && (
             <QuoteCustomerMessage
+              key={quote.id}
               customerName={quote.customerName}
               customerPhone={quote.customerPhone ?? ""}
               customerMessage={quote.note}
