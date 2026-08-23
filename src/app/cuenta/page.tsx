@@ -29,9 +29,14 @@ type ShopperAccountPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-function getQuoteStatusLabel(status: "PENDING" | "ERP_REGISTERED" | "ERROR") {
+import { QuoteStatus } from "@prisma/client";
+
+function getQuoteStatusLabel(status: QuoteStatus) {
   if (status === "ERP_REGISTERED") return "Registrada";
   if (status === "ERROR") return "Requiere revisión";
+  if (status === "IN_REVIEW") return "En revisión";
+  if (status === "RESPONDED") return "Respondido";
+  if (status === "CLOSED") return "Cerrado";
   return "Procesando";
 }
 

@@ -288,6 +288,8 @@ export type AdminQuoteDetailView = Omit<AdminQuoteView, "items" | "itemCount"> &
   statusSteps: AdminQuoteStatusStepView[];
   updatedAt: string;
   whatsappHref: string | null;
+  assignedToName: string | null;
+  assignedToEmail: string | null;
 };
 
 export type AdminQuotesData = {

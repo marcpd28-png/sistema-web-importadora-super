@@ -1342,5 +1342,7 @@ export async function getAdminQuoteById(id: string): Promise<AdminQuoteDetailVie
         }
       : null,
     whatsappHref: quote.whatsappHref,
+    assignedToName: quote.assignedToName,
+    assignedToEmail: quote.assignedToEmail,
   };
 }
