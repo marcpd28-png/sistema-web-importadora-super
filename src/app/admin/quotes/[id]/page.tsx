@@ -16,23 +16,36 @@ type AdminQuoteDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-function getStatusLabel(status: AdminQuoteDetailView["status"]) {
-  if (status === "ERP_REGISTERED") return "Registrada ERP";
-  if (status === "ERROR") return "Con error";
-  if (status === "IN_REVIEW") return "En revisión";
-  if (status === "RESPONDED") return "Respondido";
-  if (status === "CLOSED") return "Cerrado";
-  return "Nuevo";
-}
+function getStatusBadge(status: string) {
+  let className = "admin-complaint-status";
+  let style: React.CSSProperties | undefined = undefined;
+  let label = "Nuevo";
 
-function getStatusClass(status: AdminQuoteDetailView["status"]) {
-  if (status === "PENDING") return "is-pending";
-  if (status === "IN_REVIEW") return "is-warning";
-  if (status === "RESPONDED") return "is-info";
-  if (status === "CLOSED") return "is-positive";
-  if (status === "ERP_REGISTERED") return "is-positive";
-  if (status === "ERROR") return "is-negative";
-  return "is-pending";
+  if (status === "PENDING") {
+    className += " is-new";
+    label = "Nuevo";
+  } else if (status === "IN_REVIEW") {
+    className += " is-in_review";
+    label = "En revisión";
+  } else if (status === "RESPONDED") {
+    className += " is-responded";
+    label = "Respondido";
+  } else if (status === "CLOSED") {
+    className += " is-closed";
+    label = "Cerrado";
+  } else if (status === "ERP_REGISTERED") {
+    className += " is-responded";
+    label = "Registrada ERP";
+  } else if (status === "ERROR") {
+    style = { color: "#dc2626", background: "rgba(220, 38, 38, 0.12)" };
+    label = "Con error";
+  }
+
+  return (
+    <span className={className} style={style}>
+      {label}
+    </span>
+  );
 }
 
 function getCustomerModeLabel(value: string | null) {
@@ -147,10 +160,13 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             {formatDate(quote.createdAt)} · {formatDate(quote.updatedAt)}
           </p>
         </div>
-        <div className="admin-quote-detail-total">
-          <span className={`admin-quote-status ${getStatusClass(quote.status)}`}>
-            {getStatusLabel(quote.status)}
-          </span>
+        <div className="admin-quote-detail-total" style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+          {getStatusBadge(quote.status)}
+          {quote.assignedToName && (
+            <span style={{ fontSize: "13px", color: "#2320da", fontWeight: 600 }}>
+              Asesor: {quote.assignedToName}
+            </span>
+          )}
           <strong>{formatCurrency(quote.total, quote.currencySymbol)}</strong>
           <span>{quote.itemCount} unidades cotizadas</span>
         </div>

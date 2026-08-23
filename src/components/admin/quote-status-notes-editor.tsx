@@ -12,13 +12,13 @@ type QuoteStatusNotesEditorProps = {
   assignedToEmail: string | null;
 };
 
-const statusMeta: Record<QuoteStatus, { label: string; color: string; bg: string; border: string }> = {
-  PENDING: { label: "Nuevo", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe" },
-  IN_REVIEW: { label: "En revisión", color: "#b45309", bg: "#fffbeb", border: "#fde68a" },
-  RESPONDED: { label: "Respondido", color: "#6d28d9", bg: "#faf5ff", border: "#e9d5ff" },
-  CLOSED: { label: "Cerrado", color: "#15803d", bg: "#f0fdf4", border: "#bbf7d0" },
-  ERP_REGISTERED: { label: "Registrado ERP", color: "#0f766e", bg: "#f0fdfa", border: "#99f6e4" },
-  ERROR: { label: "Con error", color: "#b91c1c", bg: "#fef2f2", border: "#fecaca" },
+const statusMeta: Record<QuoteStatus, { label: string; className: string }> = {
+  PENDING: { label: "Nuevo", className: "is-new" },
+  IN_REVIEW: { label: "En revisión", className: "is-in_review" },
+  RESPONDED: { label: "Respondido", className: "is-responded" },
+  CLOSED: { label: "Cerrado", className: "is-closed" },
+  ERP_REGISTERED: { label: "Registrada ERP", className: "is-responded" },
+  ERROR: { label: "Con error", className: "is-error" },
 };
 
 export function QuoteStatusNotesEditor({
@@ -107,17 +107,7 @@ export function QuoteStatusNotesEditor({
       <div className="panel" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px", background: "white" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#0f172a", margin: 0 }}>Estado de Gestión</h3>
-          <span
-            style={{
-              padding: "4px 10px",
-              borderRadius: "20px",
-              fontSize: "12px",
-              fontWeight: "700",
-              color: currentMeta.color,
-              backgroundColor: currentMeta.bg,
-              border: `1px solid ${currentMeta.border}`,
-            }}
-          >
+          <span className={`admin-complaint-status ${currentMeta.className}`}>
             {currentMeta.label}
           </span>
         </div>
@@ -131,17 +121,12 @@ export function QuoteStatusNotesEditor({
                 key={key}
                 disabled={isSavingStatus}
                 onClick={() => handleStatusChange(key)}
+                className={`admin-complaint-status ${meta.className}`}
                 style={{
-                  padding: "6px 12px",
-                  borderRadius: "8px",
-                  fontSize: "12px",
-                  fontWeight: "600",
                   cursor: "pointer",
-                  color: isSelected ? "white" : meta.color,
-                  backgroundColor: isSelected ? meta.color : meta.bg,
-                  border: `1px solid ${isSelected ? meta.color : meta.border}`,
                   transition: "all 0.15s ease",
                   opacity: isSavingStatus ? 0.6 : 1,
+                  border: isSelected ? "2px solid #000" : "1px solid transparent",
                 }}
               >
                 {meta.label}
