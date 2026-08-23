@@ -272,6 +272,8 @@ export type AdminQuoteView = {
     name: string;
     email: string;
   } | null;
+  assignedToName: string | null;
+  assignedToEmail: string | null;
 };
 
 export type AdminQuoteDetailView = Omit<AdminQuoteView, "items" | "itemCount"> & {

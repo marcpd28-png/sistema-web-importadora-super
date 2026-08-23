@@ -1197,6 +1197,8 @@ export async function getAdminQuotes(input: {
           customerEmail: true,
           erpCustomerMode: true,
           createdAt: true,
+          assignedToName: true,
+          assignedToEmail: true,
           user: {
             select: {
               email: true,
@@ -1255,6 +1257,8 @@ export async function getAdminQuotes(input: {
             name: quote.user.name,
           }
         : null,
+      assignedToName: quote.assignedToName,
+      assignedToEmail: quote.assignedToEmail,
     })),
     page,
     pageSize: ADMIN_QUOTES_PAGE_SIZE,

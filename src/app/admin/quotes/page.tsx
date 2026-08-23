@@ -15,23 +15,59 @@ const statusOptions: Array<{
   value: QuoteStatus | "all";
 }> = [
   { label: "Todas", value: "all" },
-  { label: "Registradas", value: "ERP_REGISTERED" },
-  { label: "Procesando", value: "PENDING" },
+  { label: "Nuevo", value: "PENDING" },
+  { label: "En revisión", value: "IN_REVIEW" },
+  { label: "Respondido", value: "RESPONDED" },
+  { label: "Cerrado", value: "CLOSED" },
+  { label: "Registradas ERP", value: "ERP_REGISTERED" },
   { label: "Con error", value: "ERROR" },
 ];
 
 function parseStatus(value: string | string[] | undefined): QuoteStatus | "all" {
-  if (value === "ERP_REGISTERED" || value === "PENDING" || value === "ERROR") {
+  if (
+    value === "PENDING" ||
+    value === "IN_REVIEW" ||
+    value === "RESPONDED" ||
+    value === "CLOSED" ||
+    value === "ERP_REGISTERED" ||
+    value === "ERROR"
+  ) {
     return value;
   }
 
   return "all";
 }
 
-function getStatusLabel(status: QuoteStatus) {
-  if (status === "ERP_REGISTERED") return "Registrada ERP";
-  if (status === "ERROR") return "Con error";
-  return "Procesando";
+function getStatusBadge(status: string) {
+  let className = "admin-complaint-status";
+  let style: React.CSSProperties | undefined = undefined;
+  let label = "Nuevo";
+
+  if (status === "PENDING") {
+    className += " is-new";
+    label = "Nuevo";
+  } else if (status === "IN_REVIEW") {
+    className += " is-in_review";
+    label = "En revisión";
+  } else if (status === "RESPONDED") {
+    className += " is-responded";
+    label = "Respondido";
+  } else if (status === "CLOSED") {
+    className += " is-closed";
+    label = "Cerrado";
+  } else if (status === "ERP_REGISTERED") {
+    className += " is-responded";
+    label = "Registrada ERP";
+  } else if (status === "ERROR") {
+    style = { color: "#dc2626", background: "rgba(220, 38, 38, 0.12)" };
+    label = "Con error";
+  }
+
+  return (
+    <span className={className} style={style}>
+      {label}
+    </span>
+  );
 }
 
 function getCustomerModeLabel(value: string | null) {
@@ -114,6 +150,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
                 <th>Cotización</th>
                 <th>Productos</th>
                 <th>Total</th>
+                <th>Asesor</th>
                 <th>Estado</th>
                 <th />
               </tr>
@@ -158,10 +195,15 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
                   <td data-label="Total">
                     <strong>{formatCurrency(quote.total, quote.currencySymbol)}</strong>
                   </td>
+                  <td data-label="Asesor">
+                    {quote.assignedToName ? (
+                      <strong style={{ fontSize: "13px", color: "#2320da" }}>{quote.assignedToName}</strong>
+                    ) : (
+                      <span className="muted" style={{ fontStyle: "italic", fontSize: "12px" }}>Sin asignar</span>
+                    )}
+                  </td>
                   <td data-label="Estado">
-                    <span className={`admin-quote-status is-${quote.status.toLowerCase()}`}>
-                      {getStatusLabel(quote.status)}
-                    </span>
+                    {getStatusBadge(quote.status)}
                   </td>
                   <td data-label="Acciones">
                     <div className="table-actions">
