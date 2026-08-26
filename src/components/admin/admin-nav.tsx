@@ -41,6 +41,7 @@ const sections: AdminNavSection[] = [
     links: [
       { href: "/admin", label: "Dashboard", icon: ChartNoAxesCombined },
       { href: "/", label: "Ver catálogo", icon: Store },
+      { href: "/qr", label: "QR tienda", icon: QrCode },
     ],
   },
   {
@@ -146,4 +147,3 @@ export function AdminNav({ badges }: AdminNavProps) {
     </nav>
   );
 }
-

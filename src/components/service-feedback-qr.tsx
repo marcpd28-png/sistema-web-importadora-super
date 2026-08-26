@@ -13,7 +13,37 @@ import {
 } from "lucide-react";
 
 type ServiceFeedbackQrProps = {
+  copy?: Partial<ServiceFeedbackQrCopy>;
   initialUrl: string;
+};
+
+type ServiceFeedbackQrCopy = {
+  formLabel: string;
+  localExamplePath: string;
+  posterDescription: string;
+  posterEyebrow: string;
+  posterTitle: string;
+  posterTitleAccent: string;
+  readyText: string;
+  scanHint: string;
+  toolsCopy: string;
+  toolsKicker: string;
+  toolsTitle: string;
+};
+
+const DEFAULT_QR_COPY: ServiceFeedbackQrCopy = {
+  formLabel: "Enlace del formulario",
+  localExamplePath: "/califica-atencion",
+  posterDescription: "Solo te tomará un minuto. Tu experiencia nos ayuda a hacerlo mejor.",
+  posterEyebrow: "Tu opinión nos importa",
+  posterTitle: "Escanea y califica",
+  posterTitleAccent: "tu atención",
+  readyText: "Escanea el QR con un celular conectado a la misma red.",
+  scanHint: "Abre la cámara de tu celular y apunta al código",
+  toolsCopy:
+    "Define el enlace que abrirá el QR. Para probarlo con un celular, ambos equipos deben estar conectados a la misma red Wi-Fi.",
+  toolsKicker: "Herramienta local",
+  toolsTitle: "QR de atención",
 };
 
 function isLocalOnlyUrl(value: string) {
@@ -25,7 +55,8 @@ function isLocalOnlyUrl(value: string) {
   }
 }
 
-export function ServiceFeedbackQr({ initialUrl }: ServiceFeedbackQrProps) {
+export function ServiceFeedbackQr({ copy: copyOverrides, initialUrl }: ServiceFeedbackQrProps) {
+  const copy = { ...DEFAULT_QR_COPY, ...copyOverrides };
   const [url, setUrl] = useState(initialUrl);
   const [qrSvg, setQrSvg] = useState("");
   const [qrError, setQrError] = useState<string | null>(null);
@@ -104,20 +135,17 @@ export function ServiceFeedbackQr({ initialUrl }: ServiceFeedbackQrProps) {
             <QrCode aria-hidden="true" size={18} />
           </span>
           <div>
-            <p>Herramienta local</p>
-            <h1>QR de atención</h1>
+            <p>{copy.toolsKicker}</p>
+            <h1>{copy.toolsTitle}</h1>
           </div>
         </div>
 
-        <p className="service-qr-tools-copy">
-          Define el enlace que abrirá el QR. Para probarlo con un celular, ambos equipos deben estar
-          conectados a la misma red Wi-Fi.
-        </p>
+        <p className="service-qr-tools-copy">{copy.toolsCopy}</p>
 
         <form className="service-qr-url-form" onSubmit={updateUrl}>
           <label htmlFor="feedbackUrl">
             <Link2 aria-hidden="true" size={16} />
-            Enlace del formulario
+            {copy.formLabel}
           </label>
           <div>
             <input defaultValue={initialUrl} id="feedbackUrl" name="feedbackUrl" type="url" />
@@ -131,7 +159,7 @@ export function ServiceFeedbackQr({ initialUrl }: ServiceFeedbackQrProps) {
             <p>
               <strong>“localhost” no funciona desde el celular.</strong>
               Reemplázalo por la IP local de esta computadora; por ejemplo:
-              <code>http://192.168.1.20:3000/califica-atencion</code>
+              <code>{`http://192.168.1.20:3000${copy.localExamplePath}`}</code>
             </p>
           </div>
         ) : (
@@ -139,7 +167,7 @@ export function ServiceFeedbackQr({ initialUrl }: ServiceFeedbackQrProps) {
             <Smartphone aria-hidden="true" size={18} />
             <p>
               <strong>Enlace listo para probar.</strong>
-              Escanea el QR con un celular conectado a la misma red.
+              {copy.readyText}
             </p>
           </div>
         )}
@@ -169,12 +197,12 @@ export function ServiceFeedbackQr({ initialUrl }: ServiceFeedbackQrProps) {
           </div>
 
           <div className="service-qr-poster-copy">
-            <p>Tu opinión nos importa</p>
+            <p>{copy.posterEyebrow}</p>
             <h2>
-              Escanea y califica
-              <span>tu atención</span>
+              {copy.posterTitle}
+              <span>{copy.posterTitleAccent}</span>
             </h2>
-            <p>Solo te tomará un minuto. Tu experiencia nos ayuda a hacerlo mejor.</p>
+            <p>{copy.posterDescription}</p>
           </div>
 
           <div className="service-qr-code-frame">
@@ -197,7 +225,7 @@ export function ServiceFeedbackQr({ initialUrl }: ServiceFeedbackQrProps) {
 
           <div className="service-qr-scan-hint">
             <Smartphone aria-hidden="true" size={18} />
-            Abre la cámara de tu celular y apunta al código
+            {copy.scanHint}
           </div>
 
           <footer className="service-qr-poster-footer">
