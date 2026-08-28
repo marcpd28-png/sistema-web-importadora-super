@@ -324,7 +324,7 @@ function mapComplaintView(
   complaint: {
     id: string;
     sheetNumber: string;
-    type: ComplaintType;
+    type: import("@prisma/client").ComplaintType;
     reason: string;
     names: string;
     lastNames: string;

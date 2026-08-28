@@ -91,6 +91,7 @@ enum ComplaintStatus {
 }
 
 model User {
+<<<<<<< HEAD
   id                    String   @id @default(cuid())
   email                 String   @unique
   name                  String
@@ -101,24 +102,37 @@ model User {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   quotes                Quote[]  @relation("UserQuotes")
+=======
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  phone         String?        @db.VarChar(32)
+  passwordHash  String
+  role          UserRole       @default(ADMIN)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  quotes        Quote[]        @relation("UserQuotes")
+  conversations Conversation[]
+>>>>>>> 9d8069d (feat: modulo de Centro de Mensajes)
 }
 
 model Product {
-  id              String         @id @default(cuid())
-  code            String         @unique @db.VarChar(64)
-  slug            String         @unique @db.VarChar(140)
-  name            String         @db.VarChar(180)
-  description     String?        @db.Text
-  technicalSpecs  String?        @db.Text
-  brand           String?        @db.VarChar(120)
-  category        String?        @db.VarChar(120)
-  categoryId      String?
-  categoryRef     Category?      @relation("CategoryToProduct", fields: [categoryId], references: [id], onDelete: SetNull)
-  imageUrl        String?        @db.Text
-  sourceImageUrl  String?        @db.Text
-  localImageUrl   String?        @db.Text
+  id                     String         @id @default(cuid())
+  code                   String         @unique @db.VarChar(64)
+  slug                   String         @unique @db.VarChar(140)
+  name                   String         @db.VarChar(180)
+  description            String?        @db.Text
+  technicalSpecs         String?        @db.Text
+  brand                  String?        @db.VarChar(120)
+  category               String?        @db.VarChar(120)
+  categoryId             String?
+  categoryRef            Category?      @relation("CategoryToProduct", fields: [categoryId], references: [id], onDelete: SetNull)
+  imageUrl               String?        @db.Text
+  sourceImageUrl         String?        @db.Text
+  localImageUrl          String?        @db.Text
   sourceImageFingerprint String?        @db.VarChar(64)
   sourceImageContentHash String?        @db.VarChar(64)
+<<<<<<< HEAD
   unitLabel       String         @default("unidad") @db.VarChar(40)
   unitPrice       Decimal        @db.Decimal(10, 2)
   wholesalePrice  Decimal?       @db.Decimal(10, 2)
@@ -148,6 +162,30 @@ model Product {
   documents       ProductDocument[]
   qr              ProductQr?
   qrAnalyticsLogs QrAnalyticsLog[]
+=======
+  unitLabel              String         @default("unidad") @db.VarChar(40)
+  unitPrice              Decimal        @db.Decimal(10, 2)
+  wholesalePrice         Decimal?       @db.Decimal(10, 2)
+  wholesaleMinQty        Int            @default(3)
+  boxPrice               Decimal?       @db.Decimal(10, 2)
+  unitsPerBox            Int?
+  stockUnits             Int            @default(0)
+  isVisible              Boolean        @default(true)
+  isFeatured             Boolean        @default(false)
+  externalSource         String?        @db.VarChar(80)
+  externalId             String?        @db.VarChar(120)
+  externalCode           String?        @db.VarChar(120)
+  syncEnabled            Boolean        @default(false)
+  lastSyncedAt           DateTime?
+  erpUpdatedAt           DateTime?
+  syncHash               String?        @db.VarChar(64)
+  syncQuickHash          String?        @db.VarChar(64)
+  syncStockHash          String?        @db.VarChar(64)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  media                  ProductMedia[]
+  quoteItems             QuoteItem[]    @relation("ProductQuoteItems")
+>>>>>>> 9d8069d (feat: modulo de Centro de Mensajes)
 
   @@index([name])
   @@index([code])
@@ -217,32 +255,32 @@ model StoreSettings {
 }
 
 model HeroBanner {
-  id               String                   @id @default(cuid())
-  slot             HeroBannerSlot           @default(HERO)
-  layout           HeroBannerLayout         @default(HERO_DESKTOP_FULL)
-  title            String?                  @db.VarChar(180)
-  subtitle         String?                  @db.VarChar(240)
-  description      String?                  @db.Text
-  ctaLabel         String?                  @db.VarChar(80)
-  ctaHref          String?                  @db.Text
-  desktopImageUrl  String                   @db.Text
-  mobileImageUrl   String?                  @db.Text
-  altText          String?                  @db.VarChar(180)
-  overlayColor     String                   @default("#000000") @db.VarChar(16)
-  overlayOpacity   Float                    @default(0.36)
-  textAlign        HeroBannerTextAlign      @default(LEFT)
-  contentPosition  HeroBannerContentPosition @default(LEFT)
-  priority         Int                      @default(0)
-  sortOrder        Int                      @default(0)
-  isActive         Boolean                  @default(true)
-  startsAt         DateTime?
-  endsAt           DateTime?
-  campaignName     String?                  @db.VarChar(120)
-  analyticsKey     String?                  @db.VarChar(120)
-  impressionCount  Int                      @default(0)
-  clickCount       Int                      @default(0)
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
+  id              String                    @id @default(cuid())
+  slot            HeroBannerSlot            @default(HERO)
+  layout          HeroBannerLayout          @default(HERO_DESKTOP_FULL)
+  title           String?                   @db.VarChar(180)
+  subtitle        String?                   @db.VarChar(240)
+  description     String?                   @db.Text
+  ctaLabel        String?                   @db.VarChar(80)
+  ctaHref         String?                   @db.Text
+  desktopImageUrl String                    @db.Text
+  mobileImageUrl  String?                   @db.Text
+  altText         String?                   @db.VarChar(180)
+  overlayColor    String                    @default("#000000") @db.VarChar(16)
+  overlayOpacity  Float                     @default(0.36)
+  textAlign       HeroBannerTextAlign       @default(LEFT)
+  contentPosition HeroBannerContentPosition @default(LEFT)
+  priority        Int                       @default(0)
+  sortOrder       Int                       @default(0)
+  isActive        Boolean                   @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  campaignName    String?                   @db.VarChar(120)
+  analyticsKey    String?                   @db.VarChar(120)
+  impressionCount Int                       @default(0)
+  clickCount      Int                       @default(0)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
 
   @@index([slot, isActive, sortOrder])
   @@index([slot, priority(sort: Desc), sortOrder])
@@ -308,51 +346,52 @@ model QuoteItem {
 }
 
 model Complaint {
-  id                      String          @id @default(cuid())
-  sheetNumber             String          @unique @db.VarChar(32) // Formato: LR-YYYY-XXXXXX
-  serialNumber            Int             // Número correlativo dentro del año
-  year                    Int             // Año del reclamo (ej: 2026)
-  
+  id           String @id @default(cuid())
+  sheetNumber  String @unique @db.VarChar(32) // Formato: LR-YYYY-XXXXXX
+  serialNumber Int // Número correlativo dentro del año
+  year         Int // Año del reclamo (ej: 2026)
+
   // Datos del Consumidor
-  documentType            String          @db.VarChar(16) // DNI, CE, RUC, PASAPORTE
-  documentNumber          String          @db.VarChar(32)
-  names                   String          @db.VarChar(100)
-  lastNames               String          @db.VarChar(100)
-  email                   String          @db.VarChar(150)
-  phone                   String          @db.VarChar(32)
-  address                 String          @db.VarChar(255)
-  department              String          @db.VarChar(64)
-  province                String          @db.VarChar(64)
-  district                String          @db.VarChar(64)
-  
+  documentType   String @db.VarChar(16) // DNI, CE, RUC, PASAPORTE
+  documentNumber String @db.VarChar(32)
+  names          String @db.VarChar(100)
+  lastNames      String @db.VarChar(100)
+  email          String @db.VarChar(150)
+  phone          String @db.VarChar(32)
+  address        String @db.VarChar(255)
+  department     String @db.VarChar(64)
+  province       String @db.VarChar(64)
+  district       String @db.VarChar(64)
+
   // Representante (Si es menor de edad)
-  isMinor                 Boolean         @default(false)
-  repNames                String?         @db.VarChar(200)
-  repDocumentType         String?         @db.VarChar(16)
-  repDocumentNumber       String?         @db.VarChar(32)
-  
+  isMinor           Boolean @default(false)
+  repNames          String? @db.VarChar(200)
+  repDocumentType   String? @db.VarChar(16)
+  repDocumentNumber String? @db.VarChar(32)
+
   // Datos de la Compra / Bien Contratado
-  isPurchaseRelated       Boolean         @default(false)
-  orderNumber             String?         @db.VarChar(64)
-  invoiceNumber           String?         @db.VarChar(64)
-  purchaseDate            DateTime?
-  productName             String?         @db.VarChar(200)
-  productBrand            String?         @db.VarChar(100)
-  productModel            String?         @db.VarChar(100)
-  productSku              String?         @db.VarChar(100)
-  productSerial           String?         @db.VarChar(100)
-  purchaseAmount          Decimal?        @db.Decimal(10, 2)
-  purchaseChannel         String?         @db.VarChar(64) // Web, Físico, WhatsApp, etc.
-  paymentMethod           String?         @db.VarChar(64) // Transferencia, Efectivo, Tarjeta
-  
+  isPurchaseRelated Boolean   @default(false)
+  orderNumber       String?   @db.VarChar(64)
+  invoiceNumber     String?   @db.VarChar(64)
+  purchaseDate      DateTime?
+  productName       String?   @db.VarChar(200)
+  productBrand      String?   @db.VarChar(100)
+  productModel      String?   @db.VarChar(100)
+  productSku        String?   @db.VarChar(100)
+  productSerial     String?   @db.VarChar(100)
+  purchaseAmount    Decimal?  @db.Decimal(10, 2)
+  purchaseChannel   String?   @db.VarChar(64) // Web, Físico, WhatsApp, etc.
+  paymentMethod     String?   @db.VarChar(64) // Transferencia, Efectivo, Tarjeta
+
   // Detalles del Reclamo/Queja
-  type                    ComplaintType   @default(RECLAMO)
-  reason                  String          @db.VarChar(100)
-  subReason               String?         @db.VarChar(150)
-  facts                   String          @db.Text
-  request                 String          @db.Text
-  
+  type      ComplaintType @default(RECLAMO)
+  reason    String        @db.VarChar(100)
+  subReason String?       @db.VarChar(150)
+  facts     String        @db.Text
+  request   String        @db.Text
+
   // Gestión Administrativa
+<<<<<<< HEAD
   status                  ComplaintStatus @default(NEW)
   adminReply              String?         @db.Text
   repliedAt               DateTime?
@@ -362,10 +401,18 @@ model Complaint {
   expiryDate              DateTime        // Fecha límite de 15 días hábiles
   internalNotes           ComplaintInternalNote[]
   
+=======
+  status         ComplaintStatus @default(NEW)
+  adminReply     String?         @db.Text
+  repliedAt      DateTime?
+  repliedByEmail String?         @db.VarChar(150)
+  expiryDate     DateTime // Fecha límite de 15 días hábiles
+
+>>>>>>> 9d8069d (feat: modulo de Centro de Mensajes)
   // Adjuntos
-  attachments             Json            @default("[]") // Listado de URLs de archivos subidos
-  createdAt               DateTime        @default(now())
-  updatedAt               DateTime        @updatedAt
+  attachments Json     @default("[]") // Listado de URLs de archivos subidos
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([status, createdAt(sort: Desc)])
   @@index([email])
@@ -469,31 +516,31 @@ model ProductTrendSnapshot {
 }
 
 model ErpSyncLog {
-  id                String         @id @default(cuid())
-  source            String         @db.VarChar(80)
-  trigger           ErpSyncTrigger @default(SCRIPT)
-  syncMode          String         @default("FULL") @db.VarChar(20)
-  status            ErpSyncStatus  @default(RUNNING)
-  fetchedCount      Int            @default(0)
+  id                 String         @id @default(cuid())
+  source             String         @db.VarChar(80)
+  trigger            ErpSyncTrigger @default(SCRIPT)
+  syncMode           String         @default("FULL") @db.VarChar(20)
+  status             ErpSyncStatus  @default(RUNNING)
+  fetchedCount       Int            @default(0)
   progressTotalCount Int            @default(0)
-  processedCount    Int            @default(0)
-  createdCount      Int            @default(0)
-  updatedCount      Int            @default(0)
-  skippedCount      Int            @default(0)
-  errorCount        Int            @default(0)
-  failedPage        Int?
-  failedPageMessage String?        @db.Text
-  skippedPreview    Json?
-  errorMessage      String?        @db.Text
-  cancelRequestedAt DateTime?
-  initiatedByName   String?        @db.VarChar(120)
-  initiatedByEmail  String?        @db.VarChar(180)
-  canceledByName    String?        @db.VarChar(120)
-  canceledByEmail   String?        @db.VarChar(180)
-  startedAt         DateTime       @default(now())
-  finishedAt        DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  processedCount     Int            @default(0)
+  createdCount       Int            @default(0)
+  updatedCount       Int            @default(0)
+  skippedCount       Int            @default(0)
+  errorCount         Int            @default(0)
+  failedPage         Int?
+  failedPageMessage  String?        @db.Text
+  skippedPreview     Json?
+  errorMessage       String?        @db.Text
+  cancelRequestedAt  DateTime?
+  initiatedByName    String?        @db.VarChar(120)
+  initiatedByEmail   String?        @db.VarChar(180)
+  canceledByName     String?        @db.VarChar(120)
+  canceledByEmail    String?        @db.VarChar(180)
+  startedAt          DateTime       @default(now())
+  finishedAt         DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   @@index([createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
@@ -610,4 +657,106 @@ model QrAnalyticsLog {
 
   @@index([productId, eventType])
   @@index([timestamp])
+}
+
+enum Channel {
+  WHATSAPP
+  INSTAGRAM
+  FACEBOOK
+  TIKTOK
+  WEB
+}
+
+enum ConversationState {
+  AUTOMATICO
+  REQUIERE_ASESOR
+  ATENDIENDO
+  ESPERANDO_CLIENTE
+  CERRADO
+  VENTA
+  RECLAMO
+}
+
+enum MessageSender {
+  CUSTOMER
+  BOT
+  AGENT
+  SYSTEM
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+  LOCATION
+  CONTACT
+  UNKNOWN
+}
+
+model ChatContact {
+  id         String   @id @default(cuid())
+  externalId String?  @db.VarChar(120)
+  channel    Channel?
+  name       String   @db.VarChar(180)
+  phone      String?  @db.VarChar(32)
+  avatar     String?  @db.Text
+  tags       String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  conversations Conversation[]
+  
+  @@unique([channel, externalId])
+  @@index([phone])
+  @@index([name])
+}
+
+model Conversation {
+  id             String            @id @default(cuid())
+  contactId      String
+  contact        ChatContact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel        Channel           @default(WHATSAPP)
+  status         ConversationState @default(AUTOMATICO)
+  botEnabled     Boolean           @default(true)
+  assignedUserId String?
+  assignedUser   User?             @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  lastMessageAt  DateTime          @default(now())
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  unreadCount    Int               @default(0)
+
+  messages ChatMessage[]
+
+  @@index([contactId])
+  @@index([channel])
+  @@index([status])
+  @@index([lastMessageAt(sort: Desc)])
+  @@index([botEnabled])
+  @@index([assignedUserId])
+}
+
+model ChatMessage {
+  id                String           @id @default(cuid())
+  conversationId    String
+  conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  externalMessageId String?          @unique @db.VarChar(120)
+  direction         MessageDirection
+  senderType        MessageSender
+  messageType       MessageType      @default(TEXT)
+  content           String           @db.Text
+  mediaUrl          String?          @db.Text
+  metadata          Json?
+  status            String?          @db.VarChar(32) // sent, delivered, read, failed
+  createdAt         DateTime         @default(now())
+
+  @@index([conversationId])
+  @@index([externalMessageId])
+  @@index([createdAt(sort: Asc)])
 }
