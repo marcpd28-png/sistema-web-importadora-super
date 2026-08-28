@@ -91,101 +91,64 @@ enum ComplaintStatus {
 }
 
 model User {
-<<<<<<< HEAD
-  id                    String   @id @default(cuid())
-  email                 String   @unique
+  id                    String         @id @default(cuid())
+  email                 String         @unique
   name                  String
-  phone                 String?  @db.VarChar(32)
+  phone                 String?        @db.VarChar(32)
   passwordHash          String
-  role                  UserRole @default(ADMIN)
-  requirePasswordChange Boolean  @default(false)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  quotes                Quote[]  @relation("UserQuotes")
-=======
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String
-  phone         String?        @db.VarChar(32)
-  passwordHash  String
-  role          UserRole       @default(ADMIN)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  quotes        Quote[]        @relation("UserQuotes")
-  conversations Conversation[]
->>>>>>> 9d8069d (feat: modulo de Centro de Mensajes)
+  role                  UserRole       @default(ADMIN)
+  requirePasswordChange Boolean        @default(false)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  quotes                Quote[]        @relation("UserQuotes")
+  conversations         Conversation[]
 }
 
 model Product {
-  id                     String         @id @default(cuid())
-  code                   String         @unique @db.VarChar(64)
-  slug                   String         @unique @db.VarChar(140)
-  name                   String         @db.VarChar(180)
-  description            String?        @db.Text
-  technicalSpecs         String?        @db.Text
-  brand                  String?        @db.VarChar(120)
-  category               String?        @db.VarChar(120)
+  id                     String                 @id @default(cuid())
+  code                   String                 @unique @db.VarChar(64)
+  slug                   String                 @unique @db.VarChar(140)
+  name                   String                 @db.VarChar(180)
+  description            String?                @db.Text
+  technicalSpecs         String?                @db.Text
+  brand                  String?                @db.VarChar(120)
+  category               String?                @db.VarChar(120)
   categoryId             String?
-  categoryRef            Category?      @relation("CategoryToProduct", fields: [categoryId], references: [id], onDelete: SetNull)
-  imageUrl               String?        @db.Text
-  sourceImageUrl         String?        @db.Text
-  localImageUrl          String?        @db.Text
-  sourceImageFingerprint String?        @db.VarChar(64)
-  sourceImageContentHash String?        @db.VarChar(64)
-<<<<<<< HEAD
-  unitLabel       String         @default("unidad") @db.VarChar(40)
-  unitPrice       Decimal        @db.Decimal(10, 2)
-  wholesalePrice  Decimal?       @db.Decimal(10, 2)
-  wholesaleMinQty Int            @default(3)
-  boxPrice        Decimal?       @db.Decimal(10, 2)
-  unitsPerBox     Int?
-  stockUnits      Int            @default(0)
-  isVisible       Boolean        @default(true)
-  isFeatured      Boolean        @default(false)
-  externalSource  String?        @db.VarChar(80)
-  externalId      String?        @db.VarChar(120)
-  externalCode    String?        @db.VarChar(120)
-  syncEnabled     Boolean        @default(false)
-  lastSyncedAt    DateTime?
-  erpUpdatedAt    DateTime?
-  syncHash        String?        @db.VarChar(64)
-  syncQuickHash   String?        @db.VarChar(64)
-  syncStockHash   String?        @db.VarChar(64)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  media           ProductMedia[]
-  quoteItems      QuoteItem[]    @relation("ProductQuoteItems")
-  digitalProfile  DigitalProductProfile?
-  specifications  ProductSpecification[]
-  variants        ProductVariant[]
-  videos          ProductVideo[]
-  documents       ProductDocument[]
-  qr              ProductQr?
-  qrAnalyticsLogs QrAnalyticsLog[]
-=======
-  unitLabel              String         @default("unidad") @db.VarChar(40)
-  unitPrice              Decimal        @db.Decimal(10, 2)
-  wholesalePrice         Decimal?       @db.Decimal(10, 2)
-  wholesaleMinQty        Int            @default(3)
-  boxPrice               Decimal?       @db.Decimal(10, 2)
+  categoryRef            Category?              @relation("CategoryToProduct", fields: [categoryId], references: [id], onDelete: SetNull)
+  imageUrl               String?                @db.Text
+  sourceImageUrl         String?                @db.Text
+  localImageUrl          String?                @db.Text
+  sourceImageFingerprint String?                @db.VarChar(64)
+  sourceImageContentHash String?                @db.VarChar(64)
+  unitLabel              String                 @default("unidad") @db.VarChar(40)
+  unitPrice              Decimal                @db.Decimal(10, 2)
+  wholesalePrice         Decimal?               @db.Decimal(10, 2)
+  wholesaleMinQty        Int                    @default(3)
+  boxPrice               Decimal?               @db.Decimal(10, 2)
   unitsPerBox            Int?
-  stockUnits             Int            @default(0)
-  isVisible              Boolean        @default(true)
-  isFeatured             Boolean        @default(false)
-  externalSource         String?        @db.VarChar(80)
-  externalId             String?        @db.VarChar(120)
-  externalCode           String?        @db.VarChar(120)
-  syncEnabled            Boolean        @default(false)
+  stockUnits             Int                    @default(0)
+  isVisible              Boolean                @default(true)
+  isFeatured             Boolean                @default(false)
+  externalSource         String?                @db.VarChar(80)
+  externalId             String?                @db.VarChar(120)
+  externalCode           String?                @db.VarChar(120)
+  syncEnabled            Boolean                @default(false)
   lastSyncedAt           DateTime?
   erpUpdatedAt           DateTime?
-  syncHash               String?        @db.VarChar(64)
-  syncQuickHash          String?        @db.VarChar(64)
-  syncStockHash          String?        @db.VarChar(64)
-  createdAt              DateTime       @default(now())
-  updatedAt              DateTime       @updatedAt
+  syncHash               String?                @db.VarChar(64)
+  syncQuickHash          String?                @db.VarChar(64)
+  syncStockHash          String?                @db.VarChar(64)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
   media                  ProductMedia[]
-  quoteItems             QuoteItem[]    @relation("ProductQuoteItems")
->>>>>>> 9d8069d (feat: modulo de Centro de Mensajes)
+  quoteItems             QuoteItem[]            @relation("ProductQuoteItems")
+  digitalProfile         DigitalProductProfile?
+  specifications         ProductSpecification[]
+  variants               ProductVariant[]
+  videos                 ProductVideo[]
+  documents              ProductDocument[]
+  qr                     ProductQr?
+  qrAnalyticsLogs        QrAnalyticsLog[]
 
   @@index([name])
   @@index([code])
@@ -391,28 +354,18 @@ model Complaint {
   request   String        @db.Text
 
   // Gestión Administrativa
-<<<<<<< HEAD
-  status                  ComplaintStatus @default(NEW)
-  adminReply              String?         @db.Text
-  repliedAt               DateTime?
-  repliedByEmail          String?         @db.VarChar(150)
-  assignedToName          String?         @db.VarChar(100)
-  assignedToEmail         String?         @db.VarChar(150)
-  expiryDate              DateTime        // Fecha límite de 15 días hábiles
-  internalNotes           ComplaintInternalNote[]
-  
-=======
-  status         ComplaintStatus @default(NEW)
-  adminReply     String?         @db.Text
-  repliedAt      DateTime?
-  repliedByEmail String?         @db.VarChar(150)
-  expiryDate     DateTime // Fecha límite de 15 días hábiles
-
->>>>>>> 9d8069d (feat: modulo de Centro de Mensajes)
+  status          ComplaintStatus         @default(NEW)
+  adminReply      String?                 @db.Text
+  repliedAt       DateTime?
+  repliedByEmail  String?                 @db.VarChar(150)
+  assignedToName  String?                 @db.VarChar(100)
+  assignedToEmail String?                 @db.VarChar(150)
+  expiryDate      DateTime // Fecha límite de 15 días hábiles
+  internalNotes   ComplaintInternalNote[]
   // Adjuntos
-  attachments Json     @default("[]") // Listado de URLs de archivos subidos
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  attachments     Json                    @default("[]") // Listado de URLs de archivos subidos
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   @@index([status, createdAt(sort: Desc)])
   @@index([email])
@@ -562,28 +515,28 @@ model SyncEventQueue {
 }
 
 model DigitalProductProfile {
-  id               String          @id @default(cuid())
-  productId        String          @unique
-  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  descriptionShort String?         @db.Text
-  descriptionFull  String?         @db.Text
-  status           String          @default("BORRADOR") @db.VarChar(20) // BORRADOR, PUBLICADA
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id               String   @id @default(cuid())
+  productId        String   @unique
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  descriptionShort String?  @db.Text
+  descriptionFull  String?  @db.Text
+  status           String   @default("BORRADOR") @db.VarChar(20) // BORRADOR, PUBLICADA
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([productId])
   @@index([status])
 }
 
 model ProductSpecification {
-  id         String   @id @default(cuid())
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name       String   @db.VarChar(120)
-  value      String   @db.VarChar(255)
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(120)
+  value     String   @db.VarChar(255)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([productId, sortOrder])
 }
@@ -710,9 +663,9 @@ model ChatContact {
   tags       String[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  
+
   conversations Conversation[]
-  
+
   @@unique([channel, externalId])
   @@index([phone])
   @@index([name])
