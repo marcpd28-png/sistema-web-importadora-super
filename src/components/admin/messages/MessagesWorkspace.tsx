@@ -23,7 +23,7 @@ export function MessagesWorkspace() {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const res = await fetch("/api/admin/conversations");
+        const res = await fetch(`/api/admin/conversations?t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setConversations(data.items);
@@ -49,7 +49,7 @@ export function MessagesWorkspace() {
 
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`/api/admin/conversations/${activeId}/messages`);
+        const res = await fetch(`/api/admin/conversations/${activeId}/messages?t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           // Sort messages by createdAt asc just in case

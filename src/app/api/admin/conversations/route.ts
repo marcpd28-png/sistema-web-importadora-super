@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/auth";
 import { getConversations, getConversationsSchema } from "@/lib/messages-service";
 import { z } from "zod";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
