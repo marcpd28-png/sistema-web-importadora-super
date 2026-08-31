@@ -1,4 +1,4 @@
-import { Conversation } from "@/types/messages";
+import type { Conversation } from "@/types/messages";
 import { Bot, User } from "lucide-react";
 
 interface Props {

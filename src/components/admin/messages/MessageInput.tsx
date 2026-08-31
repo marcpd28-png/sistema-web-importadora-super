@@ -1,8 +1,9 @@
 import { useState } from "react";
+import type { KeyboardEvent } from "react";
 import { Paperclip, Smile, Send } from "lucide-react";
 
 interface Props {
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string) => Promise<void> | void;
 }
 
 export function MessageInput({ onSendMessage }: Props) {
@@ -15,7 +16,7 @@ export function MessageInput({ onSendMessage }: Props) {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -25,7 +26,7 @@ export function MessageInput({ onSendMessage }: Props) {
   return (
     <div className="chat-input-container">
       <div className="chat-input-wrapper">
-        <button className="icon-btn" title="Adjuntar">
+        <button className="icon-btn" title="Adjuntar" type="button">
           <Paperclip size={18} />
         </button>
         
@@ -39,7 +40,7 @@ export function MessageInput({ onSendMessage }: Props) {
         />
         
         <div className="chat-input-actions">
-          <button className="icon-btn" title="Emoji">
+          <button className="icon-btn" title="Emoji" type="button">
             <Smile size={18} />
           </button>
           <button 
@@ -47,6 +48,8 @@ export function MessageInput({ onSendMessage }: Props) {
             style={{ color: message.trim() ? 'var(--primary)' : 'var(--text-muted)' }}
             onClick={handleSend}
             disabled={!message.trim()}
+            title="Enviar"
+            type="button"
           >
             <Send size={18} />
           </button>

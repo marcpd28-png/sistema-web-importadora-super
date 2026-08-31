@@ -1,4 +1,4 @@
-import { Conversation } from "@/types/messages";
+import type { Conversation } from "@/types/messages";
 import { ConversationStatus } from "./ConversationStatus";
 import { UserPlus, StopCircle, PlayCircle, CheckCircle } from "lucide-react";
 
@@ -18,7 +18,7 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
         <div>
           <h3 className="chat-header-name">{contact.name}</h3>
           <div className="chat-header-meta">
-            <span>{contact.phone || 'Sin teléfono'}</span>
+            <span>{contact.phone || contact.phoneNormalized || 'Sin teléfono'}</span>
           </div>
         </div>
       </div>
@@ -27,20 +27,20 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
       
       <div className="chat-header-actions">
         {botEnabled ? (
-          <button className="btn btn-outline" onClick={onToggleBot}>
+          <button className="btn btn-outline" onClick={onToggleBot} type="button">
             <StopCircle size={14} /> Pausar Bot
           </button>
         ) : (
-          <button className="btn btn-outline" onClick={onToggleBot}>
+          <button className="btn btn-outline" onClick={onToggleBot} type="button">
             <PlayCircle size={14} /> Activar Bot
           </button>
         )}
         
-        <button className="btn btn-primary" onClick={onTakeConversation}>
+        <button className="btn btn-primary" onClick={onTakeConversation} type="button">
           <UserPlus size={14} /> Tomar
         </button>
         
-        <button className="btn btn-outline" onClick={onCloseConversation} title="Cerrar conversación">
+        <button className="btn btn-outline" onClick={onCloseConversation} title="Cerrar conversación" type="button">
           <CheckCircle size={14} />
         </button>
       </div>

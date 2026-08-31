@@ -1,5 +1,5 @@
-import { Conversation } from "@/types/messages";
-import { User, MessageSquare, Globe, MessageCircle } from "lucide-react";
+import type { Conversation } from "@/types/messages";
+import { Bot, Globe, MessageSquare, User, UserRound } from "lucide-react";
 
 interface Props {
   conversation: Conversation;
@@ -7,60 +7,95 @@ interface Props {
   onClick: () => void;
 }
 
-export function ConversationItem({ conversation, isActive, onClick }: Props) {
-  const { contact, channel, unreadCount, status, botEnabled, lastMessageAt } = conversation;
+const MESSAGE_TYPE_LABELS: Record<string, string> = {
+  AUDIO: "Audio",
+  CONTACT: "Contacto",
+  DOCUMENT: "Documento",
+  IMAGE: "Imagen",
+  LOCATION: "Ubicación",
+  VIDEO: "Video",
+};
 
-  let channelIcon;
-  switch (channel) {
-    case "WHATSAPP": channelIcon = <MessageSquare size={12} color="#25D366" />; break;
-    case "INSTAGRAM": channelIcon = <MessageCircle size={12} color="#E1306C" />; break;
-    case "FACEBOOK": channelIcon = <MessageCircle size={12} color="#1877F2" />; break;
-    case "TIKTOK": channelIcon = <MessageSquare size={12} color="#000000" />; break;
-    case "WEB": channelIcon = <Globe size={12} color="#4B5563" />; break;
-    default: channelIcon = <MessageSquare size={12} />; break;
+function formatConversationTime(value: Conversation["lastMessageAt"]) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
   }
 
-  const dateObj = lastMessageAt ? new Date(lastMessageAt) : null;
-  const timeStr = dateObj 
-    ? `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
-    : "";
+  const today = new Date();
+  const isToday = date.toDateString() === today.toDateString();
+
+  if (isToday) {
+    return date.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  return date.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" });
+}
+
+function getPreview(conversation: Conversation) {
+  const lastMessage = conversation.lastMessage;
+
+  if (!lastMessage) {
+    return conversation.botEnabled ? "Bot activo" : "Asesor";
+  }
+
+  const content =
+    lastMessage.messageType === "TEXT" || lastMessage.messageType === "UNKNOWN"
+      ? lastMessage.content
+      : MESSAGE_TYPE_LABELS[lastMessage.messageType] ?? "Mensaje";
+
+  if (lastMessage.senderType === "AGENT") {
+    return `Asesor: ${content}`;
+  }
+
+  if (lastMessage.senderType === "BOT") {
+    return `Bot: ${content}`;
+  }
+
+  return content;
+}
+
+export function ConversationItem({ conversation, isActive, onClick }: Props) {
+  const { contact, channel, unreadCount, status, botEnabled, lastMessageAt } = conversation;
+  const ChannelIcon = channel === "WEB" ? Globe : MessageSquare;
+  const OwnerIcon = botEnabled ? Bot : UserRound;
 
   return (
-    <div className={`conversation-item ${isActive ? "active" : ""}`} onClick={onClick}>
+    <button className={`conversation-item ${isActive ? "active" : ""}`} onClick={onClick} type="button">
       <div className="conversation-avatar">
         {contact.avatar ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={contact.avatar} alt={contact.name} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+          <img alt={contact.name} className="conversation-avatar-img" src={contact.avatar} />
         ) : (
-          <User size={24} color="#9CA3AF" />
+          <User size={24} />
         )}
         <div className="conversation-channel-icon">
-          {channelIcon}
+          <ChannelIcon size={12} />
         </div>
       </div>
-      
+
       <div className="conversation-info">
         <div className="conversation-header">
           <span className="conversation-name">{contact.name}</span>
-          <span className="conversation-time">{timeStr}</span>
+          <span className="conversation-time">{formatConversationTime(lastMessageAt)}</span>
         </div>
-        
+
+        <div className="conversation-phone">{contact.phone || contact.phoneNormalized || "Sin teléfono"}</div>
+
         <div className="conversation-preview">
-          {/* We might not fetch the actual last message content without a join, so leaving blank or finding an alternative */}
-          <span className="conversation-last-msg" style={{ color: '#6B7280', fontSize: '12px' }}>
-            {botEnabled ? '🤖 Bot activo' : '👤 Asesor'}
-          </span>
-          {unreadCount > 0 && (
-            <span className="conversation-unread">{unreadCount}</span>
-          )}
+          <span className="conversation-last-msg">{getPreview(conversation)}</span>
+          {unreadCount > 0 ? <span className="conversation-unread">{unreadCount}</span> : null}
         </div>
-        
+
         <div className="conversation-tags">
-          <span className={`conversation-badge badge-${status.toLowerCase()}`}>
-            {status.replace('_', ' ')}
+          <span className={`conversation-badge badge-${status.toLowerCase()}`}>{status.replace("_", " ")}</span>
+          <span className="conversation-owner">
+            <OwnerIcon size={11} />
+            {botEnabled ? "Bot" : "Asesor"}
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

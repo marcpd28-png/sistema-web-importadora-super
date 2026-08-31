@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { getConversation, updateConversation } from "@/lib/messages-service";
+import { z } from "zod";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
@@ -35,14 +36,14 @@ export async function PATCH(
     
     const body = await request.json();
     
-    // In a real app we would validate the body with Zod here
-    // but the service function also validates to some extent (or we trust the typed input)
-    // Actually we should validate with the schema from the service
-    
     const conversation = await updateConversation(id, body);
 
     return NextResponse.json(conversation);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
+    }
+
     console.error("Error updating conversation:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -10,16 +10,22 @@ export async function GET(request: NextRequest) {
     await requireAdmin();
 
     const searchParams = request.nextUrl.searchParams;
-    
-    // Parse query params safely
+
     const query = {
       search: searchParams.get("search") || undefined,
+      q: searchParams.get("q") || undefined,
+      phone: searchParams.get("phone") || undefined,
+      date: searchParams.get("date") || undefined,
+      dateFrom: searchParams.get("dateFrom") || undefined,
+      dateTo: searchParams.get("dateTo") || undefined,
+      from: searchParams.get("from") || undefined,
+      to: searchParams.get("to") || undefined,
       status: searchParams.get("status") || undefined,
       channel: searchParams.get("channel") || undefined,
-      unreadOnly: searchParams.get("unreadOnly") === "true" ? true : undefined,
-      botEnabled: searchParams.has("botEnabled") ? searchParams.get("botEnabled") === "true" : undefined,
-      page: searchParams.has("page") ? parseInt(searchParams.get("page")!) : undefined,
-      limit: searchParams.has("limit") ? parseInt(searchParams.get("limit")!) : undefined,
+      unreadOnly: searchParams.get("unreadOnly") || undefined,
+      botEnabled: searchParams.get("botEnabled") || undefined,
+      page: searchParams.get("page") || undefined,
+      limit: searchParams.get("limit") || undefined,
     };
 
     const validatedQuery = getConversationsSchema.parse(query);

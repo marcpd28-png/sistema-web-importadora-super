@@ -654,20 +654,22 @@ enum MessageType {
 }
 
 model ChatContact {
-  id         String   @id @default(cuid())
-  externalId String?  @db.VarChar(120)
-  channel    Channel?
-  name       String   @db.VarChar(180)
-  phone      String?  @db.VarChar(32)
-  avatar     String?  @db.Text
-  tags       String[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String   @id @default(cuid())
+  externalId      String?  @db.VarChar(120)
+  channel         Channel?
+  name            String   @db.VarChar(180)
+  phone           String?  @db.VarChar(32)
+  phoneNormalized String?  @db.VarChar(32)
+  avatar          String?  @db.Text
+  tags            String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   conversations Conversation[]
 
   @@unique([channel, externalId])
   @@index([phone])
+  @@index([phoneNormalized])
   @@index([name])
 }
 
@@ -710,6 +712,7 @@ model ChatMessage {
   createdAt         DateTime         @default(now())
 
   @@index([conversationId])
+  @@index([conversationId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([externalMessageId])
   @@index([createdAt(sort: Asc)])
 }

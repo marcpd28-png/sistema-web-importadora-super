@@ -17,6 +17,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:sync-categories": "tsx prisma/sync-categories.ts",
+    "messages:backfill-phones": "tsx scripts/backfill-message-phones.ts",
     "sync:facturador-product": "tsx prisma/sync-facturador-product.ts",
     "sync:facturador-products": "tsx prisma/sync-facturador-products.ts",
     "sync:facturador-scheduler": "tsx prisma/erp-sync-scheduler.ts"

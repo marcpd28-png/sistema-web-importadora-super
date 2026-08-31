@@ -1,4 +1,4 @@
-import { ProductContext } from "@/types/messages";
+import type { ProductContext } from "@/types/messages";
 import { ExternalLink, Copy, Send } from "lucide-react";
 
 interface Props {

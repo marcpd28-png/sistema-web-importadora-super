@@ -1,4 +1,4 @@
-import { Conversation } from "@/types/messages";
+import type { Conversation } from "@/types/messages";
 import { ProductContextCard } from "./ProductContextCard";
 
 interface Props {
@@ -19,7 +19,7 @@ export function CustomerPanel({ conversation }: Props) {
         </div>
         <div className="info-row">
           <span className="info-label">Teléfono:</span>
-          <span className="info-value">{contact.phone || 'N/A'}</span>
+          <span className="info-value">{contact.phone || contact.phoneNormalized || 'N/A'}</span>
         </div>
         <div className="info-row">
           <span className="info-label">Canal:</span>
