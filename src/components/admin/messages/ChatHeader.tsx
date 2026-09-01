@@ -1,6 +1,7 @@
 import type { Conversation } from "@/types/messages";
 import { ConversationStatus } from "./ConversationStatus";
 import { UserPlus, StopCircle, PlayCircle, CheckCircle } from "lucide-react";
+import { DynamicAvatar } from "./ConversationItem";
 
 interface Props {
   conversation: Conversation;
@@ -15,6 +16,18 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
   return (
     <div className="chat-header">
       <div className="chat-header-info">
+        <div style={{ width: '40px', height: '40px', marginRight: '12px' }}>
+          {contact.avatar ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img 
+              alt={contact.name} 
+              src={contact.avatar} 
+              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+            />
+          ) : (
+            <DynamicAvatar name={contact.name} />
+          )}
+        </div>
         <div>
           <h3 className="chat-header-name">{contact.name}</h3>
           <div className="chat-header-meta">
