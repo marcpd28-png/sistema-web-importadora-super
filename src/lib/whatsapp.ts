@@ -16,6 +16,12 @@ export type WhatsappSendResult = {
   response: unknown;
 };
 
+type WhatsappTextMessageInput = {
+  body: string;
+  previewUrl?: boolean;
+  to: string;
+};
+
 export function getWhatsappAlertTarget(defaultNumber?: string | null) {
   const configured =
     process.env.WHATSAPP_ALERT_NUMBER?.trim() ||
@@ -38,6 +44,111 @@ export function isWhatsappApiConfigured() {
       process.env.WHATSAPP_ACCESS_TOKEN?.trim() &&
       process.env.WHATSAPP_PHONE_NUMBER_ID?.trim(),
   );
+}
+
+export async function sendWhatsappTextMessage(
+  input: WhatsappTextMessageInput,
+): Promise<WhatsappSendResult> {
+  const provider = process.env.WHATSAPP_PROVIDER?.trim();
+
+  if (provider !== "meta-cloud") {
+    throw new Error("El centro de mensajes requiere WHATSAPP_PROVIDER=meta-cloud.");
+  }
+
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+
+  if (!accessToken || !phoneNumberId) {
+    throw new Error("Faltan WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID para enviar por WhatsApp API.");
+  }
+
+  const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
+  const to = normalizeWhatsappRecipient(input.to);
+
+  if (!to) {
+    throw new Error("No hay un número destino válido para WhatsApp API.");
+  }
+
+  const response = await postMetaMessage(graphVersion, phoneNumberId, accessToken, {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: "text",
+    text: {
+      body: input.body,
+      preview_url: input.previewUrl ?? false,
+    },
+  });
+
+  return {
+    messageId: getMetaMessageId(response),
+    ok: true,
+    provider: "meta-cloud",
+    response,
+  };
+}
+
+export type WhatsappMediaMessageInput = {
+  type: "IMAGE" | "VIDEO" | "DOCUMENT";
+  mediaUrl: string;
+  caption?: string;
+  filename?: string;
+  to: string;
+};
+
+export async function sendWhatsappMediaMessage(
+  input: WhatsappMediaMessageInput,
+): Promise<WhatsappSendResult> {
+  const provider = process.env.WHATSAPP_PROVIDER?.trim();
+  if (provider !== "meta-cloud") {
+    throw new Error("El centro de mensajes requiere WHATSAPP_PROVIDER=meta-cloud.");
+  }
+
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+  if (!accessToken || !phoneNumberId) {
+    throw new Error("Faltan WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID.");
+  }
+
+  const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
+  const to = normalizeWhatsappRecipient(input.to);
+  if (!to) {
+    throw new Error("No hay un número destino válido para WhatsApp API.");
+  }
+
+  const mediaType = input.type === "IMAGE" ? "image" : input.type === "VIDEO" ? "video" : "document";
+  
+  // Resolve relative URLs to absolute URLs if needed for WhatsApp API (which requires absolute URLs)
+  // Assuming the host URL is required, we use the BASE_URL or just send it as is if it's already absolute.
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000";
+  const absoluteUrl = input.mediaUrl.startsWith("http") ? input.mediaUrl : `${baseUrl}${input.mediaUrl}`;
+
+  const mediaPayload: any = {
+    link: absoluteUrl,
+  };
+  
+  if (input.caption) {
+    mediaPayload.caption = input.caption;
+  }
+  
+  if (mediaType === "document" && input.filename) {
+    mediaPayload.filename = input.filename;
+  }
+
+  const response = await postMetaMessage(graphVersion, phoneNumberId, accessToken, {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: mediaType,
+    [mediaType]: mediaPayload,
+  });
+
+  return {
+    messageId: getMetaMessageId(response),
+    ok: true,
+    provider: "meta-cloud",
+    response,
+  };
 }
 
 export async function sendQuotePdfToWhatsapp(

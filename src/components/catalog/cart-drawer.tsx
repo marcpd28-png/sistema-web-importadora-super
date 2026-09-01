@@ -11,7 +11,9 @@ import {
   Trash2,
   UserRoundCheck,
   X,
+  CreditCard,
 } from "lucide-react";
+import { CulqiCheckout } from "@/components/catalog/culqi-checkout";
 import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
 import { rehydrateCartStore } from "@/components/catalog/cart-store";
 import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
@@ -202,14 +204,14 @@ function CartFooter({
       ) : null}
 
       {!quoteFormOpen ? (
-        <div className="cart-footer-actions">
+        <div className="cart-footer-actions" style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
           <button
             className="button button-primary cart-quote-open"
             onClick={onOpenQuoteForm}
             type="button"
           >
             <ReceiptText size={18} />
-            Generar cotización
+            Completar pedido
           </button>
         </div>
       ) : null}
@@ -224,7 +226,8 @@ function QuoteForm({
   onChange,
   onClose,
   onReset,
-  onSubmit,
+  onSubmitQuote,
+  onOpenPayment,
   quoteMessage,
   quoteMessageTone,
   quoteStatusSteps,
@@ -237,7 +240,8 @@ function QuoteForm({
   onChange: (field: keyof QuoteDraft, value: string) => void;
   onClose: () => void;
   onReset: () => void;
-  onSubmit: () => void;
+  onSubmitQuote: () => void;
+  onOpenPayment: () => void;
   quoteMessage: string;
   quoteMessageTone: "success" | "error" | "neutral";
   quoteStatusSteps: QuoteStatusStep[];
@@ -248,7 +252,7 @@ function QuoteForm({
     <section className="cart-quote-form">
       <div className="cart-quote-head">
         <span aria-hidden="true" className="cart-quote-head-spacer" />
-        <h3>Datos para cotización</h3>
+        <h3>Datos de envío y facturación</h3>
         <button className="icon-button icon-button-close" onClick={onClose} type="button">
           <X size={16} />
         </button>
@@ -336,16 +340,27 @@ function QuoteForm({
         </label>
       </div>
 
-      <div className="cart-quote-actions">
+      <div className="cart-quote-actions" style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
         <button
           className={`button cart-quote-submit ${isReady ? "is-ready button-primary" : "button-ghost"}`}
           disabled={!isReady || quoteState === "loading"}
-          onClick={onSubmit}
+          onClick={onOpenPayment}
           type="button"
         >
-          {quoteState === "loading" ? "Registrando..." : "Solicitar cotización"}
+          {quoteState === "loading" ? "Procesando..." : (
+            <>
+              <CreditCard size={18} /> Pagar Ahora
+            </>
+          )}
         </button>
-
+        <button
+          className={`button cart-quote-submit button-ghost`}
+          disabled={!isReady || quoteState === "loading"}
+          onClick={onSubmitQuote}
+          type="button"
+        >
+          Solo Solicitar Cotización
+        </button>
       </div>
 
       {quoteState !== "success" && quoteMessage ? (
@@ -393,6 +408,7 @@ export function CartDrawer({
   const [quoteMessageTone, setQuoteMessageTone] = useState<"success" | "error" | "neutral">("neutral");
   const [quoteStatusSteps, setQuoteStatusSteps] = useState<QuoteStatusStep[]>([]);
   const [quoteWhatsappHref, setQuoteWhatsappHref] = useState<string | null>(null);
+  const [culqiOpen, setCulqiOpen] = useState(false);
   const quoteSubmitPendingRef = useRef(false);
   const hasAccountDefaults = Boolean(quoteDefaults?.name?.trim() || quoteDefaults?.phone?.trim());
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(() => buildInitialQuoteDraft(settings, quoteDefaults));
@@ -552,6 +568,59 @@ export function CartDrawer({
     }
   };
 
+  const handleCulqiToken = async (token: string) => {
+    setQuoteState("loading");
+    setQuoteMessage("Procesando pago...");
+    setQuoteMessageTone("neutral");
+    
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          customer: {
+            documentNumber: quoteDraft.documentNumber,
+            documentType: quoteDraft.documentType,
+            name: quoteDraft.name,
+            phone: quoteDraft.phone,
+          },
+          items: orderLines.map(({ item }) => ({
+            code: item.code,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+          })),
+          amount: Math.round(totalAmount * 100),
+          currency: "PEN",
+        }),
+      });
+      
+      const payload = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(payload.message || "Error al procesar el pago");
+      }
+      
+      setQuoteState("success");
+      setQuoteMessage("Pago exitoso. Tu pedido ha sido registrado.");
+      setQuoteMessageTone("success");
+      clear();
+    } catch (error) {
+      setQuoteState("error");
+      setQuoteMessage(error instanceof Error ? error.message : "Error procesando el pago");
+      setQuoteMessageTone("error");
+    }
+  };
+
+  const handleCulqiError = (error: string) => {
+    setQuoteState("error");
+    setQuoteMessage(error);
+    setQuoteMessageTone("error");
+  };
+
   if (!open && !orderLines.length) {
     return null;
   }
@@ -606,12 +675,24 @@ export function CartDrawer({
               onChange={updateQuoteDraft}
               onClose={() => setQuoteFormOpen(false)}
               onReset={resetQuoteDraft}
-              onSubmit={submitQuoteToErp}
+              onSubmitQuote={submitQuoteToErp}
+              onOpenPayment={() => setCulqiOpen(true)}
               quoteMessage={quoteMessage}
               quoteMessageTone={quoteMessageTone}
               quoteState={quoteState}
               quoteStatusSteps={quoteStatusSteps}
               quoteWhatsappHref={quoteWhatsappHref}
+            />
+            
+            <CulqiCheckout
+              publicKey="pk_test_a0437cd3339ed240"
+              amount={Math.round(totalAmount * 100)}
+              currency="PEN"
+              title={settings.businessName}
+              isOpen={culqiOpen}
+              onClose={() => setCulqiOpen(false)}
+              onToken={handleCulqiToken}
+              onError={handleCulqiError}
             />
           </div>
         </div>

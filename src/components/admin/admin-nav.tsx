@@ -9,6 +9,7 @@ import {
   FolderTree,
   ImagePlus,
   LogOut,
+  MessageCircle,
   MessageSquareHeart,
   PackagePlus,
   PackageSearch,
@@ -59,6 +60,7 @@ const sections: AdminNavSection[] = [
     title: "Clientes y Atención",
     links: [
       { href: "/admin/users", label: "Usuarios", icon: UsersRound },
+      { href: "/admin/mensajes", label: "Centro Mensajes", icon: MessageCircle },
       { href: "/admin/opiniones", label: "Opiniones", icon: MessageSquareHeart },
       { href: "/admin/reclamos", label: "Libro Reclam.", icon: ShieldAlert, badgeKey: "newComplaintsCount" },
     ],
