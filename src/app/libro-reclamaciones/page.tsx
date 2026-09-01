@@ -1506,7 +1506,7 @@ export default function LibroReclamacionesPage() {
             <strong>Notas explicativas de ley:</strong><br />
             ¹ <strong>Reclamo:</strong> Disconformidad relacionada a los productos expendidos o servicios prestados; o disconformidad sobre la calidad del servicio posventa.<br />
             ² <strong>Queja:</strong> Disconformidad que no se encuentra relacionada a los productos o servicios defectuosos; sino al malestar o descontento respecto a la atención al cliente.<br />
-            * Plazo de atención del reclamo: De acuerdo con la Ley N° 31435, el plazo máximo de atención de quejas y reclamos es de <strong>15 días hábiles no prorrogables</strong>, contados a partir del día siguiente del registro.
+            * Plazo de atención De acuerdo al artículo 15 de la Ley N° 29571, te recordamos que el plazo máximo para dar respuesta al presente reclamo es de 15 días hábiles. Al enviar tus datos, aceptas la &quot;Política de Privacidad&quot; y los &quot;Términos y Condiciones&quot;.
           </div>
         </div>
       )}

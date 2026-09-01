@@ -90,7 +90,7 @@ async function readUploadFile(filePath: string, requestHeaders?: Headers) {
 
 export async function GET(
   request: Request,
-  { params }: RouteContext<"/uploads/[...path]">,
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path: uploadPath } = await params;
   const filePath = safeJoinUploadPath(uploadPath);
@@ -114,7 +114,7 @@ export async function GET(
 
 export async function HEAD(
   _request: Request,
-  { params }: RouteContext<"/uploads/[...path]">,
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path: uploadPath } = await params;
   const filePath = safeJoinUploadPath(uploadPath);
