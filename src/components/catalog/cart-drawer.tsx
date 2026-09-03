@@ -341,18 +341,20 @@ function QuoteForm({
       </div>
 
       <div className="cart-quote-actions" style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
-        <button
-          className={`button cart-quote-submit ${isReady ? "is-ready button-primary" : "button-ghost"}`}
-          disabled={!isReady || quoteState === "loading"}
-          onClick={onOpenPayment}
-          type="button"
-        >
-          {quoteState === "loading" ? "Procesando..." : (
-            <>
-              <CreditCard size={18} /> Pagar Ahora
-            </>
-          )}
-        </button>
+        {process.env.NEXT_PUBLIC_ENABLE_PAYMENTS === "true" && (
+          <button
+            className={`button cart-quote-submit ${isReady ? "is-ready button-primary" : "button-ghost"}`}
+            disabled={!isReady || quoteState === "loading"}
+            onClick={onOpenPayment}
+            type="button"
+          >
+            {quoteState === "loading" ? "Procesando..." : (
+              <>
+                <CreditCard size={18} /> Pagar Ahora
+              </>
+            )}
+          </button>
+        )}
         <button
           className={`button cart-quote-submit button-ghost`}
           disabled={!isReady || quoteState === "loading"}
