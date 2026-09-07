@@ -16675,7 +16675,11 @@ body.admin-sidebar-collapsed .admin-sidebar-brand {
   margin-bottom: 1rem;
 }
 
-body.admin-sidebar-collapsed .admin-sidebar-brand .brand-logo {
+body.admin-sidebar-collapsed .brand-logo-container {
+  display: none !important;
+}
+
+/* 
   width: 48px;
   height: 48px;
   overflow: hidden;
@@ -16712,4 +16716,12 @@ body.admin-sidebar-collapsed .admin-nav-button {
   width: 100%;
   justify-content: center;
   position: relative;
+}
+
+body.admin-sidebar-collapsed .brand-logo-container {
+  display: none !important;
+}
+
+body.admin-sidebar-collapsed .admin-sidebar-brand {
+  justify-content: center !important;
 }

@@ -27,8 +27,11 @@ export default async function AdminLayout({
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-main" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          <div className="admin-sidebar-brand">
-            <BrandLogo href="/admin" priority size="sm" />
+          <div className="admin-sidebar-brand" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <div className="brand-logo-container">
+              <BrandLogo href="/admin" priority size="sm" />
+            </div>
+            <SidebarToggle />
           </div>
           <div className="admin-profile-card">
             <span className="admin-profile-badge">
@@ -43,8 +46,6 @@ export default async function AdminLayout({
           </div>
 
           <AdminNav badges={badges} />
-          
-          <SidebarToggle />
         </div>
       </aside>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function SidebarToggle() {
@@ -27,23 +27,16 @@ export function SidebarToggle() {
     }
   };
 
-  if (!mounted) return <div style={{ height: "40px", marginTop: "auto" }} />;
+  if (!mounted) return <div style={{ width: "36px", height: "36px" }} />;
 
   return (
     <button 
       onClick={toggle}
-      className="button button-ghost"
-      style={{ 
-        width: "100%", 
-        justifyContent: collapsed ? "center" : "flex-start", 
-        marginTop: "auto", 
-        color: "var(--muted)",
-        gap: "10px",
-        padding: collapsed ? "0" : "0 1rem"
-      }}
+      className="icon-button"
+      style={{ color: "var(--muted)", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center" }}
       title={collapsed ? "Expandir menú" : "Colapsar menú"}
     >
-      {collapsed ? <ChevronRight size={20} /> : <><ChevronLeft size={18} /> <span>Colapsar menú</span></>}
+      {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
     </button>
   );
 }
