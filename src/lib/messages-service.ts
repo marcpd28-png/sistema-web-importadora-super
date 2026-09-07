@@ -2,10 +2,10 @@ import { z } from "zod";
 import { Channel, ConversationState, MessageType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
-import { 
-  sendWhatsappTextMessage, 
-  sendWhatsappMediaMessage 
-} from "@/lib/whatsapp";
+import {
+  sendN8nOutboundMessage,
+  type N8nOutboundMessageType,
+} from "@/lib/n8n-outbound";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
@@ -415,26 +415,25 @@ export async function sendInternalMessage(
     throw new Error("La conversación no tiene un teléfono de WhatsApp válido.");
   }
 
-  let sent;
-  if (parsed.type === "TEXT") {
-    sent = await sendWhatsappTextMessage({
-      body: parsed.content,
-      to: recipient,
-    });
-  } else if (["IMAGE", "VIDEO", "DOCUMENT"].includes(parsed.type)) {
-    if (!parsed.mediaUrl) {
-      throw new Error("Se requiere mediaUrl para enviar archivos multimedia.");
-    }
-    sent = await sendWhatsappMediaMessage({
-      type: parsed.type as any,
-      mediaUrl: parsed.mediaUrl,
-      caption: parsed.content || undefined,
-      filename: parsed.mediaUrl.split('/').pop() || 'archivo',
-      to: recipient,
-    });
-  } else {
+  if (!["TEXT", "IMAGE", "VIDEO", "DOCUMENT"].includes(parsed.type)) {
     throw new Error("El tipo de mensaje no está soportado por ahora.");
   }
+
+  if (parsed.type !== "TEXT" && !parsed.mediaUrl) {
+    throw new Error("Se requiere mediaUrl para enviar archivos multimedia.");
+  }
+
+  const outboundType = parsed.type as N8nOutboundMessageType;
+
+  const sent = await sendN8nOutboundMessage({
+    agentId,
+    channel: "WHATSAPP",
+    content: parsed.content,
+    conversationId,
+    mediaUrl: parsed.mediaUrl ?? null,
+    recipient,
+    type: outboundType,
+  });
 
   return prisma.$transaction(async (tx) => {
     const message = await tx.chatMessage.create({
@@ -446,7 +445,10 @@ export async function sendInternalMessage(
         messageType: parsed.type,
         content: parsed.content,
         mediaUrl: parsed.mediaUrl,
-        metadata: sent.response ? (sent.response as Prisma.InputJsonValue) : Prisma.JsonNull,
+        metadata: {
+          provider: sent.provider,
+          requestId: sent.requestId,
+        },
         status: "sent",
       },
     });

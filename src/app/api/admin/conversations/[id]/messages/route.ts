@@ -5,6 +5,7 @@ import {
   getConversationMessagesSchema,
   sendInternalMessage,
 } from "@/lib/messages-service";
+import { N8nOutboundError } from "@/lib/n8n-outbound";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,13 @@ export async function POST(
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
+    }
+
+    if (error instanceof N8nOutboundError) {
+      return NextResponse.json(
+        { code: error.code, error: error.message },
+        { status: error.statusCode },
+      );
     }
 
     console.error("Error sending message:", error);
