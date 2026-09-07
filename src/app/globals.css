@@ -468,6 +468,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-width: 7.8rem;
   min-height: 2.8rem;
   padding: 0.65rem 1rem;
@@ -768,6 +769,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.45rem;
   min-height: 3rem;
   padding: 0.7rem 1rem;
@@ -1778,6 +1780,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.48rem;
   min-height: 2.65rem;
   padding: 0.46rem 1.12rem;
@@ -1834,6 +1837,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   flex: 0 0 auto;
 }
 
@@ -1959,6 +1963,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 1.25rem;
   height: 1.25rem;
   color: rgba(var(--brand-ink-rgb), 0.52);
@@ -2138,6 +2143,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2rem;
   height: 2rem;
   padding: 0;
@@ -2267,6 +2273,7 @@ body {
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.45rem;
   min-width: 5.75rem;
   min-height: 3.2rem;
@@ -2296,6 +2303,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-width: 1.15rem;
   min-height: 1.15rem;
   padding: 0 0.28rem;
@@ -2331,6 +2339,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.18rem;
   min-width: 6.25rem;
   min-height: 3.4rem;
@@ -2460,6 +2469,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: clamp(0.18rem, 0.35vw, 0.3rem);
   min-width: clamp(3.05rem, 3.85vw, 4.55rem);
   min-height: clamp(2.9rem, 3.85vw, 4.35rem);
@@ -2489,6 +2499,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-width: 1.18rem;
   min-height: 1.18rem;
   padding: 0 0.25rem;
@@ -2513,6 +2524,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   flex: 0 0 auto;
   width: var(--store-whatsapp-float-size);
   height: var(--store-whatsapp-float-size);
@@ -2929,6 +2941,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-height: 1.5rem;
   padding: 0.2rem 0.45rem;
   border-radius: 999px;
@@ -3006,6 +3019,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-height: 2.2rem;
   padding: 0.48rem 0.8rem;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.08);
@@ -3133,6 +3147,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
   justify-content: center;
+  position: relative;
   gap: 1rem;
   align-items: stretch;
   width: 100%;
@@ -3353,6 +3368,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-height: 2.35rem;
   padding: 0.48rem 0.84rem;
   border-radius: 999px;
@@ -3417,6 +3433,7 @@ body {
 
 .admin-select-all {
   justify-content: center;
+  position: relative;
   min-height: auto;
   padding: 0;
   border: 0;
@@ -3618,6 +3635,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 3rem;
   height: 3rem;
   border-radius: 999px;
@@ -4107,6 +4125,7 @@ body[data-admin-theme="dark"] .admin-chip-filter.is-neutral {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.7rem;
   height: 2.7rem;
   border: 0;
@@ -4417,6 +4436,7 @@ body[data-admin-theme="dark"] .admin-chip-filter.is-neutral {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.2rem;
   height: 2.2rem;
   border: 0;
@@ -4448,6 +4468,7 @@ body[data-admin-theme="dark"] .admin-chip-filter.is-neutral {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   padding: 0.45rem 0.7rem;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -4483,6 +4504,7 @@ body[data-admin-theme="dark"] .admin-chip-filter.is-neutral {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2rem;
   height: 2rem;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.08);
@@ -4780,6 +4802,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   gap: 0.65rem;
   flex-wrap: wrap;
   justify-content: center;
+  position: relative;
 }
 
 .hero-banner-empty-state strong {
@@ -5562,6 +5585,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0;
   position: relative;
   min-width: 0;
@@ -5604,6 +5628,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.4rem;
   min-height: 2.35rem;
   padding: 0.3rem 0.45rem;
@@ -5615,6 +5640,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 1.95rem;
   height: 1.95rem;
   padding: 0;
@@ -6073,6 +6099,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 30px;
   height: 30px;
   border: 0;
@@ -6120,6 +6147,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.55rem;
   border: 0;
   border-radius: 999px;
@@ -6216,6 +6244,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-width: 28px;
   min-height: 28px;
   border-radius: 999px;
@@ -6447,6 +6476,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 
 .cart-quote-open {
   justify-content: center;
+  position: relative;
   color: white;
   background: var(--brand-primary);
   border-color: var(--brand-primary);
@@ -6867,6 +6897,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.7rem;
   width: 100%;
   min-height: 3rem;
@@ -6890,6 +6921,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 1.7rem;
   height: 1.7rem;
   border-radius: 999px;
@@ -6964,6 +6996,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   flex-wrap: wrap;
   gap: 0.6rem;
   justify-content: center;
+  position: relative;
   align-items: center;
 }
 
@@ -7034,6 +7067,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-height: 1.35rem;
   border-radius: 999px;
   font-size: 0.63rem;
@@ -7074,6 +7108,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   height: 100%;
   align-items: center;
   justify-content: center;
+  position: relative;
   text-align: center;
   color: var(--muted);
 }
@@ -7297,6 +7332,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+  position: relative;
     min-height: 2.1rem !important;
     height: 2.1rem !important;
     max-height: 2.1rem !important;
@@ -7554,6 +7590,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 3rem;
   height: 3rem;
   border-radius: 18px;
@@ -7606,6 +7643,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   width: 100%;
   gap: 1.5rem;
   justify-content: center;
+  position: relative;
   padding: 2.25rem;
   border-radius: 0;
   background:
@@ -7667,6 +7705,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   padding: 0 1rem;
   border-radius: 999px;
   color: var(--muted);
@@ -7857,6 +7896,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.55rem;
   min-height: 44px;
   padding: 0.66rem 0.9rem;
@@ -7878,6 +7918,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   flex-wrap: wrap;
   gap: 0.38rem;
   justify-content: center;
+  position: relative;
 }
 
 .store-footer-social {
@@ -7923,6 +7964,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.5rem;
   width: fit-content;
   min-height: 42px;
@@ -8045,6 +8087,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.3rem;
   padding: 0.55rem 0 0.35rem;
   text-align: center;
@@ -8344,6 +8387,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   .complaint-response-actions .button {
     width: 100%;
     justify-content: center;
+  position: relative;
   }
 }
 
@@ -8784,6 +8828,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.45rem;
   min-height: 2.55rem;
   padding: 0 0.9rem;
@@ -9328,6 +9373,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 .media-upload-button {
   width: 100%;
   justify-content: center;
+  position: relative;
 }
 
 .field-caption {
@@ -9639,6 +9685,7 @@ body[data-admin-theme="dark"] .auth-panel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.7rem;
   height: 2.7rem;
   border-radius: 18px;
@@ -9796,6 +9843,7 @@ body[data-admin-theme="dark"] .admin-nav-link:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
@@ -9817,6 +9865,7 @@ body[data-admin-theme="dark"] .admin-nav-link:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-width: 1.35rem;
   height: 1.35rem;
   padding: 0 0.45rem;
@@ -10223,6 +10272,7 @@ body[data-admin-theme="dark"] .admin-hero-footnote {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   border-radius: 999px;
 }
 
@@ -10407,6 +10457,7 @@ body[data-admin-theme="dark"] .admin-hero-footnote {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   color: var(--muted);
 }
 
@@ -10447,6 +10498,7 @@ body[data-admin-theme="dark"] .admin-hero-footnote {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 18px;
@@ -10574,6 +10626,7 @@ body[data-admin-theme="dark"] .category-summary-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 14px;
@@ -10768,6 +10821,7 @@ body[data-admin-theme="dark"] .category-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 0.45rem;
   width: fit-content;
   min-height: 2rem;
@@ -10803,6 +10857,7 @@ body[data-admin-theme="dark"] .category-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-height: 2rem;
   padding: 0 0.8rem;
   border-radius: 999px;
@@ -11918,6 +11973,7 @@ body[data-admin-theme="dark"] .category-card {
 .erp-progress-idle-secondary {
   width: 100%;
   justify-content: center;
+  position: relative;
 }
 
 .erp-progress-idle-link {
@@ -12040,6 +12096,7 @@ body[data-admin-theme="dark"] .category-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.2rem;
   height: 2.2rem;
   border-radius: 999px;
@@ -12556,6 +12613,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .hero-banner-cta {
     width: 100%;
     justify-content: center;
+  position: relative;
     min-height: 2.4rem;
   }
 }
@@ -12605,6 +12663,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     width: 2.42rem;
     padding: 0;
     justify-content: center;
+  position: relative;
   }
 
   .public-store-mobile-category-slot {
@@ -12625,6 +12684,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-mobile-category-slot .public-store-shortcut.is-lead {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-width: 3.1rem;
     width: 3.1rem;
@@ -12772,6 +12832,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
   min-width: 2.7rem;
   min-height: 3.8rem;
   padding: 0;
@@ -12786,6 +12847,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 1.65rem;
   height: 1.65rem;
 }
@@ -12852,6 +12914,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   display: inline-flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
   align-items: center;
   gap: 0.18rem;
   padding: 0.46rem 0.72rem;
@@ -13034,6 +13097,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .shopper-quick-actions .button {
     width: 100%;
     justify-content: center;
+  position: relative;
   }
 
   .public-store-desktop-category-slot {
@@ -13263,6 +13327,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
 
   .product-detail-qty-row {
     justify-content: center;
+  position: relative;
     gap: 0.55rem;
     width: 100%;
   }
@@ -13764,6 +13829,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-mobile-category-slot .public-store-shortcut.is-lead {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-height: 3.15rem;
     padding: 0.28rem 0.22rem;
@@ -13885,6 +13951,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
 
   .public-store-shortcut-menu summary {
     justify-content: center;
+  position: relative;
   }
 
   .public-store-actions {
@@ -13897,6 +13964,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     grid-area: cart;
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-width: 2.18rem;
     width: 2.18rem;
@@ -13994,6 +14062,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-mobile-category-slot .public-store-shortcut.is-lead {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     gap: 0.15rem;
     min-height: 3.8rem;
@@ -14048,6 +14117,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     justify-self: end;
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-width: 2.7rem;
     width: 2.7rem;
@@ -14106,6 +14176,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-account-popover > .account-popover-trigger {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-width: 2.7rem;
     min-height: 3.8rem;
@@ -14148,6 +14219,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
 
   .public-store-shortcut-menu summary {
     justify-content: center;
+  position: relative;
   }
 
   .public-store-header-shell.is-collapsed .public-store-brand {
@@ -14222,6 +14294,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .site-admin-entry .button {
     width: 100%;
     justify-content: center;
+  position: relative;
   }
 
   .hero-copy h1,
@@ -14344,6 +14417,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .product-detail-qty-row {
     align-items: center;
     justify-content: center;
+  position: relative;
   }
 
   .product-detail-stage {
@@ -14574,6 +14648,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     bottom: calc(0.05rem + env(safe-area-inset-bottom, 0px));
     width: auto;
     justify-content: center;
+  position: relative;
   }
 
   .qty-control {
@@ -14685,6 +14760,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 2.35rem;
   height: 2.35rem;
   border: 1px solid rgba(var(--brand-ink-rgb), 0.1);
@@ -15131,6 +15207,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     padding: 0;
     border-radius: 999px;
     justify-content: center;
+  position: relative;
     background: transparent;
     border: 0;
   }
@@ -15212,6 +15289,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   display: inline-flex;
   grid-area: cart;
   justify-content: center;
+  position: relative;
 }
 
 .public-store-header-shell .public-store-quick-link {
@@ -15272,6 +15350,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
 
 .public-store-header-shell .public-store-mobile-category-slot .public-store-shortcut.is-lead {
   justify-content: center;
+  position: relative;
   align-items: center;
   gap: 0.15rem;
   min-width: 3.1rem;
@@ -15347,6 +15426,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-header-shell .public-store-mobile-category-slot .public-store-shortcut.is-lead {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     gap: 0.15rem;
     min-width: 2.7rem;
@@ -15381,6 +15461,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     grid-area: cart;
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     justify-self: end;
     min-width: 2.7rem;
@@ -15422,6 +15503,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-header-shell .public-store-account-popover > .account-popover-trigger {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-width: 2.7rem;
     min-height: 3.8rem;
@@ -15590,6 +15672,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   .public-store-header-shell .public-store-cart-link {
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     min-height: 3.8rem;
     padding: 0;
@@ -16060,6 +16143,7 @@ main,
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
+  position: relative;
     align-items: center;
     gap: 0.18rem;
     padding: 0.46rem 0.72rem;
@@ -16532,6 +16616,7 @@ main,
     flex-direction: row;
     align-items: center;
     justify-content: center;
+  position: relative;
     width: var(--store-whatsapp-float-size) !important;
     height: var(--store-whatsapp-float-size) !important;
     min-width: var(--store-whatsapp-float-size) !important;
@@ -16557,4 +16642,74 @@ main,
     width: 100%;
     height: 100%;
   }
+}
+
+/* Admin Sidebar Collapsed State */
+body.admin-sidebar-collapsed .admin-shell {
+  grid-template-columns: 88px minmax(0, 1fr) !important;
+}
+
+body.admin-sidebar-collapsed .admin-sidebar {
+  padding: 1.25rem 0.5rem;
+  align-items: center;
+}
+
+body.admin-sidebar-collapsed .admin-nav-label,
+body.admin-sidebar-collapsed .admin-nav-section-title,
+body.admin-sidebar-collapsed .admin-profile-body {
+  display: none !important;
+}
+
+body.admin-sidebar-collapsed .admin-profile-card {
+  padding: 0;
+  background: transparent;
+  justify-content: center;
+  position: relative;
+  box-shadow: none;
+}
+
+body.admin-sidebar-collapsed .admin-sidebar-brand {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+body.admin-sidebar-collapsed .admin-sidebar-brand .brand-logo {
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+  background: var(--brand-ink);
+}
+
+body.admin-sidebar-collapsed .admin-sidebar-brand .brand-logo-image {
+  object-fit: cover;
+  object-position: left center;
+  width: 200%;
+  height: 100%;
+}
+
+body.admin-sidebar-collapsed .admin-nav-link {
+  justify-content: center;
+  position: relative;
+  padding: 0.75rem;
+}
+
+body.admin-sidebar-collapsed .admin-nav-icon {
+  margin: 0;
+}
+
+body.admin-sidebar-collapsed .admin-nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  transform: scale(0.75);
+}
+
+body.admin-sidebar-collapsed .admin-nav-button {
+  width: 100%;
+  justify-content: center;
+  position: relative;
 }

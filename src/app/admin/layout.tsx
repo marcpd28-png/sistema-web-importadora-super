@@ -4,6 +4,7 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { getAdminNavBadges } from "@/lib/admin";
 import { ForcePasswordChange } from "@/components/admin/force-password-change";
+import { SidebarToggle } from "@/components/admin/sidebar-toggle";
 
 export default async function AdminLayout({
   children,
@@ -25,7 +26,7 @@ export default async function AdminLayout({
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-main">
+        <div className="admin-sidebar-main" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
           <div className="admin-sidebar-brand">
             <BrandLogo href="/admin" priority size="sm" />
           </div>
@@ -42,6 +43,8 @@ export default async function AdminLayout({
           </div>
 
           <AdminNav badges={badges} />
+          
+          <SidebarToggle />
         </div>
       </aside>
 

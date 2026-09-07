@@ -27,7 +27,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable}`}>
-      <body>{children}</body>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if (localStorage.getItem("admin-sidebar-collapsed") === "true") { document.body.classList.add("admin-sidebar-collapsed"); }`
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
