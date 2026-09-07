@@ -16764,3 +16764,12 @@ body[data-admin-theme="dark"] .admin-content {
 body[data-admin-theme="dark"] .admin-shell {
   filter: drop-shadow(0 10px 40px rgba(0,0,0,0.3));
 }
+
+/* Hide ugly scrollbar in sidebar to prevent overlap with chevrons */
+.admin-sidebar::-webkit-scrollbar {
+  display: none;
+}
+.admin-sidebar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
