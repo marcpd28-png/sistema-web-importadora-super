@@ -1,4 +1,5 @@
 import { cleanWhatsappNumber } from "@/lib/utils";
+import { resolveWhatsappCredentials } from "@/lib/whatsapp-credentials";
 
 type QuotePdfNotificationInput = {
   bodyText: string;
@@ -49,18 +50,7 @@ export function isWhatsappApiConfigured() {
 export async function sendWhatsappTextMessage(
   input: WhatsappTextMessageInput,
 ): Promise<WhatsappSendResult> {
-  const provider = process.env.WHATSAPP_PROVIDER?.trim();
-
-  if (provider !== "meta-cloud") {
-    throw new Error("El centro de mensajes requiere WHATSAPP_PROVIDER=meta-cloud.");
-  }
-
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
-
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("Faltan WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID para enviar por WhatsApp API.");
-  }
+  const { accessToken, phoneNumberId } = await resolveWhatsappCredentials();
 
   const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
   const to = normalizeWhatsappRecipient(input.to);
@@ -99,16 +89,7 @@ export type WhatsappMediaMessageInput = {
 export async function sendWhatsappMediaMessage(
   input: WhatsappMediaMessageInput,
 ): Promise<WhatsappSendResult> {
-  const provider = process.env.WHATSAPP_PROVIDER?.trim();
-  if (provider !== "meta-cloud") {
-    throw new Error("El centro de mensajes requiere WHATSAPP_PROVIDER=meta-cloud.");
-  }
-
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("Faltan WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID.");
-  }
+  const { accessToken, phoneNumberId } = await resolveWhatsappCredentials();
 
   const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
   const to = normalizeWhatsappRecipient(input.to);
@@ -123,7 +104,7 @@ export async function sendWhatsappMediaMessage(
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000";
   const absoluteUrl = input.mediaUrl.startsWith("http") ? input.mediaUrl : `${baseUrl}${input.mediaUrl}`;
 
-  const mediaPayload: any = {
+  const mediaPayload: { link: string; caption?: string; filename?: string } = {
     link: absoluteUrl,
   };
   

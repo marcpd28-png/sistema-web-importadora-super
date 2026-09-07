@@ -8,6 +8,8 @@ export function MessageBubble({ message }: Props) {
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
   const isAgent = message.senderType === "AGENT";
+  const isSending = message.status === "sending";
+  const isFailed = message.status === "failed";
   
   let bubbleClass = "message-customer";
   if (isBot) bubbleClass = "message-bot";
@@ -29,9 +31,9 @@ export function MessageBubble({ message }: Props) {
       fontSize: '14px',
       position: 'relative',
       alignSelf: isCustomer ? 'flex-start' : 'flex-end',
-      backgroundColor: isCustomer ? '#ffffff' : isBot ? '#f0fdf4' : '#dcf8c6', // WhatsApp-like colors
+      backgroundColor: isFailed ? '#fee2e2' : isCustomer ? '#ffffff' : isBot ? '#f0fdf4' : '#dcf8c6', // WhatsApp-like colors
       color: '#111b21',
-      border: isCustomer ? '1px solid #e5e7eb' : '1px solid transparent',
+      border: isFailed ? '1px solid #fca5a5' : isCustomer ? '1px solid #e5e7eb' : '1px solid transparent',
       borderTopLeftRadius: isCustomer ? '0' : '12px',
       borderTopRightRadius: isCustomer ? '12px' : '0',
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
@@ -56,6 +58,8 @@ export function MessageBubble({ message }: Props) {
       <span style={{ fontSize: '10px', color: '#667781', textAlign: 'right', marginTop: '4px' }}>
         {timeStr}
       </span>
+      {isSending && <span style={{ fontSize: '10px', color: '#92400e' }}>Enviando...</span>}
+      {isFailed && <span style={{ fontSize: '10px', color: '#b91c1c' }}>Error de envío. Reintenta.</span>}
     </div>
   );
 }

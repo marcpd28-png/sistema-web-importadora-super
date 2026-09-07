@@ -24,11 +24,13 @@ export const dynamic = "force-dynamic";
 const roleLabels: Record<UserRole, string> = {
   ADMIN: "Administrador",
   USERSHOP: "Comprador",
+  PROMOTOR: "Promotor",
 };
 
 const rolePills: Record<UserRole, string> = {
   ADMIN: "is-admin",
   USERSHOP: "is-shopper",
+  PROMOTOR: "is-promotor",
 };
 
 function formatDate(value: Date) {
