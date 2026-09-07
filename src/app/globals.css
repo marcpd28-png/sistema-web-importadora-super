@@ -16645,8 +16645,9 @@ main,
 }
 
 /* Admin Sidebar Collapsed State */
+/* Admin Sidebar Collapsed State */
 body.admin-sidebar-collapsed .admin-shell {
-  grid-template-columns: 88px minmax(0, 1fr) !important;
+  grid-template-columns: 80px minmax(0, 1fr) !important;
 }
 
 body.admin-sidebar-collapsed .admin-sidebar {
@@ -16664,14 +16665,11 @@ body.admin-sidebar-collapsed .admin-profile-card {
   padding: 0;
   background: transparent;
   justify-content: center;
-  position: relative;
   box-shadow: none;
 }
 
 body.admin-sidebar-collapsed .admin-sidebar-brand {
-  display: flex;
-  justify-content: center;
-  position: relative;
+  justify-content: center !important;
   margin-bottom: 1rem;
 }
 
@@ -16679,26 +16677,14 @@ body.admin-sidebar-collapsed .brand-logo-container {
   display: none !important;
 }
 
-/* 
-  width: 48px;
-  height: 48px;
-  overflow: hidden;
-  position: relative;
-  border-radius: 8px;
-  background: var(--brand-ink);
-}
-
-body.admin-sidebar-collapsed .admin-sidebar-brand .brand-logo-image {
-  object-fit: cover;
-  object-position: left center;
-  width: 200%;
-  height: 100%;
-}
-
 body.admin-sidebar-collapsed .admin-nav-link {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0 auto;
   justify-content: center;
   position: relative;
-  padding: 0.75rem;
+  border-radius: 12px;
 }
 
 body.admin-sidebar-collapsed .admin-nav-icon {
@@ -16707,21 +16693,14 @@ body.admin-sidebar-collapsed .admin-nav-icon {
 
 body.admin-sidebar-collapsed .admin-nav-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  transform: scale(0.75);
+  top: -4px;
+  right: -4px;
+  transform: scale(0.7);
+  transform-origin: top right;
 }
 
 body.admin-sidebar-collapsed .admin-nav-button {
-  width: 100%;
+  width: 44px;
   justify-content: center;
   position: relative;
-}
-
-body.admin-sidebar-collapsed .brand-logo-container {
-  display: none !important;
-}
-
-body.admin-sidebar-collapsed .admin-sidebar-brand {
-  justify-content: center !important;
 }
