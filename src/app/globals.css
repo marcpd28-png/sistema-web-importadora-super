@@ -16704,3 +16704,10 @@ body.admin-sidebar-collapsed .admin-nav-button {
   justify-content: center;
   position: relative;
 }
+
+.admin-nav-links.is-accordion-closed {
+  display: none;
+}
+body.admin-sidebar-collapsed .admin-nav-links.is-accordion-closed {
+  display: grid !important; /* Force show when sidebar is icon-only */
+}
