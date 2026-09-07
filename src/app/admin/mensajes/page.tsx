@@ -1,4 +1,5 @@
 import { MessagesWorkspace } from "@/components/admin/messages/MessagesWorkspace";
+import { WhatsAppMetaConnect } from "@/components/admin/messages/WhatsAppMetaConnect";
 import { Metadata } from "next";
 import "./messages.css";
 
@@ -14,6 +15,8 @@ export default function MensajesPage() {
         <h1 className="h2">Centro de Mensajes</h1>
         <p className="text-muted">Gestiona todas las conversaciones con clientes desde un solo lugar.</p>
       </div>
+
+      <WhatsAppMetaConnect />
       
       <MessagesWorkspace />
     </div>

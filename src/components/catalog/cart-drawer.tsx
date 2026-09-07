@@ -33,12 +33,17 @@ type QuoteDraftDefaults = {
   phone?: string | null;
 };
 
+type DeliveryType = "DELIVERY" | "PICKUP" | "PROVINCE";
+
 type QuoteDraft = {
   name: string;
   phone: string;
   documentType: string;
   documentNumber: string;
   note: string;
+  deliveryType: DeliveryType;
+  address: string;
+  district: string;
 };
 
 type QuoteStatusStep = {
@@ -46,10 +51,21 @@ type QuoteStatusStep = {
   text: string;
 };
 
+type QuoteState = "idle" | "loading" | "success" | "error";
+
 type CartLine = {
   item: ReturnType<typeof useCartStore.getState>["items"][number];
   pricing: ReturnType<typeof getLinePricing>;
 };
+
+function EmptyCartState() {
+  return (
+    <div className="cart-empty-state">
+      <ShoppingCart size={28} />
+      <p>Tu carrito está vacío.</p>
+    </div>
+  );
+}
 
 function WhatsAppIcon({ size = 18 }: { size?: number }) {
   return (
@@ -81,6 +97,9 @@ function buildInitialQuoteDraft(
   defaults?: QuoteDraftDefaults | null,
 ): QuoteDraft {
   return {
+    address: "",
+    deliveryType: "DELIVERY",
+    district: "",
     documentNumber: "",
     documentType: "",
     name: defaults?.name?.trim() ?? "",
@@ -183,28 +202,90 @@ function CartFooter({
   quoteFormOpen,
   totalAmount,
   totalSavings,
+  appliedPromo,
+  promoCodeInput,
+  setPromoCodeInput,
+  setAppliedPromo,
+  handleVerifyPromo,
+  isVerifyingPromo,
+  promoError,
+  finalTotalAmount
 }: {
   currencySymbol: string;
   onOpenQuoteForm: () => void;
   quoteFormOpen: boolean;
   totalAmount: number;
   totalSavings: number;
+  appliedPromo?: any;
+  promoCodeInput?: string;
+  setPromoCodeInput?: any;
+  setAppliedPromo?: any;
+  handleVerifyPromo?: any;
+  isVerifyingPromo?: boolean;
+  promoError?: string;
+  finalTotalAmount?: number;
 }) {
   return (
     <div className="cart-footer">
+      {!quoteFormOpen && (
+        <div style={{ marginBottom: "16px", padding: "12px", background: "#f9fafb", borderRadius: "8px", border: "1px dashed #d1d5db" }}>
+          <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "8px", color: "#374151" }}>¿Tienes un código de promotor?</label>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <input 
+              type="text" 
+              value={promoCodeInput || ''}
+              onChange={(e) => setPromoCodeInput?.(e.target.value)}
+              placeholder="Ingresa tu código" 
+              style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "14px", textTransform: "uppercase" }}
+              disabled={!!appliedPromo}
+            />
+            {!appliedPromo ? (
+              <button 
+                onClick={handleVerifyPromo} 
+                disabled={isVerifyingPromo || !promoCodeInput}
+                style={{ padding: "8px 16px", background: "#111827", color: "#fff", borderRadius: "6px", fontWeight: 500, fontSize: "14px", opacity: (!promoCodeInput || isVerifyingPromo) ? 0.5 : 1 }}
+              >
+                {isVerifyingPromo ? "..." : "Aplicar"}
+              </button>
+            ) : (
+              <button 
+                onClick={() => { setPromoCodeInput?.(""); setAppliedPromo?.(null); }} 
+                style={{ padding: "8px 16px", background: "#fee2e2", color: "#b91c1c", borderRadius: "6px", fontWeight: 500, fontSize: "14px" }}
+              >
+                Quitar
+              </button>
+            )}
+          </div>
+          {promoError && <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "8px" }}>{promoError}</p>}
+          {appliedPromo && <p style={{ color: "#10b981", fontSize: "12px", marginTop: "8px" }}>¡Cupón aplicado! Ahorraste - S/ {appliedPromo.discountAmount}</p>}
+        </div>
+      )}
+
       <div className="summary-row is-total">
-        <span>Total estimado</span>
-        <strong>{formatCurrency(totalAmount, currencySymbol)}</strong>
+        <span>Subtotal</span>
+        <strong>S/ {totalAmount.toFixed(2)}</strong>
       </div>
+      {appliedPromo && (
+        <div className="summary-row is-savings" style={{ color: "#10b981" }}>
+          <span>Descuento Promotor</span>
+          <strong>- S/ {appliedPromo.discountAmount.toFixed(2)}</strong>
+        </div>
+      )}
+      {appliedPromo && (
+        <div className="summary-row is-total" style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #e5e7eb", fontSize: "18px" }}>
+          <span>Total a Pagar</span>
+          <strong>S/ {finalTotalAmount?.toFixed(2) || totalAmount.toFixed(2)}</strong>
+        </div>
+      )}
       {totalSavings > 0 ? (
         <div className="summary-row is-savings">
           <span>Ahorro por mayorista</span>
-          <strong>{formatCurrency(totalSavings, currencySymbol)}</strong>
+          <strong>S/ {totalSavings.toFixed(2)}</strong>
         </div>
       ) : null}
 
       {!quoteFormOpen ? (
-        <div className="cart-footer-actions" style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
+        <div className="cart-footer-actions" style={{ display: "flex", gap: "8px", flexDirection: "column", marginTop: "12px" }}>
           <button
             className="button button-primary cart-quote-open"
             onClick={onOpenQuoteForm}
@@ -225,173 +306,367 @@ function QuoteForm({
   isReady,
   onChange,
   onClose,
-  onReset,
   onSubmitQuote,
   onOpenPayment,
+  onManualPayment,
   quoteMessage,
-  quoteMessageTone,
-  quoteStatusSteps,
   quoteState,
+  quoteStatusSteps,
   quoteWhatsappHref,
 }: {
   draft: QuoteDraft;
   hasAccountDefaults: boolean;
   isReady: boolean;
-  onChange: (field: keyof QuoteDraft, value: string) => void;
+  onChange: (fields: Partial<QuoteDraft>) => void;
   onClose: () => void;
-  onReset: () => void;
   onSubmitQuote: () => void;
   onOpenPayment: () => void;
-  quoteMessage: string;
-  quoteMessageTone: "success" | "error" | "neutral";
+  onManualPayment: (method: "INTERBANK" | "YAPE" | "PLIN") => void;
+  quoteMessage: string | null;
+  quoteState: QuoteState;
   quoteStatusSteps: QuoteStatusStep[];
-  quoteState: "idle" | "loading" | "success" | "error";
   quoteWhatsappHref: string | null;
 }) {
+  const [paymentStep, setPaymentStep] = useState<"form" | "select_method" | "manual_interbank" | "manual_plin">("form");
+
+  if (paymentStep === "select_method") {
+    return (
+      <section className="cart-quote-form checkout-payment-step">
+        <div className="cart-quote-head">
+          <div>
+            <span className="checkout-step-kicker">Paso 2 de 2</span>
+            <h3>Elige cómo pagar</h3>
+            <p className="checkout-step-copy">Selecciona una opción para terminar tu pedido.</p>
+          </div>
+          <button className="icon-button icon-button-close" onClick={() => setPaymentStep("form")} type="button">
+            <X size={16} />
+          </button>
+        </div>
+        
+        <button className="checkout-payment-option is-primary" onClick={onOpenPayment} type="button">
+          <CreditCard size={24} />
+          <div className="checkout-option-copy">
+            <strong style={{ display: "block" }}>Tarjeta o Yape (Culqi)</strong>
+            <span style={{ fontSize: "12px", opacity: 0.8 }}>Pago automático y seguro con cualquier tarjeta</span>
+          </div>
+        </button>
+
+        <button className="checkout-payment-option" onClick={() => setPaymentStep("manual_interbank")} type="button">
+          <BadgeCheck size={24} />
+          <div className="checkout-option-copy">
+            <strong style={{ display: "block" }}>Transferencia Interbank</strong>
+            <span style={{ fontSize: "12px", opacity: 0.8 }}>Transfiere directamente a nuestra cuenta bancaria</span>
+          </div>
+        </button>
+
+        <button className="checkout-payment-option" onClick={() => setPaymentStep("manual_plin")} type="button">
+          <BadgeCheck size={24} />
+          <div className="checkout-option-copy">
+            <strong style={{ display: "block" }}>Plin</strong>
+            <span style={{ fontSize: "12px", opacity: 0.8 }}>Pago rápido escaneando nuestro QR de Plin</span>
+          </div>
+        </button>
+      </section>
+    );
+  }
+
+  if (paymentStep === "manual_interbank" || paymentStep === "manual_plin") {
+    const isInterbank = paymentStep === "manual_interbank";
+    const method = isInterbank ? "INTERBANK" : "PLIN";
+
+    return (
+      <section className="cart-quote-form checkout-payment-step checkout-manual-payment">
+        <div className="cart-quote-head">
+          <button className="icon-button" onClick={() => setPaymentStep("select_method")} type="button" style={{ marginRight: "auto", display: "flex", alignItems: "center", gap: "6px", color: "#6b7280" }}>
+            ← Volver
+          </button>
+        </div>
+
+        <h3 className="checkout-payment-title">
+          {isInterbank ? "🏦 Transferencia Interbank" : "📱 Pago con Plin"}
+        </h3>
+
+        {/* Account / QR Info */}
+        <div className="checkout-payment-info">
+          {isInterbank ? (
+            <>
+              <p style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700, marginBottom: "6px", textTransform: "uppercase" }}>Cuenta Corriente Soles</p>
+              <p style={{ fontSize: "24px", fontWeight: 800, letterSpacing: "2px", color: "#15803d", margin: "0 0 6px" }}>200-3004005006</p>
+              <p style={{ fontSize: "12px", color: "#6b7280", margin: "0 0 2px" }}>CCI: 003-200-000000000000-00</p>
+              <p style={{ fontSize: "12px", color: "#6b7280" }}>Titular: <strong>Importaciones Super S.A.C.</strong></p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: "12px", color: "#16a34a", fontWeight: 700, marginBottom: "8px", textTransform: "uppercase" }}>Escanea el QR desde tu app bancaria</p>
+              <div style={{ width: "160px", height: "160px", margin: "0 auto 10px", backgroundColor: "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px", border: "2px dashed #9ca3af" }}>
+                <span style={{ fontSize: "11px", color: "#9ca3af" }}>QR Plin aquí</span>
+              </div>
+              <p style={{ fontSize: "13px", color: "#15803d", fontWeight: 700 }}>955 252 609</p>
+              <p style={{ fontSize: "12px", color: "#6b7280" }}>Importaciones Super</p>
+            </>
+          )}
+        </div>
+
+        {/* Step instruction */}
+        <div className="checkout-payment-instructions">
+          <strong>Pasos:</strong>
+          <ol style={{ margin: "6px 0 0", paddingLeft: "18px" }}>
+            <li>Realiza la transferencia o Plin por <strong>S/ {/* total shown dynamically in quoteMessage */}el monto de tu pedido</strong>.</li>
+            <li>Haz clic en el botón de abajo para registrar tu pedido.</li>
+            <li>Envíanos la captura del voucher por WhatsApp para confirmar.</li>
+          </ol>
+        </div>
+
+        {quoteState === "error" && (
+          <div style={{ padding: "10px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "8px", color: "#dc2626", fontSize: "13px" }}>
+            {quoteMessage}
+          </div>
+        )}
+
+        <button
+          className="button button-primary"
+          onClick={() => onManualPayment(method)}
+          disabled={quoteState === "loading" || !isReady}
+          style={{ marginTop: "4px", padding: "14px", fontSize: "15px", justifyContent: "center" }}
+        >
+          {quoteState === "loading" ? "Registrando pedido..." : `✓ Registrar pedido vía ${isInterbank ? "Interbank" : "Plin"}`}
+        </button>
+        {!isReady && (
+          <p style={{ textAlign: "center", fontSize: "12px", color: "#9ca3af" }}>
+            Completa tu nombre y teléfono en el formulario para continuar.
+          </p>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className="cart-quote-form">
       <div className="cart-quote-head">
-        <span aria-hidden="true" className="cart-quote-head-spacer" />
-        <h3>Datos de envío y facturación</h3>
+        <div>
+          <span className="checkout-step-kicker">Paso 1 de 2</span>
+          <h3>Datos de envío y contacto</h3>
+          <p className="checkout-step-copy">Completa tus datos y dinos cómo quieres recibir tu pedido.</p>
+        </div>
         <button className="icon-button icon-button-close" onClick={onClose} type="button">
           <X size={16} />
         </button>
       </div>
 
       {quoteState === "success" ? (
-        <div className="cart-quote-success" role="status" aria-live="polite">
-          <div className="cart-quote-success-copy">
-            <BadgeCheck size={18} />
+        <div className="cart-quote-success" role="status" aria-live="polite" style={{ backgroundColor: "#fffbeb", border: "2px solid #fbbf24", padding: "20px", borderRadius: "12px", textAlign: "center" }}>
+          <div className="cart-quote-success-copy" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ width: "48px", height: "48px", backgroundColor: "#fbbf24", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <BadgeCheck size={28} color="#fff" />
+            </div>
             <div>
-              <strong>Cotización generada con éxito</strong>
-              <span>{quoteMessage || "Te contactaremos vía WhatsApp."}</span>
+              <strong style={{ fontSize: "18px", color: "#92400e", display: "block", marginBottom: "8px" }}>¡Paso final obligatorio! 🛑</strong>
+              <span style={{ fontSize: "14px", color: "#b45309", lineHeight: "1.5", display: "block" }}>
+                Tu pedido ha sido registrado en nuestro sistema. Para procesar tu envío de inmediato y confirmar tu pago, es <strong>obligatorio</strong> que nos envíes tu comprobante o número de orden por WhatsApp.
+              </span>
             </div>
           </div>
           {quoteWhatsappHref ? (
-            <a className="button cart-quote-whatsapp" href={quoteWhatsappHref} rel="noreferrer" target="_blank">
-              <span className="cart-quote-whatsapp-icon">
-                <WhatsAppIcon />
+            <a className="button cart-quote-whatsapp" href={quoteWhatsappHref} rel="noreferrer" target="_blank" style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: "16px", backgroundColor: "#25D366", color: "#fff", border: "none", boxShadow: "0 4px 14px rgba(37, 211, 102, 0.4)" }}>
+              <span className="cart-quote-whatsapp-icon" style={{ display: 'inline-flex', marginRight: '8px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.06-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
               </span>
-              Contactar asesor por WhatsApp
+              Confirmar mi pedido por WhatsApp
             </a>
-          ) : null}
-        </div>
-      ) : null}
-
-      {hasAccountDefaults ? (
-        <div className="cart-quote-account-note">
-          <div className="cart-quote-account-note-copy">
-            <UserRoundCheck size={16} />
-            <span>Usando datos precargados del comprador registrado.</span>
-          </div>
-          <button className="button button-ghost" onClick={onReset} type="button">
-            <RefreshCcw size={15} />
-            Restaurar mis datos
-          </button>
-        </div>
-      ) : null}
-
-      <div className="cart-quote-grid">
-        <label className="field-stack">
-          <span>Nombre o razón social</span>
-          <input
-            onChange={(event) => onChange("name", event.target.value)}
-            placeholder="Ej. Comercial Pérez SAC"
-            type="text"
-            value={draft.name}
-          />
-        </label>
-        <label className="field-stack">
-          <span>Teléfono / WhatsApp</span>
-          <input
-            onChange={(event) => onChange("phone", event.target.value)}
-            placeholder="Ej. 987654321"
-            type="tel"
-            value={draft.phone}
-          />
-        </label>
-        <label className="field-stack">
-          <span>Tipo de documento</span>
-          <select onChange={(event) => onChange("documentType", event.target.value)} value={draft.documentType}>
-            {DOCUMENT_TYPE_OPTIONS.map((option) => (
-              <option key={option.value || "none"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field-stack">
-          <span>Número de documento</span>
-          <input
-            onChange={(event) => onChange("documentNumber", event.target.value)}
-            placeholder="DNI o RUC"
-            type="text"
-            value={draft.documentNumber}
-          />
-        </label>
-        <label className="field-stack cart-quote-grid-full">
-          <span>Observaciones</span>
-          <textarea
-            onChange={(event) => onChange("note", event.target.value)}
-            placeholder="Notas comerciales, entrega o confirmación"
-            rows={3}
-            value={draft.note}
-          />
-        </label>
-      </div>
-
-      <div className="cart-quote-actions" style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
-        <button
-          className={`button cart-quote-submit ${isReady ? "is-ready button-primary" : "button-ghost"}`}
-          disabled={!isReady || quoteState === "loading"}
-          onClick={onOpenPayment}
-          type="button"
-        >
-          {quoteState === "loading" ? "Procesando..." : (
-            <>
-              <CreditCard size={18} /> Pagar Ahora
-            </>
+          ) : (
+            <a className="button cart-quote-whatsapp" href="https://wa.me/51955252609?text=Hola,%20acabo%20de%20realizar%20un%20pedido%20en%20la%20tienda%20y%20quiero%20confirmar%20mi%20pago." rel="noreferrer" target="_blank" style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: "16px", backgroundColor: "#25D366", color: "#fff", border: "none", boxShadow: "0 4px 14px rgba(37, 211, 102, 0.4)" }}>
+              <span className="cart-quote-whatsapp-icon" style={{ display: 'inline-flex', marginRight: '8px' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.06-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              </span>
+              Confirmar mi pedido por WhatsApp
+            </a>
           )}
-        </button>
-        <button
-          className={`button cart-quote-submit button-ghost`}
-          disabled={!isReady || quoteState === "loading"}
-          onClick={onSubmitQuote}
-          type="button"
-        >
-          Solo Solicitar Cotización
-        </button>
-      </div>
-
-      {quoteState !== "success" && quoteMessage ? (
-        <p className={quoteMessageTone === "error" ? "error-text" : quoteMessageTone === "success" ? "success-text" : "muted"}>
-          {quoteMessage}
-        </p>
-      ) : null}
-
-      {quoteState !== "success" && quoteStatusSteps.length ? (
-        <div className="cart-quote-status">
-          {quoteStatusSteps.map((step, index) => (
-            <p
-              className={`cart-quote-status-item is-${step.status}`}
-              key={`${step.status}-${index}-${step.text}`}
-            >
-              <span>{step.status === "success" ? "OK" : step.status === "warning" ? "AV" : "ER"}</span>
-              {step.text}
-            </p>
-          ))}
         </div>
       ) : null}
-    </section>
-  );
-}
 
-function EmptyCartState() {
-  return (
-    <div className="cart-empty">
-      <ShoppingCart size={22} />
-      <p>Agrega productos y arma el pedido sin salir del catálogo.</p>
-    </div>
+      <div className="cart-quote-fields checkout-form-content">
+        <div className="checkout-section-heading">
+          <span className="checkout-section-number">01</span>
+          <div>
+            <strong>¿A quién entregamos?</strong>
+            <span>Usaremos estos datos para confirmar tu pedido.</span>
+          </div>
+        </div>
+        <div className="checkout-contact-grid">
+        <label className="checkout-field">
+          <span>Nombres y apellidos completos</span>
+          <input
+            defaultValue={draft.name || ""}
+            disabled={quoteState === "loading" || quoteState === "success"}
+            onChange={(event) => onChange({ name: event.target.value })}
+            placeholder="Escribe tu nombre"
+            type="text"
+          />
+        </label>
+        <label className="checkout-field">
+          <span>Número de celular</span>
+          <input
+            defaultValue={draft.phone || ""}
+            disabled={quoteState === "loading" || quoteState === "success"}
+            onChange={(event) => onChange({ phone: event.target.value })}
+            placeholder="987 654 321"
+            type="tel"
+          />
+        </label>
+        </div>
+
+        {/* ── Delivery Type Selector ── */}
+        <div className="checkout-delivery-section">
+          <div className="checkout-section-heading">
+            <span className="checkout-section-number">02</span>
+            <div>
+              <strong>¿Cómo recibirás tu pedido?</strong>
+              <span>Elige una modalidad para mostrarte los datos necesarios.</span>
+            </div>
+          </div>
+          <div className="checkout-delivery-options">
+            {(["DELIVERY", "PICKUP", "PROVINCE"] as DeliveryType[]).map((type) => {
+              const labels: Record<DeliveryType, { icon: string; title: string; subtitle: string }> = {
+                DELIVERY: { icon: "🛵", title: "Delivery Lima", subtitle: "Envío a domicilio en Lima" },
+                PICKUP:   { icon: "🏪", title: "Recojo en Tienda", subtitle: "Retira en nuestro local" },
+                PROVINCE: { icon: "📦", title: "Envío Provincia", subtitle: "Via courier a tu ciudad" },
+              };
+              const l = labels[type];
+              const selected = draft.deliveryType === type;
+              return (
+                <button
+                  aria-pressed={selected}
+                  className={`checkout-delivery-option ${selected ? "is-selected" : ""}`}
+                  key={type}
+                  type="button"
+                  disabled={quoteState === "loading" || quoteState === "success"}
+                  onClick={() => onChange({ deliveryType: type })}
+                >
+                  <span className="checkout-delivery-icon">{l.icon}</span>
+                  <span className="checkout-delivery-title">{l.title}</span>
+                  <span className="checkout-delivery-subtitle">{l.subtitle}</span>
+                  <span className="checkout-selection-mark">{selected ? "Elegido" : "Seleccionar"}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Address field — show for DELIVERY and PROVINCE */}
+          {(draft.deliveryType === "DELIVERY" || draft.deliveryType === "PROVINCE") && (
+            <div className="checkout-delivery-fields">
+              <label className="checkout-field">
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>
+                  {draft.deliveryType === "PROVINCE" ? "Ciudad / Provincia de destino" : "Dirección de entrega"}
+                </span>
+                <input
+                  type="text"
+                  disabled={quoteState === "loading" || quoteState === "success"}
+                  value={draft.address}
+                  onChange={(e) => onChange({ address: e.target.value })}
+                  placeholder={draft.deliveryType === "PROVINCE" ? "Ej: Arequipa, Trujillo, Cusco..." : "Ej: Av. Los Álamos 123, San Borja"}
+                />
+              </label>
+              {draft.deliveryType === "DELIVERY" && (
+                <label className="checkout-field">
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Distrito</span>
+                  <input
+                    type="text"
+                    disabled={quoteState === "loading" || quoteState === "success"}
+                    value={draft.district}
+                    onChange={(e) => onChange({ district: e.target.value })}
+                    placeholder="Ej: Miraflores, San Isidro, Los Olivos..."
+                  />
+                </label>
+              )}
+            </div>
+          )}
+
+          {draft.deliveryType === "PICKUP" && (
+            <div className="checkout-pickup-note">
+              📍 <strong>Dirección:</strong> Jr. Lampa 1234, Cercado de Lima — Lun–Sáb 9am–6pm
+            </div>
+          )}
+        </div>
+
+        <details className="cart-quote-details">
+          <summary>
+            Datos adicionales (RUC, DNI...)
+            <Plus size={16} />
+          </summary>
+          <div className="cart-quote-details-content">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "10px" }}>
+              <label>
+                <span>Documento</span>
+                <select
+                  defaultValue={draft.documentType || ""}
+                  disabled={quoteState === "loading" || quoteState === "success"}
+                  onChange={(event) => onChange({ documentType: event.target.value })}
+                >
+                  <option value="">(Ninguno)</option>
+                  <option value="DNI">DNI</option>
+                  <option value="RUC">RUC</option>
+                  <option value="CE">C.E.</option>
+                </select>
+              </label>
+              <label>
+                <span>Número</span>
+                <input
+                  defaultValue={draft.documentNumber || ""}
+                  disabled={quoteState === "loading" || quoteState === "success"}
+                  onChange={(event) => onChange({ documentNumber: event.target.value })}
+                  placeholder="Número de documento"
+                  type="text"
+                />
+              </label>
+            </div>
+            <label>
+              <span>Notas de envío / Referencia (Opcional)</span>
+              <textarea
+                defaultValue={draft.note || ""}
+                disabled={quoteState === "loading" || quoteState === "success"}
+                onChange={(event) => onChange({ note: event.target.value })}
+                placeholder="Escribe aquí si tienes instrucciones especiales para tu envío..."
+                rows={3}
+              />
+            </label>
+          </div>
+        </details>
+      </div>
+
+      <div className="cart-quote-actions">
+        {quoteState === "error" ? (
+          <div className="cart-quote-error" role="alert">
+            {quoteMessage || "Hubo un error al generar la cotización."}
+          </div>
+        ) : null}
+
+        {quoteStatusSteps.length > 0 ? (
+          <div className="cart-quote-steps">
+            {quoteStatusSteps.map((step, idx) => (
+              <div key={idx} className="cart-quote-step">
+                <BadgeCheck size={14} />
+                <span>{step.text}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {quoteState !== "success" ? (
+          <button
+            className={`button cart-quote-submit ${isReady ? "is-ready button-primary" : "button-ghost"}`}
+            disabled={!isReady || quoteState === "loading"}
+            onClick={() => setPaymentStep("select_method")}
+            type="button"
+          >
+            {quoteState === "loading" ? "Procesando..." : (
+              <>
+                <CreditCard size={18} /> Seleccionar Método de Pago
+              </>
+            )}
+          </button>
+        ) : null}
+      </div>
+    </section>
   );
 }
 
@@ -412,6 +687,12 @@ export function CartDrawer({
   const quoteSubmitPendingRef = useRef(false);
   const hasAccountDefaults = Boolean(quoteDefaults?.name?.trim() || quoteDefaults?.phone?.trim());
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(() => buildInitialQuoteDraft(settings, quoteDefaults));
+
+  // Promociones
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoError, setPromoError] = useState("");
+  const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
 
   useEffect(() => {
     rehydrateCartStore();
@@ -470,16 +751,45 @@ export function CartDrawer({
     pricing: getLinePricing(item, item.quantity),
   }));
   const totalAmount = orderLines.reduce((sum, line) => sum + line.pricing.total, 0);
+
+  const handleVerifyPromo = async () => {
+    if (!promoCodeInput.trim()) return;
+    setIsVerifyingPromo(true);
+    setPromoError("");
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCodeInput, cartTotal: totalAmount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppliedPromo(data);
+      } else {
+        setPromoError(data.message);
+        setAppliedPromo(null);
+      }
+    } catch (error) {
+      setPromoError("Error al verificar código");
+    } finally {
+      setIsVerifyingPromo(false);
+    }
+  };
+  
+  const finalTotalAmount = totalAmount - (appliedPromo?.discountAmount || 0);
   const totalSavings = orderLines.reduce((sum, line) => sum + line.pricing.savings, 0);
 
   const isQuoteReady =
     quoteDraft.name.trim().length >= 3 &&
-    quoteDraft.phone.trim().length >= 6;
+    quoteDraft.phone.trim().length >= 6 &&
+    (quoteDraft.deliveryType === "PICKUP" ||
+      (quoteDraft.address.trim().length >= 5 &&
+        (quoteDraft.deliveryType === "PROVINCE" || quoteDraft.district.trim().length >= 3)));
 
-  const updateQuoteDraft = (field: keyof QuoteDraft, value: string) => {
+  const updateQuoteDraft = (fields: Partial<QuoteDraft>) => {
     setQuoteDraft((current) => ({
       ...current,
-      [field]: value,
+      ...fields,
     }));
   };
 
@@ -521,6 +831,9 @@ export function CartDrawer({
             quantity: item.quantity,
           })),
           note: quoteDraft.note,
+          deliveryType: quoteDraft.deliveryType,
+          address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(", ") || undefined,
+          promoCodeId: appliedPromo?.promoCodeId,
         }),
       });
       const responseText = await response.text();
@@ -593,7 +906,10 @@ export function CartDrawer({
             quantity: item.quantity,
             unitPrice: Number(item.unitPrice),
           })),
-          amount: Math.round(totalAmount * 100),
+          amount: Math.round(finalTotalAmount * 100),
+          promoCode: appliedPromo?.code || undefined,
+          deliveryType: quoteDraft.deliveryType,
+          address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(", ") || undefined,
           currency: "PEN",
         }),
       });
@@ -611,6 +927,47 @@ export function CartDrawer({
     } catch (error) {
       setQuoteState("error");
       setQuoteMessage(error instanceof Error ? error.message : "Error procesando el pago");
+      setQuoteMessageTone("error");
+    }
+  };
+
+  const handleManualPayment = async (method: "INTERBANK" | "YAPE" | "PLIN") => {
+    setQuoteState("loading");
+    setQuoteMessage("Registrando pedido...");
+    setQuoteMessageTone("neutral");
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentMethod: method,
+          customer: {
+            name: quoteDraft.name,
+            phone: quoteDraft.phone,
+            documentType: quoteDraft.documentType || undefined,
+            documentNumber: quoteDraft.documentNumber || undefined,
+          },
+          items: orderLines.map(({ item }) => ({
+            productId: item.id,
+            code: item.code,
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: Number(item.unitPrice),
+          })),
+          promoCode: appliedPromo?.code || undefined,
+          deliveryType: quoteDraft.deliveryType,
+          address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(', ') || undefined,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || "Error registrando el pedido");
+      setQuoteState("success");
+      setQuoteMessage(payload.message || "¡Pedido registrado! Envíanos tu comprobante por WhatsApp.");
+      setQuoteMessageTone("success");
+      if (payload.whatsappLink) setQuoteWhatsappHref(payload.whatsappLink);
+    } catch (error) {
+      setQuoteState("error");
+      setQuoteMessage(error instanceof Error ? error.message : "Error registrando el pedido");
       setQuoteMessageTone("error");
     }
   };
@@ -649,6 +1006,14 @@ export function CartDrawer({
               quoteFormOpen={quoteFormOpen}
               totalAmount={totalAmount}
               totalSavings={totalSavings}
+              appliedPromo={appliedPromo}
+              promoCodeInput={promoCodeInput}
+              setPromoCodeInput={setPromoCodeInput}
+              setAppliedPromo={setAppliedPromo}
+              handleVerifyPromo={handleVerifyPromo}
+              isVerifyingPromo={isVerifyingPromo}
+              promoError={promoError}
+              finalTotalAmount={finalTotalAmount}
             />
           </>
         ) : (
@@ -674,19 +1039,17 @@ export function CartDrawer({
               isReady={isQuoteReady}
               onChange={updateQuoteDraft}
               onClose={() => setQuoteFormOpen(false)}
-              onReset={resetQuoteDraft}
               onSubmitQuote={submitQuoteToErp}
               onOpenPayment={() => setCulqiOpen(true)}
+              onManualPayment={handleManualPayment}
               quoteMessage={quoteMessage}
-              quoteMessageTone={quoteMessageTone}
               quoteState={quoteState}
               quoteStatusSteps={quoteStatusSteps}
               quoteWhatsappHref={quoteWhatsappHref}
             />
-            
             <CulqiCheckout
               publicKey="pk_test_a0437cd3339ed240"
-              amount={Math.round(totalAmount * 100)}
+              amount={Math.round(finalTotalAmount * 100)}
               currency="PEN"
               title={settings.businessName}
               isOpen={culqiOpen}

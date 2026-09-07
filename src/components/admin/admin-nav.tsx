@@ -52,6 +52,7 @@ const sections: AdminNavSection[] = [
       { href: "/admin/fichas", label: "Fichas digitales / QR", icon: QrCode },
       { href: "/admin/categories", label: "Categorías", icon: FolderTree },
       { href: "/admin/products/new", label: "Nuevo producto", icon: PackagePlus },
+      { href: "/admin/cupones", label: "Cupones de Descuento", icon: PackagePlus },
       { href: "/admin/quotes", label: "Cotizaciones", icon: FileText, badgeKey: "pendingQuotesCount" },
       { href: "/admin/banners", label: "Banners y campañas", icon: ImagePlus },
     ],

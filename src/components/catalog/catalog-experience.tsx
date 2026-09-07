@@ -382,6 +382,7 @@ export function CatalogExperience({
         <div className="catalog-sections-layout">
           <ProductSection
             featured
+            compact
             title={hasRealBestSellers ? "Productos más vendidos" : "Productos destacados"}
             subtitle={hasRealBestSellers ? "Ventas ERP por producto y rotación por unidades." : undefined}
             href="/?collection=mas-vendidos"

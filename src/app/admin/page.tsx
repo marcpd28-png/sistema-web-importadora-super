@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import type { DashboardPeriod } from "@/lib/store";
 import { getAdminDashboardData } from "@/lib/store";
+import { prisma } from "@/lib/prisma";
+import { PromoDashboardSection } from "@/components/admin/promo-dashboard-section";
+import { PromoChartsSection } from "@/components/admin/promo-charts-section";
 import { CHANGE_CODES } from "@/lib/change-codes";
 import { cn, formatCompactNumber } from "@/lib/utils";
 
@@ -147,6 +150,85 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
         timeStyle: "short",
       }).format(new Date(data.dataFreshness.lastSyncAt))
     : "Sin sincronizaciones registradas";
+
+  const promosData = await prisma.promoCode.findMany({
+    include: {
+      creator: true,
+      orders: {
+        where: { status: "PAID" },
+        select: { commissionAmount: true, discountAmount: true, total: true },
+      },
+      _count: {
+        select: { orders: { where: { status: "PAID" } } }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const promoStats = promosData.map(p => ({
+    id: p.id,
+    code: p.code,
+    creatorName: p.creator ? p.creator.name : "Sin asignar",
+    discount: p.discountType === "PERCENTAGE" ? `${Number(p.discountValue)}%` : `S/ ${Number(p.discountValue)}`,
+    commission: p.commissionType === "PERCENTAGE" ? `${Number(p.commissionValue)}%` : `S/ ${Number(p.commissionValue)}`,
+    uses: p._count.orders,
+    totalGenerated: p.orders.reduce((sum: number, order: any) => sum + Number(order.commissionAmount), 0),
+  }));
+
+  // ── Charts data ─────────────────────────────────────────────────────────────
+  // 1. Bar chart: usos y comisiones por cupón
+  const couponBars = promosData.map(p => ({
+    code: p.code,
+    usos: p._count.orders,
+    comisiones: p.orders.reduce((s: number, o: any) => s + Number(o.commissionAmount), 0),
+  }));
+
+  // 2. Donut: ventas por método de pago
+  const paymentOrders = await prisma.order.groupBy({
+    by: ["paymentMethod"],
+    where: { status: "PAID" },
+    _count: { _all: true },
+  });
+  const paymentMethods = paymentOrders.map(p => ({
+    name: p.paymentMethod || "Sin especificar",
+    value: p._count._all,
+  }));
+
+  // 3. Donut: ventas (S/) por influencer
+  const influencerMap: Record<string, number> = {};
+  for (const p of promosData) {
+    const creatorName = p.creator ? p.creator.name : "Sin promotor";
+    const totalSales = p.orders.reduce((s: number, o: any) => s + Number(o.total), 0);
+    influencerMap[creatorName] = (influencerMap[creatorName] || 0) + totalSales;
+  }
+  const influencers = Object.entries(influencerMap).map(([name, value]) => ({ name, value }));
+
+  // 4. Donut: descuentos vs comisiones vs ingreso neto
+  const allPaidOrders = await prisma.order.aggregate({
+    where: { status: "PAID" },
+    _sum: { total: true, discountAmount: true, commissionAmount: true },
+  });
+  const grossTotal = Number(allPaidOrders._sum.total || 0);
+  const totalDiscount = Number(allPaidOrders._sum.discountAmount || 0);
+  const totalCommission = Number(allPaidOrders._sum.commissionAmount || 0);
+  const netIncome = grossTotal - totalDiscount - totalCommission;
+  const discountVsNet = [
+    { name: "Ingreso Neto", value: Math.max(0, netIncome) },
+    { name: "Descuentos Dados", value: totalDiscount },
+    { name: "Comisiones Pagadas", value: totalCommission },
+  ].filter(d => d.value > 0);
+
+  // Export rows for Excel
+  const exportRows = promoStats.map(p => ({
+    "Código": p.code,
+    "Promotor": p.creatorName,
+    "Descuento al Cliente": p.discount,
+    "Comisión Promotor": p.commission,
+    "Usos Totales": p.uses,
+    "Comisiones Generadas (S/)": p.totalGenerated,
+  }));
+
+  const chartsData = { couponBars, paymentMethods, influencers, discountVsNet, exportRows };
 
   return (
     <div className="stack-lg">
@@ -366,6 +448,9 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
           />
         </div>
       </section>
+      <PromoChartsSection data={chartsData} />
+
+      <PromoDashboardSection promos={promoStats} />
     </div>
   );
 }

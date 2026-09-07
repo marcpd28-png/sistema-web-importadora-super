@@ -26,6 +26,8 @@ type QuoteCustomerPayload = {
   address?: string | null;
 };
 
+const DELIVERY_TYPES = new Set(["DELIVERY", "PICKUP", "PROVINCE"]);
+
 export async function POST(request: Request) {
   let localQuoteId: string | null = null;
   try {
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
     const payload = (await request.json()) as {
       items?: unknown;
       note?: string;
+      deliveryType?: string;
       customer?: QuoteCustomerPayload;
     };
 
@@ -56,6 +59,15 @@ export async function POST(request: Request) {
 
     if (!requestedItems.length) {
       return NextResponse.json({ message: "No hay items para cotizar." }, { status: 400 });
+    }
+
+    const deliveryType = payload.deliveryType?.trim() || "DELIVERY";
+    if (!DELIVERY_TYPES.has(deliveryType)) {
+      return NextResponse.json({ message: "Selecciona cómo recibirás tu pedido." }, { status: 400 });
+    }
+
+    if (deliveryType !== "PICKUP" && !payload.customer?.address?.trim()) {
+      return NextResponse.json({ message: "Ingresa la dirección o ciudad de entrega." }, { status: 400 });
     }
 
     const customerName = payload.customer?.name?.trim() || session?.name?.trim() || "";
@@ -152,6 +164,7 @@ export async function POST(request: Request) {
       data: {
         currencySymbol: settings.currencySymbol,
         customerAddress,
+        deliveryType,
         customerDocumentNumber: documentNumber,
         customerDocumentType: documentType,
         customerEmail,

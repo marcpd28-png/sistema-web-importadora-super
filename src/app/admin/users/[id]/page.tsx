@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 const roleLabels = {
   ADMIN: "Administrador",
   USERSHOP: "Comprador",
+  PROMOTOR: "Promotor",
 } as const;
 
 export default async function AdminUserEditPage({ params, searchParams }: AdminUserEditPageProps) {
