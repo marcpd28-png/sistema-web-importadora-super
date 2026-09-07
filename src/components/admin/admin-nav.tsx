@@ -129,12 +129,12 @@ export function AdminNav({ badges }: AdminNavProps) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
+                justifyContent: "space-between", padding: "0.25rem 2rem 0.25rem 0.5rem",
                 width: "100%",
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                padding: "0.25rem 0.5rem",
+                
                 color: "var(--muted)",
                 fontFamily: "inherit",
                 textTransform: "uppercase",
