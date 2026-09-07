@@ -134,7 +134,7 @@ export function AdminNav({ badges }: AdminNavProps) {
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                padding: "0.25rem 0",
+                padding: "0.25rem 0.5rem",
                 color: "var(--muted)",
                 fontFamily: "inherit",
                 textTransform: "uppercase",

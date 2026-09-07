@@ -16789,7 +16789,7 @@ body[data-admin-theme="dark"] .admin-shell {
   height: 100vh !important;
   min-height: 100vh !important;
   border-radius: 0 !important;
-  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-right: none !important;
   padding-top: 1.5rem !important;
   padding-bottom: 1.5rem !important;
 }
@@ -16806,5 +16806,5 @@ body[data-admin-theme="dark"] .admin-shell {
 }
 
 body[data-admin-theme="dark"] .admin-sidebar {
-  border-right-color: rgba(255, 255, 255, 0.1) !important;
+  border-right: none !important;
 }
