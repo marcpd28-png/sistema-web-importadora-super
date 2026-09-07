@@ -16808,3 +16808,17 @@ body[data-admin-theme="dark"] .admin-shell {
 body[data-admin-theme="dark"] .admin-sidebar {
   border-right: none !important;
 }
+
+/* Fix for Sidebar items getting cut off by the main content area */
+.admin-sidebar {
+  box-sizing: border-box !important;
+  padding-right: 1.25rem !important;
+  padding-left: 1.25rem !important;
+  z-index: 10 !important; /* Ensure sidebar items render above the main content area if they overflow */
+}
+
+/* Ensure nav links don't stretch beyond their container */
+.admin-nav-link {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
