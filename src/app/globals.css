@@ -16773,3 +16773,38 @@ body[data-admin-theme="dark"] .admin-shell {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Completely Flush Seamless Dashboard */
+.admin-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  filter: none !important; /* no global shadow needed if it fills the screen */
+}
+
+.admin-sidebar {
+  top: 0 !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  border-radius: 0 !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+.admin-content {
+  border-radius: 0 !important;
+  min-height: 100vh;
+}
+
+/* Add some padding to content so it doesn't hit the edges */
+.admin-content > * {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+body[data-admin-theme="dark"] .admin-sidebar {
+  border-right-color: rgba(255, 255, 255, 0.1) !important;
+}
