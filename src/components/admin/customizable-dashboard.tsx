@@ -254,7 +254,7 @@ export function CustomizableDashboard({
           className="cart-quote-overlay"
           style={{ zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          <div className="cart-quote-overlay-panel" style={{ width: "90%", maxWidth: 500, borderRadius: 16, height: "auto", maxHeight: "85vh", position: "relative" }}>
+          <div className="" style={{ width: "90%", maxWidth: 500, borderRadius: 16, height: "auto", maxHeight: "85vh", position: "relative", display: "flex", flexDirection: "column", background: "#fff", boxShadow: "0 24px 60px rgba(0,0,0,0.15)" }}>
             <div className="dashboard-config-head" style={{ display: "flex", justifyContent: "space-between", padding: 24 }}>
               <div>
                 <h3>Personalizar Dashboard</h3>
