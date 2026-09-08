@@ -236,11 +236,12 @@ export function CustomizableDashboard({
       {children}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, marginTop: 12 }}>
-        {widgets.filter(w => w.enabled).map(w => (
+        {widgets.filter(w => w.enabled).map((w, index) => (
           <div 
             key={w.id} 
             style={{ 
               gridColumn: WIDGET_META[w.id].fullWidth ? "1 / -1" : "auto",
+              order: index,
               minHeight: 300
             }}
           >
