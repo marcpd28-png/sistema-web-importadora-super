@@ -18,8 +18,8 @@ import {
 import type { DashboardPeriod } from "@/lib/store";
 import { getAdminDashboardData } from "@/lib/store";
 import { prisma } from "@/lib/prisma";
-import { PromoDashboardSection } from "@/components/admin/promo-dashboard-section";
-import { PromoChartsSection } from "@/components/admin/promo-charts-section";
+
+import { CustomizableDashboard } from "@/components/admin/customizable-dashboard";
 import { CHANGE_CODES } from "@/lib/change-codes";
 import { cn, formatCompactNumber } from "@/lib/utils";
 
@@ -231,10 +231,11 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
   const chartsData = { couponBars, paymentMethods, influencers, discountVsNet, exportRows };
 
   return (
-    <div className="stack-lg">
+    <CustomizableDashboard chartsData={chartsData} promoStats={promoStats as any}>
+      
       <section className="panel admin-hero-panel">
         <div className="admin-hero-copy">
-          <p className="eyebrow">Dashboard operativo</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><p className="eyebrow" style={{ margin: 0 }}>Dashboard operativo</p><span id="dashboard-settings-portal"></span></div>
           <h1>Control center del catálogo</h1>
           <p className="panel-copy">
             Estado comercial, sincronización ERP, campañas y atención al cliente en una sola superficie.
@@ -448,9 +449,7 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
           />
         </div>
       </section>
-      <PromoChartsSection data={chartsData} />
-
-      <PromoDashboardSection promos={promoStats} />
-    </div>
+      
+    </CustomizableDashboard>
   );
 }
