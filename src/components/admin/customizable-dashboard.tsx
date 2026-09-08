@@ -15,6 +15,9 @@ export type ChartsData = {
   exportRows: any[];
 };
 
+import { QrScansCard, QuotesTotalCard, TopProductList } from "./analytics-widgets";
+import { QrCode, ShoppingCart } from "lucide-react";
+
 export type PromoStats = {
   id: string;
   code: string;
@@ -25,7 +28,7 @@ export type PromoStats = {
   totalGenerated: number;
 };
 
-type WidgetId = "coupon_bar" | "payment_donut" | "influencer_donut" | "discount_donut" | "promo_table";
+type WidgetId = "coupon_bar" | "payment_donut" | "influencer_donut" | "discount_donut" | "promo_table" | "qr_scans" | "quotes_total" | "top_scanned" | "top_quoted";
 
 interface WidgetConfig {
   id: WidgetId;
@@ -34,14 +37,22 @@ interface WidgetConfig {
 }
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: "coupon_bar", enabled: true, order: 0 },
-  { id: "payment_donut", enabled: true, order: 1 },
-  { id: "influencer_donut", enabled: true, order: 2 },
-  { id: "discount_donut", enabled: true, order: 3 },
-  { id: "promo_table", enabled: true, order: 4 },
+  { id: "qr_scans", enabled: true, order: 0 },
+  { id: "quotes_total", enabled: true, order: 1 },
+  { id: "top_scanned", enabled: true, order: 2 },
+  { id: "top_quoted", enabled: true, order: 3 },
+  { id: "coupon_bar", enabled: true, order: 4 },
+  { id: "payment_donut", enabled: true, order: 5 },
+  { id: "influencer_donut", enabled: true, order: 6 },
+  { id: "discount_donut", enabled: true, order: 7 },
+  { id: "promo_table", enabled: true, order: 8 },
 ];
 
 const WIDGET_META: Record<WidgetId, { title: string; subtitle: string; icon: string; fullWidth: boolean }> = {
+  qr_scans: { title: "Escaneos QR", subtitle: "Interacciones", icon: "📱", fullWidth: false },
+  quotes_total: { title: "Total Valorizado", subtitle: "Cotizaciones", icon: "🛒", fullWidth: false },
+  top_scanned: { title: "Fichas más Escaneadas", subtitle: "Interés", icon: "📑", fullWidth: false },
+  top_quoted: { title: "Productos más Solicitados", subtitle: "Demanda", icon: "📦", fullWidth: false },
   coupon_bar: { title: "Usos vs Comisiones", subtitle: "Gráfico de Barras", icon: "📊", fullWidth: true },
   payment_donut: { title: "Ventas por Método de Pago", subtitle: "Gráfico Circular", icon: "💳", fullWidth: false },
   influencer_donut: { title: "Ventas por Influencer", subtitle: "Gráfico Circular", icon: "👥", fullWidth: false },
@@ -52,10 +63,12 @@ const WIDGET_META: Record<WidgetId, { title: string; subtitle: string; icon: str
 export function CustomizableDashboard({
   chartsData,
   promoStats,
+  storeData,
   children
 }: {
   chartsData: ChartsData;
   promoStats: PromoStats[];
+  storeData: any;
   children?: React.ReactNode;
 }) {
   const [widgets, setWidgets] = useState<WidgetConfig[]>([]);
@@ -127,6 +140,34 @@ export function CustomizableDashboard({
     };
 
     switch (id) {
+      case "qr_scans":
+        return <QrScansCard data={storeData} />;
+      case "quotes_total":
+        return <QuotesTotalCard data={storeData} />;
+      case "top_scanned":
+        return (
+          <TopProductList
+            emptyCopy="Sin datos de escaneo en este periodo."
+            maxCount={storeData.storeAnalysis.topScannedProducts.length ? Math.max(...storeData.storeAnalysis.topScannedProducts.map((p: any) => p.count)) : 1}
+            products={storeData.storeAnalysis.topScannedProducts}
+            title="Fichas Técnicas más Escaneadas"
+            subtitle="Interés del Consumidor"
+            metricLabel="vistas"
+            icon={QrCode}
+          />
+        );
+      case "top_quoted":
+        return (
+          <TopProductList
+            emptyCopy="Sin cotizaciones en este periodo."
+            maxCount={storeData.storeAnalysis.topQuotedProducts.length ? Math.max(...storeData.storeAnalysis.topQuotedProducts.map((p: any) => p.count)) : 1}
+            products={storeData.storeAnalysis.topQuotedProducts}
+            title="Productos más Solicitados"
+            subtitle="Comportamiento de Compra"
+            metricLabel="uds"
+            icon={ShoppingCart}
+          />
+        );
       case "coupon_bar":
         return (
           <div style={cardStyle}>
