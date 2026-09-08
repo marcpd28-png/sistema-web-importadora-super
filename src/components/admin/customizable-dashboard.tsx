@@ -255,7 +255,7 @@ export function CustomizableDashboard({
           style={{ zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <div className="cart-quote-overlay-panel" style={{ width: "90%", maxWidth: 500, borderRadius: 16, height: "auto", maxHeight: "85vh", position: "relative" }}>
-            <div className="cart-quote-head">
+            <div className="dashboard-config-head" style={{ display: "flex", justifyContent: "space-between", padding: 24 }}>
               <div>
                 <h3>Personalizar Dashboard</h3>
                 <p className="checkout-step-copy">Activa o reordena los gráficos de tu panel principal.</p>
