@@ -48,16 +48,16 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "promo_table", enabled: true, order: 8 },
 ];
 
-const WIDGET_META: Record<WidgetId, { title: string; subtitle: string; icon: string; fullWidth: boolean }> = {
-  qr_scans: { title: "Escaneos QR", subtitle: "Interacciones", icon: "📱", fullWidth: false },
-  quotes_total: { title: "Total Valorizado", subtitle: "Cotizaciones", icon: "🛒", fullWidth: false },
-  top_scanned: { title: "Fichas más Escaneadas", subtitle: "Interés", icon: "📑", fullWidth: false },
-  top_quoted: { title: "Productos más Solicitados", subtitle: "Demanda", icon: "📦", fullWidth: false },
-  coupon_bar: { title: "Usos vs Comisiones", subtitle: "Gráfico de Barras", icon: "📊", fullWidth: true },
-  payment_donut: { title: "Ventas por Método de Pago", subtitle: "Gráfico Circular", icon: "💳", fullWidth: false },
-  influencer_donut: { title: "Ventas por Influencer", subtitle: "Gráfico Circular", icon: "👥", fullWidth: false },
-  discount_donut: { title: "Descuentos vs Ingreso Neto", subtitle: "Gráfico Circular", icon: "💰", fullWidth: false },
-  promo_table: { title: "Tabla de Rendimiento", subtitle: "Lista Detallada", icon: "📋", fullWidth: true },
+const WIDGET_META: Record<WidgetId, { title: string; subtitle: string; icon: string; fullWidth: boolean; category: string }> = {
+  qr_scans: { title: "Escaneos QR", subtitle: "Interacciones", icon: "📱", fullWidth: false, category: "Tienda" },
+  quotes_total: { title: "Total Valorizado", subtitle: "Cotizaciones", icon: "🛒", fullWidth: false, category: "Tienda" },
+  top_scanned: { title: "Fichas más Escaneadas", subtitle: "Interés", icon: "📑", fullWidth: false, category: "Tienda" },
+  top_quoted: { title: "Productos más Solicitados", subtitle: "Demanda", icon: "📦", fullWidth: false, category: "Tienda" },
+  coupon_bar: { title: "Usos vs Comisiones", subtitle: "Gráfico de Barras", icon: "📊", fullWidth: true, category: "Promotores" },
+  payment_donut: { title: "Ventas por Método de Pago", subtitle: "Gráfico Circular", icon: "💳", fullWidth: false, category: "Promotores" },
+  influencer_donut: { title: "Ventas por Influencer", subtitle: "Gráfico Circular", icon: "👥", fullWidth: false, category: "Promotores" },
+  discount_donut: { title: "Descuentos vs Ingreso Neto", subtitle: "Gráfico Circular", icon: "💰", fullWidth: false, category: "Promotores" },
+  promo_table: { title: "Tabla de Rendimiento", subtitle: "Lista Detallada", icon: "📋", fullWidth: true, category: "Promotores" },
 };
 
 export function CustomizableDashboard({
