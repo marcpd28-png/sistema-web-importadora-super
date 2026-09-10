@@ -212,7 +212,7 @@ export async function POST(request: Request) {
         paymentMethod: paymentMethod || "MANUAL",
         deliveryType: deliveryType || "DELIVERY",
         address: address || null,
-        subtotal: serverSubtotal,
+        subtotal: subtotal,
         discountAmount,
         promoCode: promoCode || null,
         total: finalTotal,
