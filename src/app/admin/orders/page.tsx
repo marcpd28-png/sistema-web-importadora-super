@@ -34,7 +34,7 @@ export default async function AdminOrdersPage({
   searchParams?: Promise<{ status?: string; q?: string }>;
 }) {
   await requireAdmin();
-  const params = await (searchParams ?? Promise.resolve({}));
+  const params = searchParams ? await searchParams : { status: "ALL", q: "" };
   const filterStatus = params.status || "ALL";
   const search = params.q || "";
 
