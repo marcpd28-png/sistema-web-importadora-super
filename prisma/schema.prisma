@@ -260,6 +260,8 @@ model StoreSettings {
   currencySymbol      String   @default("S/")
   highlightMessage    String   @default("Precios por unidad y mayorista sincronizados con el ERP.")
   supportHours        String   @default("Lun a sáb 8:00 am - 7:00 pm")
+  storeAddress        String   @default("Jr. Huallaga 420, Cercado de Lima")
+  storeMapsUrl        String?  @db.Text
   primaryColor        String   @default("#2320DA")
   accentColor         String   @default("#2320DA")
   createdAt           DateTime @default(now())

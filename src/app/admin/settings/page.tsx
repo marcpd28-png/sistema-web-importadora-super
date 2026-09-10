@@ -76,6 +76,23 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <span>Horario</span>
             <input defaultValue={settings.supportHours} name="supportHours" required />
           </label>
+          <label className="field field-wide">
+            <span>📍 Dirección de la tienda (para recojo en local)</span>
+            <input
+              defaultValue={(settings as any).storeAddress ?? "Jr. Huallaga 420, Cercado de Lima"}
+              name="storeAddress"
+              placeholder="Ej: Jr. Huallaga 420, Cercado de Lima"
+            />
+          </label>
+          <label className="field field-wide">
+            <span>🗺️ Link de Google Maps (opcional)</span>
+            <input
+              defaultValue={(settings as any).storeMapsUrl ?? ""}
+              name="storeMapsUrl"
+              placeholder="https://maps.google.com/?q=..."
+              type="url"
+            />
+          </label>
           <label className="field">
             <span>Color de marca</span>
             <input defaultValue={settings.primaryColor} name="primaryColor" required type="color" />

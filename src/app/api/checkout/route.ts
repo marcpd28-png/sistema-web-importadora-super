@@ -206,6 +206,25 @@ export async function POST(request: Request) {
       message: orderStatus === "PAID"
         ? `¡Pago aprobado! Tu pedido ${orderNumber} ha sido registrado.`
         : `¡Pedido ${orderNumber} recibido! Envíanos tu voucher de pago por WhatsApp para confirmar.`,
+      // Receipt data for frontend display
+      receipt: {
+        orderNumber,
+        paymentMethod: paymentMethod || "MANUAL",
+        deliveryType: deliveryType || "DELIVERY",
+        address: address || null,
+        subtotal: serverSubtotal,
+        discountAmount,
+        promoCode: promoCode || null,
+        total: finalTotal,
+        createdAt: new Date().toISOString(),
+        items: validatedItems.map((item: any) => ({
+          name: item.name,
+          code: item.code,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.quantity * item.unitPrice,
+        })),
+      },
     });
 
   } catch (error: any) {
