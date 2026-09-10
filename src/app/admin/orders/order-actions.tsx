@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { approveOrderAction, cancelOrderAction, markShippedAction, saveAdminNotesAction } from "../actions";
+import { approveOrderAction, cancelOrderAction, markShippedAction, saveAdminNotesAction } from "./actions";
 import { CheckCircle, XCircle, Truck, Save, Loader2 } from "lucide-react";
 
 type Props = {
