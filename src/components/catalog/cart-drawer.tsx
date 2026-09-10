@@ -314,6 +314,7 @@ function QuoteForm({
   quoteState,
   quoteStatusSteps,
   quoteWhatsappHref,
+  receiptData,
 }: {
   draft: QuoteDraft;
   hasAccountDefaults: boolean;
@@ -327,6 +328,7 @@ function QuoteForm({
   quoteState: QuoteState;
   quoteStatusSteps: QuoteStatusStep[];
   quoteWhatsappHref: string | null;
+  receiptData: ReceiptData | null;
 }) {
   const [paymentStep, setPaymentStep] = useState<"form" | "select_method" | "manual_interbank" | "manual_plin">("form");
 
@@ -1052,6 +1054,7 @@ export function CartDrawer({
               quoteState={quoteState}
               quoteStatusSteps={quoteStatusSteps}
               quoteWhatsappHref={quoteWhatsappHref}
+              receiptData={receiptData}
             />
             <CulqiCheckout
               publicKey="pk_test_a0437cd3339ed240"
