@@ -16,6 +16,7 @@ export type ChartsData = {
 };
 
 import { QrScansCard, QuotesTotalCard, TopProductList } from "./analytics-widgets";
+import { FunnelChart, CategoryRevenueChart, QuotesVsOrdersChart, TopPromotersChart, PeakHoursChart } from "./advanced-dashboard-charts";
 import { QrCode, ShoppingCart } from "lucide-react";
 
 export type PromoStats = {
@@ -28,7 +29,7 @@ export type PromoStats = {
   totalGenerated: number;
 };
 
-type WidgetId = "coupon_bar" | "payment_donut" | "influencer_donut" | "discount_donut" | "promo_table" | "qr_scans" | "quotes_total" | "top_scanned" | "top_quoted";
+type WidgetId = "coupon_bar" | "payment_donut" | "influencer_donut" | "discount_donut" | "promo_table" | "qr_scans" | "quotes_total" | "top_scanned" | "top_quoted" | "advanced_funnel" | "advanced_category" | "advanced_quotes_orders" | "advanced_promoters" | "advanced_heatmap";
 
 interface WidgetConfig {
   id: WidgetId;
@@ -46,6 +47,11 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: "influencer_donut", enabled: true, order: 6 },
   { id: "discount_donut", enabled: true, order: 7 },
   { id: "promo_table", enabled: true, order: 8 },
+  { id: "advanced_funnel", enabled: true, order: 9 },
+  { id: "advanced_category", enabled: true, order: 10 },
+  { id: "advanced_quotes_orders", enabled: true, order: 11 },
+  { id: "advanced_promoters", enabled: true, order: 12 },
+  { id: "advanced_heatmap", enabled: true, order: 13 },
 ];
 
 const WIDGET_META: Record<WidgetId, { title: string; subtitle: string; icon: string; fullWidth: boolean; category: string }> = {
@@ -58,6 +64,11 @@ const WIDGET_META: Record<WidgetId, { title: string; subtitle: string; icon: str
   influencer_donut: { title: "Ventas por Influencer", subtitle: "Gráfico Circular", icon: "👥", fullWidth: false, category: "Promotores" },
   discount_donut: { title: "Descuentos vs Ingreso Neto", subtitle: "Gráfico Circular", icon: "💰", fullWidth: false, category: "Promotores" },
   promo_table: { title: "Tabla de Rendimiento", subtitle: "Lista Detallada", icon: "📋", fullWidth: true, category: "Promotores" },
+  advanced_funnel: { title: "Embudo de Conversión", subtitle: "Tráfico vs Compras", icon: "🔻", fullWidth: false, category: "E-Commerce" },
+  advanced_category: { title: "Ventas por Categoría", subtitle: "Rentabilidad", icon: "📦", fullWidth: false, category: "E-Commerce" },
+  advanced_quotes_orders: { title: "Cotizaciones vs Órdenes", subtitle: "Tasa de Cierre", icon: "📈", fullWidth: true, category: "E-Commerce" },
+  advanced_promoters: { title: "Top Promotores", subtitle: "Ranking de Ventas", icon: "🏆", fullWidth: false, category: "Promotores" },
+  advanced_heatmap: { title: "Horas Pico", subtitle: "Comportamiento de Compra", icon: "🔥", fullWidth: false, category: "E-Commerce" },
 };
 
 export function CustomizableDashboard({
@@ -253,6 +264,58 @@ export function CustomizableDashboard({
             </div>
           </article>
         );
+      
+      case "advanced_funnel":
+        return (
+          <div style={cardStyle}>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#6b7280", letterSpacing: 1 }}>Rendimiento General</p>
+              <h3 style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700 }}>🔻 Embudo de Conversión</h3>
+            </div>
+            <FunnelChart data={[]} />
+          </div>
+        );
+      case "advanced_category":
+        return (
+          <div style={cardStyle}>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#6b7280", letterSpacing: 1 }}>Inventario Múltiple</p>
+              <h3 style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700 }}>📦 Ventas por Categoría</h3>
+            </div>
+            <CategoryRevenueChart data={[]} />
+          </div>
+        );
+      case "advanced_quotes_orders":
+        return (
+          <div style={cardStyle}>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#6b7280", letterSpacing: 1 }}>Evolución Mensual</p>
+              <h3 style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700 }}>📈 Cotizaciones vs Órdenes Cerradas</h3>
+            </div>
+            <QuotesVsOrdersChart data={[]} />
+          </div>
+        );
+      case "advanced_promoters":
+        return (
+          <div style={cardStyle}>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#6b7280", letterSpacing: 1 }}>Influencers Activos</p>
+              <h3 style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700 }}>🏆 Top Promotores (Ventas)</h3>
+            </div>
+            <TopPromotersChart data={[]} />
+          </div>
+        );
+      case "advanced_heatmap":
+        return (
+          <div style={cardStyle}>
+            <div>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#6b7280", letterSpacing: 1 }}>Intención de Compra</p>
+              <h3 style={{ margin: "4px 0 0", fontSize: 16, fontWeight: 700 }}>🔥 Horas Pico de Transacciones</h3>
+            </div>
+            <PeakHoursChart data={[]} />
+          </div>
+        );
+
       default:
         return null;
     }
