@@ -32,7 +32,7 @@ export function FunnelChart({ data }: { data: { step: string, count: number }[] 
           />
           <Bar dataKey="count" fill="var(--brand-primary)" radius={[0, 4, 4, 0]} barSize={30}>
             {safeData.map((entry, index) => (
-              <Cell key={\`cell-\${index}\`} fill={COLORS[index % COLORS.length]} />
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Bar>
         </BarChart>
@@ -57,7 +57,7 @@ export function CategoryRevenueChart({ data }: { data: { name: string, value: nu
         <PieChart>
           <Pie data={safeData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
             {safeData.map((entry, index) => (
-              <Cell key={\`cell-\${index}\`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.1)" />
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="rgba(0,0,0,0.1)" />
             ))}
           </Pie>
           <Tooltip 
@@ -88,7 +88,7 @@ export function QuotesVsOrdersChart({ data }: { data: { month: string, quotes: n
         <ComposedChart data={safeData} margin={{ top: 20, right: 20, left: 20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
           <XAxis dataKey="month" axisLine={false} tickLine={false} style={{ fill: 'var(--muted)', fontSize: 12 }} />
-          <YAxis yAxisId="left" tickFormatter={(v) => \`\${v/1000}k\`} axisLine={false} tickLine={false} style={{ fill: 'var(--muted)', fontSize: 12 }} />
+          <YAxis yAxisId="left" tickFormatter={(v) => `${v/1000}k`} axisLine={false} tickLine={false} style={{ fill: 'var(--muted)', fontSize: 12 }} />
           <Tooltip 
             formatter={(value: number) => formatCurrency(value, "S/")}
             contentStyle={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
