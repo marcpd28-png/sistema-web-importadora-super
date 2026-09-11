@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-const SUPER_ADMIN_EMAIL = "mark@importadora.local";
+const SUPER_ADMIN_EMAILS = ["mark@importadora.com", "adminmark@importadora.com", "mark@importadora.local"];
 
 export async function deleteQuoteAction(quoteId: string) {
   const session = await requireAdmin();
 
-  if (session.email !== SUPER_ADMIN_EMAIL) {
+  if (!SUPER_ADMIN_EMAILS.includes(session.email)) {
     throw new Error("No tienes permisos de súper administrador para realizar esta acción.");
   }
 
@@ -25,7 +25,7 @@ export async function deleteQuoteAction(quoteId: string) {
 export async function deleteOrderAction(orderId: string) {
   const session = await requireAdmin();
 
-  if (session.email !== SUPER_ADMIN_EMAIL) {
+  if (!SUPER_ADMIN_EMAILS.includes(session.email)) {
     throw new Error("No tienes permisos de súper administrador para realizar esta acción.");
   }
 

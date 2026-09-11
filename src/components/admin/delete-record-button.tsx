@@ -14,8 +14,8 @@ export function DeleteRecordButton({ recordId, recordType, userEmail, onDelete }
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const superAdminEmail = "mark@importadora.local";
-  const hasPermission = userEmail === superAdminEmail;
+  const superAdminEmails = ["mark@importadora.com", "adminmark@importadora.com", "mark@importadora.local"];
+  const hasPermission = superAdminEmails.includes(userEmail);
 
   const handleClick = () => {
     if (!hasPermission) {
