@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart, Area
+  PieChart, Pie, Cell, Legend, LineChart, Line, ComposedChart, Area, AreaChart
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
 
@@ -164,5 +164,4 @@ export function PeakHoursChart({ data }: { data: { hour: string, value: number }
   );
 }
 
-// Componente helper
-import { AreaChart } from "recharts";
+
