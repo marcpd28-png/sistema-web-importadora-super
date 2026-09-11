@@ -128,6 +128,22 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                 <span>Teléfono</span>
                 <div className="auth-password-wrap">
                   <Phone size={18} />
+                  <input name="phone" placeholder="Opcional" type="tel" />
+                </div>
+              </label>
+
+              <label className="field">
+                <span>Tipo de usuario</span>
+                <select defaultValue="USERSHOP" name="role">
+                  <option value="USERSHOP">Comprador</option>
+                  <option value="PROMOTOR">Promotor / Influencer</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Contraseña</span>
+                <input name="password" placeholder="Mínimo 6 caracteres" required type="password" />
               </label>
 
               <label className="field">
