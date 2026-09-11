@@ -99,8 +99,7 @@ export function CustomizableDashboard({
   }, []);
 
   const handleOpenConfig = () => {
-    setEditingWidgets([...widgets]);
-    setIsModalOpen(true);
+    window.open("/admin/dashboard-settings", "_blank");
   };
 
   const handleSaveConfig = () => {

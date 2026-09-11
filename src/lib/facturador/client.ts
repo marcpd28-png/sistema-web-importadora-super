@@ -267,10 +267,17 @@ export class FacturadorClient {
         const payload = text ? parseJson(text) : null;
 
         if (!response.ok) {
-          const message =
-            isRecord(payload) && typeof payload.message === "string"
-              ? payload.message
-              : `La API externa respondio HTTP ${response.status}.`;
+          let message = `La API externa respondio HTTP ${response.status}.`;
+          
+          if (isRecord(payload)) {
+            if (typeof payload.message === "string") {
+              message = payload.message;
+            } else if (typeof payload.error === "string") {
+              message = payload.error;
+            } else {
+              message = `HTTP ${response.status}: ` + JSON.stringify(payload);
+            }
+          }
 
           if (allowRetry && shouldRetry(response.status, message) && attempt < this.config.maxRetries) {
             attempt += 1;

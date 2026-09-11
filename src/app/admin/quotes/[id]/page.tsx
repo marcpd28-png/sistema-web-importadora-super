@@ -9,6 +9,8 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { QuoteStatusNotesEditor } from "@/components/admin/quote-status-notes-editor";
 import { QuoteCustomerMessage } from "@/components/admin/quote-customer-message";
+import { DeleteRecordButton } from "@/components/admin/delete-record-button";
+import { deleteQuoteAction } from "@/app/admin/delete-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -139,6 +141,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             Ver PDF ERP
           </a>
         ) : null}
+        <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} />
         {customerWhatsappHref ? (
           <a
             className="button button-primary"
