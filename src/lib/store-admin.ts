@@ -762,13 +762,13 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
   return payload;
 }
 
-export const getAdminDashboardData = unstable_cache(
-  async (period: DashboardPeriod = "MONTH") => {
-    return getAdminDashboardDataRaw(period);
-  },
-  ["admin-dashboard-key"],
-  { revalidate: 600, tags: ["admin-dashboard"] }
-);
+export async function getAdminDashboardData(period: DashboardPeriod = "MONTH") {
+  return unstable_cache(
+    async () => getAdminDashboardDataRaw(period),
+    ["admin-dashboard-key", period],
+    { revalidate: 600, tags: ["admin-dashboard"] }
+  )();
+}
 
 export const getAdminProductStatsCached = unstable_cache(
   async (staleDateMs: number) => {
