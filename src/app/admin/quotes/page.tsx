@@ -2,6 +2,9 @@ import Link from "next/link";
 import type { QuoteStatus } from "@prisma/client";
 import { AlertCircle, CheckCircle2, Clock3, Eye, FileText, SearchCode } from "lucide-react";
 import { getAdminQuotes } from "@/lib/store";
+import { DeleteRecordButton } from "@/components/admin/delete-record-button";
+import { deleteQuoteAction } from "@/app/admin/delete-actions";
+import { getSession } from "@/lib/auth";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +94,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
   });
   const pageStart = data.totalResults > 0 ? (data.page - 1) * data.pageSize + 1 : 0;
   const pageEnd = Math.min(data.page * data.pageSize, data.totalResults);
+  const session = await getSession();
 
   return (
     <section className="panel admin-quotes-panel">
@@ -207,6 +211,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
                   </td>
                   <td data-label="Acciones">
                     <div className="table-actions">
+                      <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} />
                       <Link className="icon-button" href={`/admin/quotes/${quote.id}`}>
                         <Eye size={16} />
                         <span>Ver</span>
