@@ -1,21 +1,9 @@
 const fs = require('fs');
+
 let code = fs.readFileSync('src/components/admin/promo-form.tsx', 'utf8');
 
-// We need to add a searchable combobox. First, import useRef, useEffect if needed
-if(!code.includes('useRef')) {
-  code = code.replace(/import { useState } from "react";/, 'import { useState, useRef, useEffect } from "react";');
-}
+const comboboxComponent = `
 
-const targetRegex = /<select name="creatorId"[\s\S]*?<\/select>/m;
-
-const replacement = `<PromotorCombobox promoters={promoters} defaultValue={promo?.creatorId || ""} />`;
-
-if (targetRegex.test(code)) {
-  code = code.replace(targetRegex, replacement);
-  
-  // Add PromotorCombobox component at the end of the file
-  if (!code.includes('PromotorCombobox')) {
-    const comboboxComponent = `
 function PromotorCombobox({ promoters, defaultValue }: { promoters: any[], defaultValue: string }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -32,8 +20,8 @@ function PromotorCombobox({ promoters, defaultValue }: { promoters: any[], defau
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const selectedPromotor = promoters.find(p => p.id === selectedId);
-  const filteredPromoters = promoters.filter(p => 
+  const selectedPromotor = promoters.find((p: any) => p.id === selectedId);
+  const filteredPromoters = promoters.filter((p: any) => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.email.toLowerCase().includes(search.toLowerCase())
   );
@@ -86,15 +74,15 @@ function PromotorCombobox({ promoters, defaultValue }: { promoters: any[], defau
                 padding: "8px 12px", cursor: "pointer", borderRadius: "4px",
                 background: selectedId === "" ? "#f3f4f6" : "transparent"
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = selectedId === "" ? "#f3f4f6" : "transparent")}
+              onMouseEnter={(e: any) => (e.currentTarget.style.background = "#f9fafb")}
+              onMouseLeave={(e: any) => (e.currentTarget.style.background = selectedId === "" ? "#f3f4f6" : "transparent")}
             >
               -- Sin asignar --
             </div>
             {filteredPromoters.length === 0 ? (
               <div style={{ padding: "8px 12px", color: "#6b7280", textAlign: "center" }}>No se encontraron usuarios</div>
             ) : (
-              filteredPromoters.map((p) => (
+              filteredPromoters.map((p: any) => (
                 <div
                   key={p.id}
                   onClick={() => { setSelectedId(p.id); setOpen(false); setSearch(""); }}
@@ -102,8 +90,8 @@ function PromotorCombobox({ promoters, defaultValue }: { promoters: any[], defau
                     padding: "8px 12px", cursor: "pointer", borderRadius: "4px",
                     background: selectedId === p.id ? "#f3f4f6" : "transparent"
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = selectedId === p.id ? "#f3f4f6" : "transparent")}
+                  onMouseEnter={(e: any) => (e.currentTarget.style.background = "#f9fafb")}
+                  onMouseLeave={(e: any) => (e.currentTarget.style.background = selectedId === p.id ? "#f3f4f6" : "transparent")}
                 >
                   <div style={{ fontWeight: 500 }}>{p.name}</div>
                   <div style={{ fontSize: "12px", color: "#6b7280" }}>{p.email}</div>
@@ -117,10 +105,11 @@ function PromotorCombobox({ promoters, defaultValue }: { promoters: any[], defau
   );
 }
 `;
-    code = code + '\n' + comboboxComponent;
-  }
+
+if (!code.includes('function PromotorCombobox')) {
+  code = code + comboboxComponent;
   fs.writeFileSync('src/components/admin/promo-form.tsx', code);
-  console.log('Combobox injected successfully');
+  console.log("Component appended successfully");
 } else {
-  console.log('Target regex not found in promo-form.tsx');
+  console.log("Component already exists");
 }
