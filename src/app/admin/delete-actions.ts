@@ -19,7 +19,6 @@ export async function deleteQuoteAction(quoteId: string) {
   });
 
   revalidatePath("/admin/quotes");
-  revalidateTag("admin-dashboard");
   redirect("/admin/quotes");
 }
 
@@ -35,6 +34,5 @@ export async function deleteOrderAction(orderId: string) {
   });
 
   revalidatePath("/admin/orders");
-  revalidateTag("admin-dashboard");
   redirect("/admin/orders");
 }

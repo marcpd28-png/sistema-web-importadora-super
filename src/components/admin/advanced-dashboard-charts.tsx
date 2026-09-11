@@ -61,7 +61,7 @@ export function CategoryRevenueChart({ data }: { data: { name: string, value: nu
             ))}
           </Pie>
           <Tooltip 
-            formatter={(value: number) => formatCurrency(value, "S/")}
+            formatter={(value: any) => formatCurrency(Number(value), "S/")}
             contentStyle={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
           />
           <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: 12, color: 'var(--muted)' }} />
@@ -90,7 +90,7 @@ export function QuotesVsOrdersChart({ data }: { data: { month: string, quotes: n
           <XAxis dataKey="month" axisLine={false} tickLine={false} style={{ fill: 'var(--muted)', fontSize: 12 }} />
           <YAxis yAxisId="left" tickFormatter={(v) => `${v/1000}k`} axisLine={false} tickLine={false} style={{ fill: 'var(--muted)', fontSize: 12 }} />
           <Tooltip 
-            formatter={(value: number) => formatCurrency(value, "S/")}
+            formatter={(value: any) => formatCurrency(Number(value), "S/")}
             contentStyle={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -120,7 +120,7 @@ export function TopPromotersChart({ data }: { data: { name: string, sales: numbe
           <XAxis type="number" hide />
           <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} style={{ fill: 'var(--muted)', fontSize: 11 }} width={80} />
           <Tooltip 
-            formatter={(value: number) => formatCurrency(value, "S/")}
+            formatter={(value: any) => formatCurrency(Number(value), "S/")}
             contentStyle={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
           />
           <Bar dataKey="sales" name="Ventas Generadas" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} />
