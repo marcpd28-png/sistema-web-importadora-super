@@ -281,13 +281,29 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
               <h1>{displayName}</h1>
             </div>
 
-            {product.description ? <p className="product-detail-description">{product.description}</p> : null}
+            {product.description ? (
+              <div 
+                className="product-detail-description"
+                dangerouslySetInnerHTML={{ 
+                  __html: product.description
+                    .replace(/\n/g, "<br/>")
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                }} 
+              />
+            ) : null}
 
             {/* CHANGE-CODE: CAT-002 */}
             {product.technicalSpecs ? (
               <section className="product-detail-specs-card">
                 <p className="eyebrow">Especificaciones técnicas</p>
-                <div className="product-detail-specs">{product.technicalSpecs}</div>
+                <div 
+                  className="product-detail-specs"
+                  dangerouslySetInnerHTML={{ 
+                    __html: product.technicalSpecs
+                      .replace(/\n/g, "<br/>")
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                  }} 
+                />
               </section>
             ) : null}
           </div>
