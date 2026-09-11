@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { savePromoAction, deletePromoAction } from "@/app/admin/cupones/actions";
 import { AlertTriangle } from "lucide-react";
 
@@ -96,12 +96,7 @@ export function PromoForm({ promo, promoters }: { promo?: any; promoters: any[] 
 
         <label className="field">
           <span>Asignar a Promotor (Opcional)</span>
-          <select name="creatorId" defaultValue={promo?.creatorId || ""}>
-            <option value="">-- Sin asignar --</option>
-            {promoters.map((p) => (
-              <option key={p.id} value={p.id}>{p.name} ({p.email})</option>
-            ))}
-          </select>
+          <PromotorCombobox promoters={promoters} defaultValue={promo?.creatorId || ""} />
           <p className="muted" style={{ fontSize: "12px", marginTop: "4px" }}>Las comisiones se asociarán a este usuario.</p>
         </label>
       </div>
