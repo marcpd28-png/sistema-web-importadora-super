@@ -82,7 +82,6 @@ const sections: AdminNavSection[] = [
     links: [
       { href: "/admin/erp", label: "Sincronización ERP", icon: DatabaseZap },
       { href: "/admin/settings", label: "Configuración general", icon: Settings },
-      { label: "Cerrar sesión", icon: LogOut, kind: "action" },
     ],
   },
 ];

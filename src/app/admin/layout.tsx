@@ -5,6 +5,8 @@ import { AdminNav } from "@/components/admin/admin-nav";
 import { getAdminNavBadges } from "@/lib/admin";
 import { ForcePasswordChange } from "@/components/admin/force-password-change";
 import { SidebarToggle } from "@/components/admin/sidebar-toggle";
+import { DarkModeToggle } from "@/components/admin/dark-mode-toggle";
+import { LogoutButton } from "@/components/admin/logout-button";
 
 export default async function AdminLayout({
   children,
@@ -27,11 +29,17 @@ export default async function AdminLayout({
     <main className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar-main" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          <div className="admin-sidebar-brand" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-            <div className="brand-logo-container">
+          <div className="admin-sidebar-brand" style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1rem" }}>
+            <div className="brand-logo-container" style={{ display: "flex", justifyContent: "center", width: "100%" }}>
               <BrandLogo href="/admin" priority size="sm" />
             </div>
-            <SidebarToggle />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(0,0,0,0.03)", padding: "4px", borderRadius: "8px" }}>
+              <SidebarToggle />
+              <div style={{ display: "flex", gap: "4px" }}>
+                <DarkModeToggle />
+                <LogoutButton />
+              </div>
+            </div>
           </div>
           <div className="admin-profile-card">
             <span className="admin-profile-badge">
