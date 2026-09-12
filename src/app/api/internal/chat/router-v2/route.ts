@@ -14,6 +14,7 @@ import { buildRouterV2ResponsePlan } from "@/lib/router-v2-response-plan";
 import { buildRouterV2ResponseContext } from "@/lib/router-v2-response-context";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { applyRouterV2ContextualSlots } from "@/lib/router-v2-contextual-slots";
+import { applyRouterV2DeliverySelection } from "@/lib/router-v2-delivery-selection";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
 
@@ -74,8 +75,14 @@ export async function POST(request: Request) {
       ? serializeSalesState(conversation.salesState)
       : null;
 
-    const analysis = applyRouterV2ContextualSlots({
+    const contextualAnalysis = applyRouterV2ContextualSlots({
       analysis: baseAnalysis,
+      content: input.content,
+      stage: currentState?.stage,
+    });
+
+    const analysis = applyRouterV2DeliverySelection({
+      analysis: contextualAnalysis,
       content: input.content,
       stage: currentState?.stage,
     });

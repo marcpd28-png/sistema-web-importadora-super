@@ -173,15 +173,6 @@ export function analyzeRouterV2Message(input: {
     }
   }
 
-  if (/\bshalom\b/.test(text))
-    slots.deliveryMethod = "SHALOM";
-
-  if (/\bolva\b/.test(text))
-    slots.deliveryMethod = "OLVA";
-
-  if (/\brecojo\b/.test(text))
-    slots.deliveryMethod = "RECOJO";
-
   if (
     input.mediaUrl ||
     ["IMAGE", "VIDEO", "DOCUMENT"].includes(
