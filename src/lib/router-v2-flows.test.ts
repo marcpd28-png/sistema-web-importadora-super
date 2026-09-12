@@ -8,6 +8,7 @@ import { applyRouterV2ContextualSlots } from "@/lib/router-v2-contextual-slots";
 import { applyRouterV2DeliverySelection } from "@/lib/router-v2-delivery-selection";
 import { resolveRouterV2PaymentSelection } from "@/lib/router-v2-payment-selection";
 import { buildRouterV2ResponsePlan } from "@/lib/router-v2-response-plan";
+import { parseRouterV2VisionText } from "@/lib/router-v2-vision-analyzer";
 
 test("catalog request asks wholesale or retail", () => {
   const analysis = analyzeRouterV2Message({ content: "Quiero el catalogo" });
@@ -241,4 +242,26 @@ test("consumed checkout transition overrides generic payment answer", () => {
 
   assert.equal(plan.answerType, "CHECKOUT_PAYMENT_EVIDENCE");
   assert.equal(plan.resumeAction, "ASK_PAYMENT_EVIDENCE");
+});
+
+test("vision parser accepts JSON even when provider wraps it in text", () => {
+  const hints = parseRouterV2VisionText(
+    'Resultado: {"brand":"JBL","model":"FLIP 7","color":"AZUL","code":null,"visibleText":["JBL","FLIP 7"],"confidence":0.94}',
+  );
+
+  assert.ok(hints);
+  assert.equal(hints.brand, "JBL");
+  assert.equal(hints.model, "FLIP 7");
+  assert.equal(hints.color, "AZUL");
+  assert.equal(hints.confidence, 0.94);
+});
+
+test("vision parser rejects malformed or out-of-range hints", () => {
+  assert.equal(parseRouterV2VisionText("not json"), null);
+  assert.equal(
+    parseRouterV2VisionText(
+      '{"brand":"JBL","visibleText":[],"confidence":1.4}',
+    ),
+    null,
+  );
 });
