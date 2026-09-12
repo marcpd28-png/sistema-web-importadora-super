@@ -18,6 +18,7 @@ export type RouterV2CheckoutStep =
   | "ASK_PRICE_CONFIRMATION"
   | "PRICE_CHANGES_REQUESTED"
   | "ASK_CUSTOMER_DATA"
+  | "ASK_CUSTOMER_PHONE"
   | "ASK_DOCUMENT_TYPE"
   | "ASK_DOCUMENT_DATA"
   | "ASK_DELIVERY_METHOD"
@@ -88,7 +89,28 @@ function usableContactName(value: string | null | undefined) {
   if (!name) return "";
   if (/^(sin nombre|cliente|whatsapp|unknown|desconocido)$/i.test(name)) return "";
   if (/^\+?\d{7,15}$/.test(name.replace(/\s+/g, ""))) return "";
-  return name;
+  return name.slice(0, 180);
+}
+
+function normalizeCustomerPhone(value: string | null | undefined) {
+  const raw = value?.trim() ?? "";
+  if (!raw) return "";
+
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length < 9 || digits.length > 15) return "";
+
+  return digits;
+}
+
+function detectPhoneFromText(text: string) {
+  const candidates = text.match(/\+?\d[\d\s().-]{7,20}\d/g) ?? [];
+
+  for (const candidate of candidates) {
+    const phone = normalizeCustomerPhone(candidate);
+    if (phone) return phone;
+  }
+
+  return "";
 }
 
 function detectDocumentType(text: string) {
@@ -217,7 +239,7 @@ export function resolveRouterV2CheckoutFlow(input: {
     if (!affirmative(text)) return result("ASK_PRICE_CONFIRMATION");
 
     const contactName = usableContactName(input.contact?.name);
-    const contactPhone = input.contact?.phone?.trim() ?? "";
+    const contactPhone = normalizeCustomerPhone(input.contact?.phone);
 
     if (contactName || contactPhone) {
       patch.customerData = {
@@ -233,30 +255,76 @@ export function resolveRouterV2CheckoutFlow(input: {
     }
 
     patch.stage = "AWAITING_CUSTOMER_DATA";
-    return result("ASK_CUSTOMER_DATA", true);
+    return result(
+      contactName && !contactPhone
+        ? "ASK_CUSTOMER_PHONE"
+        : "ASK_CUSTOMER_DATA",
+      true,
+    );
   }
 
   if (state.stage === "AWAITING_CUSTOMER_DATA") {
-    const currentName = readString(customerData, "name");
-    const currentPhone =
-      readString(customerData, "phone") ?? input.contact?.phone?.trim() ?? null;
+    let currentName = readString(customerData, "name");
+    let currentPhone =
+      normalizeCustomerPhone(readString(customerData, "phone")) ||
+      normalizeCustomerPhone(input.contact?.phone);
 
-    if (!currentName && text.length >= 3 && !affirmative(text)) {
-      patch.customerData = {
-        ...customerData,
-        name: text.slice(0, 180),
-        ...(currentPhone ? { phone: currentPhone } : {}),
+    const incomingPhone = detectPhoneFromText(text);
+    let nextCustomerData = { ...customerData };
+    let consumed = false;
+
+    if (!currentPhone && incomingPhone) {
+      currentPhone = incomingPhone;
+      nextCustomerData = {
+        ...nextCustomerData,
+        phone: incomingPhone,
       };
-      patch.stage = "AWAITING_DOCUMENT_TYPE";
-      return result("ASK_DOCUMENT_TYPE", true);
+      consumed = true;
+    }
+
+    if (
+      !currentName &&
+      !incomingPhone &&
+      text.length >= 3 &&
+      !affirmative(text) &&
+      !negative(text)
+    ) {
+      currentName = text.slice(0, 180);
+      nextCustomerData = {
+        ...nextCustomerData,
+        name: currentName,
+      };
+      consumed = true;
+    }
+
+    if (currentPhone && !readString(nextCustomerData, "phone")) {
+      nextCustomerData = {
+        ...nextCustomerData,
+        phone: currentPhone,
+      };
+    }
+
+    if (currentName && !readString(nextCustomerData, "name")) {
+      nextCustomerData = {
+        ...nextCustomerData,
+        name: currentName,
+      };
+    }
+
+    if (consumed || currentName || currentPhone) {
+      patch.customerData = nextCustomerData;
     }
 
     if (currentName && currentPhone) {
       patch.stage = "AWAITING_DOCUMENT_TYPE";
-      return result("ASK_DOCUMENT_TYPE", true);
+      return result("ASK_DOCUMENT_TYPE", consumed);
     }
 
-    return result("ASK_CUSTOMER_DATA");
+    if (currentName && !currentPhone) {
+      return result("ASK_CUSTOMER_PHONE", consumed);
+    }
+
+    return result("ASK_CUSTOMER_DATA", consumed);
   }
 
   if (state.stage === "AWAITING_DOCUMENT_TYPE") {
