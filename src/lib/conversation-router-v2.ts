@@ -74,27 +74,31 @@ export function analyzeRouterV2Message(input: {
   if (/\b(hola|ola|hl|buenas)\b/.test(text))
     add(intents, "GREETING");
 
-  if (/\b(catalogo|pdf|lista de productos)\b/.test(text))
+  if (/\b(catalogo|pdf|lista de productos|lista de precios)\b/.test(text))
     add(intents, "CATALOG_REQUEST");
 
   if (/\b(precio|costo|cuanto cuesta|cuanto sale|a cuanto)\b/.test(text))
     add(intents, "PRICE_REQUEST");
 
-  if (/\b(stock|disponible|hay|tienen|lo tienes)\b/.test(text))
+  if (/\b(stock|disponible|disponibilidad|hay|tienen|lo tienes)\b/.test(text))
     add(intents, "STOCK_REQUEST");
 
   if (/\b(por mayor|mayorista|precio por cantidad|por caja)\b/.test(text))
     add(intents, "WHOLESALE");
 
-  if (/\b(quiero comprar|quiero adquirir|me interesa adquirir|deseo comprar|me llevo)\b/.test(text)) {
+  if (
+    /\b(quiero comprar|quiero adquirir|quiero llevar|quiero pedir|deseo comprar|me llevo|lo quiero|quiero este|quiero ese)\b/.test(
+      text,
+    )
+  ) {
     add(intents, "PURCHASE_INTENT");
     slots.purchaseIntent = true;
   }
 
-  if (/\b(delivery|envio|enviar|provincia|shalom|olva|agencia|recojo)\b/.test(text))
+  if (/\b(delivery|envio|enviar|provincia|shalom|olva|agencia|recojo|domicilio)\b/.test(text))
     add(intents, "LOGISTICS_INQUIRY");
 
-  if (/\b(yape|plin|tarjeta|transferencia|depositar|forma de pago)\b/.test(text))
+  if (/\b(yape|plin|tarjeta|transferencia|depositar|deposito|forma de pago|metodos de pago)\b/.test(text))
     add(intents, "PAYMENT_METHOD_REQUEST");
 
   if (/\b(factura|boleta|ruc|comprobante)\b/.test(text))
@@ -103,7 +107,11 @@ export function analyzeRouterV2Message(input: {
   if (/\b(mi pedido|estado del pedido|seguimiento|tracking|no llega|ya salio)\b/.test(text))
     add(intents, "ORDER_STATUS");
 
-  if (/\b(no funciona|falla|fallado|garantia|averia)\b/.test(text))
+  if (
+    /\b(no funciona|falla|fallado|averia|servicio tecnico|problema con mi|cambio por falla)\b/.test(
+      text,
+    )
+  )
     add(intents, "SUPPORT");
 
   if (/\b(reclamo|queja|devolucion)\b/.test(text))
