@@ -146,6 +146,7 @@ export function buildRouterV2ResponsePlan(input: {
   visualResolutionStatus?: string | null;
   catalogDecision?: RouterV2CatalogDecision | null;
   checkoutStep?: RouterV2CheckoutStep;
+  checkoutConsumed?: boolean;
 }): RouterV2ResponsePlan {
   const resumeAction = salesResumeAction(input.state);
 
@@ -170,7 +171,10 @@ export function buildRouterV2ResponsePlan(input: {
   if (input.catalogDecision?.action === "START_RETAIL_DISCOVERY") {
     return {
       answerType: "RETAIL_DISCOVERY",
-      resumeAction: "ASK_PRODUCT",
+      resumeAction:
+        input.state?.stage === "AWAITING_MODEL_SELECTION"
+          ? "ASK_VARIANT"
+          : "ASK_PRODUCT",
     };
   }
 
@@ -183,6 +187,11 @@ export function buildRouterV2ResponsePlan(input: {
       answerType: productAnswerType,
       resumeAction,
     };
+  }
+
+  const checkoutType = checkoutAnswerType(input.checkoutStep ?? null);
+  if (checkoutType && input.checkoutConsumed) {
+    return { answerType: checkoutType, resumeAction };
   }
 
   if (input.finalAction === "ANSWER_LOGISTICS") {
@@ -205,7 +214,6 @@ export function buildRouterV2ResponsePlan(input: {
     return { answerType: "CATALOG", resumeAction };
   }
 
-  const checkoutType = checkoutAnswerType(input.checkoutStep ?? null);
   if (checkoutType) {
     return { answerType: checkoutType, resumeAction };
   }
