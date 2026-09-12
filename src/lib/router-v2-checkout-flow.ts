@@ -13,6 +13,7 @@ type ContactLike = {
 };
 
 export type RouterV2CheckoutStep =
+  | "ASK_QUANTITY"
   | "ASK_PRICE_CONFIRMATION"
   | "ASK_CUSTOMER_DATA"
   | "ASK_DOCUMENT_TYPE"
@@ -67,9 +68,17 @@ function readString(value: unknown, key: string) {
 }
 
 function affirmative(text: string) {
-  return /^(si|sí|s|ok|okay|dale|listo|correcto|confirmo|confirmado|continua|continuar|procede|proceder|de acuerdo|esta bien|está bien)[.!]?$/i.test(
+  return /^(si|sí|s|ok|okay|dale|listo|correcto|confirmo|confirmado|continua|continuar|procede|proceder|de acuerdo|esta bien|está bien|ya)[.!]?$/i.test(
     text.trim(),
   );
+}
+
+function usableContactName(value: string | null | undefined) {
+  const name = value?.trim() ?? "";
+  if (!name) return "";
+  if (/^(sin nombre|cliente|whatsapp|unknown|desconocido)$/i.test(name)) return "";
+  if (/^\+?\d{7,15}$/.test(name.replace(/\s+/g, ""))) return "";
+  return name;
 }
 
 function detectDocumentType(text: string) {
@@ -99,10 +108,11 @@ function detectPaymentMethod(content: string) {
   const text = normalize(content);
   if (/\byape\b/.test(text)) return "YAPE";
   if (/\bplin\b/.test(text)) return "PLIN";
-  if (/\b(interbank|transferencia|transferir|deposito|depósito)\b/.test(text)) {
+  if (/\b(interbank|transferencia|transferir|deposito)\b/.test(text)) {
     return "TRANSFERENCIA";
   }
   if (/\b(tarjeta|culqi|visa|mastercard)\b/.test(text)) return "TARJETA";
+  if (/\befectivo\b/.test(text)) return "EFECTIVO";
   return null;
 }
 
@@ -142,6 +152,9 @@ function deliveryAllowed(method: string, allowed: string[]) {
     if (wanted === "RECOJO") {
       return configured.includes("RECOJO") || configured.includes("PICKUP");
     }
+    if (wanted === "DELIVERY") {
+      return configured.includes("DELIVERY") || configured.includes("DOMICILIO");
+    }
     return configured.includes(wanted);
   });
 }
@@ -173,10 +186,18 @@ export function resolveRouterV2CheckoutFlow(input: {
   const deliveryData = asRecord(state.deliveryData);
   const paymentData = asRecord(state.paymentData);
 
+  if (state.stage === "AWAITING_PURCHASE_CONFIRMATION") {
+    if (!affirmative(text)) return none();
+
+    patch.purchaseIntent = true;
+    patch.stage = "AWAITING_QUANTITY";
+    return none("ASK_QUANTITY");
+  }
+
   if (state.stage === "AWAITING_PRICE_CONFIRMATION") {
     if (!affirmative(text)) return none("ASK_PRICE_CONFIRMATION");
 
-    const contactName = input.contact?.name?.trim() ?? "";
+    const contactName = usableContactName(input.contact?.name);
     const contactPhone = input.contact?.phone?.trim() ?? "";
 
     if (contactName || contactPhone) {
@@ -198,7 +219,8 @@ export function resolveRouterV2CheckoutFlow(input: {
 
   if (state.stage === "AWAITING_CUSTOMER_DATA") {
     const currentName = readString(customerData, "name");
-    const currentPhone = readString(customerData, "phone") ?? input.contact?.phone?.trim() ?? null;
+    const currentPhone =
+      readString(customerData, "phone") ?? input.contact?.phone?.trim() ?? null;
 
     if (!currentName && text.length >= 3 && !affirmative(text)) {
       patch.customerData = {
@@ -234,7 +256,10 @@ export function resolveRouterV2CheckoutFlow(input: {
     const type = readString(documentData, "type");
     const normalizedText = normalize(text);
 
-    if (type === "BOLETA" && /\b(sin dni|no deseo dar dni|sin documento)\b/.test(normalizedText)) {
+    if (
+      type === "BOLETA" &&
+      /\b(sin dni|no deseo dar dni|sin documento)\b/.test(normalizedText)
+    ) {
       patch.documentData = {
         ...documentData,
         number: null,
@@ -336,7 +361,9 @@ export function resolveRouterV2CheckoutFlow(input: {
   if (state.stage === "AWAITING_PAYMENT_CONFIRMATION") {
     const hasEvidence =
       Boolean(input.mediaUrl) ||
-      ["IMAGE", "DOCUMENT"].includes((input.messageType ?? "").toUpperCase());
+      ["IMAGE", "DOCUMENT"].includes(
+        (input.messageType ?? "").toUpperCase(),
+      );
 
     if (!hasEvidence) return none("ASK_PAYMENT_EVIDENCE");
 
