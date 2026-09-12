@@ -38,3 +38,6 @@ jobs:
 
       - name: Router V2 flow tests
         run: npm run test:router-v2
+
+      - name: Production build
+        run: npm run build
