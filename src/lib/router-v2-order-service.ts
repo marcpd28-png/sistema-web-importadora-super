@@ -40,6 +40,14 @@ function mapDeliveryType(method: string | null) {
   return "DELIVERY";
 }
 
+export function extractRouterV2OrderNumber(content: string) {
+  const match = content
+    .toUpperCase()
+    .match(/\b(?:WA-\d{8}-[A-Z0-9]{6}|ORD-\d{3,})\b/);
+
+  return match?.[0] ?? null;
+}
+
 export async function createRouterV2PendingOrder(input: {
   conversationId: string;
   state: SalesStateLike;
