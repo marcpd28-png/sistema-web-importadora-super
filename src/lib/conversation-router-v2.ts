@@ -41,6 +41,7 @@ export type RouterV2Analysis = {
     | "RESOLVE_PRODUCT"
     | "ANSWER_LOGISTICS"
     | "ANSWER_PAYMENT"
+    | "ANSWER_DOCUMENT"
     | "ANSWER_ORDER_STATUS"
     | "CONTINUE_SALES_FLOW";
 };
@@ -206,10 +207,9 @@ export function analyzeRouterV2Message(input: {
     nextAction = "RESOLVE_PRODUCT";
   else if (intents.includes("LOGISTICS_INQUIRY"))
     nextAction = "ANSWER_LOGISTICS";
-  else if (
-    intents.includes("PAYMENT_METHOD_REQUEST") ||
-    intents.includes("INVOICE_REQUEST")
-  )
+  else if (intents.includes("INVOICE_REQUEST"))
+    nextAction = "ANSWER_DOCUMENT";
+  else if (intents.includes("PAYMENT_METHOD_REQUEST"))
     nextAction = "ANSWER_PAYMENT";
 
   return {
