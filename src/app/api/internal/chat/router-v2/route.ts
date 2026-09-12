@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { discoverExactProducts } from "@/lib/product-discovery";
+import { buildRouterV2ProductDecision } from "@/lib/router-v2-product-decision";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
@@ -82,6 +83,9 @@ export async function POST(request: Request) {
           })
         : null;
 
+    const productDecision =
+      buildRouterV2ProductDecision(productResolution);
+
     const nextAction =
       conversation.botEnabled === false
         ? "HUMAN_HANDOFF"
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
       proposedPatch,
       mergedContext,
       productResolution,
+      productDecision,
       nextAction,
     });
   } catch (error: unknown) {
