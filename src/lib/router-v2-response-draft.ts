@@ -68,29 +68,58 @@ function requestedDeliveryMethod(message: string) {
   const text = message.toLowerCase();
   if (/\bshalom\b/.test(text)) return "SHALOM";
   if (/\bolva\b/.test(text)) return "OLVA";
-  if (/\brecojo\b/.test(text)) return "RECOJO";
+  if (/\b(recojo|recoger|pickup)\b/.test(text)) return "RECOJO";
+  if (/\b(delivery|domicilio|reparto)\b/.test(text)) return "DELIVERY";
   return null;
+}
+
+function configuredDeliveryMatches(configured: string, requested: string) {
+  const value = configured.toUpperCase();
+  if (requested === "RECOJO") {
+    return value.includes("RECOJO") || value.includes("PICKUP");
+  }
+  if (requested === "DELIVERY") {
+    return value.includes("DELIVERY") || value.includes("DOMICILIO");
+  }
+  return value.includes(requested);
 }
 
 function formatProductDetails(context: ResponseContext) {
   const product = context.product;
   const name = context.sales.productName ?? "el producto";
-  if (!product) return `Tengo seleccionado ${name}, pero no encuentro una ficha técnica registrada para mostrarte.`;
+  if (!product) {
+    return `Tengo seleccionado ${name}, pero no encuentro una ficha técnica registrada para mostrarte.`;
+  }
 
   const description =
     product.descriptionShort ??
     product.description ??
     product.descriptionFull ??
     null;
-  const specs = product.specifications.slice(0, 5);
+  const specs = product.specifications.slice(0, 6);
   const lines = [`${name}.`];
 
   if (description) lines.push(description);
   if (specs.length > 0) {
-    lines.push(specs.map((item) => `• ${item.name}: ${item.value}`).join("\n"));
+    lines.push(
+      specs
+        .map((item) => `• ${item.name}: ${item.value}`)
+        .join("\n"),
+    );
   } else if (product.technicalSpecs) {
     lines.push(product.technicalSpecs);
   }
+
+  const price = money(
+    context.sales.unitPrice,
+    context.business?.currencySymbol || "S/",
+  );
+  if (price) lines.push(`Precio vigente por unidad: ${price}.`);
+  lines.push(
+    product.available
+      ? "Actualmente figura disponible."
+      : "Actualmente no figura disponible.",
+  );
 
   return lines.join("\n");
 }
@@ -109,18 +138,25 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
 
   if (answerType === "WHOLESALE_CATALOG") {
     if (context.catalog.wholesaleCatalogUrl) {
-      return "Perfecto, para compra mayorista te comparto el catálogo. Si luego me indicas el producto y la cantidad, puedo calcularte el precio vigente y continuar el pedido.";
+      return "Perfecto, para compra mayorista te comparto el catálogo. Luego indícame el producto y la cantidad y te calculo el precio vigente para continuar el pedido.";
     }
 
-    return "Puedo atender tu compra mayorista, pero el PDF mayorista todavía no está configurado en el sistema. Indícame qué producto o categoría buscas y te ayudo con precios y cantidades reales.";
+    return "Puedo atender tu compra mayorista, pero el catálogo mayorista todavía no está configurado en el sistema. Indícame qué producto o categoría buscas y te ayudo con precios y cantidades reales.";
   }
 
   if (answerType === "RETAIL_DISCOVERY") {
     if (context.catalog.retailProducts.length > 0) {
-      return "Para compra por unidades conviene revisar productos concretos con su foto y precio vigente. Te muestro algunas opciones; dime cuál te interesa y te doy todos sus detalles.";
+      return "Para compra por unidades te muestro productos concretos con su imagen y precio vigente. Elige uno y te doy su información completa, especificaciones y opciones para continuar la compra.";
     }
 
-    return "Para compra por unidades puedo mostrarte la foto, precio y detalles de cada producto. ¿Qué producto o categoría estás buscando?";
+    return "Para compra por unidades puedo mostrarte la imagen, precio y detalles de cada producto. ¿Qué producto o categoría estás buscando?";
+  }
+
+  if (answerType === "CATALOG") {
+    return appendResume(
+      "Puedo ayudarte con el catálogo y también guiarte directamente hasta completar la compra.",
+      context,
+    );
   }
 
   if (answerType === "IMAGE_PRODUCT_CLARIFICATION") {
@@ -128,10 +164,13 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
   }
 
   if (answerType === "PRODUCT_CLARIFICATION") {
-    return "No pude identificar un producto exacto con esos datos. Indícame la marca y modelo, o envíame una foto/código para ubicarlo correctamente.";
+    return "No pude identificar un producto exacto con esos datos. Indícame la marca y modelo, o envíame una foto o código para ubicarlo correctamente.";
   }
 
-  if (answerType === "VARIANT_OPTIONS" || answerType === "VARIANT_CLARIFICATION") {
+  if (
+    answerType === "VARIANT_OPTIONS" ||
+    answerType === "VARIANT_CLARIFICATION"
+  ) {
     const options = context.sales.shownProducts;
     const answer = options.length
       ? `Encontré estas opciones:\n${options
@@ -146,8 +185,14 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
   }
 
   if (answerType === "PRODUCT_CONFIRMED") {
-    const name = context.sales.productName ?? context.sales.productCode ?? "el producto";
-    return appendResume(`Perfecto, tengo identificado ${name}.`, context);
+    const name =
+      context.sales.productName ??
+      context.sales.productCode ??
+      "el producto";
+    return appendResume(
+      `Perfecto, tengo identificado ${name}.`,
+      context,
+    );
   }
 
   if (answerType === "PRODUCT_DETAILS") {
@@ -194,18 +239,28 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
     const product = context.product;
     const name = context.sales.productName ?? "este producto";
     const answer =
-      product?.wholesalePrice !== null && product?.wholesalePrice !== undefined
+      product?.wholesalePrice !== null &&
+      product?.wholesalePrice !== undefined
         ? `${name} tiene precio mayorista desde ${product.wholesaleMinQty} unidades: ${money(product.wholesalePrice, currency)} c/u.`
         : `${name} no tiene un precio mayorista distinto registrado actualmente.`;
     return appendResume(answer, context);
   }
 
-  if (answerType === "PRICE_SUMMARY" || answerType === "CHECKOUT_PRICE_CONFIRMATION") {
+  if (
+    answerType === "PRICE_SUMMARY" ||
+    answerType === "CHECKOUT_PRICE_CONFIRMATION"
+  ) {
     const quantity = context.sales.quantity;
     const unit = money(context.sales.unitPrice, currency);
     const total = money(context.sales.total, currency);
-    const name = context.sales.productName ?? context.sales.productCode ?? "el producto";
-    const tier = context.sales.priceTier === "MAYORISTA" ? "precio mayorista" : "precio unitario";
+    const name =
+      context.sales.productName ??
+      context.sales.productCode ??
+      "el producto";
+    const tier =
+      context.sales.priceTier === "MAYORISTA"
+        ? "precio mayorista"
+        : "precio unitario";
 
     const answer =
       quantity && unit && total
@@ -216,14 +271,18 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
   }
 
   if (answerType === "LOGISTICS") {
-    const requested = requestedDeliveryMethod(context.customerMessage);
+    const requested = requestedDeliveryMethod(
+      context.customerMessage,
+    );
     const configured = context.business?.deliveryMethods ?? [];
     let answer: string;
 
     if (requested) {
-      const available = configured.some((item) => item.toUpperCase().includes(requested));
+      const available = configured.some((item) =>
+        configuredDeliveryMatches(item, requested),
+      );
       if (configured.length === 0) {
-        answer = `No tengo configurada una lista oficial de métodos de envío para confirmar ${requested} sin riesgo de darte información incorrecta.`;
+        answer = `No tengo configurada una lista oficial de métodos de entrega para confirmar ${requested} sin riesgo de darte información incorrecta.`;
       } else if (available) {
         answer = `Sí, ${requested} figura entre los métodos de entrega configurados.`;
       } else {
@@ -247,12 +306,15 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
   }
 
   if (answerType === "DOCUMENT") {
-    return appendResume("Podemos registrar el pedido con boleta o factura. Para factura necesitaremos el RUC.", context);
+    return appendResume(
+      "Podemos registrar el pedido con boleta o factura. Para factura necesitaremos el RUC.",
+      context,
+    );
   }
 
   if (answerType === "ORDER_STATUS") {
     if (!context.order) {
-      return "No encontré una orden asociada para consultar. Envíame el número de pedido, por ejemplo WA-20260912-ABC123.";
+      return "No encontré una orden asociada para consultar. Envíame el número de pedido para revisarlo.";
     }
 
     const labels: Record<string, string> = {
@@ -284,7 +346,18 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
     const methods = context.business?.deliveryMethods ?? [];
     return methods.length
       ? `¿Cómo deseas recibir tu pedido? Opciones configuradas: ${methods.join(", ")}.`
-      : "¿Prefieres recojo o envío? Si será por agencia, indícame cuál para registrarlo.";
+      : "Todavía no tengo configurados métodos oficiales de entrega en el bot. Prefiero no registrar una modalidad hasta que esa configuración esté definida.";
+  }
+
+  if (answerType === "DELIVERY_CONFIGURATION_MISSING") {
+    return "No puedo registrar ese método de entrega porque la configuración oficial de entregas está vacía. Prefiero detener este paso antes que prometer una modalidad no confirmada.";
+  }
+
+  if (answerType === "DELIVERY_METHOD_UNAVAILABLE") {
+    const methods = context.business?.deliveryMethods ?? [];
+    return methods.length
+      ? `Ese método de entrega no está habilitado actualmente. Las opciones configuradas son: ${methods.join(", ")}.`
+      : "Ese método de entrega no está disponible y todavía no tengo alternativas oficiales configuradas para ofrecerte.";
   }
 
   if (answerType === "CHECKOUT_DELIVERY_DETAILS") {
@@ -293,7 +366,9 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
 
   if (answerType === "CHECKOUT_ORDER_CONFIRMATION") {
     const total = money(context.sales.total, currency);
-    const number = context.sales.orderNumber ? ` Pedido ${context.sales.orderNumber}.` : "";
+    const number = context.sales.orderNumber
+      ? ` Pedido ${context.sales.orderNumber}.`
+      : "";
     return `Ya tengo los datos principales del pedido.${number}${total ? ` Total: ${total}.` : ""} ¿Confirmas que todo está correcto?`;
   }
 
