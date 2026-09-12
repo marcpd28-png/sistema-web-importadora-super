@@ -1,4 +1,4 @@
-type ShownProduct = {
+export type ShownProduct = {
   position: number;
   code: string;
   name: string;
@@ -140,4 +140,30 @@ export function resolveShownProductReference(
     matchedBy: null,
     matches: [],
   };
+}
+
+export function readShownProducts(
+  value: unknown,
+): ShownProduct[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.filter((item): item is ShownProduct => {
+    if (
+      !item ||
+      typeof item !== "object" ||
+      Array.isArray(item)
+    ) {
+      return false;
+    }
+
+    const product = item as Record<string, unknown>;
+
+    return (
+      typeof product.position === "number" &&
+      typeof product.code === "string" &&
+      typeof product.name === "string" &&
+      typeof product.slug === "string" &&
+      typeof product.unitPrice === "number"
+    );
+  });
 }
