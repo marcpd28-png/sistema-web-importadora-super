@@ -11,6 +11,7 @@ import { shouldPersistRouterV2State } from "@/lib/router-v2-persistence-policy";
 import { persistRouterV2State } from "@/lib/router-v2-state-store";
 import { resolveCommercialPrice } from "@/lib/router-v2-commercial-price";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
+import { applyRouterV2ContextualSlots } from "@/lib/router-v2-contextual-slots";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
 
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const analysis = analyzeRouterV2Message({
+    const baseAnalysis = analyzeRouterV2Message({
       content: input.content,
       messageType: input.messageType,
       mediaUrl: input.mediaUrl,
@@ -70,6 +71,12 @@ export async function POST(request: Request) {
     const currentState = conversation.salesState
       ? serializeSalesState(conversation.salesState)
       : null;
+
+    const analysis = applyRouterV2ContextualSlots({
+      analysis: baseAnalysis,
+      content: input.content,
+      stage: currentState?.stage,
+    });
 
     const proposedPatch = buildRouterV2SalesStatePatch(
       analysis,
