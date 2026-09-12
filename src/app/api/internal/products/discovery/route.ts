@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { discoverSpeakerBrands } from "@/lib/product-discovery";
+import { discoverExactProducts, discoverSpeakerBrands } from "@/lib/product-discovery";
 
-const schema = z.object({
-  mode: z.enum(["BRANDS"]),
-  query: z.string().trim().min(1).max(120),
-});
+const schema = z.discriminatedUnion("mode", [
+  z.object({
+    mode: z.literal("BRANDS"),
+    query: z.string().trim().min(1).max(120),
+  }),
+  z.object({
+    mode: z.literal("EXACT_PRODUCT"),
+    brand: z.string().trim().min(1).max(120),
+    model: z.string().trim().min(1).max(120),
+  }),
+]);
 
 function authorized(request: Request) {
   const expected = process.env.N8N_INTERNAL_API_KEY;
@@ -26,6 +33,19 @@ export async function POST(request: Request) {
     }
 
     const input = schema.parse(await request.json());
+
+    if (input.mode === "EXACT_PRODUCT") {
+      const result = await discoverExactProducts({
+        brand: input.brand,
+        model: input.model,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        mode: input.mode,
+        ...result,
+      });
+    }
 
     const brands = await discoverSpeakerBrands();
 
