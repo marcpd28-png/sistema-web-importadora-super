@@ -8,6 +8,7 @@ import { readShownProducts, resolveShownProductReference, shouldResolveShownProd
 import { determineRouterV2FinalAction } from "@/lib/router-v2-final-action";
 import { buildRouterV2DecisionStatePatch } from "@/lib/router-v2-state-transition";
 import { shouldPersistRouterV2State } from "@/lib/router-v2-persistence-policy";
+import { persistRouterV2State } from "@/lib/router-v2-state-store";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
@@ -137,6 +138,13 @@ export async function POST(request: Request) {
         proposedStatePatch,
       });
 
+    const persistedState = shouldPersistState
+      ? await persistRouterV2State(
+          conversation.id,
+          proposedStatePatch,
+        )
+      : null;
+
     return NextResponse.json({
       ok: true,
 
@@ -152,6 +160,7 @@ export async function POST(request: Request) {
       proposedPatch,
       proposedStatePatch,
       shouldPersistState,
+      persistedState,
       mergedContext,
       productResolution,
       productDecision,
