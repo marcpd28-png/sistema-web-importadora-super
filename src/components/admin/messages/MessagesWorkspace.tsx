@@ -108,8 +108,10 @@ async function fetchConversationsPage(
   filters: ConversationFilters,
   page: number,
   signal?: AbortSignal,
+  customLimit?: number
 ) {
   const params = buildConversationParams(filters, page);
+  if (customLimit) params.set("limit", String(customLimit));
   const response = await fetch(`/api/admin/conversations?${params.toString()}`, {
     cache: "no-store",
     signal,
@@ -257,16 +259,18 @@ export function MessagesWorkspace() {
     loadInitialConversations();
 
     const interval = window.setInterval(async () => {
-      try {
-        const data = await fetchConversationsPage(filtersSnapshot, 1);
-        const merged = mergeConversations(conversationsRef.current, data.items);
-        setConversations(merged);
-        setConversationTotal(data.total);
-        setConversationHasMore(data.total > merged.length);
-      } catch (error) {
-        console.error("Failed to refresh conversations", error);
-      }
-    }, CONVERSATION_POLL_MS);
+        try {
+          const currentLimit = conversationsRef.current.length > 0 
+            ? Math.max(CONVERSATION_PAGE_SIZE, conversationsRef.current.length) 
+            : CONVERSATION_PAGE_SIZE;
+          const data = await fetchConversationsPage(filtersSnapshot, 1, undefined, currentLimit);
+          setConversations(data.items);
+          setConversationTotal(data.total);
+          setConversationHasMore(data.total > data.items.length);
+        } catch (error) {
+          console.error("Failed to refresh conversations", error);
+        }
+      }, CONVERSATION_POLL_MS);
 
     return () => {
       controller.abort();
@@ -440,12 +444,18 @@ export function MessagesWorkspace() {
     setMessageHasMore(false);
   };
 
-  const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT") => {
+  const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT", clientRequestId?: string) => {
     if (!activeId) {
       return;
     }
 
     const now = new Date();
+    const requestIdToUse = clientRequestId || crypto.randomUUID();
+
+    if (clientRequestId) {
+      setActiveMessages(prev => prev.filter(m => m.clientRequestId !== clientRequestId));
+    }
+
     const tempMessage: ChatMessage = {
       content,
       conversationId: activeId,
@@ -453,8 +463,9 @@ export function MessagesWorkspace() {
       direction: "OUTBOUND",
       externalMessageId: null,
       id: `m-new-${now.getTime()}`,
+      clientRequestId: requestIdToUse,
       mediaUrl: mediaUrl || null,
-      messageType: type as any,
+      messageType: type as "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO",
       metadata: null,
       senderType: "AGENT",
       status: "sending",
@@ -471,7 +482,7 @@ export function MessagesWorkspace() {
                 content,
                 createdAt: now,
                 id: tempMessage.id,
-                messageType: type as any,
+                messageType: type as "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO",
                 senderType: "AGENT",
               },
               lastMessageAt: now,
@@ -623,7 +634,7 @@ export function MessagesWorkspace() {
               {loadingMessages && activeMessages.length === 0 ? (
                 <div className="messages-list-loader">Cargando mensajes...</div>
               ) : (
-                activeMessages.map((message) => <MessageBubble key={message.id} message={message} />)
+                activeMessages.map((message) => <MessageBubble key={message.id} message={message} onRetry={(msg) => handleSendMessage(msg.content, msg.mediaUrl || undefined, msg.messageType, msg.clientRequestId || undefined)} />)
               )}
 
               {!loadingMessages && activeMessages.length === 0 ? (

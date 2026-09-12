@@ -21,7 +21,8 @@
     "messages:backfill-phones": "tsx scripts/backfill-message-phones.ts",
     "sync:facturador-product": "tsx prisma/sync-facturador-product.ts",
     "sync:facturador-products": "tsx prisma/sync-facturador-products.ts",
-    "sync:facturador-scheduler": "tsx prisma/erp-sync-scheduler.ts"
+    "sync:facturador-scheduler": "tsx prisma/erp-sync-scheduler.ts",
+    "test:messages": "node --import tsx --test src/lib/n8n-outbound.test.ts src/lib/messages-outbound-regression.test.ts src/lib/message-center.test.ts src/lib/message-center-e2e.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

@@ -20,6 +20,7 @@ export type N8nOutboundMessageInput = {
   type: N8nOutboundMessageType;
   mediaUrl?: string | null;
   agentId: string;
+  clientRequestId?: string;
 };
 
 export type N8nOutboundMessageResult = {
@@ -89,7 +90,7 @@ export async function sendN8nOutboundMessage(
     );
   }
 
-  const requestId = randomUUID();
+  const requestId = input.clientRequestId || randomUUID();
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),

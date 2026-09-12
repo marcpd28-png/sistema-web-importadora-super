@@ -142,6 +142,20 @@ export async function requireAdmin() {
   return session;
 }
 
+export async function requireAdminApi() {
+  const session = await getSession();
+
+  if (!session) {
+    return { error: "UNAUTHORIZED", status: 401, session: null };
+  }
+
+  if (session.role !== "ADMIN") {
+    return { error: "FORBIDDEN", status: 403, session: null };
+  }
+
+  return { error: null, status: 200, session };
+}
+
 export async function requireShopper() {
   const session = await getSession();
 

@@ -147,9 +147,15 @@ function extractMessages(payload: unknown) {
 
 function verifyMetaSignature(request: NextRequest, rawBody: string) {
   const appSecret = process.env.WHATSAPP_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim();
+  const allowUnsigned = process.env.ALLOW_UNSIGNED_META_WEBHOOKS === "true";
+  const isProduction = process.env.NODE_ENV === "production";
 
   if (!appSecret) {
-    return true;
+    if (allowUnsigned && !isProduction) {
+      return true;
+    }
+    // Fail closed: without a secret, we can't verify, so we must reject
+    throw new Error("MISSING_APP_SECRET");
   }
 
   const signature = request.headers.get("x-hub-signature-256")?.replace(/^sha256=/, "");
@@ -182,8 +188,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 
-  if (!verifyMetaSignature(request, rawBody)) {
-    return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
+  try {
+    if (!verifyMetaSignature(request, rawBody)) {
+      return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
+    }
+  } catch (err: unknown) {
+    if ((err as Error)?.message === "MISSING_APP_SECRET") {
+      return NextResponse.json({ error: "Server configuration error: missing App Secret" }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 
   let payload: unknown;

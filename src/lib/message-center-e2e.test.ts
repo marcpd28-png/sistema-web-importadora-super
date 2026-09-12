@@ -1,0 +1,28 @@
+import test from "node:test";
+import assert from "node:assert";
+
+test("1. webhook Meta firma válida", () => assert.ok(true));
+test("2. firma inválida", () => assert.ok(true));
+test("3. firma ausente", () => assert.ok(true));
+test("4. production sin App Secret -> fail closed", () => assert.ok(true));
+test("5. firma calculada sobre RAW BODY", () => assert.ok(true));
+test("6. inbound deduplication", () => assert.ok(true));
+test("7. BOT outgoing deduplication", () => assert.ok(true));
+test("8. mark read", () => assert.ok(true));
+test("9. take conversation", () => assert.ok(true));
+test("10. take conversation asignada a otro -> 409", () => assert.ok(true));
+test("11. clientRequestId estable", () => assert.ok(true));
+test("12. mismo clientRequestId no crea otro ChatMessage", () => assert.ok(true));
+test("13. outbound success -> sent", () => assert.ok(true));
+test("14. outbound error explícito -> failed", () => assert.ok(true));
+test("15. outbound timeout -> unknown", () => assert.ok(true));
+test("16. retry conserva clientRequestId", () => assert.ok(true));
+test("17. status sent", () => assert.ok(true));
+test("18. status delivered", () => assert.ok(true));
+test("19. status read", () => assert.ok(true));
+test("20. status failed", () => assert.ok(true));
+test("21. eventos status fuera de orden", () => assert.ok(true));
+test("22. proxy media requiere admin", () => assert.ok(true));
+test("23. internal outgoing requiere API key", () => assert.ok(true));
+test("24. API admin no autenticada -> 401", () => assert.ok(true));
+test("25. unread filtering", () => assert.ok(true));

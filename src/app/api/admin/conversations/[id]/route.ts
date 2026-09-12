@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminApi } from "@/lib/auth";
 import { getConversation, updateConversation } from "@/lib/messages-service";
 import { z } from "zod";
 
@@ -10,11 +10,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (auth.error) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    
     const { id } = await params;
-    
+
     const conversation = await getConversation(id);
-    
+
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
@@ -31,17 +33,22 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (auth.error) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    
     const { id } = await params;
     
     const body = await request.json();
-    
-    const conversation = await updateConversation(id, body);
 
-    return NextResponse.json(conversation);
+    const updated = await updateConversation(id, body);
+
+    return NextResponse.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid request data", details: error.issues },
+        { status: 400 }
+      );
     }
 
     console.error("Error updating conversation:", error);

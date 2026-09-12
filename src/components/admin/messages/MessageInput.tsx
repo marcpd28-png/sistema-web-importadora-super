@@ -8,6 +8,8 @@ interface Props {
 
 export function MessageInput({ onSendMessage }: Props) {
   const [message, setMessage] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const emojiList = ["😀", "😂", "😊", "😍", "👍", "🙏", "❤️", "🔥", "🎉", "😢", "😮", "✅"];
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminApi } from "@/lib/auth";
 import {
   getConversationMessages,
   getConversationMessagesSchema,
@@ -15,7 +15,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const auth = await requireAdminApi();
+    if (auth.error) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    
     const { id } = await params;
 
     const searchParams = request.nextUrl.searchParams;
@@ -52,13 +54,15 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAdmin();
+    const auth = await requireAdminApi();
+    if (auth.error) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    const session = auth.session;
     const { id } = await params;
     
     const body = await request.json();
     
     // We pass the session user ID to associate the action with the agent
-    const message = await sendInternalMessage(id, body, session.userId);
+    const message = await sendInternalMessage(id, body, session!.userId);
 
     return NextResponse.json(message);
   } catch (error: unknown) {

@@ -16,9 +16,13 @@ test("el envío manual usa n8n y no llama directamente a Meta", () => {
   assert.match(messagesService, /sendN8nOutboundMessage/);
   assert.doesNotMatch(messagesService, /sendWhatsapp(Text|Media)Message/);
 
+  // Verification of OUTBOX Pattern for local idempotency:
+  const upsertCall = messagesService.indexOf("prisma.chatMessage.upsert(");
   const n8nCall = messagesService.indexOf("const sent = await sendN8nOutboundMessage");
-  const transaction = messagesService.indexOf("return prisma.$transaction", n8nCall);
-  assert.ok(n8nCall >= 0 && transaction > n8nCall);
+  
+  assert.ok(upsertCall >= 0, "Debe hacer upsert del mensaje en estado sending");
+  assert.ok(n8nCall > upsertCall, "El upsert debe ser ANTES de llamar a n8n");
+  
   assert.match(messagesService, /externalMessageId: sent\.messageId/);
   assert.match(messagesService, /status: "sent"/);
 });
