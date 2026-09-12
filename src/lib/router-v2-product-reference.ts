@@ -167,3 +167,45 @@ export function readShownProducts(
     );
   });
 }
+
+export function shouldResolveShownProductReference(input: {
+  stage?: string | null;
+  hasProductResolution: boolean;
+  shownProducts: ShownProduct[];
+  quantity?: number;
+  intents: readonly string[];
+}) {
+  if (input.stage !== "AWAITING_MODEL_SELECTION")
+    return false;
+
+  if (input.hasProductResolution)
+    return false;
+
+  if (input.shownProducts.length === 0)
+    return false;
+
+  if (input.quantity !== undefined)
+    return false;
+
+  const blockingIntents = new Set<string>([
+    "GREETING",
+    "HUMAN_HANDOFF",
+    "SUPPORT",
+    "COMPLAINT",
+    "CATALOG_REQUEST",
+    "LOGISTICS_INQUIRY",
+    "PAYMENT_METHOD_REQUEST",
+    "INVOICE_REQUEST",
+    "ORDER_STATUS",
+    "PRICE_REQUEST",
+    "STOCK_REQUEST",
+    "WHOLESALE",
+    "PRODUCT_SEARCH",
+    "BRAND_SEARCH",
+    "QUANTITY",
+  ]);
+
+  return !input.intents.some(
+    (intent) => blockingIntents.has(intent),
+  );
+}

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { discoverExactProducts } from "@/lib/product-discovery";
 import { buildRouterV2ProductDecision } from "@/lib/router-v2-product-decision";
-import { readShownProducts, resolveShownProductReference } from "@/lib/router-v2-product-reference";
+import { readShownProducts, resolveShownProductReference, shouldResolveShownProductReference } from "@/lib/router-v2-product-reference";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
@@ -90,8 +90,17 @@ export async function POST(request: Request) {
     const priorShownProducts =
       readShownProducts(currentState?.shownProducts);
 
+    const canResolveProductReference =
+      shouldResolveShownProductReference({
+        stage: currentState?.stage,
+        hasProductResolution: Boolean(productResolution),
+        shownProducts: priorShownProducts,
+        quantity: analysis.slots.quantity,
+        intents: analysis.intents,
+      });
+
     const productReference =
-      !productResolution && priorShownProducts.length > 0
+      canResolveProductReference
         ? resolveShownProductReference(
             input.content,
             priorShownProducts,
