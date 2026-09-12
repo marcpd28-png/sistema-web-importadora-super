@@ -12,7 +12,8 @@ function normalize(value: string) {
 function methodFromText(text: string) {
   if (/\bshalom\b/.test(text)) return "SHALOM";
   if (/\bolva\b/.test(text)) return "OLVA";
-  if (/\brecojo\b/.test(text)) return "RECOJO";
+  if (/\b(recojo|recoger|pickup)\b/.test(text)) return "RECOJO";
+  if (/\b(delivery|domicilio|reparto)\b/.test(text)) return "DELIVERY";
   return null;
 }
 
@@ -27,15 +28,21 @@ export function applyRouterV2DeliverySelection(input: {
   if (!method) return input.analysis;
 
   const exactChoice =
-    /^(shalom|olva|recojo)(?:\s+por favor)?[.!]?$/.test(text);
+    /^(shalom|olva|recojo|pickup|delivery|domicilio|reparto)(?:\s+por favor)?[.!]?$/.test(
+      text,
+    );
 
   const explicitChoice =
-    /\b(quiero|deseo|prefiero)\b.*\b(shalom|olva|recojo)\b/.test(text) ||
-    /\b(enviamelo|envienmelo|mandalo|mandamelo|mandenlo)\b.*\b(shalom|olva)\b/.test(text);
+    /\b(quiero|deseo|prefiero|elijo)\b.*\b(shalom|olva|recojo|pickup|delivery|domicilio|reparto)\b/.test(
+      text,
+    ) ||
+    /\b(enviamelo|envienmelo|mandalo|mandamelo|mandenlo)\b.*\b(shalom|olva|domicilio|delivery)\b/.test(
+      text,
+    ) ||
+    /\bvoy\s+a\s+recoger(?:lo)?\b/.test(text);
 
   const contextualChoice =
-    input.stage === "AWAITING_DELIVERY_METHOD" &&
-    exactChoice;
+    input.stage === "AWAITING_DELIVERY_METHOD" && exactChoice;
 
   if (!explicitChoice && !contextualChoice) {
     return input.analysis;
