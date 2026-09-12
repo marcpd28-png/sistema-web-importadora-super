@@ -43,6 +43,7 @@ import {
 import { mergeRouterV2StatePatches } from "@/lib/router-v2-state-patch";
 import { persistRouterV2State } from "@/lib/router-v2-state-store";
 import { buildRouterV2DecisionStatePatch } from "@/lib/router-v2-state-transition";
+import { resolveRouterV2TextProduct } from "@/lib/router-v2-text-product-resolver";
 import { buildRouterV2VisualDecision } from "@/lib/router-v2-visual-decision";
 import { resolveRouterV2VisualProduct } from "@/lib/router-v2-visual-product-resolver";
 
@@ -68,7 +69,6 @@ const schema = z.object({
 
 function authorized(request: Request) {
   const expected = process.env.N8N_INTERNAL_API_KEY;
-
   return Boolean(
     expected && request.headers.get("x-internal-api-key") === expected,
   );
@@ -78,12 +78,6 @@ function asStateRecord(value: unknown) {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
-}
-
-function readStateString(value: unknown, key: string) {
-  const record = asStateRecord(value);
-  const field = record?.[key];
-  return typeof field === "string" && field.trim() ? field.trim() : null;
 }
 
 function looksLikeQuestion(content: string) {
@@ -99,6 +93,10 @@ function looksLikeQuestion(content: string) {
       text,
     )
   );
+}
+
+function looksLikeProductCode(content: string) {
+  return /\(?[a-z]\d{2,6}(?:[-_\s][a-z0-9]+)*\)?/i.test(content);
 }
 
 function shouldAttemptCheckout(input: {
@@ -117,13 +115,17 @@ function shouldAttemptCheckout(input: {
   if (input.catalogAction !== "NONE" || input.hasProductQuestion) return false;
 
   if (stage === "AWAITING_DELIVERY_METHOD") {
-    return Boolean(input.deliveryMethodCandidate) ||
-      input.analysisNextAction === "CONTINUE_SALES_FLOW";
+    return (
+      Boolean(input.deliveryMethodCandidate) ||
+      input.analysisNextAction === "CONTINUE_SALES_FLOW"
+    );
   }
 
   if (stage === "AWAITING_PAYMENT_METHOD") {
-    return Boolean(input.paymentMethodCandidate) ||
-      input.analysisNextAction === "CONTINUE_SALES_FLOW";
+    return (
+      Boolean(input.paymentMethodCandidate) ||
+      input.analysisNextAction === "CONTINUE_SALES_FLOW"
+    );
   }
 
   if (stage === "AWAITING_PAYMENT_CONFIRMATION") {
@@ -139,7 +141,10 @@ function shouldAttemptCheckout(input: {
     const exactDocumentChoice = /^(boleta|factura)[.!]?$/i.test(
       input.content.trim(),
     );
-    return exactDocumentChoice || input.analysisNextAction === "CONTINUE_SALES_FLOW";
+    return (
+      exactDocumentChoice ||
+      input.analysisNextAction === "CONTINUE_SALES_FLOW"
+    );
   }
 
   if (stage === "AWAITING_DELIVERY_DETAILS") {
@@ -207,6 +212,10 @@ export async function POST(request: Request) {
       stage: currentState?.stage,
     });
 
+    const productQuestion = detectRouterV2ProductQuestion(
+      input.content,
+    );
+
     const proposedPatch = buildRouterV2SalesStatePatch(
       analysis,
       currentState,
@@ -266,7 +275,7 @@ export async function POST(request: Request) {
       retailStatePatch,
     );
 
-    const productResolution =
+    const exactProductResolution =
       analysis.slots.brand && analysis.slots.model
         ? await discoverExactProducts({
             brand: analysis.slots.brand,
@@ -274,8 +283,33 @@ export async function POST(request: Request) {
           })
         : null;
 
-    const textProductDecision =
-      buildRouterV2ProductDecision(productResolution);
+    const exactProductDecision =
+      buildRouterV2ProductDecision(exactProductResolution);
+
+    const genericSearchAllowedStage =
+      !currentState?.stage ||
+      currentState.stage === "AWAITING_PRODUCT_QUERY";
+    const shouldTryGenericTextProduct =
+      !exactProductResolution &&
+      catalogDecision.action === "NONE" &&
+      (
+        analysis.nextAction === "RESOLVE_PRODUCT" ||
+        (Boolean(productQuestion) && !currentState?.selectedProductCode) ||
+        looksLikeProductCode(input.content) ||
+        (genericSearchAllowedStage &&
+          (analysis.intents.length === 0 ||
+            analysis.intents.includes("PURCHASE_INTENT")))
+      );
+
+    const textProductResolution = shouldTryGenericTextProduct
+      ? await resolveRouterV2TextProduct(input.content)
+      : null;
+
+    const genericProductDecision =
+      textProductResolution &&
+      textProductResolution.status !== "NO_QUERY"
+        ? buildRouterV2ProductDecision(textProductResolution)
+        : null;
 
     const isPaymentEvidenceStage =
       currentState?.stage === "AWAITING_PAYMENT_CONFIRMATION";
@@ -287,17 +321,25 @@ export async function POST(request: Request) {
     const visualResolution = hasImageMessage
       ? await resolveRouterV2VisualProduct(input.visualHints ?? null)
       : null;
-    const visualDecision =
-      buildRouterV2VisualDecision(visualResolution);
-    const productDecision = textProductDecision ?? visualDecision;
+    const visualDecision = buildRouterV2VisualDecision(
+      visualResolution,
+    );
 
-    const priorShownProducts =
-      readShownProducts(currentState?.shownProducts);
+    const productDecision =
+      exactProductDecision ??
+      genericProductDecision ??
+      visualDecision;
+
+    const priorShownProducts = readShownProducts(
+      currentState?.shownProducts,
+    );
 
     const canResolveProductReference =
       shouldResolveShownProductReference({
         stage: currentState?.stage,
-        hasProductResolution: Boolean(productResolution),
+        hasProductResolution: Boolean(
+          exactProductResolution || genericProductDecision,
+        ),
         shownProducts: priorShownProducts,
         quantity: analysis.slots.quantity,
         intents: analysis.intents,
@@ -310,11 +352,14 @@ export async function POST(request: Request) {
         )
       : null;
 
-    const analysisNextAction = isPaymentEvidenceStage && hasImageMessage === false &&
+    const incomingPaymentEvidence =
+      isPaymentEvidenceStage &&
       (Boolean(input.mediaUrl) ||
         ["IMAGE", "DOCUMENT"].includes(
           (input.messageType ?? "").toUpperCase(),
-        ))
+        ));
+
+    const analysisNextAction = incomingPaymentEvidence
       ? "CONTINUE_SALES_FLOW"
       : analysis.nextAction;
 
@@ -376,10 +421,6 @@ export async function POST(request: Request) {
           ? null
           : currentState?.selectedProductCode ?? null;
 
-    const productQuestion = detectRouterV2ProductQuestion(
-      input.content,
-    );
-
     const productInformation = selectedProductCodeForInfo
       ? await getRouterV2ProductInformation(
           selectedProductCodeForInfo,
@@ -394,10 +435,11 @@ export async function POST(request: Request) {
           )
         : null;
 
-    const paymentMethodCandidate = resolveRouterV2PaymentSelection({
-      content: input.content,
-      stage: currentState?.stage,
-    });
+    const paymentMethodCandidate =
+      resolveRouterV2PaymentSelection({
+        content: input.content,
+        stage: currentState?.stage,
+      });
 
     const projectedBeforeCheckout = {
       ...(currentStateRecord ?? {}),
@@ -470,6 +512,7 @@ export async function POST(request: Request) {
       orderCreation = await createRouterV2PendingOrder({
         conversationId: conversation.id,
         state: persistedState,
+        currencySymbol: businessKnowledge.currencySymbol,
       });
 
       if (
@@ -500,11 +543,12 @@ export async function POST(request: Request) {
       checkoutDecision.paymentMethodToPersist &&
       persistedState?.orderNumber
     ) {
-      paymentMethodUpdate = await updateRouterV2OrderPaymentMethod({
-        orderNumber: persistedState.orderNumber,
-        paymentMethod:
-          checkoutDecision.paymentMethodToPersist,
-      });
+      paymentMethodUpdate =
+        await updateRouterV2OrderPaymentMethod({
+          orderNumber: persistedState.orderNumber,
+          paymentMethod:
+            checkoutDecision.paymentMethodToPersist,
+        });
     }
 
     const requestedOrderNumber =
@@ -583,7 +627,8 @@ export async function POST(request: Request) {
       mergedContext,
       catalogDecision,
       retailDiscovery,
-      productResolution,
+      exactProductResolution,
+      textProductResolution,
       productDecision,
       productReference,
       visualResolution,
