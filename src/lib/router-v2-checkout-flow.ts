@@ -33,6 +33,7 @@ export type RouterV2CheckoutStep =
 export type RouterV2CheckoutDecision = {
   patch: Record<string, unknown>;
   step: RouterV2CheckoutStep;
+  consumedInput: boolean;
   createPendingOrder: boolean;
   paymentMethodToPersist: string | null;
 };
@@ -171,14 +172,18 @@ export function resolveRouterV2CheckoutFlow(input: {
 }): RouterV2CheckoutDecision {
   const state = input.state;
   const patch: Record<string, unknown> = {};
-  const none = (step: RouterV2CheckoutStep = null): RouterV2CheckoutDecision => ({
+  const result = (
+    step: RouterV2CheckoutStep = null,
+    consumedInput = false,
+  ): RouterV2CheckoutDecision => ({
     patch,
     step,
+    consumedInput,
     createPendingOrder: false,
     paymentMethodToPersist: null,
   });
 
-  if (!state?.stage) return none();
+  if (!state?.stage) return result();
 
   const text = input.content.trim();
   const customerData = asRecord(state.customerData);
@@ -187,15 +192,15 @@ export function resolveRouterV2CheckoutFlow(input: {
   const paymentData = asRecord(state.paymentData);
 
   if (state.stage === "AWAITING_PURCHASE_CONFIRMATION") {
-    if (!affirmative(text)) return none();
+    if (!affirmative(text)) return result();
 
     patch.purchaseIntent = true;
     patch.stage = "AWAITING_QUANTITY";
-    return none("ASK_QUANTITY");
+    return result("ASK_QUANTITY", true);
   }
 
   if (state.stage === "AWAITING_PRICE_CONFIRMATION") {
-    if (!affirmative(text)) return none("ASK_PRICE_CONFIRMATION");
+    if (!affirmative(text)) return result("ASK_PRICE_CONFIRMATION");
 
     const contactName = usableContactName(input.contact?.name);
     const contactPhone = input.contact?.phone?.trim() ?? "";
@@ -210,11 +215,11 @@ export function resolveRouterV2CheckoutFlow(input: {
 
     if (contactName && contactPhone) {
       patch.stage = "AWAITING_DOCUMENT_TYPE";
-      return none("ASK_DOCUMENT_TYPE");
+      return result("ASK_DOCUMENT_TYPE", true);
     }
 
     patch.stage = "AWAITING_CUSTOMER_DATA";
-    return none("ASK_CUSTOMER_DATA");
+    return result("ASK_CUSTOMER_DATA", true);
   }
 
   if (state.stage === "AWAITING_CUSTOMER_DATA") {
@@ -229,27 +234,27 @@ export function resolveRouterV2CheckoutFlow(input: {
         ...(currentPhone ? { phone: currentPhone } : {}),
       };
       patch.stage = "AWAITING_DOCUMENT_TYPE";
-      return none("ASK_DOCUMENT_TYPE");
+      return result("ASK_DOCUMENT_TYPE", true);
     }
 
     if (currentName && currentPhone) {
       patch.stage = "AWAITING_DOCUMENT_TYPE";
-      return none("ASK_DOCUMENT_TYPE");
+      return result("ASK_DOCUMENT_TYPE", true);
     }
 
-    return none("ASK_CUSTOMER_DATA");
+    return result("ASK_CUSTOMER_DATA");
   }
 
   if (state.stage === "AWAITING_DOCUMENT_TYPE") {
     const type = detectDocumentType(text);
-    if (!type) return none("ASK_DOCUMENT_TYPE");
+    if (!type) return result("ASK_DOCUMENT_TYPE");
 
     patch.documentData = {
       ...documentData,
       type,
     };
     patch.stage = "AWAITING_DOCUMENT_DATA";
-    return none("ASK_DOCUMENT_DATA");
+    return result("ASK_DOCUMENT_DATA", true);
   }
 
   if (state.stage === "AWAITING_DOCUMENT_DATA") {
@@ -265,30 +270,30 @@ export function resolveRouterV2CheckoutFlow(input: {
         number: null,
       };
       patch.stage = "AWAITING_DELIVERY_METHOD";
-      return none("ASK_DELIVERY_METHOD");
+      return result("ASK_DELIVERY_METHOD", true);
     }
 
     const number = detectDocumentNumber(text, type);
-    if (!number) return none("ASK_DOCUMENT_DATA");
+    if (!number) return result("ASK_DOCUMENT_DATA");
 
     patch.documentData = {
       ...documentData,
       number,
     };
     patch.stage = "AWAITING_DELIVERY_METHOD";
-    return none("ASK_DELIVERY_METHOD");
+    return result("ASK_DELIVERY_METHOD", true);
   }
 
   if (state.stage === "AWAITING_DELIVERY_METHOD") {
     const method = input.deliveryMethodCandidate?.trim() ?? "";
-    if (!method) return none("ASK_DELIVERY_METHOD");
+    if (!method) return result("ASK_DELIVERY_METHOD");
 
     const allowed = input.allowedDeliveryMethods ?? [];
     if (allowed.length === 0) {
-      return none("DELIVERY_CONFIGURATION_MISSING");
+      return result("DELIVERY_CONFIGURATION_MISSING", true);
     }
     if (!deliveryAllowed(method, allowed)) {
-      return none("DELIVERY_METHOD_UNAVAILABLE");
+      return result("DELIVERY_METHOD_UNAVAILABLE", true);
     }
 
     patch.deliveryData = {
@@ -298,48 +303,48 @@ export function resolveRouterV2CheckoutFlow(input: {
 
     if (method === "RECOJO") {
       patch.stage = "AWAITING_ORDER_CONFIRMATION";
-      return none("ASK_ORDER_CONFIRMATION");
+      return result("ASK_ORDER_CONFIRMATION", true);
     }
 
     patch.stage = "AWAITING_DELIVERY_DETAILS";
-    return none("ASK_DELIVERY_DETAILS");
+    return result("ASK_DELIVERY_DETAILS", true);
   }
 
   if (state.stage === "AWAITING_DELIVERY_DETAILS") {
-    if (text.length < 3) return none("ASK_DELIVERY_DETAILS");
+    if (text.length < 3) return result("ASK_DELIVERY_DETAILS");
 
     patch.deliveryData = {
       ...deliveryData,
       details: text.slice(0, 500),
     };
     patch.stage = "AWAITING_ORDER_CONFIRMATION";
-    return none("ASK_ORDER_CONFIRMATION");
+    return result("ASK_ORDER_CONFIRMATION", true);
   }
 
   if (state.stage === "AWAITING_ORDER_CONFIRMATION") {
-    if (!affirmative(text)) return none("ASK_ORDER_CONFIRMATION");
+    if (!affirmative(text)) return result("ASK_ORDER_CONFIRMATION");
 
     patch.stage = "AWAITING_PAYMENT_METHOD";
     return {
       patch,
       step: "ASK_PAYMENT_METHOD",
+      consumedInput: true,
       createPendingOrder: !state.orderNumber,
       paymentMethodToPersist: null,
     };
   }
 
   if (state.stage === "AWAITING_PAYMENT_METHOD") {
-    const allowed = input.allowedPaymentMethods ?? [];
+    const method = detectPaymentMethod(text);
+    if (!method) return result("ASK_PAYMENT_METHOD");
 
+    const allowed = input.allowedPaymentMethods ?? [];
     if (allowed.length === 0) {
-      return none("PAYMENT_CONFIGURATION_MISSING");
+      return result("PAYMENT_CONFIGURATION_MISSING", true);
     }
 
-    const method = detectPaymentMethod(text);
-    if (!method) return none("ASK_PAYMENT_METHOD");
-
     if (!paymentAllowed(method, allowed)) {
-      return none("PAYMENT_METHOD_UNAVAILABLE");
+      return result("PAYMENT_METHOD_UNAVAILABLE", true);
     }
 
     patch.paymentData = {
@@ -353,6 +358,7 @@ export function resolveRouterV2CheckoutFlow(input: {
     return {
       patch,
       step: "ASK_PAYMENT_EVIDENCE",
+      consumedInput: true,
       createPendingOrder: false,
       paymentMethodToPersist: method,
     };
@@ -365,7 +371,7 @@ export function resolveRouterV2CheckoutFlow(input: {
         (input.messageType ?? "").toUpperCase(),
       );
 
-    if (!hasEvidence) return none("ASK_PAYMENT_EVIDENCE");
+    if (!hasEvidence) return result("ASK_PAYMENT_EVIDENCE");
 
     patch.paymentData = {
       ...paymentData,
@@ -374,8 +380,8 @@ export function resolveRouterV2CheckoutFlow(input: {
       ...(input.mediaUrl ? { evidenceUrl: input.mediaUrl } : {}),
     };
 
-    return none("PAYMENT_EVIDENCE_RECEIVED");
+    return result("PAYMENT_EVIDENCE_RECEIVED", true);
   }
 
-  return none();
+  return result();
 }
