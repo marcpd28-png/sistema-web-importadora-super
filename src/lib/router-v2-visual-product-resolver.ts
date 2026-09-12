@@ -85,9 +85,13 @@ export async function resolveRouterV2VisualProduct(
 ): Promise<RouterV2VisualResolution> {
   if (!hints) return { status: "NO_IMAGE_HINTS" };
 
-  const confidence = hints.confidence ?? 0;
+  const confidence = hints.confidence;
 
-  if (confidence > 0 && confidence < 0.7) {
+  if (
+    confidence !== undefined &&
+    confidence !== null &&
+    confidence < 0.7
+  ) {
     return { status: "LOW_CONFIDENCE", hints };
   }
 
