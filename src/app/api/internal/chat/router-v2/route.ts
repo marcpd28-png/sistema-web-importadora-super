@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { discoverExactProducts } from "@/lib/product-discovery";
 import { buildRouterV2ProductDecision } from "@/lib/router-v2-product-decision";
 import { readShownProducts, resolveShownProductReference, shouldResolveShownProductReference } from "@/lib/router-v2-product-reference";
+import { determineRouterV2FinalAction } from "@/lib/router-v2-final-action";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
@@ -109,9 +110,13 @@ export async function POST(request: Request) {
 
 
     const nextAction =
-      conversation.botEnabled === false
-        ? "HUMAN_HANDOFF"
-        : analysis.nextAction;
+      determineRouterV2FinalAction({
+        botEnabled: conversation.botEnabled,
+        analysisNextAction: analysis.nextAction,
+        productDecision,
+        productReference,
+        canResolveProductReference,
+      });
 
     return NextResponse.json({
       ok: true,
