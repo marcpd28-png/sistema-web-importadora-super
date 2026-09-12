@@ -27,21 +27,43 @@ test("catalog request asks wholesale or retail", () => {
 test("pending catalog routes wholesale and retail explicitly", () => {
   const currentState = { customerData: { catalogPending: true } };
 
+  for (const phrase of ["por mayor", "mayorista"]) {
+    const wholesale = resolveRouterV2CatalogFlow({
+      analysis: analyzeRouterV2Message({ content: phrase }),
+      content: phrase,
+      currentState,
+    });
+    assert.equal(wholesale.action, "SEND_WHOLESALE_CATALOG");
+    assert.equal(wholesale.mode, "WHOLESALE");
+  }
+
+  for (const phrase of ["por unidad", "por unidades", "unidades", "minorista"]) {
+    const retail = resolveRouterV2CatalogFlow({
+      analysis: analyzeRouterV2Message({ content: phrase }),
+      content: phrase,
+      currentState,
+    });
+    assert.equal(retail.action, "START_RETAIL_DISCOVERY");
+    assert.equal(retail.mode, "RETAIL");
+  }
+});
+
+test("catalog can route directly when purchase mode is stated in first message", () => {
+  const wholesaleContent = "Quiero el catalogo por mayor";
   const wholesale = resolveRouterV2CatalogFlow({
-    analysis: analyzeRouterV2Message({ content: "por mayor" }),
-    content: "por mayor",
-    currentState,
+    analysis: analyzeRouterV2Message({ content: wholesaleContent }),
+    content: wholesaleContent,
+    currentState: null,
   });
   assert.equal(wholesale.action, "SEND_WHOLESALE_CATALOG");
-  assert.equal(wholesale.mode, "WHOLESALE");
 
+  const retailContent = "Quiero el catalogo por unidades";
   const retail = resolveRouterV2CatalogFlow({
-    analysis: analyzeRouterV2Message({ content: "por unidades" }),
-    content: "por unidades",
-    currentState,
+    analysis: analyzeRouterV2Message({ content: retailContent }),
+    content: retailContent,
+    currentState: null,
   });
   assert.equal(retail.action, "START_RETAIL_DISCOVERY");
-  assert.equal(retail.mode, "RETAIL");
 });
 
 test("active retail mode continues broad product discovery", () => {
@@ -76,6 +98,17 @@ test("delivery inquiry is not stored as a selection", () => {
     stage: "AWAITING_DELIVERY_METHOD",
   });
   assert.equal(selected.slots.deliveryMethod, "SHALOM");
+});
+
+test("explicit delivery choice is accepted outside exact-choice wording", () => {
+  const content = "Quiero que me lo envien por Shalom";
+  const analysis = applyRouterV2DeliverySelection({
+    analysis: analyzeRouterV2Message({ content }),
+    content,
+    stage: "AWAITING_DELIVERY_METHOD",
+  });
+
+  assert.equal(analysis.slots.deliveryMethod, "SHALOM");
 });
 
 test("payment inquiry is not stored as a selection", () => {
@@ -144,6 +177,40 @@ test("checkout consumes explicit invoice, delivery and payment choices", () => {
   });
   assert.equal(payment.consumedInput, true);
   assert.equal(payment.step, "ASK_PAYMENT_EVIDENCE");
+});
+
+test("unsupported checkout choices fail safely", () => {
+  const delivery = resolveRouterV2CheckoutFlow({
+    content: "Olva",
+    state: { stage: "AWAITING_DELIVERY_METHOD" },
+    deliveryMethodCandidate: "OLVA",
+    allowedDeliveryMethods: ["Shalom", "Recojo"],
+  });
+  assert.equal(delivery.consumedInput, true);
+  assert.equal(delivery.step, "DELIVERY_METHOD_UNAVAILABLE");
+
+  const payment = resolveRouterV2CheckoutFlow({
+    content: "Tarjeta",
+    state: { stage: "AWAITING_PAYMENT_METHOD" },
+    paymentMethodCandidate: "TARJETA",
+    allowedPaymentMethods: ["Yape", "Transferencia"],
+  });
+  assert.equal(payment.consumedInput, true);
+  assert.equal(payment.step, "PAYMENT_METHOD_UNAVAILABLE");
+});
+
+test("boleta can continue explicitly without DNI", () => {
+  const checkout = resolveRouterV2CheckoutFlow({
+    content: "sin DNI",
+    state: {
+      stage: "AWAITING_DOCUMENT_DATA",
+      documentData: { type: "BOLETA" },
+    },
+  });
+
+  assert.equal(checkout.consumedInput, true);
+  assert.equal(checkout.step, "ASK_DELIVERY_METHOD");
+  assert.equal(checkout.patch.stage, "AWAITING_DELIVERY_METHOD");
 });
 
 test("voucher is evidence but never automatic verification", () => {
