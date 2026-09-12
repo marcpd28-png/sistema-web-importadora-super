@@ -22,7 +22,7 @@ export function detectRouterV2ProductQuestion(
   if (!text) return null;
 
   if (
-    /\b(bateria|autonomia|duracion|potencia|watts?|bluetooth|resistente al agua|ipx|ip67|ip68|peso|pesa|medidas|dimension(?:es)?|tamano|carga|cargador|usb|tipo c|type c|garantia)\b/.test(
+    /\b(bateria|autonomia|duracion|potencia|watts?|voltaje|voltios|amperaje|bluetooth|wifi|inalambrico|resistente al agua|impermeable|ipx|ip67|ip68|peso|pesa|medidas|dimension(?:es)?|tamano|carga|cargador|usb|tipo c|type c|garantia|material|color(?:es)?|compatibilidad|compatible|capacidad|alcance|distancia|frecuencia|conector(?:es)?|puerto(?:s)?|incluye|accesorios)\b/.test(
       text,
     )
   ) {
@@ -30,22 +30,22 @@ export function detectRouterV2ProductQuestion(
   }
 
   if (
-    /\b(mas informacion|informacion|detalles|caracteristicas|especificaciones|ficha tecnica|que incluye|que trae|como es)\b/.test(
+    /\b(mas informacion|informacion|detalles|caracteristicas|especificaciones|ficha tecnica|que incluye|que trae|como es|cuentame mas|dime mas|quiero saber mas)\b/.test(
       text,
     )
   ) {
     return "DETAILS";
   }
 
-  if (/\b(precio|costo|cuanto cuesta|cuanto sale|a cuanto)\b/.test(text)) {
+  if (/\b(precio|costo|cuanto cuesta|cuanto sale|a cuanto|valor)\b/.test(text)) {
     return "PRICE";
   }
 
-  if (/\b(stock|disponible|disponibilidad|hay|tienen|lo tienes|queda)\b/.test(text)) {
+  if (/\b(stock|disponible|disponibilidad|hay|tienen|lo tienes|queda|disponibles)\b/.test(text)) {
     return "STOCK";
   }
 
-  if (/\b(por mayor|mayorista|precio por cantidad|por caja)\b/.test(text)) {
+  if (/\b(por mayor|mayorista|precio por cantidad|por caja|mayoreo)\b/.test(text)) {
     return "WHOLESALE";
   }
 
