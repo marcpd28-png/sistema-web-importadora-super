@@ -101,7 +101,10 @@ function scoreProduct(
   return score;
 }
 
-export async function resolveRouterV2TextProduct(query: string) {
+export async function resolveRouterV2TextProduct(
+  query: string,
+  options: { includeUnavailable?: boolean } = {},
+) {
   const normalizedQuery = normalize(query);
   const tokens = queryTokens(query);
 
@@ -116,7 +119,9 @@ export async function resolveRouterV2TextProduct(query: string) {
   const rows = await prisma.product.findMany({
     where: {
       isVisible: true,
-      stockUnits: { gt: 0 },
+      ...(options.includeUnavailable
+        ? {}
+        : { stockUnits: { gt: 0 } }),
       AND: tokens.map((token) => ({
         OR: [
           { code: { contains: token, mode: "insensitive" as const } },
@@ -146,6 +151,7 @@ export async function resolveRouterV2TextProduct(query: string) {
       unitPrice: true,
       wholesalePrice: true,
       wholesaleMinQty: true,
+      stockUnits: true,
     },
     take: 80,
   });
@@ -176,6 +182,7 @@ export async function resolveRouterV2TextProduct(query: string) {
           ? null
           : Number(product.wholesalePrice),
       wholesaleMinQty: product.wholesaleMinQty,
+      available: product.stockUnits > 0,
       productUrl: `/producto/${product.slug}`,
     }));
 
