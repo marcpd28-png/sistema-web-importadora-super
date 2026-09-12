@@ -152,3 +152,101 @@ export async function discoverSpeakerBrands() {
       a.brand.localeCompare(b.brand, "es"),
     );
 }
+
+function normalizeDiscoveryText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export async function discoverExactProducts(input: {
+  brand: string;
+  model: string;
+}) {
+  const brand = normalizeDiscoveryText(input.brand);
+  const model = normalizeDiscoveryText(input.model);
+
+  const modelTokens = model
+    .split(" ")
+    .filter(Boolean);
+
+  const rows = await prisma.product.findMany({
+    where: {
+      isVisible: true,
+      stockUnits: { gt: 0 },
+      AND: modelTokens.map((token) => ({
+        name: {
+          contains: token,
+          mode: "insensitive" as const,
+        },
+      })),
+    },
+    select: {
+      id: true,
+      code: true,
+      slug: true,
+      name: true,
+      brand: true,
+      category: true,
+      imageUrl: true,
+      localImageUrl: true,
+      unitPrice: true,
+      wholesalePrice: true,
+      wholesaleMinQty: true,
+    },
+    take: 100,
+  });
+
+  const matches = rows
+    .filter((product) => {
+      const resolvedBrand = resolveProductBrand(product);
+
+      if (!resolvedBrand) return false;
+
+      const productBrand =
+        normalizeDiscoveryText(resolvedBrand);
+
+      const productName =
+        normalizeDiscoveryText(product.name);
+
+      const hasModel = modelTokens.every((token) =>
+        productName.split(" ").includes(token),
+      );
+
+      return productBrand === brand && hasModel;
+    })
+    .map((product) => ({
+      id: product.id,
+      code: product.code,
+      slug: product.slug,
+      name: product.name,
+      brand: resolveProductBrand(product),
+      category: product.category,
+      imageUrl:
+        product.localImageUrl ??
+        product.imageUrl ??
+        null,
+      unitPrice: Number(product.unitPrice),
+      wholesalePrice:
+        product.wholesalePrice === null
+          ? null
+          : Number(product.wholesalePrice),
+      wholesaleMinQty: product.wholesaleMinQty,
+      productUrl: `/producto/${product.slug}`,
+    }));
+
+  return {
+    status:
+      matches.length === 0
+        ? "NOT_FOUND"
+        : matches.length === 1
+          ? "UNIQUE"
+          : "MULTIPLE",
+    count: matches.length,
+    matches,
+  } as const;
+}
