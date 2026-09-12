@@ -9,7 +9,7 @@ const sshConfig = {
 
 const commands = `
 cd /home/IMPORTADORA
-pm2 info importadora
+pm2 logs importadora --lines 50 --nostream
 `;
 
 const client = new Client();

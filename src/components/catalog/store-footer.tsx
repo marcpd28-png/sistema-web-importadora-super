@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { BookOpenText, Clock3, Mail, MapPin } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 
@@ -207,7 +208,17 @@ export function StoreFooter() {
           </div>
           <div className="store-footer-info-item" title="Correo de Soporte">
             <Mail size={14} className="store-footer-icon" />
-            <a href="mailto:supereimportaciones@gmail.com">supereimportaciones@gmail.com</a>
+            <a href="mailto:importacionessupersac@gmail.com">importacionessupersac@gmail.com</a>
+          </div>
+        </div>
+
+        {/* Legal Section */}
+        <div className="store-footer-legal" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <span style={{ color: "#fbbf24", fontWeight: 700, fontSize: "12px", textTransform: "uppercase" }}>Legal</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <Link href="/politica-de-privacidad" style={{ color: "#ffffff", textDecoration: "none", fontSize: "12.5px", fontWeight: 500, transition: "color 0.2s" }} onMouseOver={(e) => e.currentTarget.style.color = "#fbbf24"} onMouseOut={(e) => e.currentTarget.style.color = "#ffffff"}>Política de privacidad</Link>
+            <Link href="/terminos-y-condiciones" style={{ color: "#ffffff", textDecoration: "none", fontSize: "12.5px", fontWeight: 500, transition: "color 0.2s" }} onMouseOver={(e) => e.currentTarget.style.color = "#fbbf24"} onMouseOut={(e) => e.currentTarget.style.color = "#ffffff"}>Términos y condiciones</Link>
+            <Link href="/eliminacion-de-datos" style={{ color: "#ffffff", textDecoration: "none", fontSize: "12.5px", fontWeight: 500, transition: "color 0.2s" }} onMouseOver={(e) => e.currentTarget.style.color = "#fbbf24"} onMouseOut={(e) => e.currentTarget.style.color = "#ffffff"}>Eliminación de datos</Link>
           </div>
         </div>
 
