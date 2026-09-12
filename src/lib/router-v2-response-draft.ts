@@ -64,6 +64,10 @@ function appendResume(answer: string, context: ResponseContext) {
   return `${answer.trim()}\n\n${prompt}`;
 }
 
+function unavailableAlternativePrompt(answer: string) {
+  return `${answer.trim()}\n\nSi quieres, indícame qué alternativa buscas y te muestro opciones disponibles.`;
+}
+
 function requestedDeliveryMethod(message: string) {
   const text = message.toLowerCase();
   if (/\bshalom\b/.test(text)) return "SHALOM";
@@ -196,7 +200,10 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
   }
 
   if (answerType === "PRODUCT_DETAILS") {
-    return appendResume(formatProductDetails(context), context);
+    const answer = formatProductDetails(context);
+    return context.product?.available === false
+      ? unavailableAlternativePrompt(answer)
+      : appendResume(answer, context);
   }
 
   if (answerType === "PRODUCT_SPECIFICATION") {
@@ -207,7 +214,9 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
       ? `${name}: ${matched.name}: ${matched.value}.`
       : `No encuentro ese dato específico registrado en la ficha de ${name}. Prefiero no inventarlo.`;
 
-    return appendResume(answer, context);
+    return context.product?.available === false
+      ? unavailableAlternativePrompt(answer)
+      : appendResume(answer, context);
   }
 
   if (answerType === "PRODUCT_PRICE") {
@@ -219,20 +228,28 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
         ? ` Precio mayorista desde ${context.product.wholesaleMinQty} unidades: ${money(wholesale, currency)} c/u.`
         : "";
 
-    const answer = price
+    let answer = price
       ? `${name} está a ${price} por unidad.${wholesaleText}`
       : `No tengo un precio vigente confirmado para ${name}.`;
+
+    if (context.product?.available === false) {
+      answer += " Actualmente no figura disponible.";
+      return unavailableAlternativePrompt(answer);
+    }
 
     return appendResume(answer, context);
   }
 
   if (answerType === "PRODUCT_STOCK") {
     const name = context.sales.productName ?? "este producto";
-    const answer =
-      context.product?.available === true
-        ? `Sí, ${name} aparece disponible actualmente.`
-        : `En este momento ${name} no aparece disponible.`;
-    return appendResume(answer, context);
+    const available = context.product?.available === true;
+    const answer = available
+      ? `Sí, ${name} aparece disponible actualmente.`
+      : `En este momento ${name} no aparece disponible.`;
+
+    return available
+      ? appendResume(answer, context)
+      : unavailableAlternativePrompt(answer);
   }
 
   if (answerType === "PRODUCT_WHOLESALE") {
@@ -243,7 +260,12 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
       product?.wholesalePrice !== undefined
         ? `${name} tiene precio mayorista desde ${product.wholesaleMinQty} unidades: ${money(product.wholesalePrice, currency)} c/u.`
         : `${name} no tiene un precio mayorista distinto registrado actualmente.`;
-    return appendResume(answer, context);
+
+    return product?.available === false
+      ? unavailableAlternativePrompt(
+          `${answer} Actualmente no figura disponible.`,
+        )
+      : appendResume(answer, context);
   }
 
   if (
@@ -268,6 +290,14 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
         : `Tengo seleccionado ${name}, pero falta completar cantidad o precio antes de confirmar.`;
 
     return appendResume(answer, context);
+  }
+
+  if (answerType === "PURCHASE_DECLINED") {
+    return "Entendido, no continuaré con ese producto. ¿Qué otro producto o categoría deseas buscar?";
+  }
+
+  if (answerType === "PRICE_CHANGES_REQUESTED") {
+    return "Claro, todavía no avanzaré con el pedido. ¿Qué deseas cambiar: el producto o la cantidad?";
   }
 
   if (answerType === "LOGISTICS") {
@@ -370,6 +400,10 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
       ? ` Pedido ${context.sales.orderNumber}.`
       : "";
     return `Ya tengo los datos principales del pedido.${number}${total ? ` Total: ${total}.` : ""} ¿Confirmas que todo está correcto?`;
+  }
+
+  if (answerType === "ORDER_CHANGES_REQUESTED") {
+    return "De acuerdo, no avanzaré con la creación del pedido todavía. ¿Qué deseas corregir: producto, cantidad, comprobante o entrega?";
   }
 
   if (answerType === "CHECKOUT_PAYMENT_METHOD") {
