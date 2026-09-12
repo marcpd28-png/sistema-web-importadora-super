@@ -31,3 +31,10 @@ test("inbound y ManyChat conservan sus puntos de entrada actuales", () => {
   assert.match(inboundRoute, /processIncomingMessage/);
   assert.match(whatsapp, /sendQuotePdfToManychat/);
 });
+
+test("el servicio maneja los errores estructurados de n8n apropiadamente", () => {
+  assert.match(messagesService, /code === 'N8N_TIMEOUT'/);
+  assert.match(messagesService, /code === 'REQUEST_IN_PROGRESS'/);
+  assert.match(messagesService, /code === 'REQUIRES_FORCE_RETRY'/);
+  assert.match(messagesService, /isUnknown \? "unknown" : "failed"/);
+});

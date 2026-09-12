@@ -21,6 +21,7 @@ export type N8nOutboundMessageInput = {
   mediaUrl?: string | null;
   agentId: string;
   clientRequestId?: string;
+  forceRetry?: boolean;
 };
 
 export type N8nOutboundMessageResult = {
@@ -114,6 +115,7 @@ export async function sendN8nOutboundMessage(
         mediaUrl: input.mediaUrl ?? null,
         agentId: input.agentId,
         requestId,
+        forceRetry: input.forceRetry ?? false,
         timestamp: new Date().toISOString(),
       }),
       signal: controller.signal,
@@ -127,8 +129,17 @@ export async function sendN8nOutboundMessage(
     }
 
     if (!response.ok) {
+      let code = "N8N_REMOTE_ERROR";
+      if (payload && typeof payload === "object" && "error" in payload) {
+        if (payload.error === "REQUEST_IN_PROGRESS") {
+          code = "REQUEST_IN_PROGRESS";
+        } else if (payload.error === "REQUIRES_FORCE_RETRY") {
+          code = "REQUIRES_FORCE_RETRY";
+        }
+      }
+
       throw new N8nOutboundError(getRemoteError(payload), {
-        code: "N8N_REMOTE_ERROR",
+        code,
         statusCode: 502,
         remoteStatus: response.status,
       });

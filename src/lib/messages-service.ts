@@ -474,6 +474,7 @@ export async function sendInternalMessage(
       content: parsed.content,
       conversationId,
       clientRequestId: requestId,
+      forceRetry: parsed.forceRetry ?? false,
       mediaUrl: parsed.mediaUrl ?? null,
       recipient,
       type: outboundType,
@@ -490,10 +491,11 @@ export async function sendInternalMessage(
       }
     });
   } catch (error: unknown) {
-    const isTimeout = (error as { code?: string })?.code === 'N8N_TIMEOUT';
+    const code = (error as { code?: string })?.code;
+    const isUnknown = code === 'N8N_TIMEOUT' || code === 'REQUEST_IN_PROGRESS' || code === 'REQUIRES_FORCE_RETRY';
     await prisma.chatMessage.update({
       where: { id: outboxMessage.id },
-      data: { status: isTimeout ? "unknown" : "failed" }
+      data: { status: isUnknown ? "unknown" : "failed" }
     });
     throw error;
   }

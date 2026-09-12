@@ -122,9 +122,39 @@ test("envía el contrato TEXT con header, requestId y teléfono normalizado", as
   assert.equal(payload.recipient, "51999999999");
   assert.equal(payload.type, "TEXT");
   assert.equal(payload.mediaUrl, null);
+  assert.equal(payload.forceRetry, false);
   assert.match(String(payload.requestId), /^[0-9a-f-]{36}$/);
   assert.equal(result.messageId, "wamid.test-text");
   assert.equal(result.provider, "meta-cloud");
+});
+
+test("transmite forceRetry=true cuando se proporciona", async () => {
+  configureOutbound();
+  let payload: Record<string, unknown> | undefined;
+
+  await sendN8nOutboundMessage(input({ forceRetry: true }), {
+    fetchImpl: async (_url, init) => {
+      payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return jsonResponse(200, { messageId: "wamid.retry-test", ok: true, provider: "meta-cloud" });
+    },
+  });
+
+  assert.equal(payload?.forceRetry, true);
+});
+
+test("usa clientRequestId como requestId de n8n si se proporciona", async () => {
+  configureOutbound();
+  let payload: Record<string, unknown> | undefined;
+  const clientId = "client-req-123";
+
+  await sendN8nOutboundMessage(input({ clientRequestId: clientId }), {
+    fetchImpl: async (_url, init) => {
+      payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return jsonResponse(200, { messageId: "wamid.test-id", ok: true, provider: "meta-cloud" });
+    },
+  });
+
+  assert.equal(payload?.requestId, clientId);
 });
 
 test("acepta IMAGE, VIDEO y DOCUMENT con mediaUrl", async () => {
@@ -157,5 +187,29 @@ test("no considera exitoso un 200 sin confirmación válida de Meta", async () =
     }),
     (error: unknown) =>
       error instanceof N8nOutboundError && error.code === "N8N_INVALID_RESPONSE",
+  );
+});
+
+test("mapea REQUEST_IN_PROGRESS a su código de error estructurado", async () => {
+  configureOutbound();
+
+  await assert.rejects(
+    sendN8nOutboundMessage(input(), {
+      fetchImpl: async () => jsonResponse(409, { ok: false, error: "REQUEST_IN_PROGRESS" }),
+    }),
+    (error: unknown) =>
+      error instanceof N8nOutboundError && error.code === "REQUEST_IN_PROGRESS",
+  );
+});
+
+test("mapea REQUIRES_FORCE_RETRY a su código de error estructurado", async () => {
+  configureOutbound();
+
+  await assert.rejects(
+    sendN8nOutboundMessage(input(), {
+      fetchImpl: async () => jsonResponse(409, { ok: false, error: "REQUIRES_FORCE_RETRY" }),
+    }),
+    (error: unknown) =>
+      error instanceof N8nOutboundError && error.code === "REQUIRES_FORCE_RETRY",
   );
 });
