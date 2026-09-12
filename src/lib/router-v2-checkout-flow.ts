@@ -19,6 +19,8 @@ export type RouterV2CheckoutStep =
   | "ASK_DOCUMENT_DATA"
   | "ASK_DELIVERY_METHOD"
   | "ASK_DELIVERY_DETAILS"
+  | "DELIVERY_METHOD_UNAVAILABLE"
+  | "DELIVERY_CONFIGURATION_MISSING"
   | "ASK_ORDER_CONFIRMATION"
   | "ASK_PAYMENT_METHOD"
   | "ASK_PAYMENT_EVIDENCE"
@@ -40,6 +42,15 @@ function normalize(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeToken(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, " ")
     .trim();
 }
 
@@ -84,15 +95,6 @@ function detectDocumentNumber(text: string, type: string | null) {
   return null;
 }
 
-function normalizePaymentMethod(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, " ")
-    .trim();
-}
-
 function detectPaymentMethod(content: string) {
   const text = normalize(content);
   if (/\byape\b/.test(text)) return "YAPE";
@@ -106,8 +108,8 @@ function detectPaymentMethod(content: string) {
 
 function paymentAllowed(method: string, allowed: string[]) {
   if (allowed.length === 0) return false;
-  const normalizedAllowed = allowed.map(normalizePaymentMethod);
-  const methodNormalized = normalizePaymentMethod(method);
+  const normalizedAllowed = allowed.map(normalizeToken);
+  const methodNormalized = normalizeToken(method);
 
   return normalizedAllowed.some((allowedMethod) => {
     if (methodNormalized === "TRANSFERENCIA") {
@@ -131,6 +133,19 @@ function paymentAllowed(method: string, allowed: string[]) {
   });
 }
 
+function deliveryAllowed(method: string, allowed: string[]) {
+  if (allowed.length === 0) return false;
+  const wanted = normalizeToken(method);
+
+  return allowed.some((item) => {
+    const configured = normalizeToken(item);
+    if (wanted === "RECOJO") {
+      return configured.includes("RECOJO") || configured.includes("PICKUP");
+    }
+    return configured.includes(wanted);
+  });
+}
+
 export function resolveRouterV2CheckoutFlow(input: {
   content: string;
   messageType?: string | null;
@@ -138,6 +153,7 @@ export function resolveRouterV2CheckoutFlow(input: {
   state: CheckoutStateLike | null;
   contact?: ContactLike | null;
   deliveryMethodCandidate?: string | null;
+  allowedDeliveryMethods?: string[];
   allowedPaymentMethods?: string[];
 }): RouterV2CheckoutDecision {
   const state = input.state;
@@ -241,6 +257,14 @@ export function resolveRouterV2CheckoutFlow(input: {
   if (state.stage === "AWAITING_DELIVERY_METHOD") {
     const method = input.deliveryMethodCandidate?.trim() ?? "";
     if (!method) return none("ASK_DELIVERY_METHOD");
+
+    const allowed = input.allowedDeliveryMethods ?? [];
+    if (allowed.length === 0) {
+      return none("DELIVERY_CONFIGURATION_MISSING");
+    }
+    if (!deliveryAllowed(method, allowed)) {
+      return none("DELIVERY_METHOD_UNAVAILABLE");
+    }
 
     patch.deliveryData = {
       ...deliveryData,
