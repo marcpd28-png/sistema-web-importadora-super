@@ -9,6 +9,7 @@ import { determineRouterV2FinalAction } from "@/lib/router-v2-final-action";
 import { buildRouterV2DecisionStatePatch } from "@/lib/router-v2-state-transition";
 import { shouldPersistRouterV2State } from "@/lib/router-v2-persistence-policy";
 import { persistRouterV2State } from "@/lib/router-v2-state-store";
+import { resolveCommercialPrice } from "@/lib/router-v2-commercial-price";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
@@ -131,6 +132,48 @@ export async function POST(request: Request) {
         purchaseIntent: mergedContext.purchaseIntent,
       });
 
+    const selectedProductCodeForPricing =
+      typeof proposedStatePatch.selectedProductCode === "string"
+        ? proposedStatePatch.selectedProductCode
+        : proposedStatePatch.selectedProductCode === null
+          ? null
+          : mergedContext.selectedProductCode;
+
+    const commercialPrice =
+      selectedProductCodeForPricing &&
+      mergedContext.quantity &&
+      mergedContext.quantity > 0
+        ? await resolveCommercialPrice(
+            selectedProductCodeForPricing,
+            mergedContext.quantity,
+          )
+        : null;
+
+    if (commercialPrice?.status === "READY") {
+      proposedStatePatch.unitPrice =
+        commercialPrice.unitPrice;
+      proposedStatePatch.priceTier =
+        commercialPrice.priceTier;
+      proposedStatePatch.total =
+        commercialPrice.total;
+
+      if (
+        !proposedStatePatch.category &&
+        commercialPrice.product.category
+      ) {
+        proposedStatePatch.category =
+          commercialPrice.product.category;
+      }
+
+      if (
+        currentState?.stage === "AWAITING_QUANTITY" ||
+        proposedStatePatch.stage === "AWAITING_QUANTITY"
+      ) {
+        proposedStatePatch.stage =
+          "AWAITING_PRICE_CONFIRMATION";
+      }
+    }
+
     const shouldPersistState =
       shouldPersistRouterV2State({
         botEnabled: conversation.botEnabled,
@@ -161,6 +204,7 @@ export async function POST(request: Request) {
       proposedStatePatch,
       shouldPersistState,
       persistedState,
+      commercialPrice,
       mergedContext,
       productResolution,
       productDecision,
