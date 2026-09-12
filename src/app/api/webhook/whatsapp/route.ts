@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { processIncomingMessage } from "@/lib/messages-service";
+import { processIncomingMessage, processWhatsappStatusUpdate } from "@/lib/messages-service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -115,6 +115,28 @@ function findContactName(contacts: unknown[], waId: string) {
   return waId;
 }
 
+
+export function extractMetaStatuses(payload: unknown) {
+  const statuses = [];
+  const entries = payload?.entry || [];
+  for (const entry of entries) {
+    for (const change of entry.changes || []) {
+      const value = change.value;
+      if (value?.statuses) {
+        for (const st of value.statuses) {
+          statuses.push({
+            id: st.id,
+            status: st.status,
+            timestamp: st.timestamp,
+            errors: st.errors || []
+          });
+        }
+      }
+    }
+  }
+  return statuses;
+}
+
 function extractMessages(payload: unknown) {
   const body = asRecord(payload);
   const entries = asArray(body?.entry);
@@ -209,6 +231,21 @@ export async function POST(request: NextRequest) {
 
   const messages = extractMessages(payload);
   const results = [];
+
+  const statuses = extractMetaStatuses(payload);
+  for (const st of statuses) {
+    results.push(
+      processWhatsappStatusUpdate({
+        externalMessageId: st.id,
+        status: st.status,
+        timestamp: st.timestamp,
+        errors: st.errors,
+      }).catch(err => {
+        console.error("Error processing status update:", err);
+      })
+    );
+  }
+
 
   for (const { contacts, message, phoneNumberId } of messages) {
     const from = getString(message, "from");

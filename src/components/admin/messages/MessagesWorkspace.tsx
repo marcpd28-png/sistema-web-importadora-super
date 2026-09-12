@@ -494,11 +494,28 @@ export function MessagesWorkspace() {
     window.requestAnimationFrame(() => scrollToBottom("smooth"));
 
     try {
-      const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
-        body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
+      const isRetry = !!clientRequestId;
+    let isForceRetry = false;
+    if (isRetry) {
+       const existingStatus = activeMessages.find(m => m.clientRequestId === clientRequestId)?.status;
+       if (existingStatus === 'unknown') {
+         if (!window.confirm("El estado del envío es desconocido. El mensaje podría haberse enviado. ¿Reintentar forzosamente y arriesgar duplicación?")) {
+           return;
+         }
+         isForceRetry = true;
+       }
+    }
+    const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
+      body: JSON.stringify({
+        content,
+        type,
+        mediaUrl: mediaUrl || undefined,
+        clientRequestId: requestIdToUse,
+        forceRetry: isForceRetry || undefined
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -535,66 +552,91 @@ export function MessagesWorkspace() {
     );
 
     try {
-      await fetch(`/api/admin/conversations/${activeId}`, {
+      const res = await fetch(`/api/admin/conversations/${activeId}`, {
         body: JSON.stringify({ botEnabled: nextStatus }),
         headers: { "Content-Type": "application/json" },
         method: "PATCH",
       });
+      if (!res.ok) throw new Error("Toggle bot failed");
     } catch {
       setConversations((previous) =>
         previous.map((conversation) =>
-          conversation.id === activeId ? { ...conversation, botEnabled: Boolean(current) } : conversation,
+          conversation.id === activeId ? { ...conversation, botEnabled: current ?? false } : conversation,
         ),
       );
     }
   };
 
+  
   const handleTakeConversation = async () => {
-    if (!activeId) {
-      return;
-    }
+    if (!activeId) return;
+    
+    const conv = conversations.find(c => c.id === activeId);
+    if (!conv) return;
+    const prevStatus = conv.status;
+    const prevBot = conv.botEnabled;
+    const prevAssigned = conv.assignedUserId;
 
     setConversations((previous) =>
       previous.map((conversation) =>
         conversation.id === activeId
-          ? {
-              ...conversation,
-              botEnabled: false,
-              status: "ATENDIENDO",
-            }
+          ? { ...conversation, botEnabled: false, status: "ATENDIENDO", assignedUserId: "admin" }
           : conversation,
       ),
     );
 
-    await fetch(`/api/admin/conversations/${activeId}`, {
-      body: JSON.stringify({ botEnabled: false, status: "ATENDIENDO" }),
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
-    });
+    try {
+      const res = await fetch(`/api/admin/conversations/${activeId}/take`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        if (res.status === 409) {
+          alert("Esta conversación ya fue tomada por otro asesor.");
+        }
+        throw new Error("Take failed");
+      }
+    } catch {
+      setConversations((previous) =>
+        previous.map((conversation) =>
+          conversation.id === activeId
+            ? { ...conversation, botEnabled: prevBot, status: prevStatus, assignedUserId: prevAssigned }
+            : conversation,
+        ),
+      );
+    }
   };
 
   const handleCloseConversation = async () => {
-    if (!activeId) {
-      return;
-    }
+    if (!activeId) return;
 
     const conversationId = activeId;
+    const conv = conversations.find(c => c.id === conversationId);
+    const prevStatus = conv?.status;
 
     setConversations((previous) =>
       previous.map((conversation) =>
         conversation.id === conversationId ? { ...conversation, status: "CERRADO" } : conversation,
       ),
     );
-    setActiveId(undefined);
-    setActiveMessages([]);
-    setMessageTotal(0);
-    setMessageHasMore(false);
 
-    await fetch(`/api/admin/conversations/${conversationId}`, {
-      body: JSON.stringify({ status: "CERRADO" }),
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
-    });
+    try {
+      const res = await fetch(`/api/admin/conversations/${conversationId}`, {
+        body: JSON.stringify({ status: "CERRADO" }),
+        headers: { "Content-Type": "application/json" },
+        method: "PATCH",
+      });
+      if (!res.ok) throw new Error("Close failed");
+      setActiveId(undefined);
+      setActiveMessages([]);
+      setMessageTotal(0);
+      setMessageHasMore(false);
+    } catch {
+      setConversations((previous) =>
+        previous.map((conversation) =>
+          conversation.id === conversationId ? { ...conversation, status: prevStatus || conversation.status } : conversation,
+        ),
+      );
+    }
   };
 
   return (

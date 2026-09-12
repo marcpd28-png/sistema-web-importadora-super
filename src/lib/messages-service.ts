@@ -604,28 +604,53 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     });
   }
 
-  const [message, updatedConversation] = await prisma.$transaction([
-    prisma.chatMessage.create({
-      data: {
-        conversationId: conversation.id,
-        externalMessageId: parsed.externalMessageId,
-        direction: "INBOUND",
-        senderType: "CUSTOMER",
-        messageType: parsed.type,
-        content: parsed.content,
-        metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
-        createdAt: timestamp,
-        status: "delivered",
-      },
-    }),
-    prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        lastMessageAt: timestamp,
-        unreadCount: { increment: 1 },
-      },
-    }),
-  ]);
+  let message;
+  let updatedConversation;
+  try {
+    [message, updatedConversation] = await prisma.$transaction([
+      prisma.chatMessage.create({
+        data: {
+          conversationId: conversation.id,
+          externalMessageId: parsed.externalMessageId,
+          direction: "INBOUND",
+          senderType: "CUSTOMER",
+          messageType: parsed.type,
+          content: parsed.content,
+          metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+          createdAt: timestamp,
+          status: "delivered",
+        },
+      }),
+      prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessageAt: timestamp,
+          unreadCount: { increment: 1 },
+        },
+      }),
+    ]);
+  } catch (error: unknown) {
+    if ((error as {code?: string})?.code === 'P2002') {
+      const existing = await prisma.chatMessage.findUnique({
+        where: { externalMessageId: parsed.externalMessageId }
+      });
+      if (existing) {
+        return {
+          ok: true,
+          duplicate: true,
+          contactId: contact.id,
+          conversationId: existing.conversationId,
+          messageId: existing.id,
+          conversation: {
+            status: conversation.status,
+            botEnabled: conversation.botEnabled,
+            assignedUserId: conversation.assignedUserId,
+          },
+        };
+      }
+    }
+    throw error;
+  }
 
   return {
     ok: true,
@@ -668,29 +693,40 @@ export async function processOutgoingBotMessage(input: OutgoingBotMessageInput) 
     }
   }
 
-  const newMessage = await prisma.$transaction(async (tx) => {
-    const message = await tx.chatMessage.create({
-      data: {
-        conversationId: parsed.conversationId,
-        externalMessageId: parsed.externalMessageId || null,
-        direction: "OUTBOUND",
-        senderType: "BOT",
-        messageType: parsed.type,
-        content: parsed.content,
-        mediaUrl: parsed.mediaUrl,
-        metadata: (parsed.metadata || {}) as Prisma.InputJsonValue,
-        status: "sent",
-        createdAt: messageTime,
+  let newMessage;
+  try {
+    newMessage = await prisma.$transaction(async (tx) => {
+      const message = await tx.chatMessage.create({
+        data: {
+          conversationId: parsed.conversationId,
+          externalMessageId: parsed.externalMessageId || null,
+          direction: "OUTBOUND",
+          senderType: "BOT",
+          messageType: parsed.type,
+          content: parsed.content,
+          mediaUrl: parsed.mediaUrl,
+          metadata: (parsed.metadata || {}) as Prisma.InputJsonValue,
+          status: "sent",
+          createdAt: messageTime,
+        }
+      });
+      await tx.conversation.update({
+        where: { id: parsed.conversationId },
+        data: { lastMessageAt: messageTime }
+      });
+      return message;
+    });
+  } catch (error: unknown) {
+    if ((error as {code?: string})?.code === 'P2002' && parsed.externalMessageId) {
+      const existing = await prisma.chatMessage.findUnique({
+        where: { externalMessageId: parsed.externalMessageId }
+      });
+      if (existing) {
+        return { ok: true, duplicate: true, message: existing };
       }
-    });
-
-    await tx.conversation.update({
-      where: { id: parsed.conversationId },
-      data: { lastMessageAt: messageTime }
-    });
-
-    return message;
-  });
+    }
+    throw error;
+  }
 
   return { ok: true, duplicate: false, message: newMessage };
 }
