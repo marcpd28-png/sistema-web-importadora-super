@@ -9,6 +9,7 @@ on:
       - "src/lib/conversation-router-v2.ts"
       - "src/lib/conversation-sales-state.ts"
       - "src/app/api/internal/chat/router-v2/**"
+      - "src/app/api/internal/chat/incoming/**"
       - "package.json"
       - "package-lock.json"
       - "prisma/schema.prisma"
