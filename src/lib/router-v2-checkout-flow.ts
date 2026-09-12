@@ -14,7 +14,9 @@ type ContactLike = {
 
 export type RouterV2CheckoutStep =
   | "ASK_QUANTITY"
+  | "PURCHASE_DECLINED"
   | "ASK_PRICE_CONFIRMATION"
+  | "PRICE_CHANGES_REQUESTED"
   | "ASK_CUSTOMER_DATA"
   | "ASK_DOCUMENT_TYPE"
   | "ASK_DOCUMENT_DATA"
@@ -23,6 +25,7 @@ export type RouterV2CheckoutStep =
   | "DELIVERY_METHOD_UNAVAILABLE"
   | "DELIVERY_CONFIGURATION_MISSING"
   | "ASK_ORDER_CONFIRMATION"
+  | "ORDER_CHANGES_REQUESTED"
   | "ASK_PAYMENT_METHOD"
   | "ASK_PAYMENT_EVIDENCE"
   | "PAYMENT_EVIDENCE_RECEIVED"
@@ -70,6 +73,12 @@ function readString(value: unknown, key: string) {
 
 function affirmative(text: string) {
   return /^(si|sí|s|ok|okay|dale|listo|correcto|confirmo|confirmado|continua|continuar|procede|proceder|de acuerdo|esta bien|está bien|ya)[.!]?$/i.test(
+    text.trim(),
+  );
+}
+
+function negative(text: string) {
+  return /^(no|n|no gracias|mejor no|aun no|aún no|todavia no|todavía no|no confirmo|no deseo)[.!]?$/i.test(
     text.trim(),
   );
 }
@@ -181,6 +190,18 @@ export function resolveRouterV2CheckoutFlow(input: {
   const paymentData = asRecord(state.paymentData);
 
   if (state.stage === "AWAITING_PURCHASE_CONFIRMATION") {
+    if (negative(text)) {
+      patch.purchaseIntent = false;
+      patch.stage = "AWAITING_PRODUCT_QUERY";
+      patch.selectedProductCode = null;
+      patch.shownProducts = null;
+      patch.quantity = null;
+      patch.unitPrice = null;
+      patch.priceTier = null;
+      patch.total = null;
+      return result("PURCHASE_DECLINED", true);
+    }
+
     if (!affirmative(text)) return result();
 
     patch.purchaseIntent = true;
@@ -189,6 +210,10 @@ export function resolveRouterV2CheckoutFlow(input: {
   }
 
   if (state.stage === "AWAITING_PRICE_CONFIRMATION") {
+    if (negative(text)) {
+      return result("PRICE_CHANGES_REQUESTED", true);
+    }
+
     if (!affirmative(text)) return result("ASK_PRICE_CONFIRMATION");
 
     const contactName = usableContactName(input.contact?.name);
@@ -311,6 +336,10 @@ export function resolveRouterV2CheckoutFlow(input: {
   }
 
   if (state.stage === "AWAITING_ORDER_CONFIRMATION") {
+    if (negative(text)) {
+      return result("ORDER_CHANGES_REQUESTED", true);
+    }
+
     if (!affirmative(text)) return result("ASK_ORDER_CONFIRMATION");
 
     patch.stage = "AWAITING_PAYMENT_METHOD";
