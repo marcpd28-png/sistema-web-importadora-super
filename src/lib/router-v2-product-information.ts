@@ -1,3 +1,4 @@
+import { getPreferredProductImageUrl } from "@/lib/product-media";
 import { prisma } from "@/lib/prisma";
 
 function normalize(value: string) {
@@ -12,17 +13,31 @@ function normalize(value: string) {
 
 export type RouterV2ProductInformation = {
   code: string;
+  slug: string;
   name: string;
   brand: string | null;
   category: string | null;
   description: string | null;
   technicalSpecs: string | null;
+  descriptionShort: string | null;
+  descriptionFull: string | null;
+  imageUrl: string | null;
+  media: Array<{
+    type: "IMAGE" | "VIDEO";
+    url: string;
+    altText: string | null;
+  }>;
   unitPrice: number;
   wholesalePrice: number | null;
   wholesaleMinQty: number;
   available: boolean;
   specifications: Array<{ name: string; value: string }>;
-  variants: Array<{ name: string; sku: string | null; isAvailable: boolean }>;
+  variants: Array<{
+    name: string;
+    sku: string | null;
+    imageUrl: string | null;
+    isAvailable: boolean;
+  }>;
   documents: Array<{ title: string; url: string; type: string }>;
 };
 
@@ -39,22 +54,46 @@ export async function getRouterV2ProductInformation(
     },
     select: {
       code: true,
+      slug: true,
       name: true,
       brand: true,
       category: true,
       description: true,
       technicalSpecs: true,
+      imageUrl: true,
+      localImageUrl: true,
       unitPrice: true,
       wholesalePrice: true,
       wholesaleMinQty: true,
       stockUnits: true,
+      digitalProfile: {
+        select: {
+          descriptionShort: true,
+          descriptionFull: true,
+          status: true,
+        },
+      },
+      media: {
+        orderBy: { sortOrder: "asc" },
+        take: 8,
+        select: {
+          type: true,
+          url: true,
+          altText: true,
+        },
+      },
       specifications: {
         orderBy: { sortOrder: "asc" },
         select: { name: true, value: true },
       },
       variants: {
         orderBy: { sortOrder: "asc" },
-        select: { name: true, sku: true, isAvailable: true },
+        select: {
+          name: true,
+          sku: true,
+          imageUrl: true,
+          isAvailable: true,
+        },
       },
       documents: {
         orderBy: { sortOrder: "asc" },
@@ -66,13 +105,27 @@ export async function getRouterV2ProductInformation(
 
   if (!product) return null;
 
+  const publishedProfile =
+    product.digitalProfile?.status === "PUBLICADA"
+      ? product.digitalProfile
+      : null;
+
   return {
     code: product.code,
+    slug: product.slug,
     name: product.name,
     brand: product.brand,
     category: product.category,
     description: product.description,
     technicalSpecs: product.technicalSpecs,
+    descriptionShort: publishedProfile?.descriptionShort ?? null,
+    descriptionFull: publishedProfile?.descriptionFull ?? null,
+    imageUrl: getPreferredProductImageUrl({
+      localImageUrl: product.localImageUrl,
+      imageUrl: product.imageUrl,
+      media: product.media,
+    }),
+    media: product.media,
     unitPrice: Number(product.unitPrice),
     wholesalePrice:
       product.wholesalePrice === null ? null : Number(product.wholesalePrice),
@@ -124,7 +177,12 @@ export function findRouterV2ProductSpecification(
     }
   }
 
-  const fallbackText = [product.description, product.technicalSpecs]
+  const fallbackText = [
+    product.descriptionShort,
+    product.descriptionFull,
+    product.description,
+    product.technicalSpecs,
+  ]
     .filter(Boolean)
     .join("\n")
     .trim();
