@@ -10,6 +10,7 @@ import { buildRouterV2DecisionStatePatch } from "@/lib/router-v2-state-transitio
 import { shouldPersistRouterV2State } from "@/lib/router-v2-persistence-policy";
 import { persistRouterV2State } from "@/lib/router-v2-state-store";
 import { resolveCommercialPrice } from "@/lib/router-v2-commercial-price";
+import { buildRouterV2ResponsePlan } from "@/lib/router-v2-response-plan";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { applyRouterV2ContextualSlots } from "@/lib/router-v2-contextual-slots";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
@@ -195,6 +196,11 @@ export async function POST(request: Request) {
         )
       : null;
 
+    const responsePlan = buildRouterV2ResponsePlan({
+      finalAction: nextAction,
+      state: persistedState ?? currentState,
+    });
+
     return NextResponse.json({
       ok: true,
 
@@ -217,6 +223,7 @@ export async function POST(request: Request) {
       productDecision,
       productReference,
       nextAction,
+      responsePlan,
     });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
