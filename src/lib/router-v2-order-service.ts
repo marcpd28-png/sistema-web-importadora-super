@@ -51,6 +51,7 @@ export function extractRouterV2OrderNumber(content: string) {
 export async function createRouterV2PendingOrder(input: {
   conversationId: string;
   state: SalesStateLike;
+  currencySymbol?: string | null;
 }) {
   if (input.state.orderNumber) {
     const existing = await prisma.order.findUnique({
@@ -144,7 +145,7 @@ export async function createRouterV2PendingOrder(input: {
       customerDocumentNumber: documentNumber,
       customerAddress: deliveryDetails,
       deliveryType: mapDeliveryType(deliveryMethod),
-      currencySymbol: "PEN",
+      currencySymbol: input.currencySymbol?.trim() || "S/",
       total: price.total,
       adminNotes: `Pedido originado por Router V2. Conversation: ${input.conversationId}. Método de entrega: ${deliveryMethod}.`,
       items: {
