@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/prisma";
+
 type BrandableProduct = {
   name: string;
   brand?: string | null;
@@ -86,4 +88,67 @@ export function isRelevantSpeaker(product: {
   return !SPEAKER_EXCLUSIONS.some((pattern) =>
     pattern.test(text),
   );
+}
+
+export async function discoverSpeakerBrands() {
+  const rows = await prisma.product.findMany({
+    where: {
+      isVisible: true,
+      stockUnits: { gt: 0 },
+      category: {
+        contains: "PARLANT",
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      code: true,
+      slug: true,
+      name: true,
+      brand: true,
+      category: true,
+      imageUrl: true,
+      localImageUrl: true,
+      unitPrice: true,
+    },
+    orderBy: [
+      { isFeatured: "desc" },
+      { updatedAt: "desc" },
+    ],
+    take: 500,
+  });
+
+  const representatives =
+    new Map<string, (typeof rows)[number]>();
+
+  for (const product of rows) {
+    if (!isRelevantSpeaker(product)) continue;
+
+    const brand = resolveProductBrand(product);
+
+    if (!brand || representatives.has(brand)) continue;
+
+    representatives.set(brand, product);
+  }
+
+  return [...representatives.entries()]
+    .map(([brand, product]) => ({
+      brand,
+      representative: {
+        id: product.id,
+        code: product.code,
+        slug: product.slug,
+        name: product.name,
+        category: product.category,
+        imageUrl:
+          product.localImageUrl ??
+          product.imageUrl ??
+          null,
+        unitPrice: Number(product.unitPrice),
+        productUrl: `/producto/${product.slug}`,
+      },
+    }))
+    .sort((a, b) =>
+      a.brand.localeCompare(b.brand, "es"),
+    );
 }
