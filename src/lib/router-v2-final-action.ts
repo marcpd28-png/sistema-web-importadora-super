@@ -3,6 +3,7 @@ const interruptActions = new Set([
   "SEND_CATALOG",
   "ANSWER_LOGISTICS",
   "ANSWER_PAYMENT",
+  "ANSWER_DOCUMENT",
   "ANSWER_ORDER_STATUS",
 ]);
 
