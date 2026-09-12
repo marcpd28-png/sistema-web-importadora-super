@@ -1,0 +1,43 @@
+name: Router V2 CI
+
+on:
+  push:
+    branches:
+      - feat/router-v2-backend
+    paths:
+      - "src/lib/router-v2-*.ts"
+      - "src/lib/conversation-router-v2.ts"
+      - "src/lib/conversation-sales-state.ts"
+      - "src/app/api/internal/chat/router-v2/**"
+      - "src/app/api/internal/chat/incoming/**"
+      - "package.json"
+      - "package-lock.json"
+      - "prisma/schema.prisma"
+      - ".github/workflows/router-v2-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript
+        run: ./node_modules/.bin/tsc --noEmit
+
+      - name: Router V2 flow tests
+        run: npm run test:router-v2
+
+      - name: Production build
+        run: npm run build
