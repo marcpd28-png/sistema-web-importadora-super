@@ -10,41 +10,29 @@ export type RouterV2VisualHints = {
   confidence?: number | null;
 };
 
+type VisualProductMatch = {
+  code: string;
+  slug: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  imageUrl: string | null;
+  unitPrice: number;
+};
+
 export type RouterV2VisualResolution =
-  | {
-      status: "NO_IMAGE_HINTS";
-    }
-  | {
-      status: "LOW_CONFIDENCE";
-      hints: RouterV2VisualHints;
-    }
-  | {
-      status: "NOT_FOUND";
-      hints: RouterV2VisualHints;
-    }
+  | { status: "NO_IMAGE_HINTS" }
+  | { status: "LOW_CONFIDENCE"; hints: RouterV2VisualHints }
+  | { status: "NOT_FOUND"; hints: RouterV2VisualHints }
   | {
       status: "MULTIPLE";
       hints: RouterV2VisualHints;
-      matches: Array<{
-        code: string;
-        name: string;
-        brand: string | null;
-        category: string | null;
-        imageUrl: string | null;
-        unitPrice: number;
-      }>;
+      matches: VisualProductMatch[];
     }
   | {
       status: "UNIQUE";
       hints: RouterV2VisualHints;
-      match: {
-        code: string;
-        name: string;
-        brand: string | null;
-        category: string | null;
-        imageUrl: string | null;
-        unitPrice: number;
-      };
+      match: VisualProductMatch;
     };
 
 function normalize(value: string | null | undefined) {
@@ -69,6 +57,7 @@ async function resolveExactCode(code: string) {
     },
     select: {
       code: true,
+      slug: true,
       name: true,
       brand: true,
       category: true,
@@ -82,6 +71,7 @@ async function resolveExactCode(code: string) {
 
   return {
     code: product.code,
+    slug: product.slug,
     name: product.name,
     brand: product.brand,
     category: product.category,
@@ -123,6 +113,7 @@ export async function resolveRouterV2VisualProduct(
 
   let matches = discovery.matches.map((product) => ({
     code: product.code,
+    slug: product.slug,
     name: product.name,
     brand: product.brand,
     category: product.category,
