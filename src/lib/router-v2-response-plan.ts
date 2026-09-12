@@ -27,6 +27,7 @@ export type RouterV2AnswerType =
   | "CHECKOUT_PRICE_CONFIRMATION"
   | "PRICE_CHANGES_REQUESTED"
   | "CHECKOUT_CUSTOMER_DATA"
+  | "CHECKOUT_CUSTOMER_PHONE"
   | "CHECKOUT_DOCUMENT_TYPE"
   | "CHECKOUT_DOCUMENT_DATA"
   | "CHECKOUT_DELIVERY_METHOD"
@@ -51,6 +52,7 @@ export type RouterV2ResumeAction =
   | "ASK_PURCHASE_CONFIRMATION"
   | "ASK_PRICE_CONFIRMATION"
   | "ASK_CUSTOMER_DATA"
+  | "ASK_CUSTOMER_PHONE"
   | "ASK_DOCUMENT_TYPE"
   | "ASK_DOCUMENT_DATA"
   | "ASK_DELIVERY_METHOD"
@@ -124,6 +126,7 @@ function checkoutAnswerType(step: RouterV2CheckoutStep): RouterV2AnswerType | nu
   if (step === "ASK_PRICE_CONFIRMATION") return "CHECKOUT_PRICE_CONFIRMATION";
   if (step === "PRICE_CHANGES_REQUESTED") return "PRICE_CHANGES_REQUESTED";
   if (step === "ASK_CUSTOMER_DATA") return "CHECKOUT_CUSTOMER_DATA";
+  if (step === "ASK_CUSTOMER_PHONE") return "CHECKOUT_CUSTOMER_PHONE";
   if (step === "ASK_DOCUMENT_TYPE") return "CHECKOUT_DOCUMENT_TYPE";
   if (step === "ASK_DOCUMENT_DATA") return "CHECKOUT_DOCUMENT_DATA";
   if (step === "ASK_DELIVERY_METHOD") return "CHECKOUT_DELIVERY_METHOD";
@@ -197,7 +200,13 @@ export function buildRouterV2ResponsePlan(input: {
 
   const checkoutType = checkoutAnswerType(input.checkoutStep ?? null);
   if (checkoutType && input.checkoutConsumed) {
-    return { answerType: checkoutType, resumeAction };
+    return {
+      answerType: checkoutType,
+      resumeAction:
+        input.checkoutStep === "ASK_CUSTOMER_PHONE"
+          ? "ASK_CUSTOMER_PHONE"
+          : resumeAction,
+    };
   }
 
   if (input.finalAction === "ANSWER_LOGISTICS") {
@@ -221,7 +230,13 @@ export function buildRouterV2ResponsePlan(input: {
   }
 
   if (checkoutType) {
-    return { answerType: checkoutType, resumeAction };
+    return {
+      answerType: checkoutType,
+      resumeAction:
+        input.checkoutStep === "ASK_CUSTOMER_PHONE"
+          ? "ASK_CUSTOMER_PHONE"
+          : resumeAction,
+    };
   }
 
   if (input.finalAction === "ASK_PRODUCT_CLARIFICATION") {
