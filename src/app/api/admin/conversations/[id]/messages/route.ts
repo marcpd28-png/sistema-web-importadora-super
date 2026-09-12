@@ -70,6 +70,13 @@ export async function POST(
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }
 
+    if (error instanceof Error && error.message === 'IDEMPOTENCY_KEY_REUSE') {
+      return NextResponse.json({ error: 'IDEMPOTENCY_KEY_REUSE' }, { status: 409 });
+    }
+    if (error instanceof Error && error.message === 'REQUIRES_FORCE_RETRY') {
+      return NextResponse.json({ error: 'REQUIRES_FORCE_RETRY' }, { status: 409 });
+    }
+
     if (error instanceof N8nOutboundError) {
       return NextResponse.json(
         { code: error.code, error: error.message },

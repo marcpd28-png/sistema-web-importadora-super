@@ -445,16 +445,22 @@ export function MessagesWorkspace() {
   };
 
   const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT", clientRequestId?: string) => {
-    if (!activeId) {
-      return;
+    if (!activeId) return;
+
+    let isForceRetry = false;
+    if (clientRequestId) {
+      const existingMsg = activeMessages.find(m => m.clientRequestId === clientRequestId);
+      if (existingMsg?.status === 'unknown') {
+        if (!window.confirm("El estado del envío es desconocido. El mensaje podría haberse enviado.\n\n¿Reintentar forzosamente y arriesgar duplicación?")) {
+          return;
+        }
+        isForceRetry = true;
+      }
+      setActiveMessages(prev => prev.filter(m => m.clientRequestId !== clientRequestId));
     }
 
     const now = new Date();
     const requestIdToUse = clientRequestId || crypto.randomUUID();
-
-    if (clientRequestId) {
-      setActiveMessages(prev => prev.filter(m => m.clientRequestId !== clientRequestId));
-    }
 
     const tempMessage: ChatMessage = {
       content,
@@ -475,64 +481,35 @@ export function MessagesWorkspace() {
     setConversations((current) =>
       current.map((conversation) =>
         conversation.id === activeId
-          ? {
-              ...conversation,
-              botEnabled: false,
-              lastMessage: {
-                content,
-                createdAt: now,
-                id: tempMessage.id,
-                messageType: type as "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" | "AUDIO",
-                senderType: "AGENT",
-              },
-              lastMessageAt: now,
-              status: conversation.status === "AUTOMATICO" ? "ATENDIENDO" : conversation.status,
-            }
+          ? { ...conversation, lastMessageAt: now, botEnabled: false, status: "ATENDIENDO" }
           : conversation,
       ),
     );
-    window.requestAnimationFrame(() => scrollToBottom("smooth"));
 
     try {
-      const isRetry = !!clientRequestId;
-    let isForceRetry = false;
-    if (isRetry) {
-       const existingStatus = activeMessages.find(m => m.clientRequestId === clientRequestId)?.status;
-       if (existingStatus === 'unknown') {
-         if (!window.confirm("El estado del envío es desconocido. El mensaje podría haberse enviado. ¿Reintentar forzosamente y arriesgar duplicación?")) {
-           return;
-         }
-         isForceRetry = true;
-       }
-    }
-    const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
-      body: JSON.stringify({
-        content,
-        type,
-        mediaUrl: mediaUrl || undefined,
-        clientRequestId: requestIdToUse,
-        forceRetry: isForceRetry || undefined
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
+      const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
+        body: JSON.stringify({
+          content,
+          type,
+          mediaUrl: mediaUrl || undefined,
+          clientRequestId: requestIdToUse,
+          forceRetry: isForceRetry || undefined
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(payload?.error || "No se pudo enviar el mensaje.");
+      if (!response.ok) throw new Error("Send failed");
+      const sentMessage = await response.json();
+      
+      if (sentMessage.id) {
+        setActiveMessages((current) =>
+          current.map((msg) => (msg.id === tempMessage.id ? sentMessage : msg)),
+        );
       }
-
-      const savedMessage = (await response.json()) as ChatMessage;
+    } catch {
       setActiveMessages((current) =>
-        mergeMessages(
-          current.filter((message) => message.id !== tempMessage.id),
-          [savedMessage],
-        ),
-      );
-    } catch (error) {
-      console.error("Send error", error);
-      setActiveMessages((current) =>
-        current.map((message) => (message.id === tempMessage.id ? { ...message, status: "failed" } : message)),
+        current.map((msg) => (msg.id === tempMessage.id ? { ...msg, status: "failed" } : msg)),
       );
     }
   };

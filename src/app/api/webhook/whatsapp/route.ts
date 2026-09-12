@@ -118,17 +118,18 @@ function findContactName(contacts: unknown[], waId: string) {
 
 export function extractMetaStatuses(payload: unknown) {
   const statuses = [];
-  const entries = payload?.entry || [];
+  const entries = asArray(asRecord(payload)?.entry) || [];
   for (const entry of entries) {
-    for (const change of entry.changes || []) {
-      const value = change.value;
+    for (const change of asArray(asRecord(entry)?.changes) || []) {
+      const value = asRecord(asRecord(change)?.value);
       if (value?.statuses) {
-        for (const st of value.statuses) {
+        for (const st of asArray(value.statuses)) {
+const statusRec = asRecord(st);
           statuses.push({
-            id: st.id,
-            status: st.status,
-            timestamp: st.timestamp,
-            errors: st.errors || []
+            id: getString(statusRec, "id"),
+            status: getString(statusRec, "status"),
+            timestamp: getString(statusRec, "timestamp"),
+            errors: asArray(statusRec?.errors) || []
           });
         }
       }
@@ -167,21 +168,15 @@ function extractMessages(payload: unknown) {
   return messages;
 }
 
-function verifyMetaSignature(request: NextRequest, rawBody: string) {
-  const appSecret = process.env.WHATSAPP_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim();
-  const allowUnsigned = process.env.ALLOW_UNSIGNED_META_WEBHOOKS === "true";
-  const isProduction = process.env.NODE_ENV === "production";
-
+export function verifyMetaSignature({ rawBody, signatureHeader, appSecret, allowUnsigned = false, isProduction = true }: { rawBody: string, signatureHeader?: string | null, appSecret?: string, allowUnsigned?: boolean, isProduction?: boolean }) {
   if (!appSecret) {
     if (allowUnsigned && !isProduction) {
       return true;
     }
-    // Fail closed: without a secret, we can't verify, so we must reject
     throw new Error("MISSING_APP_SECRET");
   }
 
-  const signature = request.headers.get("x-hub-signature-256")?.replace(/^sha256=/, "");
-
+  const signature = signatureHeader?.replace(/^sha256=/, "");
   if (!signature) {
     return false;
   }
@@ -211,7 +206,13 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 
   try {
-    if (!verifyMetaSignature(request, rawBody)) {
+    if (!verifyMetaSignature({
+      rawBody,
+      signatureHeader: request.headers.get("x-hub-signature-256"),
+      appSecret: process.env.WHATSAPP_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim(),
+      allowUnsigned: process.env.ALLOW_UNSIGNED_META_WEBHOOKS === "true",
+      isProduction: process.env.NODE_ENV === "production"
+    })) {
       return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
     }
   } catch (err: unknown) {
@@ -232,19 +233,18 @@ export async function POST(request: NextRequest) {
   const messages = extractMessages(payload);
   const results = [];
 
+  
   const statuses = extractMetaStatuses(payload);
-  for (const st of statuses) {
-    results.push(
-      processWhatsappStatusUpdate({
-        externalMessageId: st.id,
-        status: st.status,
-        timestamp: st.timestamp,
-        errors: st.errors,
-      }).catch(err => {
-        console.error("Error processing status update:", err);
-      })
-    );
-  }
+  const statusPromises = statuses.filter(st => st.id && st.status && st.timestamp).map(st => 
+    processWhatsappStatusUpdate({
+      externalMessageId: st.id as string,
+      status: st.status as string,
+      timestamp: st.timestamp as string,
+      errors: (st.errors as Array<Record<string, unknown>>) || undefined,
+    })
+  );
+  await Promise.allSettled(statusPromises);
+
 
 
   for (const { contacts, message, phoneNumberId } of messages) {
@@ -275,5 +275,5 @@ export async function POST(request: NextRequest) {
     results.push(result);
   }
 
-  return NextResponse.json({ ok: true, processed: results.length, results });
+  return NextResponse.json({ ok: true, processedMessages: results.length, processedStatuses: statuses.length });
 }
