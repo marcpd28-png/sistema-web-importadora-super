@@ -68,6 +68,12 @@ export function parseRouterV2AudioDataUrl(
   }
 }
 
+function copyToArrayBuffer(bytes: Uint8Array) {
+  const arrayBuffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(arrayBuffer).set(bytes);
+  return arrayBuffer;
+}
+
 export async function transcribeRouterV2Audio(input: {
   audioDataUrl: string;
   language?: string | null;
@@ -91,7 +97,9 @@ export async function transcribeRouterV2Audio(input: {
     "gpt-4o-mini-transcribe";
 
   const form = new FormData();
-  const blob = new Blob([audio.bytes], { type: audio.mimeType });
+  const blob = new Blob([copyToArrayBuffer(audio.bytes)], {
+    type: audio.mimeType,
+  });
   form.append("file", blob, `voice-note.${audio.extension}`);
   form.append("model", model);
 
