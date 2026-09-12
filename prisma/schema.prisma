@@ -810,6 +810,7 @@ model ConversationSalesState {
   stage               SalesConversationStage @default(AWAITING_PRODUCT_QUERY)
   category            String?                @db.VarChar(120)
   brand               String?                @db.VarChar(120)
+  purchaseIntent      Boolean                @default(false)
   shownProducts       Json?
   selectedProductCode String?                @db.VarChar(64)
   quantity            Int?

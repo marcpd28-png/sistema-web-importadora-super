@@ -3,6 +3,7 @@ import type { RouterV2Analysis } from "@/lib/conversation-router-v2";
 type CurrentSalesState = {
   category?: string | null;
   brand?: string | null;
+  purchaseIntent?: boolean;
   quantity?: number | null;
   selectedProductCode?: string | null;
   customerData?: unknown;
@@ -39,6 +40,13 @@ export function buildRouterV2SalesStatePatch(
     analysis.slots.brand !== currentState?.brand
   ) {
     patch.brand = analysis.slots.brand;
+  }
+
+  if (
+    analysis.slots.purchaseIntent === true &&
+    currentState?.purchaseIntent !== true
+  ) {
+    patch.purchaseIntent = true;
   }
 
   if (
@@ -119,7 +127,9 @@ export function buildRouterV2MergedContext(
       null,
 
     purchaseIntent:
-      analysis.slots.purchaseIntent ?? false,
+      analysis.slots.purchaseIntent ??
+      currentState?.purchaseIntent ??
+      false,
 
     mediaReference:
       analysis.slots.mediaReference ?? false,
