@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
+import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
 
 const schema = z.object({
@@ -62,42 +63,15 @@ export async function POST(request: Request) {
       ? serializeSalesState(conversation.salesState)
       : null;
 
-    const mergedContext = {
-      category:
-        analysis.slots.category ??
-        currentState?.category ??
-        null,
+    const proposedPatch = buildRouterV2SalesStatePatch(
+      analysis,
+      currentState,
+    );
 
-      brand:
-        analysis.slots.brand ??
-        currentState?.brand ??
-        null,
-
-      selectedProductCode:
-        currentState?.selectedProductCode ??
-        null,
-
-      quantity:
-        analysis.slots.quantity ??
-        currentState?.quantity ??
-        null,
-
-      customerCity:
-        analysis.slots.customerCity ??
-        null,
-
-      deliveryMethod:
-        analysis.slots.deliveryMethod ??
-        null,
-
-      purchaseIntent:
-        analysis.slots.purchaseIntent ??
-        false,
-
-      mediaReference:
-        analysis.slots.mediaReference ??
-        false,
-    };
+    const mergedContext = buildRouterV2MergedContext(
+      analysis,
+      currentState,
+    );
 
     const nextAction =
       conversation.botEnabled === false
@@ -116,6 +90,7 @@ export async function POST(request: Request) {
 
       currentState,
       analysis,
+      proposedPatch,
       mergedContext,
       nextAction,
     });
