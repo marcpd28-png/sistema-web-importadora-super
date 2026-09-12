@@ -49,6 +49,13 @@ function readBoolean(value: unknown, key: string) {
   return record[key] === true;
 }
 
+function readShoppingMode(value: unknown): RouterV2ShoppingMode | null {
+  const record = asRecord(value);
+  return record.shoppingMode === "WHOLESALE" || record.shoppingMode === "RETAIL"
+    ? record.shoppingMode
+    : null;
+}
+
 function detectShoppingMode(content: string): RouterV2ShoppingMode | null {
   const text = normalize(content);
 
@@ -71,6 +78,19 @@ function detectShoppingMode(content: string): RouterV2ShoppingMode | null {
   return null;
 }
 
+function buildModePatch(
+  customerData: Record<string, unknown>,
+  mode: RouterV2ShoppingMode,
+) {
+  return {
+    customerData: {
+      ...customerData,
+      catalogPending: false,
+      shoppingMode: mode,
+    },
+  };
+}
+
 export function resolveRouterV2CatalogFlow(input: {
   analysis: RouterV2Analysis;
   content: string;
@@ -78,18 +98,29 @@ export function resolveRouterV2CatalogFlow(input: {
 }): RouterV2CatalogDecision {
   const customerData = asRecord(input.currentState?.customerData);
   const pendingCatalog = readBoolean(customerData, "catalogPending");
+  const currentMode = readShoppingMode(customerData);
   const requestedCatalog = input.analysis.intents.includes("CATALOG_REQUEST");
-  const mode = detectShoppingMode(input.content);
+  const explicitMode = detectShoppingMode(input.content);
+  const isBroadRetailSearch =
+    !input.analysis.intents.includes("EXACT_PRODUCT") &&
+    (input.analysis.intents.includes("PRODUCT_SEARCH") ||
+      input.analysis.intents.includes("BRAND_SEARCH"));
 
-  if (!requestedCatalog && !pendingCatalog) {
-    return { action: "NONE", mode: null, patch: {} };
+  if (requestedCatalog && explicitMode) {
+    const patch = buildModePatch(customerData, explicitMode);
+    return explicitMode === "WHOLESALE"
+      ? { action: "SEND_WHOLESALE_CATALOG", mode: explicitMode, patch }
+      : { action: "START_RETAIL_DISCOVERY", mode: explicitMode, patch };
   }
 
-  if (!mode) {
-    if (!requestedCatalog) {
-      return { action: "NONE", mode: null, patch: {} };
-    }
+  if (requestedCatalog && currentMode && !explicitMode) {
+    const patch = buildModePatch(customerData, currentMode);
+    return currentMode === "WHOLESALE"
+      ? { action: "SEND_WHOLESALE_CATALOG", mode: currentMode, patch }
+      : { action: "START_RETAIL_DISCOVERY", mode: currentMode, patch };
+  }
 
+  if (requestedCatalog && !explicitMode) {
     return {
       action: "ASK_PURCHASE_MODE",
       mode: null,
@@ -102,25 +133,33 @@ export function resolveRouterV2CatalogFlow(input: {
     };
   }
 
-  const patch = {
-    customerData: {
-      ...customerData,
-      catalogPending: false,
-      shoppingMode: mode,
-    },
-  };
+  if (pendingCatalog) {
+    if (!explicitMode) {
+      return {
+        action: "ASK_PURCHASE_MODE",
+        mode: null,
+        patch: {
+          customerData: {
+            ...customerData,
+            catalogPending: true,
+          },
+        },
+      };
+    }
 
-  if (mode === "WHOLESALE") {
+    const patch = buildModePatch(customerData, explicitMode);
+    return explicitMode === "WHOLESALE"
+      ? { action: "SEND_WHOLESALE_CATALOG", mode: explicitMode, patch }
+      : { action: "START_RETAIL_DISCOVERY", mode: explicitMode, patch };
+  }
+
+  if (currentMode === "RETAIL" && isBroadRetailSearch) {
     return {
-      action: "SEND_WHOLESALE_CATALOG",
-      mode,
-      patch,
+      action: "START_RETAIL_DISCOVERY",
+      mode: "RETAIL",
+      patch: buildModePatch(customerData, "RETAIL"),
     };
   }
 
-  return {
-    action: "START_RETAIL_DISCOVERY",
-    mode,
-    patch,
-  };
+  return { action: "NONE", mode: null, patch: {} };
 }
