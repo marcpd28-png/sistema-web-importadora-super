@@ -150,9 +150,14 @@ test("Message Center Stabilization Tests", async (t) => {
     assert.match(code, /mergeMessages\(/);
   });
 
-  await t.test("arquitectura: MessagesWorkspace maneja N8N_TIMEOUT a status unknown", () => {
+  await t.test("arquitectura: MessagesWorkspace maneja errores no definitivos a status unknown", () => {
     const code = readFileSync(new URL("../components/admin/messages/MessagesWorkspace.tsx", import.meta.url), "utf8");
     assert.match(code, /N8N_TIMEOUT/);
+    assert.match(code, /REQUEST_IN_PROGRESS/);
+    assert.match(code, /REQUIRES_FORCE_RETRY/);
+    assert.match(code, /nonDefinitiveCodes\.has\(payload\?\.code\)/);
     assert.match(code, /failureStatus = "unknown"/);
+    // default for definitive errors is failed
+    assert.match(code, /let failureStatus: "failed" \| "unknown" = "failed"/);
   });
 });

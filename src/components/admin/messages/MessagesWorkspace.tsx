@@ -524,7 +524,12 @@ export function MessagesWorkspace() {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        if (payload?.code === "N8N_TIMEOUT") {
+        const nonDefinitiveCodes = new Set([
+          "N8N_TIMEOUT",
+          "REQUEST_IN_PROGRESS",
+          "REQUIRES_FORCE_RETRY",
+        ]);
+        if (nonDefinitiveCodes.has(payload?.code)) {
           failureStatus = "unknown";
         }
         throw new Error(payload?.error || "Send failed");
