@@ -105,18 +105,6 @@ function detectDocumentNumber(text: string, type: string | null) {
   return null;
 }
 
-function detectPaymentMethod(content: string) {
-  const text = normalize(content);
-  if (/\byape\b/.test(text)) return "YAPE";
-  if (/\bplin\b/.test(text)) return "PLIN";
-  if (/\b(interbank|transferencia|transferir|deposito)\b/.test(text)) {
-    return "TRANSFERENCIA";
-  }
-  if (/\b(tarjeta|culqi|visa|mastercard)\b/.test(text)) return "TARJETA";
-  if (/\befectivo\b/.test(text)) return "EFECTIVO";
-  return null;
-}
-
 function paymentAllowed(method: string, allowed: string[]) {
   if (allowed.length === 0) return false;
   const normalizedAllowed = allowed.map(normalizeToken);
@@ -167,6 +155,7 @@ export function resolveRouterV2CheckoutFlow(input: {
   state: CheckoutStateLike | null;
   contact?: ContactLike | null;
   deliveryMethodCandidate?: string | null;
+  paymentMethodCandidate?: string | null;
   allowedDeliveryMethods?: string[];
   allowedPaymentMethods?: string[];
 }): RouterV2CheckoutDecision {
@@ -335,7 +324,7 @@ export function resolveRouterV2CheckoutFlow(input: {
   }
 
   if (state.stage === "AWAITING_PAYMENT_METHOD") {
-    const method = detectPaymentMethod(text);
+    const method = input.paymentMethodCandidate?.trim() ?? "";
     if (!method) return result("ASK_PAYMENT_METHOD");
 
     const allowed = input.allowedPaymentMethods ?? [];
