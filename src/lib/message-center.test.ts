@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
 import crypto from "crypto";
+import { readFileSync } from "fs";
 import { resolveMessageStatusTransition } from "./messages-service";
 import { assertSameLogicalMessage, mergeMessages } from "./messages-core";
 import { extractMetaStatuses, verifyMetaSignature } from "../app/api/webhook/whatsapp/route";
@@ -53,10 +54,10 @@ test("Message Center Stabilization Tests", async (t) => {
 
   await t.test("missing secret fail closed", () => {
     try {
-      verifyMetaSignature({ rawBody: body, signatureHeader: validSignature, appSecret: undefined, isProduction: true });
+      verifyMetaSignature({ rawBody: body, signatureHeader: validSignature, appSecret: undefined });
       assert.fail("Debería lanzar error");
-    } catch (error: any) {
-      assert.strictEqual(error.message, "MISSING_APP_SECRET");
+    } catch (error: unknown) {
+      assert.strictEqual((error as Error).message, "MISSING_APP_SECRET");
     }
   });
 
@@ -129,5 +130,29 @@ test("Message Center Stabilization Tests", async (t) => {
     const merged = mergeMessages(existing, incoming);
     assert.strictEqual(merged.length, 1);
     assert.strictEqual(merged[0].status, "read");
+  });
+
+  // ARCHITECTURAL REGRESSION TESTS
+  await t.test("arquitectura: MessagesWorkspace contiene /read", () => {
+    const code = readFileSync(new URL("../components/admin/messages/MessagesWorkspace.tsx", import.meta.url), "utf8");
+    assert.match(code, /\/api\/admin\/conversations\/.*\/read/);
+  });
+
+  await t.test("arquitectura: messages-service usa assertSameLogicalMessage", () => {
+    const code = readFileSync(new URL("./messages-service.ts", import.meta.url), "utf8");
+    assert.match(code, /import \{.*assertSameLogicalMessage.*\} from "@\/lib\/messages-core"/);
+    assert.match(code, /assertSameLogicalMessage\(/);
+  });
+
+  await t.test("arquitectura: MessagesWorkspace usa mergeMessages de messages-core", () => {
+    const code = readFileSync(new URL("../components/admin/messages/MessagesWorkspace.tsx", import.meta.url), "utf8");
+    assert.match(code, /import \{.*mergeMessages.*\} from "@\/lib\/messages-core"/);
+    assert.match(code, /mergeMessages\(/);
+  });
+
+  await t.test("arquitectura: MessagesWorkspace maneja N8N_TIMEOUT a status unknown", () => {
+    const code = readFileSync(new URL("../components/admin/messages/MessagesWorkspace.tsx", import.meta.url), "utf8");
+    assert.match(code, /N8N_TIMEOUT/);
+    assert.match(code, /failureStatus = "unknown"/);
   });
 });

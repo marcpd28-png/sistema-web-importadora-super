@@ -8,6 +8,7 @@ import { CustomerPanel } from "./CustomerPanel";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import type { ChatMessage, Conversation } from "@/types/messages";
+import { mergeMessages } from "@/lib/messages-core";
 
 const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
@@ -163,24 +164,6 @@ function mergeConversations(base: Conversation[], incoming: Conversation[]) {
   return sortConversations([...byId.values()]);
 }
 
-function mergeMessages(base: ChatMessage[], incoming: ChatMessage[]) {
-  const byId = new Map<string, ChatMessage>();
-
-  for (const message of base) {
-    byId.set(message.id, message);
-  }
-
-  for (const message of incoming) {
-    byId.set(message.id, message);
-  }
-
-  return [...byId.values()].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() ||
-      a.id.localeCompare(b.id),
-  );
-}
-
 function isNearBottom(element: HTMLDivElement | null) {
   if (!element) {
     return true;
@@ -332,16 +315,33 @@ export function MessagesWorkspace() {
         });
 
         const knownIds = new Set(activeMessagesRef.current.map((message) => message.id));
-        const newItems = data.items.filter((message) => !knownIds.has(message.id));
+        const trulyNewItems = data.items.filter((message) => !knownIds.has(message.id));
 
-        if (!newItems.length) {
-          return;
+        if (data.items.length > 0) {
+          setActiveMessages((current) => mergeMessages(current, data.items));
+          setMessageTotal(data.total);
         }
 
-        const shouldScroll = isNearBottom(messagesContainerRef.current);
-        setActiveMessages((current) => mergeMessages(current, newItems));
-        setMessageTotal(data.total);
+        const hasNewInbound = trulyNewItems.some(
+          (message) => message.direction === "INBOUND" || message.senderType === "CUSTOMER",
+        );
 
+        if (hasNewInbound && activeId) {
+          try {
+            const res = await fetch(`/api/admin/conversations/${activeId}/read`, {
+              method: "POST",
+            });
+            if (res.ok) {
+              setConversations((current) =>
+                current.map((c) => (c.id === activeId ? { ...c, unreadCount: 0 } : c)),
+              );
+            }
+          } catch {
+            // Ignore polling read error
+          }
+        }
+
+        const shouldScroll = trulyNewItems.length > 0 && isNearBottom(messagesContainerRef.current);
         if (shouldScroll) {
           window.requestAnimationFrame(() => scrollToBottom("smooth"));
         }
@@ -432,8 +432,11 @@ export function MessagesWorkspace() {
     }
   }, [handleLoadOlderMessages]);
 
-  const handleSelectConversation = (id: string) => {
+  const handleSelectConversation = async (id: string) => {
     setActiveId(id);
+    const targetConv = conversations.find((c) => c.id === id);
+    const previousUnread = targetConv?.unreadCount ?? 0;
+
     setConversations((current) =>
       current.map((conversation) =>
         conversation.id === id ? { ...conversation, unreadCount: 0 } : conversation,
@@ -442,6 +445,24 @@ export function MessagesWorkspace() {
     setActiveMessages([]);
     setMessageTotal(0);
     setMessageHasMore(false);
+
+    if (previousUnread > 0) {
+      try {
+        const response = await fetch(`/api/admin/conversations/${id}/read`, {
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to mark conversation as read");
+        }
+      } catch {
+        setConversations((current) =>
+          current.map((conversation) =>
+            conversation.id === id ? { ...conversation, unreadCount: previousUnread } : conversation,
+          ),
+        );
+      }
+    }
   };
 
   const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT", clientRequestId?: string) => {
@@ -486,6 +507,8 @@ export function MessagesWorkspace() {
       ),
     );
 
+    let failureStatus: "failed" | "unknown" = "failed";
+
     try {
       const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
         body: JSON.stringify({
@@ -499,7 +522,14 @@ export function MessagesWorkspace() {
         method: "POST",
       });
 
-      if (!response.ok) throw new Error("Send failed");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        if (payload?.code === "N8N_TIMEOUT") {
+          failureStatus = "unknown";
+        }
+        throw new Error(payload?.error || "Send failed");
+      }
+
       const sentMessage = await response.json();
       
       if (sentMessage.id) {
@@ -509,7 +539,7 @@ export function MessagesWorkspace() {
       }
     } catch {
       setActiveMessages((current) =>
-        current.map((msg) => (msg.id === tempMessage.id ? { ...msg, status: "failed" } : msg)),
+        current.map((msg) => (msg.id === tempMessage.id ? { ...msg, status: failureStatus } : msg)),
       );
     }
   };

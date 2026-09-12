@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Channel, ConversationState, MessageType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { assertSameLogicalMessage } from "@/lib/messages-core";
 import { randomUUID } from "crypto";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import {
@@ -423,10 +424,26 @@ export async function sendInternalMessage(
       where: { clientRequestId: parsed.clientRequestId },
     });
     if (existing) {
-      if (existing.status && ['sent', 'delivered', 'read'].includes(existing.status)) {
+      const sameLogicalMessage = assertSameLogicalMessage(
+        existing as unknown as Record<string, unknown>,
+        {
+          conversationId,
+          direction: "OUTBOUND",
+          senderType: "AGENT",
+          messageType: parsed.type,
+          content: parsed.content,
+          mediaUrl: parsed.mediaUrl ?? null,
+        },
+      );
+
+      if (!sameLogicalMessage) {
+        throw new Error("IDEMPOTENCY_KEY_REUSE");
+      }
+
+      if (existing.status && ["sent", "delivered", "read"].includes(existing.status)) {
         return existing;
       }
-      if (existing.status === 'unknown' && !parsed.forceRetry) {
+      if (existing.status === "unknown" && !parsed.forceRetry) {
         throw new Error("REQUIRES_FORCE_RETRY");
       }
       requestId = existing.clientRequestId!;
@@ -443,13 +460,11 @@ export async function sendInternalMessage(
       messageType: parsed.type,
       content: parsed.content,
       mediaUrl: parsed.mediaUrl,
-      status: "sending"
+      status: "sending",
     },
     update: {
       status: "sending",
-      content: parsed.content,
-      mediaUrl: parsed.mediaUrl,
-    }
+    },
   });
 
   try {
