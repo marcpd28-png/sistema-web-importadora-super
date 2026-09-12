@@ -166,6 +166,7 @@ function normalizeDiscoveryText(value: string) {
 export async function discoverExactProducts(input: {
   brand: string;
   model: string;
+  includeUnavailable?: boolean;
 }) {
   const brand = normalizeDiscoveryText(input.brand);
   const model = normalizeDiscoveryText(input.model);
@@ -177,7 +178,9 @@ export async function discoverExactProducts(input: {
   const rows = await prisma.product.findMany({
     where: {
       isVisible: true,
-      stockUnits: { gt: 0 },
+      ...(input.includeUnavailable
+        ? {}
+        : { stockUnits: { gt: 0 } }),
       AND: modelTokens.map((token) => ({
         name: {
           contains: token,
@@ -197,6 +200,7 @@ export async function discoverExactProducts(input: {
       unitPrice: true,
       wholesalePrice: true,
       wholesaleMinQty: true,
+      stockUnits: true,
     },
     take: 100,
   });
@@ -236,6 +240,7 @@ export async function discoverExactProducts(input: {
           ? null
           : Number(product.wholesalePrice),
       wholesaleMinQty: product.wholesaleMinQty,
+      available: product.stockUnits > 0,
       productUrl: `/producto/${product.slug}`,
     }));
 
