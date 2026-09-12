@@ -129,6 +129,25 @@ enum MessageType {
   UNKNOWN
 }
 
+enum SalesConversationStage {
+  AWAITING_PRODUCT_QUERY
+  AWAITING_BRAND_SELECTION
+  AWAITING_MODEL_SELECTION
+  AWAITING_PURCHASE_CONFIRMATION
+  AWAITING_QUANTITY
+  AWAITING_PRICE_CONFIRMATION
+  AWAITING_CUSTOMER_DATA
+  AWAITING_DOCUMENT_TYPE
+  AWAITING_DOCUMENT_DATA
+  AWAITING_DELIVERY_METHOD
+  AWAITING_DELIVERY_DETAILS
+  AWAITING_ORDER_CONFIRMATION
+  AWAITING_PAYMENT_METHOD
+  AWAITING_PAYMENT_CONFIRMATION
+  ORDER_CREATED
+  COMPLETED
+}
+
 enum WhatsappIntegrationStatus {
   ACTIVE
   INACTIVE
@@ -136,68 +155,68 @@ enum WhatsappIntegrationStatus {
 }
 
 model User {
-  id                    String         @id @default(cuid())
-  email                 String         @unique
+  id                    String                @id @default(cuid())
+  email                 String                @unique
   name                  String
-  phone                 String?        @db.VarChar(32)
+  phone                 String?               @db.VarChar(32)
   passwordHash          String
-  role                  UserRole @default(ADMIN)
-  requirePasswordChange Boolean  @default(false)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  quotes                Quote[]  @relation("UserQuotes")
-  orders                Order[]  @relation("UserOrders")
+  role                  UserRole              @default(ADMIN)
+  requirePasswordChange Boolean               @default(false)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  quotes                Quote[]               @relation("UserQuotes")
+  orders                Order[]               @relation("UserOrders")
   conversations         Conversation[]
-  promoCodes            PromoCode[]  @relation("UserPromoCodes")
+  promoCodes            PromoCode[]           @relation("UserPromoCodes")
   whatsappIntegrations  WhatsappIntegration[] @relation("WhatsappIntegrationConnectedBy")
 }
 
 model Product {
-  id              String         @id @default(cuid())
-  code            String         @unique @db.VarChar(64)
-  slug            String         @unique @db.VarChar(140)
-  name            String         @db.VarChar(180)
-  description     String?        @db.Text
-  technicalSpecs  String?        @db.Text
-  brand           String?        @db.VarChar(120)
-  category        String?        @db.VarChar(120)
-  categoryId      String?
-  categoryRef     Category?      @relation("CategoryToProduct", fields: [categoryId], references: [id], onDelete: SetNull)
-  imageUrl        String?        @db.Text
-  sourceImageUrl  String?        @db.Text
-  localImageUrl   String?        @db.Text
-  sourceImageFingerprint String?        @db.VarChar(64)
-  sourceImageContentHash String?        @db.VarChar(64)
-  unitLabel       String         @default("unidad") @db.VarChar(40)
-  unitPrice       Decimal        @db.Decimal(10, 2)
-  wholesalePrice  Decimal?       @db.Decimal(10, 2)
-  wholesaleMinQty Int            @default(3)
-  boxPrice        Decimal?       @db.Decimal(10, 2)
-  unitsPerBox     Int?
-  stockUnits      Int            @default(0)
-  isVisible       Boolean        @default(true)
-  isFeatured      Boolean        @default(false)
-  externalSource  String?        @db.VarChar(80)
-  externalId      String?        @db.VarChar(120)
-  externalCode    String?        @db.VarChar(120)
-  syncEnabled     Boolean        @default(false)
-  lastSyncedAt    DateTime?
-  erpUpdatedAt    DateTime?
-  syncHash        String?        @db.VarChar(64)
-  syncQuickHash   String?        @db.VarChar(64)
-  syncStockHash   String?        @db.VarChar(64)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  media           ProductMedia[]
-  quoteItems      QuoteItem[]    @relation("ProductQuoteItems")
-  orderItems      OrderItem[]    @relation("ProductOrderItems")
-  digitalProfile  DigitalProductProfile?
-  specifications  ProductSpecification[]
-  variants        ProductVariant[]
-  videos          ProductVideo[]
-  documents       ProductDocument[]
-  qr              ProductQr?
-  qrAnalyticsLogs QrAnalyticsLog[]
+  id                     String                 @id @default(cuid())
+  code                   String                 @unique @db.VarChar(64)
+  slug                   String                 @unique @db.VarChar(140)
+  name                   String                 @db.VarChar(180)
+  description            String?                @db.Text
+  technicalSpecs         String?                @db.Text
+  brand                  String?                @db.VarChar(120)
+  category               String?                @db.VarChar(120)
+  categoryId             String?
+  categoryRef            Category?              @relation("CategoryToProduct", fields: [categoryId], references: [id], onDelete: SetNull)
+  imageUrl               String?                @db.Text
+  sourceImageUrl         String?                @db.Text
+  localImageUrl          String?                @db.Text
+  sourceImageFingerprint String?                @db.VarChar(64)
+  sourceImageContentHash String?                @db.VarChar(64)
+  unitLabel              String                 @default("unidad") @db.VarChar(40)
+  unitPrice              Decimal                @db.Decimal(10, 2)
+  wholesalePrice         Decimal?               @db.Decimal(10, 2)
+  wholesaleMinQty        Int                    @default(3)
+  boxPrice               Decimal?               @db.Decimal(10, 2)
+  unitsPerBox            Int?
+  stockUnits             Int                    @default(0)
+  isVisible              Boolean                @default(true)
+  isFeatured             Boolean                @default(false)
+  externalSource         String?                @db.VarChar(80)
+  externalId             String?                @db.VarChar(120)
+  externalCode           String?                @db.VarChar(120)
+  syncEnabled            Boolean                @default(false)
+  lastSyncedAt           DateTime?
+  erpUpdatedAt           DateTime?
+  syncHash               String?                @db.VarChar(64)
+  syncQuickHash          String?                @db.VarChar(64)
+  syncStockHash          String?                @db.VarChar(64)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  media                  ProductMedia[]
+  quoteItems             QuoteItem[]            @relation("ProductQuoteItems")
+  orderItems             OrderItem[]            @relation("ProductOrderItems")
+  digitalProfile         DigitalProductProfile?
+  specifications         ProductSpecification[]
+  variants               ProductVariant[]
+  videos                 ProductVideo[]
+  documents              ProductDocument[]
+  qr                     ProductQr?
+  qrAnalyticsLogs        QrAnalyticsLog[]
 
   @@index([name])
   @@index([code])
@@ -317,7 +336,7 @@ model Quote {
   customerDocumentType   String?     @db.VarChar(20)
   customerDocumentNumber String?     @db.VarChar(40)
   customerAddress        String?     @db.Text
-  deliveryType            String?     @db.VarChar(30)
+  deliveryType           String?     @db.VarChar(30)
   currencySymbol         String      @default("S/") @db.VarChar(8)
   total                  Decimal     @db.Decimal(12, 2)
   note                   String?     @db.Text
@@ -674,47 +693,46 @@ enum OrderStatus {
 }
 
 model Order {
-  id                     String      @id @default(cuid())
-  userId                 String?
-  user                   User?       @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
-  status                 OrderStatus @default(PENDING)
-  orderNumber            String?     @unique @db.VarChar(80)
+  id          String      @id @default(cuid())
+  userId      String?
+  user        User?       @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
+  status      OrderStatus @default(PENDING)
+  orderNumber String?     @unique @db.VarChar(80)
 
   // Culqi specific
-  culqiChargeId          String?     @unique @db.VarChar(120)
-  culqiTokenId           String?     @db.VarChar(120)
-  paymentMethod          String?     @db.VarChar(80)
+  culqiChargeId String? @unique @db.VarChar(120)
+  culqiTokenId  String? @db.VarChar(120)
+  paymentMethod String? @db.VarChar(80)
 
   // ERP Link (opcional por ahora)
-  erpExternalId          String?     @db.VarChar(120)
-  erpCustomerId          Int?
+  erpExternalId String? @db.VarChar(120)
+  erpCustomerId Int?
 
-  customerName           String      @db.VarChar(180)
-  customerPhone          String      @db.VarChar(32)
-  customerEmail          String?     @db.VarChar(180)
-  customerDocumentType   String?     @db.VarChar(20)
-  customerDocumentNumber String?     @db.VarChar(40)
-  customerAddress        String?     @db.Text
-  deliveryType           String?     @db.VarChar(30)
+  customerName           String  @db.VarChar(180)
+  customerPhone          String  @db.VarChar(32)
+  customerEmail          String? @db.VarChar(180)
+  customerDocumentType   String? @db.VarChar(20)
+  customerDocumentNumber String? @db.VarChar(40)
+  customerAddress        String? @db.Text
+  deliveryType           String? @db.VarChar(30)
 
-  currencySymbol         String      @default("PEN") @db.VarChar(8)
-  total                  Decimal     @db.Decimal(12, 2)
+  currencySymbol String  @default("PEN") @db.VarChar(8)
+  total          Decimal @db.Decimal(12, 2)
 
   // Promociones y Afiliados
-  promoCodeId            String?
-  promoCode              PromoCode?  @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
-  promoCodeStr           String?     @db.VarChar(40)
-  discountAmount         Decimal     @default(0) @db.Decimal(12, 2)
-  commissionAmount       Decimal     @default(0) @db.Decimal(12, 2)
+  promoCodeId      String?
+  promoCode        PromoCode? @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  promoCodeStr     String?    @db.VarChar(40)
+  discountAmount   Decimal    @default(0) @db.Decimal(12, 2)
+  commissionAmount Decimal    @default(0) @db.Decimal(12, 2)
 
+  adminNotes   String? @db.Text
+  errorMessage String? @db.Text
 
-  adminNotes             String?     @db.Text
-  errorMessage           String?     @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
-
-  items                  OrderItem[]
+  items OrderItem[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
@@ -762,19 +780,20 @@ model ChatContact {
 }
 
 model Conversation {
-  id             String            @id @default(cuid())
+  id             String                  @id @default(cuid())
   contactId      String
-  contact        ChatContact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  channel        Channel           @default(WHATSAPP)
-  status         ConversationState @default(AUTOMATICO)
-  botEnabled     Boolean           @default(true)
+  contact        ChatContact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel        Channel                 @default(WHATSAPP)
+  status         ConversationState       @default(AUTOMATICO)
+  botEnabled     Boolean                 @default(true)
   assignedUserId String?
-  assignedUser   User?             @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
-  lastMessageAt  DateTime          @default(now())
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  unreadCount    Int               @default(0)
+  assignedUser   User?                   @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
+  lastMessageAt  DateTime                @default(now())
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  unreadCount    Int                     @default(0)
   messages       ChatMessage[]
+  salesState     ConversationSalesState?
 
   @@index([contactId])
   @@index([channel])
@@ -782,6 +801,32 @@ model Conversation {
   @@index([lastMessageAt(sort: Desc)])
   @@index([botEnabled])
   @@index([assignedUserId])
+}
+
+model ConversationSalesState {
+  id                  String                 @id @default(cuid())
+  conversationId      String                 @unique
+  conversation        Conversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  stage               SalesConversationStage @default(AWAITING_PRODUCT_QUERY)
+  category            String?                @db.VarChar(120)
+  brand               String?                @db.VarChar(120)
+  shownProducts       Json?
+  selectedProductCode String?                @db.VarChar(64)
+  quantity            Int?
+  unitPrice           Decimal?               @db.Decimal(10, 2)
+  priceTier           String?                @db.VarChar(40)
+  total               Decimal?               @db.Decimal(12, 2)
+  customerData        Json?
+  documentData        Json?
+  deliveryData        Json?
+  paymentData         Json?
+  orderNumber         String?                @db.VarChar(80)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([stage])
+  @@index([selectedProductCode])
+  @@index([orderNumber])
 }
 
 model ChatMessage {
@@ -804,47 +849,46 @@ model ChatMessage {
   @@index([createdAt(sort: Asc)])
 }
 
-
 model PromoCode {
-  id               String   @id @default(cuid())
-  code             String   @unique @db.VarChar(20)
-  discountType     String   @default("PERCENTAGE") @db.VarChar(20)
-  discountValue    Decimal  @db.Decimal(10, 2)
-  minOrderAmount   Decimal  @default(0) @db.Decimal(10, 2)
-  commissionType   String   @default("FIXED") @db.VarChar(20)
-  commissionValue  Decimal  @db.Decimal(10, 2)
-  isActive         Boolean  @default(true)
-  expiresAt        DateTime?
-  creatorId        String?
-  creator          User?    @relation("UserPromoCodes", fields: [creatorId], references: [id], onDelete: SetNull)
-  createdAt        DateTime @default(now())
-  orders           Order[]
+  id              String    @id @default(cuid())
+  code            String    @unique @db.VarChar(20)
+  discountType    String    @default("PERCENTAGE") @db.VarChar(20)
+  discountValue   Decimal   @db.Decimal(10, 2)
+  minOrderAmount  Decimal   @default(0) @db.Decimal(10, 2)
+  commissionType  String    @default("FIXED") @db.VarChar(20)
+  commissionValue Decimal   @db.Decimal(10, 2)
+  isActive        Boolean   @default(true)
+  expiresAt       DateTime?
+  creatorId       String?
+  creator         User?     @relation("UserPromoCodes", fields: [creatorId], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  orders          Order[]
 
   @@index([code])
   @@index([creatorId])
 }
 
 model WhatsappIntegration {
-  id                  String                    @id @default(cuid())
-  businessId          String                    @db.VarChar(120)
-  wabaId              String                    @db.VarChar(120)
-  phoneNumberId       String                    @db.VarChar(120)
-  displayPhoneNumber  String?                   @db.VarChar(40)
-  verifiedName        String?                   @db.VarChar(180)
-  accessTokenEncrypted String                   @db.Text
-  tokenType           String                    @default("Bearer") @db.VarChar(40)
-  scopes              String[]                  @default([])
-  status              WhatsappIntegrationStatus @default(ACTIVE)
-  connectedByUserId   String?
-  connectedByUser     User?                     @relation("WhatsappIntegrationConnectedBy", fields: [connectedByUserId], references: [id], onDelete: SetNull)
-  lastVerifiedAt      DateTime?
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
+  id                   String                    @id @default(cuid())
+  businessId           String                    @db.VarChar(120)
+  wabaId               String                    @db.VarChar(120)
+  phoneNumberId        String                    @db.VarChar(120)
+  displayPhoneNumber   String?                   @db.VarChar(40)
+  verifiedName         String?                   @db.VarChar(180)
+  accessTokenEncrypted String                    @db.Text
+  tokenType            String                    @default("Bearer") @db.VarChar(40)
+  scopes               String[]                  @default([])
+  status               WhatsappIntegrationStatus @default(ACTIVE)
+  connectedByUserId    String?
+  connectedByUser      User?                     @relation("WhatsappIntegrationConnectedBy", fields: [connectedByUserId], references: [id], onDelete: SetNull)
+  lastVerifiedAt       DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
 
+  @@unique([businessId, wabaId, phoneNumberId])
   @@index([businessId])
   @@index([wabaId])
   @@index([phoneNumberId])
   @@index([status])
   @@index([connectedByUserId])
-  @@unique([businessId, wabaId, phoneNumberId])
 }
