@@ -10,7 +10,7 @@
     "start:web": "node prisma/start-web.mjs",
     "lint": "eslint .",
     "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts",
-    "test:router-v2": "node --import tsx --test src/lib/router-v2-flows.test.ts",
+    "test:router-v2": "node --import tsx --test src/lib/router-v2-flows.test.ts src/lib/router-v2-ai-drafter.test.ts",
     "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
