@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { discoverExactProducts } from "@/lib/product-discovery";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { buildRouterV2MergedContext, buildRouterV2SalesStatePatch } from "@/lib/router-v2-sales-state";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
@@ -73,6 +74,14 @@ export async function POST(request: Request) {
       currentState,
     );
 
+    const productResolution =
+      analysis.slots.brand && analysis.slots.model
+        ? await discoverExactProducts({
+            brand: analysis.slots.brand,
+            model: analysis.slots.model,
+          })
+        : null;
+
     const nextAction =
       conversation.botEnabled === false
         ? "HUMAN_HANDOFF"
@@ -92,6 +101,7 @@ export async function POST(request: Request) {
       analysis,
       proposedPatch,
       mergedContext,
+      productResolution,
       nextAction,
     });
   } catch (error: unknown) {
