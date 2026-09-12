@@ -68,7 +68,7 @@ function detectShoppingMode(content: string): RouterV2ShoppingMode | null {
   }
 
   if (
-    /\b(por menor|al por menor|minorista|unitario|por unidad|una unidad|unidades sueltas|pocas unidades)\b/.test(
+    /\b(por menor|al por menor|minorista|unitario|por unidades?|una unidad|unidades?|unidades sueltas|pocas unidades|compras? por unidades?)\b/.test(
       text,
     )
   ) {
