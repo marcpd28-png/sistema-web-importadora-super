@@ -221,3 +221,67 @@ test("keeps the recovery claim if the new import has an uncertain result", t => 
   assert.equal(old.run().status, 1);
   assert.equal(f.state().imports, 1);
 });
+
+function reviewedOutbound(t) {
+  const outbound = {
+    id: "YwSoeCWb8Joo3RAR", name: "STAGING - Outbound Messaging v3 CLEAN",
+    active: false, activeVersionId: null, versionId: "oldDraft", settings: {}, connections: {},
+    nodes: Array.from({ length: 19 }, (_, i) => ({
+      id: `node${i}`, name: `Node ${i}`, position: [0, 0], disabled: false,
+      parameters: { secret: CANARY },
+    })),
+  };
+  const f = fixture(t, "ok", [outbound]);
+  const old = legacyFailure(f);
+  const state = f.state();
+  const changed = state.workflows[1];
+  changed.versionId = "reviewedDraft";
+  changed.nodes[6].position[1] = 100;
+  changed.nodes[7].position = [100, 200];
+  changed.nodes[17].disabled = true;
+  changed.nodes[17].position[1] = 200;
+  changed.nodes[18].position = [300, 400];
+  fs.writeFileSync(path.join(f.root, "state.json"), JSON.stringify(state));
+  const reference = path.join(fs.mkdtempSync(path.join(f.root, "importadora-n8n-backup-")), "before.json");
+  fs.writeFileSync(reference, JSON.stringify(state.workflows));
+  return { f, old, state, reference,
+    run: () => f.run(workflowFile, ["--recover-from", old.previous, "--reviewed-before", reference]),
+  };
+}
+
+test("preserves the reviewed Outbound version, node positions and disabled state when adding Router V2", t => {
+  const r = reviewedOutbound(t);
+  const result = r.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Se conservan los cambios revisados/);
+  assert.equal((result.stdout + result.stderr).includes(CANARY), false);
+  assert.equal(r.f.state().imports, 1);
+  assert.deepEqual(r.f.state().workflows.slice(0, 2), r.state.workflows);
+  assert.equal(r.f.state().workflows[2].active, false);
+  assert.equal(fs.existsSync(r.old.lock), false);
+});
+
+test("rejects an unreviewed parameter edit even when it is inside the supplied reference", t => {
+  const r = reviewedOutbound(t);
+  const data = JSON.parse(fs.readFileSync(r.reference, "utf8"));
+  data[1].nodes[17].parameters.secret = "DIFFERENT_FAKE_SECRET";
+  fs.writeFileSync(r.reference, JSON.stringify(data));
+  const result = r.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /cambios distintos de los revisados/);
+  assert.equal(r.f.state().imports, 0);
+  assert.deepEqual(fs.readdirSync(r.old.lock), []);
+});
+
+test("retains the lock if live n8n changed again after the reviewed snapshot", t => {
+  const r = reviewedOutbound(t);
+  const live = r.f.state();
+  live.workflows[1].nodes[17].disabled = false;
+  fs.writeFileSync(path.join(r.f.root, "state.json"), JSON.stringify(live));
+  const result = r.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /n8n cambió desde el respaldo anterior/);
+  assert.equal(r.f.state().imports, 0);
+  assert.deepEqual(r.f.state().workflows, live.workflows);
+  assert.deepEqual(fs.readdirSync(r.old.lock), []);
+});

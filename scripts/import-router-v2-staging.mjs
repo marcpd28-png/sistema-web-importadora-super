@@ -9,6 +9,12 @@ import { fileURLToPath } from "node:url";
 
 const NAME = "03 - Conversation Router V2 - STAGING";
 const SOURCE_SHA = "c852e33975f2adfbfb63ef0833ce191ecd2b04b25652b106723f6c650c4da206";
+const REVIEWED_OUTBOUND_ID = "YwSoeCWb8Joo3RAR";
+const REVIEWED_OUTBOUND_NAME = "STAGING - Outbound Messaging v3 CLEAN";
+const REVIEWED_OUTBOUND_FIELDS = new Set([
+  "versionId", "nodes.6.position.1", "nodes.7.position.0", "nodes.7.position.1",
+  "nodes.17.disabled", "nodes.17.position.1", "nodes.18.position.0", "nodes.18.position.1",
+]);
 const canonical = (value) => JSON.stringify(value, (_, item) =>
   item && typeof item === "object" && !Array.isArray(item)
     ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)))
@@ -82,7 +88,44 @@ function noOtherImport() {
   if (active) throw new Error("Hay otra importación activa. Se conserva el bloqueo anterior.");
 }
 
-function beginRecovery(previous, backupRoot) {
+function differencePaths(a, b, location = "") {
+  if (canonical(a) === canonical(b)) return [];
+  if (a && b && typeof a === "object" && typeof b === "object") {
+    return [...new Set([...Object.keys(a), ...Object.keys(b)])].flatMap(key =>
+      differencePaths(a[key], b[key], location ? `${location}.${key}` : key));
+  }
+  return [location];
+}
+
+function reviewedReference(previous, file, backupRoot) {
+  if (!file) return { before: previous };
+  const reviewedFrom = path.resolve(file);
+  const dir = path.dirname(reviewedFrom);
+  if (path.basename(reviewedFrom) !== "before.json" ||
+      path.dirname(dir) !== path.resolve(backupRoot) ||
+      !/^importadora-n8n-backup-[A-Za-z0-9]+$/.test(path.basename(dir)) ||
+      !fs.lstatSync(dir).isDirectory() || !fs.lstatSync(reviewedFrom).isFile()) {
+    throw new Error("La referencia revisada debe ser before.json dentro de un respaldo local del importador.");
+  }
+  const before = readExport(reviewedFrom, "revisada");
+  if (before.length !== previous.length || previous.some(w => !before.some(a => a.id === w.id))) {
+    throw new Error("La referencia revisada agrega o elimina workflows. No se acepta automáticamente.");
+  }
+  const reviewedChanges = [];
+  for (const old of previous) {
+    const current = before.find(w => w.id === old.id);
+    const fields = differencePaths(JSON.parse(snapshot(old)), JSON.parse(snapshot(current)));
+    if (!fields.length) continue;
+    if (old.id !== REVIEWED_OUTBOUND_ID || old.name !== REVIEWED_OUTBOUND_NAME ||
+        current.name !== REVIEWED_OUTBOUND_NAME || fields.some(field => !REVIEWED_OUTBOUND_FIELDS.has(field))) {
+      throw new Error("La referencia incluye cambios distintos de los revisados en Outbound v3. Se conserva el bloqueo.");
+    }
+    reviewedChanges.push({ id: old.id, fields });
+  }
+  return { before, reviewedFrom, reviewedChanges };
+}
+
+function beginRecovery(previous, backupRoot, reviewedFile) {
   const from = path.resolve(previous);
   if (path.dirname(from) !== path.resolve(backupRoot) ||
       !/^importadora-n8n-backup-[A-Za-z0-9]+$/.test(path.basename(from)) ||
@@ -95,6 +138,7 @@ function beginRecovery(previous, backupRoot) {
   }
   const before = readExport(path.join(from, "before.json"), "anterior");
   if (before.some(w => w.name === NAME)) throw new Error("El respaldo anterior ya contiene Router V2; requiere revisión.");
+  const reference = reviewedReference(before, reviewedFile, backupRoot);
   noOtherImport();
   const stat = fs.lstatSync(lock);
   if (!stat.isDirectory() || fs.readdirSync(lock).length) {
@@ -103,7 +147,7 @@ function beginRecovery(previous, backupRoot) {
   const claim = path.join(lock, "recovery");
   fs.mkdirSync(claim, { mode: 0o700 });
   recoveryClaim = claim;
-  return { before, from, stat };
+  return { ...reference, from, stat };
 }
 
 function verifyRecovery(current) {
@@ -118,11 +162,15 @@ function verifyRecovery(current) {
   }
   fs.writeFileSync(path.join(backup, "recovery.json"), JSON.stringify({
     from: recovery.from, previousLockTime: recovery.stat.mtime.toISOString(),
+    reviewedFrom: recovery.reviewedFrom, reviewedChanges: recovery.reviewedChanges,
     workflowsChecked: current.length, checkedAt: new Date().toISOString(),
   }), { flag: "wx", mode: 0o600 });
   // Keep the directory continuously locked, including our recovery claim, until verification.
   locked = true;
-  console.log(`Recuperación verificada: ${current.length} workflows previos sin cambios.`);
+  console.log(`Recuperación verificada: ${current.length} workflows coinciden con la referencia.`);
+  if (recovery.reviewedChanges?.length) {
+    console.log("Se conservan los cambios revisados de Outbound v3; su funcionamiento aún debe probarse.");
+  }
 }
 
 function checkDraft(workflow, source) {
@@ -139,7 +187,11 @@ try {
     container: { type: "string", default: "n8n" },
     "backup-root": { type: "string", default: os.homedir() },
     "recover-from": { type: "string" },
+    "reviewed-before": { type: "string" },
   } });
+  if (values["reviewed-before"] && !values["recover-from"]) {
+    throw new Error("La referencia revisada requiere indicar el intento fallido con --recover-from.");
+  }
   container = values.container;
   if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(container)) throw new Error("Nombre de contenedor no válido.");
   const raw = fs.readFileSync(values.workflow, "utf8");
@@ -157,7 +209,7 @@ try {
     if (error.code !== "EEXIST" || !values["recover-from"]) {
       throw new Error("No se pudo obtener el bloqueo de importación. Puede existir una ejecución pendiente de revisión.");
     }
-    recovery = beginRecovery(values["recover-from"], values["backup-root"]);
+    recovery = beginRecovery(values["recover-from"], values["backup-root"], values["reviewed-before"]);
   }
   backup = fs.mkdtempSync(path.join(values["backup-root"], "importadora-n8n-backup-"));
   console.log("RESPALDO PRIVADO:", backup);

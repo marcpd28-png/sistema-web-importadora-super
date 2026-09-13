@@ -53,6 +53,16 @@ node scripts/import-router-v2-staging.mjs --container n8n \
 
 El modo de recuperación exige el error exacto en el registro, un respaldo válido, el bloqueo vacío anterior y ausencia de otro importador activo. Consulta de nuevo n8n y compara todos los workflows con ese respaldo antes de continuar. Mantiene el bloqueo durante la revisión e importación y conserva el respaldo anterior. Si hay cambios o un resultado incierto, se detiene sin sobrescribir workflows ni retirar el bloqueo pendiente. Si el bloqueo ya fue retirado tras una recuperación exitosa, una repetición comprueba el borrador existente y no lo duplica. No ejecutar la importación directa del JSON sin ID como alternativa en esta versión.
 
+Para el caso revisado de `STAGING - Outbound Messaging v3 CLEAN` (`YwSoeCWb8Joo3RAR`), se puede conservar la exportación reciente como referencia:
+
+```bash
+node scripts/import-router-v2-staging.mjs --container n8n \
+  --recover-from /root/importadora-n8n-backup-PebiZ4 \
+  --reviewed-before /root/importadora-n8n-backup-v1iZIJ/before.json
+```
+
+Esta opción admite exclusivamente las diferencias observadas en ese workflow: `versionId`, las posiciones de los nodos 6, 7, 17 y 18 y `nodes.17.disabled`. El cambio de `disabled` afecta al comportamiento; conservarlo no significa haber validado su ejecución. Se rechazan cambios en otros campos, otros workflows o en el conjunto de IDs. La exportación actual de n8n debe coincidir con la referencia revisada antes de importar. El respaldo nuevo registra la referencia y los campos revisados en `recovery.json`. La comprobación posterior sigue exigiendo que todos los workflows existentes conserven su estado previo a esta nueva importación.
+
 No ejecute `publish:workflow` durante esta fase.
 
 ## 3. Asignar credenciales en el borrador
