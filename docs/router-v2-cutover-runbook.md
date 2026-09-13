@@ -8,7 +8,7 @@ Este runbook termina la preparación técnica sin desconectar ManyChat ni public
 - Nombre al importar: `03 - Conversation Router V2 - STAGING`
 - Estado incluido: inactivo
 - No contiene tokens, claves ni IDs reales de credenciales.
-- No contiene un ID de workflow; por eso la importación crea un borrador nuevo y no sobrescribe `03 - Conversation Router V2` ni otro flujo existente.
+- El JSON no contiene un ID de workflow. El importador asigna un ID aleatorio nuevo en una copia privada y comprueba que no figure entre los workflows existentes.
 
 ## 1. Validar el repositorio
 
@@ -38,27 +38,20 @@ Para el VPS con el contenedor `n8n` en versión `2.38.6`, usar el importador com
 node scripts/import-router-v2-staging.mjs --container n8n
 ```
 
-El comando verifica la huella del JSON de la versión `4fbd981`, guarda exportaciones privadas de los borradores y de las versiones publicadas, e importa únicamente un workflow nuevo con `--activeState=false`. Después comprueba sus 43 nodos, su definición y que los workflows anteriores conservan su definición y publicación. Si ya existe un borrador idéntico e inactivo, lo conserva sin duplicarlo. No ejecuta workflows ni reinicia servicios.
+El comando verifica la huella del JSON de la versión `4fbd981`, guarda exportaciones privadas de los borradores y de las versiones publicadas, e importa únicamente un workflow nuevo con `--activeState=false`. Asigna un ID aleatorio nuevo, comprueba que no exista y guarda la copia preparada en el respaldo. Esto corrige el fallo observado en n8n 2.38.6/PostgreSQL al importar el JSON sin ID: `null value in column "id" of relation "workflow_entity" violates not-null constraint`. Después comprueba que se creó exactamente ese ID, sus 43 nodos, su definición y que los workflows anteriores conservan su definición y publicación. Si ya existe un borrador idéntico e inactivo, lo conserva sin duplicarlo. No ejecuta workflows ni reinicia servicios.
 
 Si el script se ejecuta fuera del repositorio, indicar `--workflow /ruta/al/03-conversation-router-v2.json`. Los respaldos se guardan en `importadora-n8n-backup-*` dentro del directorio personal del usuario. Son exportaciones de workflows, no un respaldo completo de la base de n8n ni de sus credenciales. Los detalles de los comandos quedan en un log privado; no se imprimen configuraciones en la terminal.
 
 Ante una importación cuyo resultado no se pudo verificar, el comando conserva el bloqueo local para impedir una repetición automática. Revisar el respaldo y el workflow antes de retirar ese bloqueo o volver a importar. Las pruebas del importador se ejecutan con `node --test scripts/import-router-v2-staging.test.mjs`, utilizando Docker simulado, sin conectar con producción.
 
-En una instalación n8n accesible desde terminal:
+Para recuperar exclusivamente un intento anterior que falló por ese ID ausente:
 
 ```bash
-n8n import:workflow \
-  --input=/ruta/al/repositorio/n8n/workflows/03-conversation-router-v2.json \
-  --activeState=false
+node scripts/import-router-v2-staging.mjs --container n8n \
+  --recover-from /root/importadora-n8n-backup-PebiZ4
 ```
 
-Si n8n vive en Docker, primero copie el JSON al contenedor y luego impórtelo:
-
-```bash
-docker cp n8n/workflows/03-conversation-router-v2.json <contenedor-n8n>:/tmp/router-v2.json
-docker exec -u node <contenedor-n8n> \
-  n8n import:workflow --input=/tmp/router-v2.json --activeState=false
-```
+El modo de recuperación exige el error exacto en el registro, un respaldo válido, el bloqueo vacío anterior y ausencia de otro importador activo. Consulta de nuevo n8n y compara todos los workflows con ese respaldo antes de continuar. Mantiene el bloqueo durante la revisión e importación y conserva el respaldo anterior. Si hay cambios o un resultado incierto, se detiene sin sobrescribir workflows ni retirar el bloqueo pendiente. Si el bloqueo ya fue retirado tras una recuperación exitosa, una repetición comprueba el borrador existente y no lo duplica. No ejecutar la importación directa del JSON sin ID como alternativa en esta versión.
 
 No ejecute `publish:workflow` durante esta fase.
 

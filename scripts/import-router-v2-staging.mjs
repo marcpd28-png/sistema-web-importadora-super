@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -29,7 +29,7 @@ const snapshot = (workflow) => canonical({
   nodes: workflow.nodes, connections: workflow.connections, settings: workflow.settings,
 });
 
-let backup, remote, container, lock;
+let backup, remote, container, lock, recovery, recoveryClaim;
 let locked = false, attempted = false, verified = false;
 
 function docker(args, label, input) {
@@ -37,7 +37,11 @@ function docker(args, label, input) {
     encoding: "utf8", input, timeout: 60000, maxBuffer: 16 * 1024 * 1024,
   });
   fs.appendFileSync(path.join(backup, "commands.log"),
-    `\n[${label}]\n${result.stdout ?? ""}${result.stderr ?? ""}`, { mode: 0o600 });
+    `\n[${label}]\n${result.stdout ?? ""}${result.stderr ?? ""}\nstatus=${result.status} signal=${result.signal ?? "none"} error=${result.error?.code ?? "none"}\n`, { mode: 0o600 });
+  const schemaError = `${result.stdout ?? ""}${result.stderr ?? ""}`.match(
+    /null value in column "[\w]+"(?: of relation "[\w]+")? violates not-null constraint|violates (?:foreign key|unique|check) constraint "[\w]+"/i,
+  );
+  if (schemaError) throw new Error(`Falló ${label}: ${schemaError[0]}`);
   if (result.error || result.status !== 0) throw new Error(`Falló: ${label}.`);
   return result.stdout;
 }
@@ -49,6 +53,10 @@ function exported(label, published = false) {
   const localFile = path.join(backup, `${label}.json`);
   docker(["cp", `${container}:${remoteFile}`, localFile], `respaldar ${label}`);
   fs.chmodSync(localFile, 0o600);
+  return readExport(localFile, label);
+}
+
+function readExport(localFile, label) {
   let list;
   try { list = JSON.parse(fs.readFileSync(localFile, "utf8")); }
   catch { throw new Error(`La exportación ${label} no contiene JSON válido.`); }
@@ -59,6 +67,62 @@ function exported(label, published = false) {
     throw new Error(`La exportación ${label} no pasó la validación.`);
   }
   return list;
+}
+
+function noOtherImport() {
+  const result = spawnSync("ps", ["-eo", "pid=,comm=,args="], { encoding: "utf8", timeout: 10000 });
+  if (result.error || result.status !== 0) throw new Error("No se pudo comprobar si hay otra importación activa.");
+  const entries = result.stdout.split(/\r?\n/)
+    .map(line => line.match(/^\s*(\d+)\s+(\S+)\s+(.*)$/)).filter(Boolean);
+  if (!entries.length) throw new Error("La consulta de procesos no devolvió un listado verificable.");
+  const active = entries.some(match => {
+    return Number(match[1]) !== process.pid && /^(node|docker|n8n|npm)$/.test(match[2]) &&
+      /(?:router-v2-import-[^\s]+|import-router-v2-staging)\.mjs\b|n8n[^\n]*\bimport:workflow\b/.test(match[3]);
+  });
+  if (active) throw new Error("Hay otra importación activa. Se conserva el bloqueo anterior.");
+}
+
+function beginRecovery(previous, backupRoot) {
+  const from = path.resolve(previous);
+  if (path.dirname(from) !== path.resolve(backupRoot) ||
+      !/^importadora-n8n-backup-[A-Za-z0-9]+$/.test(path.basename(from)) ||
+      !fs.lstatSync(from).isDirectory()) {
+    throw new Error("El respaldo de recuperación debe ser una carpeta directa del mismo directorio de respaldos.");
+  }
+  const log = fs.readFileSync(path.join(from, "commands.log"), "utf8");
+  if (!/null value in column "id" of relation "workflow_entity" violates not-null constraint/i.test(log)) {
+    throw new Error("La recuperación automática solo aplica al fallo confirmado por id ausente en workflow_entity.");
+  }
+  const before = readExport(path.join(from, "before.json"), "anterior");
+  if (before.some(w => w.name === NAME)) throw new Error("El respaldo anterior ya contiene Router V2; requiere revisión.");
+  noOtherImport();
+  const stat = fs.lstatSync(lock);
+  if (!stat.isDirectory() || fs.readdirSync(lock).length) {
+    throw new Error("El bloqueo anterior no es el bloqueo vacío esperado. Se conserva para revisión.");
+  }
+  const claim = path.join(lock, "recovery");
+  fs.mkdirSync(claim, { mode: 0o700 });
+  recoveryClaim = claim;
+  return { before, from, stat };
+}
+
+function verifyRecovery(current) {
+  if (current.length !== recovery.before.length || recovery.before.some(w =>
+    !current.some(a => a.id === w.id && snapshot(a) === snapshot(w)))) {
+    throw new Error("n8n cambió desde el respaldo anterior. Se conserva el bloqueo; no se importa otro flujo.");
+  }
+  noOtherImport();
+  const stat = fs.lstatSync(lock);
+  if (stat.dev !== recovery.stat.dev || stat.ino !== recovery.stat.ino) {
+    throw new Error("El bloqueo cambió durante la comprobación. No se continúa.");
+  }
+  fs.writeFileSync(path.join(backup, "recovery.json"), JSON.stringify({
+    from: recovery.from, previousLockTime: recovery.stat.mtime.toISOString(),
+    workflowsChecked: current.length, checkedAt: new Date().toISOString(),
+  }), { flag: "wx", mode: 0o600 });
+  // Keep the directory continuously locked, including our recovery claim, until verification.
+  locked = true;
+  console.log(`Recuperación verificada: ${current.length} workflows previos sin cambios.`);
 }
 
 function checkDraft(workflow, source) {
@@ -74,6 +138,7 @@ try {
     workflow: { type: "string", default: fileURLToPath(new URL("../n8n/workflows/03-conversation-router-v2.json", import.meta.url)) },
     container: { type: "string", default: "n8n" },
     "backup-root": { type: "string", default: os.homedir() },
+    "recover-from": { type: "string" },
   } });
   container = values.container;
   if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(container)) throw new Error("Nombre de contenedor no válido.");
@@ -88,7 +153,12 @@ try {
 
   lock = path.join(values["backup-root"], `.importadora-router-v2-${container}.lock`);
   try { fs.mkdirSync(lock, { mode: 0o700 }); locked = true; }
-  catch { throw new Error("No se pudo obtener el bloqueo de importación. Puede existir una ejecución pendiente de revisión."); }
+  catch (error) {
+    if (error.code !== "EEXIST" || !values["recover-from"]) {
+      throw new Error("No se pudo obtener el bloqueo de importación. Puede existir una ejecución pendiente de revisión.");
+    }
+    recovery = beginRecovery(values["recover-from"], values["backup-root"]);
+  }
   backup = fs.mkdtempSync(path.join(values["backup-root"], "importadora-n8n-backup-"));
   console.log("RESPALDO PRIVADO:", backup);
   const version = docker(["exec", "-u", "node", container, "n8n", "--version"], "comprobar versión").trim();
@@ -103,6 +173,7 @@ try {
   }
 
   const before = exported("before");
+  if (recovery) verifyRecovery(before);
   if (before.some(w => w.activeVersionId)) {
     const published = exported("before-published", true);
     if (before.some(w => w.activeVersionId && !published.some(p =>
@@ -117,17 +188,24 @@ try {
     checkDraft(draft, source);
     console.log("El borrador ya existe; se conserva sin importar otra copia.");
   } else {
+    // n8n 2.38.6's single-file CLI import can reach workflow_entity without an ID.
+    // Supply a fresh ID only in the private import payload; never reuse an existing one.
+    const oldIds = new Set(before.map(w => w.id));
+    let importId;
+    do { importId = randomBytes(12).toString("base64url"); } while (oldIds.has(importId));
+    const payload = JSON.stringify({ ...source, id: importId, active: false });
+    fs.writeFileSync(path.join(backup, "prepared-workflow.json"), payload, { flag: "wx", mode: 0o600 });
     docker(["exec", "-i", "-u", "node", container, "node", "-e",
       'const fs=require("node:fs");fs.writeFileSync(process.argv[1],fs.readFileSync(0),{flag:"wx",mode:0o600})',
-      `${remote}/router-v2.json`], "copiar Router V2", raw);
+      `${remote}/router-v2.json`], "copiar Router V2", payload);
     console.log("Importando Router V2 como borrador inactivo...");
     attempted = true;
     docker(["exec", "-u", "node", container, "n8n", "import:workflow",
       `--input=${remote}/router-v2.json`, "--activeState=false"], "importar Router V2 inactivo");
     const after = exported("after");
-    const oldIds = new Set(before.map(w => w.id));
     const added = after.filter(w => !oldIds.has(w.id));
-    if (added.length !== 1 || after.length !== before.length + 1 || added[0].name !== NAME ||
+    if (added.length !== 1 || after.length !== before.length + 1 ||
+        added[0].id !== importId || added[0].name !== NAME ||
         before.some(w => !after.some(a => a.id === w.id && snapshot(a) === snapshot(w)))) {
       throw new Error("La comprobación posterior detectó un resultado inesperado. Se conservan los respaldos para revisión.");
     }
@@ -152,6 +230,9 @@ try {
     try { docker(["exec", "-u", "node", container, "node", "-e",
       'require("node:fs").rmSync(process.argv[1],{recursive:true,force:true})', remote], "limpiar carpeta temporal"); }
     catch { console.error("La carpeta temporal sigue en el contenedor; el respaldo permanece disponible."); }
+  }
+  if (recoveryClaim && (!locked || !attempted || verified)) {
+    try { fs.rmdirSync(recoveryClaim); } catch { console.error("No se pudo retirar la reserva de recuperación."); }
   }
   if (locked && (!attempted || verified)) {
     try { fs.rmdirSync(lock); } catch { console.error("No se pudo retirar el bloqueo local de importación."); }

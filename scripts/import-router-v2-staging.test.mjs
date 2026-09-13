@@ -49,12 +49,19 @@ function fakeDocker(fs, path) {
     state.flags = command;
     const input = command.find(a => a.startsWith("--input=")).slice(8);
     const imported = JSON.parse(fs.readFileSync(remoteFile(input), "utf8"));
-    if (imported.id || imported.active !== false || !command.includes("--activeState=false")) {
+    if (!imported.id) {
+      console.log('null value in column "id" of relation "workflow_entity" violates not-null constraint');
+      save();
+      process.exit(0);
+    }
+    if (!/^[A-Za-z0-9_-]{16}$/.test(imported.id) ||
+        state.workflows.some(w => w.id === imported.id) ||
+        imported.active !== false || !command.includes("--activeState=false")) {
       throw new Error("Unsafe import request");
     }
     if (state.mode !== "silent-failure") {
       const active = state.mode === "unexpected-active";
-      state.workflows.push({ ...imported, id: "newRouter", versionId: "newVersion",
+      state.workflows.push({ ...imported, versionId: "newVersion",
         active, activeVersionId: active ? "newVersion" : null,
         nodes: imported.nodes.map(node => node.credentials ? {
           ...node, credentials: Object.fromEntries(Object.entries(node.credentials)
@@ -73,6 +80,8 @@ function fixture(t, mode = "ok", extra = []) {
   const bin = path.join(root, "bin");
   fs.mkdirSync(bin);
   fs.writeFileSync(path.join(bin, "docker"), `#!/usr/bin/env node\n(${fakeDocker.toString()})(require("node:fs"),require("node:path"));\n`, { mode: 0o755 });
+  fs.writeFileSync(path.join(bin, "ps"),
+    '#!/usr/bin/env node\nconsole.log("1000 node node /usr/local/bin/n8n")\n', { mode: 0o755 });
   const current = { id: "production", name: "01 - Incoming Messages", active: true,
     versionId: "draftVersion", activeVersionId: "publishedVersion",
     nodes: [{ id: "existingNode", parameters: { secret: CANARY } }], connections: {}, settings: {},
@@ -82,8 +91,8 @@ function fixture(t, mode = "ok", extra = []) {
   return {
     root, current,
     state: () => JSON.parse(fs.readFileSync(stateFile, "utf8")),
-    run: (file = workflowFile) => spawnSync(process.execPath,
-      [script, "--workflow", file, "--container", "n8n", "--backup-root", root], {
+    run: (file = workflowFile, extraArgs = []) => spawnSync(process.execPath,
+      [script, "--workflow", file, "--container", "n8n", "--backup-root", root, ...extraArgs], {
         encoding: "utf8", timeout: 15000,
         env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH}`, ROUTER_IMPORT_TEST_ROOT: root },
       }),
@@ -98,6 +107,7 @@ test("imports one inactive draft, backs up published versions, preserves product
   assert.equal((first.stdout + first.stderr).includes(CANARY), false);
   assert.deepEqual(f.state().workflows[0], f.current);
   assert.equal(f.state().workflows[1].active, false);
+  assert.match(f.state().workflows[1].id, /^[A-Za-z0-9_-]{16}$/);
   const backup = path.join(f.root, fs.readdirSync(f.root).find(n => n.startsWith("importadora-n8n-backup-")));
   assert.equal(fs.statSync(backup).mode & 0o777, 0o700);
   const published = path.join(backup, "before-published.json");
@@ -143,4 +153,71 @@ test("rejects malformed exports without printing their contents or importing", t
   assert.equal(result.status, 1);
   assert.equal((result.stdout + result.stderr).includes(CANARY), false);
   assert.equal(f.state().imports, 0);
+});
+
+function legacyFailure(f, message = 'null value in column "id" of relation "workflow_entity" violates not-null constraint') {
+  const previous = fs.mkdtempSync(path.join(f.root, "importadora-n8n-backup-"));
+  fs.writeFileSync(path.join(previous, "before.json"), JSON.stringify(f.state().workflows));
+  fs.writeFileSync(path.join(previous, "commands.log"), `[importar Router V2 inactivo]\n${message}\n`);
+  const lock = path.join(f.root, ".importadora-router-v2-n8n.lock");
+  fs.mkdirSync(lock);
+  return { previous, lock, run: () => f.run(workflowFile, ["--recover-from", previous]) };
+}
+
+test("recovers the confirmed missing-ID failure, preserves the old backup and creates exactly one draft", t => {
+  const f = fixture(t);
+  const old = legacyFailure(f);
+  const originalBackup = fs.readFileSync(path.join(old.previous, "before.json"), "utf8");
+  const result = old.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Recuperación verificada/);
+  assert.equal(f.state().imports, 1);
+  assert.deepEqual(f.state().workflows[0], f.current);
+  assert.equal(fs.existsSync(old.lock), false);
+  assert.equal(fs.readFileSync(path.join(old.previous, "before.json"), "utf8"), originalBackup);
+  assert.equal(old.run().status, 0);
+  assert.equal(f.state().imports, 1);
+});
+
+test("retains the previous lock when workflows changed after the failed import", t => {
+  const f = fixture(t);
+  const old = legacyFailure(f);
+  const state = f.state();
+  state.workflows[0].nodes[0].parameters.changedAfterFailure = true;
+  fs.writeFileSync(path.join(f.root, "state.json"), JSON.stringify(state));
+  const result = old.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /n8n cambió desde el respaldo anterior/);
+  assert.equal(f.state().imports, 0);
+  assert.deepEqual(fs.readdirSync(old.lock), []);
+  assert.deepEqual(f.state().workflows, state.workflows);
+});
+
+test("does not recover a lock while another importer is active", t => {
+  const f = fixture(t);
+  const old = legacyFailure(f);
+  fs.writeFileSync(path.join(f.root, "bin", "ps"),
+    '#!/usr/bin/env node\nconsole.log("999999 node node /root/router-v2-import-running.mjs")\n', { mode: 0o755 });
+  const result = old.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /otra importación activa/);
+  assert.equal(f.state().imports, 0);
+  assert.deepEqual(fs.readdirSync(old.lock), []);
+});
+
+test("does not recover an unrelated database failure", t => {
+  const f = fixture(t);
+  const old = legacyFailure(f, 'violates foreign key constraint "other_constraint"');
+  assert.equal(old.run().status, 1);
+  assert.equal(f.state().imports, 0);
+  assert.deepEqual(fs.readdirSync(old.lock), []);
+});
+
+test("keeps the recovery claim if the new import has an uncertain result", t => {
+  const f = fixture(t, "silent-failure");
+  const old = legacyFailure(f);
+  assert.equal(old.run().status, 1);
+  assert.equal(fs.existsSync(path.join(old.lock, "recovery")), true);
+  assert.equal(old.run().status, 1);
+  assert.equal(f.state().imports, 1);
 });
