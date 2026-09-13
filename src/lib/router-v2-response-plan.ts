@@ -22,6 +22,7 @@ export type RouterV2AnswerType =
   | "PRODUCT_PRICE"
   | "PRODUCT_STOCK"
   | "PRODUCT_WHOLESALE"
+  | "INSUFFICIENT_STOCK"
   | "PRICE_SUMMARY"
   | "PURCHASE_DECLINED"
   | "CHECKOUT_PRICE_CONFIRMATION"
@@ -271,6 +272,13 @@ export function buildRouterV2ResponsePlan(input: {
           ? "PRICE_SUMMARY"
           : "PRODUCT_CONFIRMED",
       resumeAction,
+    };
+  }
+
+  if (input.finalAction === "ASK_AVAILABLE_QUANTITY") {
+    return {
+      answerType: "INSUFFICIENT_STOCK",
+      resumeAction: "ASK_QUANTITY",
     };
   }
 

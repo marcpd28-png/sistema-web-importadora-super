@@ -2,14 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { incomingMessageSchema, processIncomingMessage } from "@/lib/messages-service";
-import { prisma } from "@/lib/prisma";
-
-const optionalMediaUrlSchema = z
-  .string()
-  .trim()
-  .url()
-  .max(5000)
-  .optional();
 
 export async function POST(request: Request) {
   try {
@@ -29,25 +21,13 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const parsedData = incomingMessageSchema.parse(body);
-    const mediaUrl = optionalMediaUrlSchema.parse(
-      typeof body === "object" && body !== null
-        ? (body as Record<string, unknown>).mediaUrl
-        : undefined,
-    );
 
     const result = await processIncomingMessage(parsedData);
-
-    if (mediaUrl && !result.duplicate) {
-      await prisma.chatMessage.update({
-        where: { id: result.messageId },
-        data: { mediaUrl },
-      });
-    }
 
     return NextResponse.json(
       {
         ...result,
-        mediaUrl: mediaUrl ?? null,
+        mediaUrl: parsedData.mediaUrl ?? null,
       },
       { status: result.duplicate ? 200 : 201 },
     );

@@ -117,3 +117,14 @@ test("unavailable stock draft never asks customer to buy it", () => {
   assert.match(text, /alternativa/i);
   assert.doesNotMatch(text, /deseas comprar este producto/i);
 });
+
+test("insufficient quantity asks for less without exposing exact stock", () => {
+  const context = baseContext("INSUFFICIENT_STOCK");
+  context.sales.quantity = 50;
+  context.resumeAction = "ASK_QUANTITY";
+
+  const text = buildRouterV2ResponseDraft(context);
+
+  assert.match(text, /cantidad menor/i);
+  assert.doesNotMatch(text, /\b\d+\b/);
+});

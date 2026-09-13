@@ -117,7 +117,15 @@ export function analyzeRouterV2Message(input: {
   if (/\b(reclamo|queja|devolucion)\b/.test(text))
     add(intents, "COMPLAINT");
 
-  if (/\b(asesor|vendedor|atencion humana|hablar con alguien)\b/.test(text))
+  const requestsHuman =
+    /\b(asesor|vendedor|atencion humana|hablar con alguien)\b/.test(text);
+  const optsOut =
+    /\b(no me escriban|no me contacten|dejen de escribirme)\b/.test(text) ||
+    /\bno quiero (?:recibir )?(?:mas )?mensajes(?: (?:comerciales|promocionales|de ustedes|de esta tienda))?[.!]*$/.test(
+      text,
+    );
+
+  if (requestsHuman || optsOut)
     add(intents, "HUMAN_HANDOFF");
 
   const brandMatch = text.match(

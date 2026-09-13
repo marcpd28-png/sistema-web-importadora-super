@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts",
     "test:router-v2": "node --import tsx --test src/lib/router-v2-*.test.ts",
+    "test:chatbot": "node --import tsx --test src/lib/router-v2-*.test.ts src/lib/n8n-outbound.test.ts src/lib/meta-webhook-signature.test.ts src/lib/messages-outbound-regression.test.ts src/lib/n8n-workflows.test.ts src/lib/server-media-url.test.ts",
+    "n8n:validate": "node --import tsx --test src/lib/n8n-workflows.test.ts",
     "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",

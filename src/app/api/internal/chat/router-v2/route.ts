@@ -5,6 +5,7 @@ import { serializeSalesState } from "@/lib/conversation-sales-state";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { prisma } from "@/lib/prisma";
 import { discoverExactProducts } from "@/lib/product-discovery";
+import { evaluateRouterV2AutomationPolicy } from "@/lib/router-v2-automation-policy";
 import { getRouterV2BusinessKnowledge } from "@/lib/router-v2-business-knowledge";
 import { resolveRouterV2CatalogFlow } from "@/lib/router-v2-catalog-flow";
 import { buildRouterV2OutboundMessages } from "@/lib/router-v2-channel-response";
@@ -46,6 +47,7 @@ import { buildRouterV2DecisionStatePatch } from "@/lib/router-v2-state-transitio
 import { resolveRouterV2TextProduct } from "@/lib/router-v2-text-product-resolver";
 import { buildRouterV2VisualDecision } from "@/lib/router-v2-visual-decision";
 import { resolveRouterV2VisualProduct } from "@/lib/router-v2-visual-product-resolver";
+import { normalizeWhatsappPhone } from "@/lib/utils";
 
 const visualHintsSchema = z
   .object({
@@ -175,8 +177,10 @@ export async function POST(request: Request) {
         salesState: true,
         contact: {
           select: {
+            externalId: true,
             name: true,
             phone: true,
+            phoneNormalized: true,
           },
         },
       },
@@ -193,6 +197,48 @@ export async function POST(request: Request) {
       ? serializeSalesState(conversation.salesState)
       : null;
     const currentStateRecord = asStateRecord(currentState);
+    const recipient = normalizeWhatsappPhone(
+      conversation.contact.phone ||
+        conversation.contact.phoneNormalized ||
+        conversation.contact.externalId,
+    );
+    const automation = evaluateRouterV2AutomationPolicy({
+      assignedUserId: conversation.assignedUserId,
+      botEnabled: conversation.botEnabled,
+      status: conversation.status,
+    });
+
+    if (!automation.allowed) {
+      return NextResponse.json({
+        ok: true,
+        automation,
+        conversation: {
+          id: conversation.id,
+          status: conversation.status,
+          botEnabled: conversation.botEnabled,
+          assignedUserId: conversation.assignedUserId,
+          recipient,
+        },
+        currentState,
+        nextAction: "NO_AUTOMATION",
+        shouldPersistState: false,
+        persistedState: null,
+        responsePlan: null,
+        responseContext: null,
+        draftText: null,
+        outboundMessages: [],
+      });
+    }
+
+    if (!recipient) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Conversation does not have a valid WhatsApp recipient",
+        },
+        { status: 422 },
+      );
+    }
 
     const baseAnalysis = analyzeRouterV2Message({
       content: input.content,
@@ -414,6 +460,18 @@ export async function POST(request: Request) {
       }
     }
 
+    if (commercialPrice?.status === "INSUFFICIENT_STOCK") {
+      proposedStatePatch.stage = "AWAITING_QUANTITY";
+      proposedStatePatch.unitPrice = null;
+      proposedStatePatch.priceTier = null;
+      proposedStatePatch.total = null;
+    }
+
+    const responseAction =
+      commercialPrice?.status === "INSUFFICIENT_STOCK"
+        ? "ASK_AVAILABLE_QUANTITY"
+        : nextAction;
+
     const selectedProductCodeForInfo =
       typeof proposedStatePatch.selectedProductCode === "string"
         ? proposedStatePatch.selectedProductCode
@@ -573,7 +631,7 @@ export async function POST(request: Request) {
     const responsePlan = buildRouterV2ResponsePlan({
       finalAction: orderCreationFailed
         ? "HUMAN_HANDOFF"
-        : nextAction,
+        : responseAction,
       state: finalState,
       productQuestion,
       productInformationAvailable: Boolean(productInformation),
@@ -612,11 +670,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
+      automation,
       conversation: {
         id: conversation.id,
         status: conversation.status,
         botEnabled: conversation.botEnabled,
         assignedUserId: conversation.assignedUserId,
+        recipient,
       },
       currentState,
       analysis,
@@ -640,7 +700,9 @@ export async function POST(request: Request) {
       orderCreation,
       paymentMethodUpdate,
       orderStatus,
-      nextAction,
+      nextAction: orderCreationFailed
+        ? "HUMAN_HANDOFF"
+        : responseAction,
       responsePlan,
       responseContext,
       draftText,

@@ -133,52 +133,108 @@ export async function createRouterV2PendingOrder(input: {
 
   const orderNumber = buildOrderNumber();
 
-  const order = await prisma.order.create({
-    data: {
-      orderNumber,
-      status: "PENDING",
-      paymentMethod: null,
-      customerName,
-      customerPhone,
-      customerEmail,
-      customerDocumentType: documentType,
-      customerDocumentNumber: documentNumber,
-      customerAddress: deliveryDetails,
-      deliveryType: mapDeliveryType(deliveryMethod),
-      currencySymbol: input.currencySymbol?.trim() || "S/",
-      total: price.total,
-      adminNotes: `Pedido originado por Router V2. Conversation: ${input.conversationId}. Método de entrega: ${deliveryMethod}.`,
-      items: {
-        create: [
-          {
-            productId: product.id,
-            externalId: product.externalId,
-            code: price.product.code,
-            name: price.product.name,
-            quantity: price.quantity,
-            unitPrice: price.unitPrice,
-            total: price.total,
-            tierLabel: price.priceTier,
-          },
-        ],
-      },
-    },
-    select: {
-      id: true,
-      orderNumber: true,
-      status: true,
-      paymentMethod: true,
-      total: true,
-    },
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      await tx.$queryRaw`
+        SELECT pg_advisory_xact_lock(
+          hashtext(${`router-order:${input.conversationId}`})
+        )
+      `;
 
-  return {
-    status: "CREATED" as const,
-    order: {
-      ...order,
-      total: Number(order.total),
+      const storedState = await tx.conversationSalesState.findUnique({
+        where: { conversationId: input.conversationId },
+        select: { orderNumber: true },
+      });
+
+      if (!storedState) {
+        return {
+          status: "INVALID_SALES_STATE" as const,
+          reason: "SALES_STATE_NOT_PERSISTED" as const,
+        };
+      }
+
+      if (storedState.orderNumber) {
+        const existing = await tx.order.findUnique({
+          where: { orderNumber: storedState.orderNumber },
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            paymentMethod: true,
+            total: true,
+          },
+        });
+
+        if (!existing) {
+          return {
+            status: "INVALID_SALES_STATE" as const,
+            reason: "ORDER_REFERENCE_NOT_FOUND" as const,
+          };
+        }
+
+        return {
+          status: "EXISTING" as const,
+          order: {
+            ...existing,
+            total: Number(existing.total),
+          },
+        };
+      }
+
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          status: "PENDING",
+          paymentMethod: null,
+          customerName,
+          customerPhone,
+          customerEmail,
+          customerDocumentType: documentType,
+          customerDocumentNumber: documentNumber,
+          customerAddress: deliveryDetails,
+          deliveryType: mapDeliveryType(deliveryMethod),
+          currencySymbol: input.currencySymbol?.trim() || "S/",
+          total: price.total,
+          adminNotes: `Pedido originado por Router V2. Conversation: ${input.conversationId}. Método de entrega: ${deliveryMethod}.`,
+          items: {
+            create: [
+              {
+                productId: product.id,
+                externalId: product.externalId,
+                code: price.product.code,
+                name: price.product.name,
+                quantity: price.quantity,
+                unitPrice: price.unitPrice,
+                total: price.total,
+                tierLabel: price.priceTier,
+              },
+            ],
+          },
+        },
+        select: {
+          id: true,
+          orderNumber: true,
+          status: true,
+          paymentMethod: true,
+          total: true,
+        },
+      });
+
+      await tx.conversationSalesState.update({
+        where: { conversationId: input.conversationId },
+        data: { orderNumber: order.orderNumber },
+      });
+
+      return {
+        status: "CREATED" as const,
+        order: {
+          ...order,
+          total: Number(order.total),
+        },
+      };
     },
-  };
+    { maxWait: 5_000, timeout: 15_000 },
+  );
 }
 
 export async function updateRouterV2OrderPaymentMethod(input: {

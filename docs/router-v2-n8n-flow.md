@@ -17,18 +17,22 @@ Este documento describe el flujo objetivo entre WhatsApp/Meta, n8n y el backend 
 
 1. Meta entrega el webhook a n8n.
 2. n8n normaliza el mensaje y llama `POST /api/internal/chat/incoming`.
-3. Guardar `conversationId`, `messageId`, `messageType`, `content` y `mediaUrl` que devuelva/reciba el backend.
-4. Esperar aproximadamente 2.5 segundos para absorber mensajes fragmentados.
-5. Llamar `POST /api/internal/chat/router-v2/batch` con `conversationId` y `triggerMessageId`.
-6. Si `batch.status = SUPERSEDED`, finalizar esa ejecución sin contestar. Otra ejecución más reciente procesará el lote.
-7. Si `batch.status = READY`, usar `batch.content` y `batch.media` como entrada consolidada.
+3. Si el backend devuelve `duplicate = true`, finalizar sin ejecutar el Router; una reentrega no puede procesar otra vez el estado comercial.
+4. Si devuelve `duplicate = false`, guardar `conversationId`, `messageId`, `messageType`, `content` y `mediaUrl` que devuelva/reciba el backend.
+5. Esperar aproximadamente 2.5 segundos para absorber mensajes fragmentados.
+6. Llamar `POST /api/internal/chat/router-v2/batch` con `conversationId` y `triggerMessageId`.
+7. Si `batch.status = SUPERSEDED`, finalizar esa ejecución sin contestar. Otra ejecución más reciente procesará el lote.
+8. Si `batch.status = READY`, usar `batch.content` y `batch.media` como entrada consolidada.
+9. Después de procesar audio o visión y antes de mutar el estado comercial, consultar `batch` otra vez. Si llegó un mensaje más nuevo o un humano ya respondió, terminar la ejecución antigua.
+
+El export importable de esta secuencia está en `n8n/workflows/03-conversation-router-v2.json` y se entrega inactivo.
 
 ## Imagen de producto
 
 Si el lote contiene una imagen y la conversación NO está esperando voucher:
 
 1. n8n descarga el archivo desde Meta usando sus credenciales.
-2. n8n lo convierte a `data:image/...;base64,...` o proporciona una URL HTTP(S) accesible.
+2. n8n lo convierte a `data:image/...;base64,...` o proporciona una URL HTTPS de Meta (`facebook.com`/`fbsbx.com`). El Router nunca envía el token Bearer de Meta a otros dominios.
 3. Llama `POST /api/internal/chat/router-v2/vision` con `imageUrl` y `customerMessage`.
 4. Si `analysis.status = READY`, enviar `visualHints` al endpoint principal del Router V2.
 5. Si Vision falla o la confianza es baja, el Router pide una foto más clara/etiqueta y nunca adivina el SKU.
@@ -38,7 +42,7 @@ No ejecutar Vision cuando el estado sea `AWAITING_PAYMENT_CONFIRMATION`; una ima
 ## Nota de voz / audio
 
 1. n8n descarga el audio desde Meta.
-2. n8n lo convierte a un Data URL de audio base64.
+2. n8n lo convierte a un Data URL de audio base64. Como alternativa, solo se acepta una URL HTTPS de Meta (`facebook.com`/`fbsbx.com`) para descargar con la credencial Bearer.
 3. Llama `POST /api/internal/chat/router-v2/transcribe`.
 4. Si `transcription.status = READY`, usar el texto transcrito como `content` del Router V2.
 5. Si no se puede transcribir, no inventar el contenido; derivar o pedir al cliente que escriba el dato importante.
@@ -59,6 +63,7 @@ Llamar `POST /api/internal/chat/router-v2` con:
 
 El backend devuelve, entre otros:
 
+- `automation`
 - `analysis`
 - `persistedState`
 - `commercialPrice`
@@ -72,6 +77,13 @@ El backend devuelve, entre otros:
 - `orderStatus`
 
 ## Human handoff
+
+Antes de procesar audio o imagen, n8n consulta `sales-state` y detiene la ejecución si el chat ya pertenece a un humano. El endpoint principal vuelve a evaluar `automation.allowed`:
+
+- si es `false`, detener la ejecución sin llamar handoff y sin enviar mensajes; esto significa que el bot ya estaba desactivado, el chat pertenece a un asesor o el estado no es automático;
+- si es `true`, continuar con la decisión del Router.
+
+Después de la redacción opcional y justo antes del outbound, n8n vuelve a consultar `sales-state`. Solo envía si la conversación continúa con `botEnabled=true`, `status=AUTOMATICO` y sin asesor asignado. Esto evita que el bot responda si un humano tomó el chat durante el procesamiento.
 
 Si `nextAction = HUMAN_HANDOFF` o `responsePlan.answerType = HUMAN_HANDOFF`:
 
@@ -129,13 +141,22 @@ No crear orden antes de la confirmación final. No marcar `PAID` por recibir una
 Variables sin valores en el repositorio:
 
 - `N8N_INTERNAL_API_KEY`
+- `N8N_OUTBOUND_WEBHOOK_URL`
+- `N8N_OUTBOUND_API_KEY`
+- `WHATSAPP_APP_SECRET` o `META_APP_SECRET` para validar firmas del webhook directo
 - `OPENAI_API_KEY` para Vision, transcripción y redacción opcional
+- `ROUTER_V2_ENABLE_AI_DRAFTS=true` solo después de aprobar la redacción opcional en staging; por defecto se usa el borrador determinista
 - `ROUTER_V2_VISION_MODEL` opcional
 - `ROUTER_V2_TEXT_MODEL` opcional
 - `ROUTER_V2_TRANSCRIBE_MODEL` opcional
 - `ROUTER_V2_WHOLESALE_CATALOG_URL`
 - `ROUTER_V2_PAYMENT_METHODS`
 - `ROUTER_V2_DELIVERY_METHODS`
+
+Variables obligatorias de n8n para el borrador de staging:
+
+- `ROUTER_V2_BACKEND_BASE_URL`, con la URL del backend de staging y sin `/` final
+- `ROUTER_V2_OUTBOUND_WEBHOOK_URL`, con la URL de prueba de Outbound V2
 
 Antes del cutover también se deben rotar las claves internas que hayan sido expuestas durante desarrollo.
 
@@ -148,3 +169,5 @@ No activar Router V2 ni desconectar ManyChat hasta que:
 3. Se ejecuten pruebas controladas contra PostgreSQL en el worktree.
 4. Se pruebe n8n end-to-end con un canal de prueba o una ventana controlada.
 5. Exista rollback claro hacia la integración actual.
+
+El procedimiento completo, las credenciales pendientes, la matriz E2E y el rollback están en `docs/router-v2-cutover-runbook.md`.

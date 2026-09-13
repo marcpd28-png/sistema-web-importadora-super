@@ -98,6 +98,14 @@ export function buildRouterV2MessageBatch(input: {
     .filter((message) => message.createdAt.getTime() >= cutoff)
     .slice(-8);
 
+  if (!batch.some((message) => message.id === input.triggerMessageId)) {
+    return {
+      status: "SUPERSEDED",
+      triggerMessageId: input.triggerMessageId,
+      latestMessageId: latest.id,
+    };
+  }
+
   const content = batch
     .map((message) => message.content.trim())
     .filter(Boolean)

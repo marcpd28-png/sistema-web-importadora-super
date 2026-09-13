@@ -20,6 +20,7 @@ export type N8nOutboundMessageInput = {
   type: N8nOutboundMessageType;
   mediaUrl?: string | null;
   agentId: string;
+  requestId?: string;
 };
 
 export type N8nOutboundMessageResult = {
@@ -75,6 +76,27 @@ function getRemoteError(payload: unknown) {
     : "n8n rechazó el envío outbound.";
 }
 
+function resolveRequestId(value: string | undefined) {
+  if (value === undefined) return randomUUID();
+
+  const parsed = z
+    .string()
+    .trim()
+    .min(8)
+    .max(120)
+    .regex(/^[a-zA-Z0-9._:-]+$/)
+    .safeParse(value);
+
+  if (!parsed.success) {
+    throw new N8nOutboundError(
+      "El identificador idempotente del envío no es válido.",
+      { code: "INVALID_REQUEST_ID", statusCode: 400 },
+    );
+  }
+
+  return parsed.data;
+}
+
 export async function sendN8nOutboundMessage(
   input: N8nOutboundMessageInput,
   options: SendOptions = {},
@@ -89,7 +111,37 @@ export async function sendN8nOutboundMessage(
     );
   }
 
-  const requestId = randomUUID();
+  const content = input.content.trim();
+  const contentLimit = input.type === "TEXT" ? 4096 : 1024;
+
+  if (!content || content.length > contentLimit) {
+    throw new N8nOutboundError(
+      `El contenido outbound debe tener entre 1 y ${contentLimit} caracteres.`,
+      { code: "INVALID_CONTENT", statusCode: 400 },
+    );
+  }
+
+  if (input.type !== "TEXT") {
+    let mediaUrl: URL;
+
+    try {
+      mediaUrl = new URL(input.mediaUrl ?? "");
+    } catch {
+      throw new N8nOutboundError(
+        "El mensaje multimedia necesita una URL pública válida.",
+        { code: "INVALID_MEDIA_URL", statusCode: 400 },
+      );
+    }
+
+    if (!["http:", "https:"].includes(mediaUrl.protocol)) {
+      throw new N8nOutboundError(
+        "El mensaje multimedia necesita una URL HTTP(S).",
+        { code: "INVALID_MEDIA_URL", statusCode: 400 },
+      );
+    }
+  }
+
+  const requestId = resolveRequestId(input.requestId);
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
@@ -108,7 +160,7 @@ export async function sendN8nOutboundMessage(
         channel: input.channel,
         conversationId: input.conversationId,
         recipient,
-        content: input.content,
+        content,
         type: input.type,
         mediaUrl: input.mediaUrl ?? null,
         agentId: input.agentId,

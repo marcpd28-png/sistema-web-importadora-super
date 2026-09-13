@@ -44,6 +44,11 @@ type CommercialPriceLike =
       productCode: string;
       quantity: number;
     }
+  | {
+      status: "INSUFFICIENT_STOCK";
+      productCode: string;
+      quantity: number;
+    }
   | null;
 
 type OrderStatusLike =

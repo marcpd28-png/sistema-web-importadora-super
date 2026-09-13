@@ -835,6 +835,7 @@ model ChatMessage {
   conversationId    String
   conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   externalMessageId String?          @unique @db.VarChar(120)
+  requestId         String?          @unique @db.VarChar(120)
   direction         MessageDirection
   senderType        MessageSender
   messageType       MessageType      @default(TEXT)

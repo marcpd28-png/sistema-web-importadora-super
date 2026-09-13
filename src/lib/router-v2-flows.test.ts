@@ -10,6 +10,26 @@ import { resolveRouterV2PaymentSelection } from "@/lib/router-v2-payment-selecti
 import { buildRouterV2ResponsePlan } from "@/lib/router-v2-response-plan";
 import { parseRouterV2VisionText } from "@/lib/router-v2-vision-analyzer";
 
+test("opt-out language stops the automatic sales flow", () => {
+  for (const content of [
+    "No me escriban",
+    "No me contacten",
+    "No quiero mensajes",
+  ]) {
+    const analysis = analyzeRouterV2Message({ content });
+    assert.ok(analysis.intents.includes("HUMAN_HANDOFF"));
+    assert.equal(analysis.nextAction, "HUMAN_HANDOFF");
+  }
+});
+
+test("message style preferences do not trigger an opt-out", () => {
+  const analysis = analyzeRouterV2Message({
+    content: "No quiero mensajes largos, dime el precio",
+  });
+
+  assert.equal(analysis.intents.includes("HUMAN_HANDOFF"), false);
+});
+
 test("catalog request asks wholesale or retail", () => {
   const analysis = analyzeRouterV2Message({ content: "Quiero el catalogo" });
   const decision = resolveRouterV2CatalogFlow({

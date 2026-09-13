@@ -78,6 +78,21 @@ test("batch never crosses a bot or agent response boundary", () => {
   }
 });
 
+test("execution stops when a bot or agent already replied after the trigger", () => {
+  const result = buildRouterV2MessageBatch({
+    messages: [
+      message("m1", 0, "quiero comprar"),
+      message("b1", 1, "respuesta ya enviada", {
+        direction: "OUTBOUND",
+        senderType: "AGENT",
+      }),
+    ],
+    triggerMessageId: "m1",
+  });
+
+  assert.equal(result.status, "SUPERSEDED");
+});
+
 test("batch keeps media references while combining text", () => {
   const result = buildRouterV2MessageBatch({
     messages: [

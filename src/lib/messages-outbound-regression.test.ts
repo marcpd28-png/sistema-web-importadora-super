@@ -11,19 +11,39 @@ const inboundRoute = readFileSync(
   "utf8",
 );
 const whatsapp = readFileSync(new URL("./whatsapp.ts", import.meta.url), "utf8");
+const messagesWorkspace = readFileSync(
+  new URL(
+    "../components/admin/messages/MessagesWorkspace.tsx",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 test("el envío manual usa n8n y no llama directamente a Meta", () => {
   assert.match(messagesService, /sendN8nOutboundMessage/);
   assert.doesNotMatch(messagesService, /sendWhatsapp(Text|Media)Message/);
 
   const n8nCall = messagesService.indexOf("const sent = await sendN8nOutboundMessage");
-  const transaction = messagesService.indexOf("return prisma.$transaction", n8nCall);
+  const transaction = messagesService.indexOf("prisma.$transaction", n8nCall);
   assert.ok(n8nCall >= 0 && transaction > n8nCall);
   assert.match(messagesService, /externalMessageId: sent\.messageId/);
+  assert.match(messagesService, /requestId: sent\.requestId/);
   assert.match(messagesService, /status: "sent"/);
 });
 
 test("inbound y ManyChat conservan sus puntos de entrada actuales", () => {
   assert.match(inboundRoute, /processIncomingMessage/);
   assert.match(whatsapp, /sendQuotePdfToManychat/);
+});
+
+test("inbound serializa por contacto y guarda media con el mensaje", () => {
+  assert.match(messagesService, /pg_advisory_xact_lock/);
+  assert.match(messagesService, /mediaUrl: parsed\.mediaUrl/);
+  assert.doesNotMatch(inboundRoute, /prisma\.chatMessage\.update/);
+});
+
+test("el reintento del panel conserva el mismo requestId", () => {
+  assert.match(messagesWorkspace, /const requestId = crypto\.randomUUID\(\)/);
+  assert.match(messagesWorkspace, /for \(let attempt = 0; attempt < 2/);
+  assert.match(messagesWorkspace, /body: requestBody/);
 });

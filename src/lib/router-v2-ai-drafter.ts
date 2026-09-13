@@ -67,22 +67,19 @@ function extractResponsesText(payload: ResponsesApiPayload) {
 }
 
 function numericFacts(value: string) {
-  return new Set(
-    (value.match(/\d+(?:[.,]\d+)*/g) ?? []).map((item) =>
-      item.replace(/[.,]/g, ""),
-    ),
-  );
+  return (value.match(/\d+(?:[.,]\d+)*/g) ?? [])
+    .map((item) => item.replace(/,/g, "."))
+    .sort();
 }
 
 function sameNumericFacts(baseline: string, candidate: string) {
   const expected = numericFacts(baseline);
   const actual = numericFacts(candidate);
 
-  if (expected.size !== actual.size) return false;
-  for (const item of expected) {
-    if (!actual.has(item)) return false;
-  }
-  return true;
+  return (
+    expected.length === actual.length &&
+    expected.every((item, index) => item === actual[index])
+  );
 }
 
 function normalizeToken(value: string) {
@@ -208,6 +205,13 @@ export async function draftRouterV2WithAi(input: {
       status: "FALLBACK",
       text: baseline,
       reason: "ANSWER_TYPE_NOT_AI_DRAFTED",
+    };
+  }
+
+  if (process.env.ROUTER_V2_ENABLE_AI_DRAFTS?.trim().toLowerCase() !== "true") {
+    return {
+      status: "NOT_CONFIGURED",
+      text: baseline,
     };
   }
 

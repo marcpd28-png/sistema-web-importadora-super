@@ -4,6 +4,63 @@ function money(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+type CommercialPriceProduct = {
+  code: string;
+  name: string;
+  brand: string | null;
+  category: string | null;
+  unitPrice: unknown;
+  wholesalePrice: unknown | null;
+  wholesaleMinQty: number;
+  stockUnits: number;
+};
+
+export function calculateRouterV2CommercialPrice(
+  product: CommercialPriceProduct,
+  quantity: number,
+) {
+  if (product.stockUnits < quantity) {
+    return {
+      status: "INSUFFICIENT_STOCK" as const,
+      productCode: product.code,
+      quantity,
+    };
+  }
+
+  const regularPrice = Number(product.unitPrice);
+  const wholesalePrice =
+    product.wholesalePrice === null
+      ? null
+      : Number(product.wholesalePrice);
+  const appliesWholesale =
+    wholesalePrice !== null &&
+    product.wholesaleMinQty > 0 &&
+    quantity >= product.wholesaleMinQty;
+  const appliedUnitPrice = appliesWholesale
+    ? wholesalePrice
+    : regularPrice;
+
+  return {
+    status: "READY" as const,
+    product: {
+      code: product.code,
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+    },
+    quantity,
+    priceTier: appliesWholesale
+      ? ("MAYORISTA" as const)
+      : ("UNITARIO" as const),
+    unitPrice: money(appliedUnitPrice),
+    total: money(appliedUnitPrice * quantity),
+    regularPrice: money(regularPrice),
+    wholesalePrice:
+      wholesalePrice === null ? null : money(wholesalePrice),
+    wholesaleMinQty: product.wholesaleMinQty,
+  };
+}
+
 export async function resolveCommercialPrice(
   productCode: string,
   quantity: number,
@@ -35,6 +92,7 @@ export async function resolveCommercialPrice(
       unitPrice: true,
       wholesalePrice: true,
       wholesaleMinQty: true,
+      stockUnits: true,
     },
   });
 
@@ -46,49 +104,5 @@ export async function resolveCommercialPrice(
     };
   }
 
-  const regularPrice = Number(product.unitPrice);
-
-  const wholesalePrice =
-    product.wholesalePrice === null
-      ? null
-      : Number(product.wholesalePrice);
-
-  const appliesWholesale =
-    wholesalePrice !== null &&
-    product.wholesaleMinQty > 0 &&
-    quantity >= product.wholesaleMinQty;
-
-  const appliedUnitPrice =
-    appliesWholesale
-      ? wholesalePrice
-      : regularPrice;
-
-  return {
-    status: "READY" as const,
-
-    product: {
-      code: product.code,
-      name: product.name,
-      brand: product.brand,
-      category: product.category,
-    },
-
-    quantity,
-
-    priceTier:
-      appliesWholesale
-        ? "MAYORISTA" as const
-        : "UNITARIO" as const,
-
-    unitPrice: money(appliedUnitPrice),
-    total: money(appliedUnitPrice * quantity),
-
-    regularPrice: money(regularPrice),
-    wholesalePrice:
-      wholesalePrice === null
-        ? null
-        : money(wholesalePrice),
-
-    wholesaleMinQty: product.wholesaleMinQty,
-  };
+  return calculateRouterV2CommercialPrice(product, quantity);
 }

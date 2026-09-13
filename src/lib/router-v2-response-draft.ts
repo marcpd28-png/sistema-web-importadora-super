@@ -292,6 +292,10 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
     return appendResume(answer, context);
   }
 
+  if (answerType === "INSUFFICIENT_STOCK") {
+    return "No puedo confirmar esa cantidad con el stock disponible. Indícame una cantidad menor y vuelvo a calcular el precio vigente.";
+  }
+
   if (answerType === "PURCHASE_DECLINED") {
     return "Entendido, no continuaré con ese producto. ¿Qué otro producto o categoría deseas buscar?";
   }

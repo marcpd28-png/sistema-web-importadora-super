@@ -8,11 +8,22 @@ on:
       - "src/lib/router-v2-*.ts"
       - "src/lib/conversation-router-v2.ts"
       - "src/lib/conversation-sales-state.ts"
+      - "src/lib/messages-service.ts"
+      - "src/lib/messages-outbound-regression.test.ts"
+      - "src/lib/meta-webhook-signature*.ts"
+      - "src/lib/n8n-*.ts"
+      - "src/lib/server-media-url*.ts"
+      - "src/lib/whatsapp.ts"
       - "src/app/api/internal/chat/router-v2/**"
       - "src/app/api/internal/chat/incoming/**"
+      - "src/app/api/webhook/whatsapp/**"
+      - "src/components/admin/messages/**"
+      - "n8n/**"
+      - "prisma/migrations/**"
       - "package.json"
       - "package-lock.json"
       - "prisma/schema.prisma"
+      - ".env.example"
       - ".github/workflows/router-v2-ci.yml"
   workflow_dispatch:
 
@@ -36,8 +47,8 @@ jobs:
       - name: TypeScript
         run: ./node_modules/.bin/tsc --noEmit
 
-      - name: Router V2 flow tests
-        run: npm run test:router-v2
+      - name: Chatbot and n8n contract tests
+        run: npm run test:chatbot
 
       - name: Production build
         run: npm run build

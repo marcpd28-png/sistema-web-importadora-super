@@ -446,16 +446,19 @@ export function MessagesWorkspace() {
     }
 
     const now = new Date();
+    const requestId = crypto.randomUUID();
+    const messageType = type as ChatMessage["messageType"];
     const tempMessage: ChatMessage = {
       content,
       conversationId: activeId,
       createdAt: now,
       direction: "OUTBOUND",
       externalMessageId: null,
-      id: `m-new-${now.getTime()}`,
+      id: `m-new-${requestId}`,
       mediaUrl: mediaUrl || null,
-      messageType: type as any,
-      metadata: null,
+      messageType,
+      metadata: { requestId },
+      requestId,
       senderType: "AGENT",
       status: "sending",
     };
@@ -471,7 +474,7 @@ export function MessagesWorkspace() {
                 content,
                 createdAt: now,
                 id: tempMessage.id,
-                messageType: type as any,
+                messageType,
                 senderType: "AGENT",
               },
               lastMessageAt: now,
@@ -483,11 +486,39 @@ export function MessagesWorkspace() {
     window.requestAnimationFrame(() => scrollToBottom("smooth"));
 
     try {
-      const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
-        body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined }),
+      const requestBody = JSON.stringify({
+        content,
+        type,
+        mediaUrl: mediaUrl || undefined,
+        requestId,
+      });
+      const send = () => fetch(`/api/admin/conversations/${activeId}/messages`, {
+        body: requestBody,
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
+      let response: Response | null = null;
+      let networkError: unknown = null;
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          response = await send();
+          networkError = null;
+          if (response.ok || response.status < 500) break;
+        } catch (error: unknown) {
+          networkError = error;
+        }
+
+        if (attempt === 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, 600));
+        }
+      }
+
+      if (!response) {
+        throw networkError instanceof Error
+          ? networkError
+          : new Error("No se pudo contactar el servidor de mensajes.");
+      }
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;

@@ -42,6 +42,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const alreadyHandoff =
+      existing.status === "REQUIERE_ASESOR" &&
+      existing.botEnabled === false;
+
     const conversation = await prisma.conversation.update({
       where: { id: input.conversationId },
       data: {
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
       },
     });
 
-    if (input.reason) {
+    if (input.reason && !alreadyHandoff) {
       await prisma.chatMessage.create({
         data: {
           conversationId: conversation.id,
@@ -71,9 +75,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      alreadyHandoff:
-        existing.status === "REQUIERE_ASESOR" &&
-        existing.botEnabled === false,
+      alreadyHandoff,
       conversation,
     });
   } catch (error: unknown) {
