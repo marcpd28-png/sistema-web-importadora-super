@@ -683,7 +683,7 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
   try {
     return await prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`
+        await tx.$executeRaw`
           SELECT pg_advisory_xact_lock(
             hashtext(${`chat-inbound:${parsed.channel}:${contactId}`})
           )
