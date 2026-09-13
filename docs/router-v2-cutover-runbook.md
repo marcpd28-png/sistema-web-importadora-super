@@ -32,6 +32,18 @@ La migración agrega `ChatMessage.requestId` como clave idempotente única. Debe
 
 ## 2. Importar el workflow sin publicarlo
 
+Para el VPS con el contenedor `n8n` en versión `2.38.6`, usar el importador comprobado:
+
+```bash
+node scripts/import-router-v2-staging.mjs --container n8n
+```
+
+El comando verifica la huella del JSON de la versión `4fbd981`, guarda exportaciones privadas de los borradores y de las versiones publicadas, e importa únicamente un workflow nuevo con `--activeState=false`. Después comprueba sus 43 nodos, su definición y que los workflows anteriores conservan su definición y publicación. Si ya existe un borrador idéntico e inactivo, lo conserva sin duplicarlo. No ejecuta workflows ni reinicia servicios.
+
+Si el script se ejecuta fuera del repositorio, indicar `--workflow /ruta/al/03-conversation-router-v2.json`. Los respaldos se guardan en `importadora-n8n-backup-*` dentro del directorio personal del usuario. Son exportaciones de workflows, no un respaldo completo de la base de n8n ni de sus credenciales. Los detalles de los comandos quedan en un log privado; no se imprimen configuraciones en la terminal.
+
+Ante una importación cuyo resultado no se pudo verificar, el comando conserva el bloqueo local para impedir una repetición automática. Revisar el respaldo y el workflow antes de retirar ese bloqueo o volver a importar. Las pruebas del importador se ejecutan con `node --test scripts/import-router-v2-staging.test.mjs`, utilizando Docker simulado, sin conectar con producción.
+
 En una instalación n8n accesible desde terminal:
 
 ```bash
@@ -73,12 +85,13 @@ El backend necesita, como mínimo:
 - `N8N_INTERNAL_API_KEY`
 - `N8N_OUTBOUND_WEBHOOK_URL`
 - `N8N_OUTBOUND_API_KEY`
-- `WHATSAPP_APP_SECRET` o `META_APP_SECRET`
 - `OPENAI_API_KEY` para audio, visión y redacción opcional
 - `ROUTER_V2_ENABLE_AI_DRAFTS=true` únicamente cuando la redacción opcional haya sido aprobada en staging; el valor seguro inicial es `false`
 - `ROUTER_V2_WHOLESALE_CATALOG_URL`
 - `ROUTER_V2_PAYMENT_METHODS`
 - `ROUTER_V2_DELIVERY_METHODS`
+
+`WHATSAPP_APP_SECRET` o `META_APP_SECRET` es obligatorio para recibir mensajes directamente en `POST /api/webhook/whatsapp`. Su ausencia devuelve `503` en esa ruta. La conexión n8n → `POST /api/internal/chat/incoming` se autentica con `N8N_INTERNAL_API_KEY` y no utiliza el App Secret del backend. Se puede preparar el borrador sin acceso a Meta; antes de cambiar el servicio o el tráfico entrante, confirmar cuál es el webhook que recibe los mensajes y conservar su verificación de origen. No desactivar la validación de firmas para omitir el secreto.
 
 ## 4. Conectar `01 - Incoming Messages` sin activación pública
 
