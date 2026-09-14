@@ -810,6 +810,7 @@ model ConversationSalesState {
   stage               SalesConversationStage @default(AWAITING_PRODUCT_QUERY)
   category            String?                @db.VarChar(120)
   brand               String?                @db.VarChar(120)
+  purchaseIntent      Boolean                @default(false)
   shownProducts       Json?
   selectedProductCode String?                @db.VarChar(64)
   quantity            Int?
@@ -834,6 +835,7 @@ model ChatMessage {
   conversationId    String
   conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   externalMessageId String?          @unique @db.VarChar(120)
+  requestId         String?          @unique @db.VarChar(120)
   direction         MessageDirection
   senderType        MessageSender
   messageType       MessageType      @default(TEXT)

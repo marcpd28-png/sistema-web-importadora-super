@@ -1,0 +1,54 @@
+name: Router V2 CI
+
+on:
+  push:
+    branches:
+      - feat/router-v2-backend
+    paths:
+      - "src/lib/router-v2-*.ts"
+      - "src/lib/conversation-router-v2.ts"
+      - "src/lib/conversation-sales-state.ts"
+      - "src/lib/messages-service.ts"
+      - "src/lib/messages-outbound-regression.test.ts"
+      - "src/lib/meta-webhook-signature*.ts"
+      - "src/lib/n8n-*.ts"
+      - "src/lib/server-media-url*.ts"
+      - "src/lib/whatsapp.ts"
+      - "src/app/api/internal/chat/router-v2/**"
+      - "src/app/api/internal/chat/incoming/**"
+      - "src/app/api/webhook/whatsapp/**"
+      - "src/components/admin/messages/**"
+      - "n8n/**"
+      - "prisma/migrations/**"
+      - "package.json"
+      - "package-lock.json"
+      - "prisma/schema.prisma"
+      - ".env.example"
+      - ".github/workflows/router-v2-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript
+        run: ./node_modules/.bin/tsc --noEmit
+
+      - name: Chatbot and n8n contract tests
+        run: npm run test:chatbot
+
+      - name: Production build
+        run: npm run build

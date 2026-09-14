@@ -127,6 +127,98 @@ test("envía el contrato TEXT con header, requestId y teléfono normalizado", as
   assert.equal(result.provider, "meta-cloud");
 });
 
+test("reutiliza un requestId estable para que n8n deduplique reintentos", async () => {
+  configureOutbound();
+  let payload: Record<string, unknown> | undefined;
+
+  const result = await sendN8nOutboundMessage(
+    input({ requestId: "manual:conversation-1:request-123" }),
+    {
+      fetchImpl: async (_url, init) => {
+        payload = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        return jsonResponse(200, {
+          messageId: "wamid.stable-request",
+          ok: true,
+          provider: "meta-cloud",
+        });
+      },
+    },
+  );
+
+  assert.equal(payload?.requestId, "manual:conversation-1:request-123");
+  assert.equal(result.requestId, "manual:conversation-1:request-123");
+});
+
+test("rechaza requestId inválidos antes de llamar n8n", async () => {
+  configureOutbound();
+  let called = false;
+
+  await assert.rejects(
+    sendN8nOutboundMessage(input({ requestId: "bad request/id" }), {
+      fetchImpl: async () => {
+        called = true;
+        return jsonResponse(200, {
+          messageId: "wamid.should-not-send",
+          ok: true,
+          provider: "meta-cloud",
+        });
+      },
+    }),
+    (error: unknown) =>
+      error instanceof N8nOutboundError &&
+      error.code === "INVALID_REQUEST_ID" &&
+      error.statusCode === 400,
+  );
+
+  assert.equal(called, false);
+});
+
+test("rechaza contenido que excede el límite seguro del tipo", async () => {
+  configureOutbound();
+
+  for (const invalidInput of [
+    input({ content: "x".repeat(4097), type: "TEXT" }),
+    input({
+      content: "x".repeat(1025),
+      mediaUrl: "https://example.test/product.jpg",
+      type: "IMAGE",
+    }),
+  ]) {
+    await assert.rejects(
+      sendN8nOutboundMessage(invalidInput, {
+        fetchImpl: async () => {
+          throw new Error("fetch should not be called");
+        },
+      }),
+      (error: unknown) =>
+        error instanceof N8nOutboundError &&
+        error.code === "INVALID_CONTENT" &&
+        error.statusCode === 400,
+    );
+  }
+});
+
+test("rechaza multimedia sin una URL HTTP pública", async () => {
+  configureOutbound();
+
+  for (const mediaUrl of [null, "/uploads/local.jpg", "file:///tmp/file.jpg"]) {
+    await assert.rejects(
+      sendN8nOutboundMessage(
+        input({ mediaUrl, type: "IMAGE" }),
+        {
+          fetchImpl: async () => {
+            throw new Error("fetch should not be called");
+          },
+        },
+      ),
+      (error: unknown) =>
+        error instanceof N8nOutboundError &&
+        error.code === "INVALID_MEDIA_URL" &&
+        error.statusCode === 400,
+    );
+  }
+});
+
 test("acepta IMAGE, VIDEO y DOCUMENT con mediaUrl", async () => {
   configureOutbound();
 

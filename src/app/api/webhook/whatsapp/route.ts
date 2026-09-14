@@ -1,5 +1,5 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { verifyMetaWebhookSignature } from "@/lib/meta-webhook-signature";
 import { processIncomingMessage } from "@/lib/messages-service";
 
 export const dynamic = "force-dynamic";
@@ -145,26 +145,6 @@ function extractMessages(payload: unknown) {
   return messages;
 }
 
-function verifyMetaSignature(request: NextRequest, rawBody: string) {
-  const appSecret = process.env.WHATSAPP_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim();
-
-  if (!appSecret) {
-    return true;
-  }
-
-  const signature = request.headers.get("x-hub-signature-256")?.replace(/^sha256=/, "");
-
-  if (!signature) {
-    return false;
-  }
-
-  const expected = createHmac("sha256", appSecret).update(rawBody).digest("hex");
-  const signatureBuffer = Buffer.from(signature, "hex");
-  const expectedBuffer = Buffer.from(expected, "hex");
-
-  return signatureBuffer.length === expectedBuffer.length && timingSafeEqual(signatureBuffer, expectedBuffer);
-}
-
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const mode = params.get("hub.mode");
@@ -181,8 +161,23 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
+  const signatureResult = verifyMetaWebhookSignature({
+    appSecret:
+      process.env.WHATSAPP_APP_SECRET?.trim() ||
+      process.env.META_APP_SECRET?.trim(),
+    rawBody,
+    signatureHeader: request.headers.get("x-hub-signature-256"),
+  });
 
-  if (!verifyMetaSignature(request, rawBody)) {
+  if (signatureResult === "MISSING_SECRET") {
+    console.error("Meta webhook app secret is not configured.");
+    return NextResponse.json(
+      { error: "Webhook is not configured" },
+      { status: 503 },
+    );
+  }
+
+  if (signatureResult !== "VALID") {
     return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
   }
 

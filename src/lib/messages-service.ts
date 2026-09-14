@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { Channel, ConversationState, MessageType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { resolveServerMediaUrl } from "@/lib/server-media-url";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import {
+  N8nOutboundError,
   sendN8nOutboundMessage,
   type N8nOutboundMessageType,
 } from "@/lib/n8n-outbound";
@@ -79,12 +81,23 @@ export type GetConversationMessagesInput = z.infer<typeof getConversationMessage
 
 export const incomingMessageSchema = z.object({
   channel: z.nativeEnum(Channel),
-  externalContactId: z.string().min(1).max(120),
-  phone: z.string().max(32).optional(),
-  name: z.string().max(180),
-  externalMessageId: z.string().min(1).max(120),
+  externalContactId: z.string().trim().min(1).max(120),
+  phone: z.string().trim().max(32).optional(),
+  name: z.string().trim().min(1).max(180),
+  externalMessageId: z.string().trim().min(1).max(120),
   type: z.nativeEnum(MessageType).default("UNKNOWN"),
-  content: z.string(),
+  content: z.string().max(10000),
+  mediaUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(5000)
+    .refine(
+      (value) => ["http:", "https:", "data:"].includes(new URL(value).protocol),
+      "mediaUrl must use HTTP(S) or a Data URL",
+    )
+    .nullable()
+    .optional(),
   timestamp: z.string().datetime(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
@@ -385,9 +398,32 @@ export async function getConversationMessages(input: GetConversationMessagesInpu
 }
 
 const sendMessageSchema = z.object({
-  content: z.string().trim().min(1),
-  type: z.nativeEnum(MessageType).default("TEXT"),
-  mediaUrl: z.string().url().optional(),
+  content: z.string().trim().min(1).max(4096),
+  type: z.enum(["TEXT", "IMAGE", "VIDEO", "DOCUMENT"]).default("TEXT"),
+  mediaUrl: z.string().trim().min(1).max(5000).optional(),
+  requestId: z
+    .string()
+    .trim()
+    .min(8)
+    .max(120)
+    .regex(/^[a-zA-Z0-9._:-]+$/)
+    .optional(),
+}).superRefine((message, context) => {
+  if (message.type !== "TEXT" && !message.mediaUrl) {
+    context.addIssue({
+      code: "custom",
+      path: ["mediaUrl"],
+      message: "Los mensajes multimedia necesitan una URL pública.",
+    });
+  }
+
+  if (message.type !== "TEXT" && message.content.length > 1024) {
+    context.addIssue({
+      code: "custom",
+      path: ["content"],
+      message: "La descripción del archivo no puede superar 1024 caracteres.",
+    });
+  }
 });
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
@@ -407,8 +443,25 @@ export async function sendInternalMessage(
     throw new Error("Conversation not found");
   }
 
+  if (parsed.requestId) {
+    const existing = await prisma.chatMessage.findUnique({
+      where: { requestId: parsed.requestId },
+    });
+
+    if (existing) {
+      if (existing.conversationId !== conversationId) {
+        throw new N8nOutboundError(
+          "El identificador de envío ya fue utilizado.",
+          { code: "DUPLICATE_REQUEST_ID", statusCode: 409 },
+        );
+      }
+
+      return existing;
+    }
+  }
+
   const recipient = normalizeMessagePhone(
-    conversation.contact.phone ?? conversation.contact.phoneNormalized ?? conversation.contact.externalId,
+    conversation.contact.phone || conversation.contact.phoneNormalized || conversation.contact.externalId,
   );
 
   if (!recipient) {
@@ -423,48 +476,75 @@ export async function sendInternalMessage(
     throw new Error("Se requiere mediaUrl para enviar archivos multimedia.");
   }
 
-  const outboundType = parsed.type as N8nOutboundMessageType;
+  const outboundType: N8nOutboundMessageType = parsed.type;
+  const outboundMediaUrl = parsed.mediaUrl
+    ? resolveServerMediaUrl(parsed.mediaUrl)
+    : null;
 
   const sent = await sendN8nOutboundMessage({
     agentId,
     channel: "WHATSAPP",
     content: parsed.content,
     conversationId,
-    mediaUrl: parsed.mediaUrl ?? null,
+    mediaUrl: outboundMediaUrl,
     recipient,
+    requestId: parsed.requestId,
     type: outboundType,
   });
 
-  return prisma.$transaction(async (tx) => {
-    const message = await tx.chatMessage.create({
-      data: {
-        conversationId,
-        externalMessageId: sent.messageId,
-        direction: "OUTBOUND",
-        senderType: "AGENT",
-        messageType: parsed.type,
-        content: parsed.content,
-        mediaUrl: parsed.mediaUrl,
-        metadata: {
-          provider: sent.provider,
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const message = await tx.chatMessage.create({
+        data: {
+          conversationId,
+          externalMessageId: sent.messageId,
           requestId: sent.requestId,
+          direction: "OUTBOUND",
+          senderType: "AGENT",
+          messageType: parsed.type,
+          content: parsed.content,
+          mediaUrl: parsed.mediaUrl,
+          metadata: {
+            provider: sent.provider,
+            requestId: sent.requestId,
+          },
+          status: "sent",
         },
-        status: "sent",
-      },
-    });
+      });
 
-    await tx.conversation.update({
-      where: { id: conversationId },
-      data: {
-        lastMessageAt: message.createdAt,
-        botEnabled: false,
-        status: "ATENDIENDO",
-        assignedUserId: agentId,
-      },
-    });
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageAt: message.createdAt,
+          botEnabled: false,
+          status: "ATENDIENDO",
+          assignedUserId: agentId,
+        },
+      });
 
-    return message;
-  });
+      return message;
+    });
+  } catch (error: unknown) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existing = await prisma.chatMessage.findFirst({
+        where: {
+          OR: [
+            { requestId: sent.requestId },
+            { externalMessageId: sent.messageId },
+          ],
+        },
+      });
+
+      if (existing?.conversationId === conversationId) {
+        return existing;
+      }
+    }
+
+    throw error;
+  }
 }
 
 const updateConversationSchema = z.object({
@@ -491,13 +571,25 @@ export async function updateConversation(id: string, input: UpdateConversationIn
 export async function processIncomingMessage(input: IncomingMessageInput) {
   const parsed = incomingMessageSchema.parse(input);
   const timestamp = new Date(parsed.timestamp);
-  const normalizedPhone = normalizeMessagePhone(parsed.phone ?? parsed.externalContactId);
+  const normalizedPhone = normalizeMessagePhone(parsed.phone || parsed.externalContactId);
   const phone = parsed.phone?.trim() || normalizedPhone || null;
 
-  const existingMsg = await prisma.chatMessage.findUnique({
-    where: { externalMessageId: parsed.externalMessageId },
-  });
+  const findDuplicate = async () => {
+    let existing = await prisma.chatMessage.findUnique({
+      where: { externalMessageId: parsed.externalMessageId },
+    });
 
+    if (existing && parsed.mediaUrl && !existing.mediaUrl) {
+      existing = await prisma.chatMessage.update({
+        where: { id: existing.id },
+        data: { mediaUrl: parsed.mediaUrl },
+      });
+    }
+
+    return existing;
+  };
+
+  const existingMsg = await findDuplicate();
   if (existingMsg) {
     return {
       ok: true,
@@ -555,70 +647,144 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
       });
     }
   } else {
-    contact = await prisma.chatContact.create({
-      data: {
-        channel: parsed.channel,
-        externalId: parsed.externalContactId,
-        name: parsed.name,
-        phone,
-        phoneNormalized: normalizedPhone,
-      },
-    });
+    try {
+      contact = await prisma.chatContact.create({
+        data: {
+          channel: parsed.channel,
+          externalId: parsed.externalContactId,
+          name: parsed.name,
+          phone,
+          phoneNormalized: normalizedPhone,
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2002"
+      ) {
+        throw error;
+      }
+
+      contact = await prisma.chatContact.findUnique({
+        where: {
+          channel_externalId: {
+            channel: parsed.channel,
+            externalId: parsed.externalContactId,
+          },
+        },
+      });
+
+      if (!contact) throw error;
+    }
   }
 
-  let conversation = await prisma.conversation.findFirst({
-    where: {
-      contactId: contact.id,
-      channel: parsed.channel,
-      status: { not: "CERRADO" },
-    },
-    orderBy: { lastMessageAt: "desc" },
-  });
+  const contactId = contact.id;
 
-  if (!conversation) {
-    conversation = await prisma.conversation.create({
-      data: {
-        contactId: contact.id,
-        channel: parsed.channel,
-        status: "AUTOMATICO",
-        botEnabled: true,
+  try {
+    return await prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`
+          SELECT pg_advisory_xact_lock(
+            hashtext(${`chat-inbound:${parsed.channel}:${contactId}`})
+          )
+        `;
+
+        let duplicate = await tx.chatMessage.findUnique({
+          where: { externalMessageId: parsed.externalMessageId },
+        });
+
+        if (duplicate) {
+          if (parsed.mediaUrl && !duplicate.mediaUrl) {
+            duplicate = await tx.chatMessage.update({
+              where: { id: duplicate.id },
+              data: { mediaUrl: parsed.mediaUrl },
+            });
+          }
+
+          return {
+            ok: true,
+            duplicate: true,
+            messageId: duplicate.id,
+            conversationId: duplicate.conversationId,
+          };
+        }
+
+        let conversation = await tx.conversation.findFirst({
+          where: {
+            contactId,
+            channel: parsed.channel,
+            status: { not: "CERRADO" },
+          },
+          orderBy: { lastMessageAt: "desc" },
+        });
+
+        if (!conversation) {
+          conversation = await tx.conversation.create({
+            data: {
+              contactId,
+              channel: parsed.channel,
+              status: "AUTOMATICO",
+              botEnabled: true,
+            },
+          });
+        }
+
+        const message = await tx.chatMessage.create({
+          data: {
+            conversationId: conversation.id,
+            externalMessageId: parsed.externalMessageId,
+            direction: "INBOUND",
+            senderType: "CUSTOMER",
+            messageType: parsed.type,
+            content: parsed.content,
+            mediaUrl: parsed.mediaUrl,
+            metadata: parsed.metadata
+              ? (parsed.metadata as Prisma.InputJsonValue)
+              : Prisma.JsonNull,
+            createdAt: timestamp,
+            status: "delivered",
+          },
+        });
+
+        const updatedConversation = await tx.conversation.update({
+          where: { id: conversation.id },
+          data: {
+            lastMessageAt: timestamp,
+            unreadCount: { increment: 1 },
+          },
+        });
+
+        return {
+          ok: true,
+          duplicate: false,
+          contactId,
+          conversationId: updatedConversation.id,
+          messageId: message.id,
+          conversation: {
+            status: updatedConversation.status,
+            botEnabled: updatedConversation.botEnabled,
+            assignedUserId: updatedConversation.assignedUserId,
+          },
+        };
       },
-    });
+      { maxWait: 5_000, timeout: 15_000 },
+    );
+  } catch (error: unknown) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const duplicate = await findDuplicate();
+      if (duplicate) {
+        return {
+          ok: true,
+          duplicate: true,
+          messageId: duplicate.id,
+          conversationId: duplicate.conversationId,
+        };
+      }
+    }
+
+    throw error;
   }
-
-  const [message, updatedConversation] = await prisma.$transaction([
-    prisma.chatMessage.create({
-      data: {
-        conversationId: conversation.id,
-        externalMessageId: parsed.externalMessageId,
-        direction: "INBOUND",
-        senderType: "CUSTOMER",
-        messageType: parsed.type,
-        content: parsed.content,
-        metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
-        createdAt: timestamp,
-        status: "delivered",
-      },
-    }),
-    prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        lastMessageAt: timestamp,
-        unreadCount: { increment: 1 },
-      },
-    }),
-  ]);
-
-  return {
-    ok: true,
-    duplicate: false,
-    contactId: contact.id,
-    conversationId: updatedConversation.id,
-    messageId: message.id,
-    conversation: {
-      status: updatedConversation.status,
-      botEnabled: updatedConversation.botEnabled,
-      assignedUserId: updatedConversation.assignedUserId,
-    },
-  };
 }

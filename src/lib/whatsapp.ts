@@ -1,4 +1,5 @@
 import { cleanWhatsappNumber } from "@/lib/utils";
+import { resolveServerMediaUrl } from "@/lib/server-media-url";
 import { resolveWhatsappCredentials } from "@/lib/whatsapp-credentials";
 
 type QuotePdfNotificationInput = {
@@ -98,20 +99,17 @@ export async function sendWhatsappMediaMessage(
   }
 
   const mediaType = input.type === "IMAGE" ? "image" : input.type === "VIDEO" ? "video" : "document";
-  
-  // Resolve relative URLs to absolute URLs if needed for WhatsApp API (which requires absolute URLs)
-  // Assuming the host URL is required, we use the BASE_URL or just send it as is if it's already absolute.
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000";
-  const absoluteUrl = input.mediaUrl.startsWith("http") ? input.mediaUrl : `${baseUrl}${input.mediaUrl}`;
+
+  const absoluteUrl = resolveServerMediaUrl(input.mediaUrl);
 
   const mediaPayload: { link: string; caption?: string; filename?: string } = {
     link: absoluteUrl,
   };
-  
+
   if (input.caption) {
     mediaPayload.caption = input.caption;
   }
-  
+
   if (mediaType === "document" && input.filename) {
     mediaPayload.filename = input.filename;
   }

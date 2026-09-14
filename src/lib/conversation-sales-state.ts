@@ -53,6 +53,8 @@ export const salesStatePatchSchema = z.object({
     .nullable()
     .optional(),
 
+  purchaseIntent: z.boolean().optional(),
+
   shownProducts: z
     .array(shownProductSchema)
     .max(20)

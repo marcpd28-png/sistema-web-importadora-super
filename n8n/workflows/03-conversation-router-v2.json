@@ -1,0 +1,1121 @@
+{
+  "name": "03 - Conversation Router V2 - STAGING",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "router-v2-trigger",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-1680, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst source = item && typeof item.body === 'object' && item.body !== null ? item.body : item;\nif (source.duplicate === true) return [];\nconst conversationId = String(source.conversationId ?? source.conversation?.id ?? '').trim();\nconst triggerMessageId = String(source.triggerMessageId ?? source.messageId ?? '').trim();\nif (!conversationId || !triggerMessageId) {\n  throw new Error('Router V2 requires conversationId and triggerMessageId/messageId');\n}\nreturn [{\n  json: {\n    conversationId,\n    triggerMessageId,\n    content: typeof source.content === 'string' ? source.content : '',\n    messageType: typeof source.messageType === 'string' ? source.messageType.toUpperCase() : 'TEXT',\n    mediaUrl: typeof source.mediaUrl === 'string' && source.mediaUrl.trim() ? source.mediaUrl.trim() : null,\n    recipient: typeof source.recipient === 'string' ? source.recipient : null,\n    receivedAt: typeof source.timestamp === 'string' ? source.timestamp : new Date().toISOString()\n  }\n}];"
+      },
+      "id": "normalize-router-input",
+      "name": "Normalize Router Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1460, 0]
+    },
+    {
+      "parameters": {
+        "amount": 2.5,
+        "unit": "seconds"
+      },
+      "id": "wait-for-fragments",
+      "name": "Wait for Message Fragments",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [-1240, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/batch' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $('Normalize Router Input').first().json.conversationId, triggerMessageId: $('Normalize Router Input').first().json.triggerMessageId, maxWindowMs: 12000 } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "batch-messages",
+      "name": "Batch Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1020, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "batch-ready-condition",
+              "leftValue": "={{ $json.batch?.status }}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "batch-is-ready",
+      "name": "Batch Is Ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-800, 0]
+    },
+    {
+      "parameters": {},
+      "id": "stop-superseded",
+      "name": "Stop Superseded Execution",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-580, 180]
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/sales-state' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "conversationId",
+              "value": "={{ $('Normalize Router Input').first().json.conversationId }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "load-sales-state",
+      "name": "Load Sales State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-580, -40],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "automation-initially-allowed-condition",
+              "leftValue": "={{ $json.conversation?.botEnabled === true && $json.conversation?.status === 'AUTOMATICO' && !$json.conversation?.assignedUserId }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "automation-initially-allowed",
+      "name": "Automation Initially Allowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-360, 140]
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized = $('Normalize Router Input').first().json;\nconst batchEnvelope = $('Batch Messages').first().json;\nconst batch = batchEnvelope.batch ?? {};\nconst media = Array.isArray(batch.media) ? batch.media : [];\nconst audioMedia = [...media].reverse().find((entry) => String(entry.messageType ?? '').toUpperCase() === 'AUDIO') ?? null;\nconst imageMedia = [...media].reverse().find((entry) => String(entry.messageType ?? '').toUpperCase() === 'IMAGE') ?? null;\nconst latestMedia = media.length ? media[media.length - 1] : null;\nconst salesState = $json.salesState ?? null;\nconst paymentEvidenceStage = salesState?.stage === 'AWAITING_PAYMENT_CONFIRMATION';\nconst isTrustedMetaMediaUrl = (value) => {\n  try {\n    const url = new URL(String(value || ''));\n    const host = url.hostname.toLowerCase();\n    return url.protocol === 'https:' && (host === 'graph.facebook.com' || host.endsWith('.facebook.com') || host === 'lookaside.fbsbx.com' || host.endsWith('.fbsbx.com'));\n  } catch {\n    return false;\n  }\n};\nreturn [{\n  json: {\n    ...normalized,\n    batch,\n    content: typeof batch.content === 'string' ? batch.content : normalized.content,\n    media,\n    latestMedia,\n    audioMedia,\n    imageMedia,\n    salesState,\n    needsAudio: Boolean(audioMedia),\n    needsVision: Boolean(imageMedia) && !paymentEvidenceStage,\n    audioRemoteTrusted: Boolean(audioMedia && isTrustedMetaMediaUrl(audioMedia.mediaUrl)),\n    imageRemoteTrusted: Boolean(imageMedia && isTrustedMetaMediaUrl(imageMedia.mediaUrl)),\n    paymentEvidenceStage\n  }\n}];"
+      },
+      "id": "prepare-media-context",
+      "name": "Prepare Media Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-360, -40]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-audio-condition",
+              "leftValue": "={{ $json.needsAudio }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "has-audio",
+      "name": "Has Audio",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-140, -40]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "audio-data-url-condition",
+              "leftValue": "={{ $json.audioMedia?.mediaUrl || '' }}",
+              "rightValue": "data:audio/",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "audio-is-data-url",
+      "name": "Audio Is Data URL",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [80, -180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "audio-meta-url-condition",
+              "leftValue": "={{ $('Prepare Media Context').first().json.audioRemoteTrusted }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "audio-url-is-trusted-meta",
+      "name": "Audio URL Is Trusted Meta",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [300, -80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Prepare Media Context').first().json;\nreturn [{ json: { ...context, audioDataUrl: context.audioMedia.mediaUrl } }];"
+      },
+      "id": "use-audio-data-url",
+      "name": "Use Audio Data URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, -280],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.audioMedia.mediaUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "download-audio",
+      "name": "Download Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, -80],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "meta-whatsapp-bearer",
+          "name": "Meta WhatsApp Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Prepare Media Context').first().json;\nconst buffer = await helpers.getBinaryDataBuffer(0, 'data');\nconst mimeType = $binary?.data?.mimeType || 'audio/ogg';\nif (!String(mimeType).startsWith('audio/')) throw new Error('Downloaded media is not audio');\nreturn [{ json: { ...context, audioDataUrl: `data:${mimeType};base64,${buffer.toString('base64')}` } }];"
+      },
+      "id": "audio-to-data-url",
+      "name": "Audio to Data URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, -80],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/transcribe' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { audioDataUrl: $json.audioDataUrl, language: 'es' } }}",
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "id": "transcribe-audio",
+      "name": "Transcribe Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, -180],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "transcription-ready-condition",
+              "leftValue": "={{ $json.transcription?.status }}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "transcription-is-ready",
+      "name": "Transcription Is Ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, -180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/handoff' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $('Normalize Router Input').first().json.conversationId, reason: 'No se pudo transcribir la nota de voz de forma segura' } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "handoff-audio-failure",
+      "name": "Handoff Audio Failure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1180, -80],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "stop-audio-failure",
+      "name": "Stop After Audio Handoff",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1400, -80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "needs-vision-condition",
+              "leftValue": "={{ $('Prepare Media Context').first().json.needsVision }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "needs-vision",
+      "name": "Needs Product Vision",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1180, -280]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "image-data-url-condition",
+              "leftValue": "={{ $('Prepare Media Context').first().json.imageMedia?.mediaUrl || '' }}",
+              "rightValue": "data:image/",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "image-is-data-url",
+      "name": "Image Is Data URL",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1400, -280]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "image-meta-url-condition",
+              "leftValue": "={{ $('Prepare Media Context').first().json.imageRemoteTrusted }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "image-url-is-trusted-meta",
+      "name": "Image URL Is Trusted Meta",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1620, -180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Prepare Media Context').first().json;\nreturn [{ json: { ...context, imageDataUrl: context.imageMedia.mediaUrl } }];"
+      },
+      "id": "use-image-data-url",
+      "name": "Use Image Data URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1620, -380],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Prepare Media Context').first().json.imageMedia.mediaUrl }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "download-image",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1620, -180],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "meta-whatsapp-bearer",
+          "name": "Meta WhatsApp Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Prepare Media Context').first().json;\nconst buffer = await helpers.getBinaryDataBuffer(0, 'data');\nconst mimeType = $binary?.data?.mimeType || 'image/jpeg';\nif (!String(mimeType).startsWith('image/')) throw new Error('Downloaded media is not an image');\nreturn [{ json: { ...context, imageDataUrl: `data:${mimeType};base64,${buffer.toString('base64')}` } }];"
+      },
+      "id": "image-to-data-url",
+      "name": "Image to Data URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1840, -180],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/vision' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { imageUrl: $json.imageDataUrl, customerMessage: $('Prepare Media Context').first().json.content } }}",
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "id": "analyze-image",
+      "name": "Analyze Product Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2060, -280],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Prepare Media Context').first().json;\nlet content = context.content || '';\nlet visualHints = null;\nif (context.needsAudio) {\n  try {\n    const transcription = $('Transcribe Audio').first().json.transcription;\n    if (transcription?.status === 'READY' && typeof transcription.text === 'string') content = transcription.text;\n  } catch {}\n}\nif (context.needsVision) {\n  try {\n    const vision = $('Analyze Product Image').first().json;\n    if (vision?.analysis?.status === 'READY') visualHints = vision.visualHints ?? vision.analysis.hints ?? null;\n  } catch {}\n}\nconst latestMedia = context.latestMedia;\nlet messageType = context.messageType || 'TEXT';\nif (context.needsAudio) messageType = 'AUDIO';\nelse if (latestMedia?.messageType) messageType = String(latestMedia.messageType).toUpperCase();\nreturn [{\n  json: {\n    conversationId: context.conversationId,\n    triggerMessageId: context.triggerMessageId,\n    content,\n    messageType,\n    mediaUrl: latestMedia?.mediaUrl ?? context.mediaUrl ?? null,\n    visualHints\n  }\n}];"
+      },
+      "id": "build-router-payload",
+      "name": "Build Router Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2280, -40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/batch' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $('Build Router Payload').first().json.conversationId, triggerMessageId: $('Build Router Payload').first().json.triggerMessageId, maxWindowMs: 12000 } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "recheck-latest-message",
+      "name": "Recheck Latest Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2500, -40],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "latest-message-still-ready-condition",
+              "leftValue": "={{ $json.batch?.status }}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "latest-message-still-ready",
+      "name": "Latest Message Still Ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2720, -40]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $('Build Router Payload').first().json.conversationId, content: $('Build Router Payload').first().json.content, messageType: $('Build Router Payload').first().json.messageType, mediaUrl: $('Build Router Payload').first().json.mediaUrl, visualHints: $('Build Router Payload').first().json.visualHints } }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "id": "route-message-v2",
+      "name": "Route Message V2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2940, -40],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/handoff' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $('Normalize Router Input').first().json.conversationId, reason: 'Router V2 no pudo procesar el mensaje; revisar ejecución ' + $execution.id } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "handoff-router-error",
+      "name": "Handoff Router Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3160, 180],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "stop-router-error",
+      "name": "Stop After Router Error",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3380, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "automation-allowed-condition",
+              "leftValue": "={{ $json.automation?.allowed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "automation-is-allowed",
+      "name": "Automation Is Allowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3160, -40]
+    },
+    {
+      "parameters": {},
+      "id": "stop-no-automation",
+      "name": "Stop - Human Owns Conversation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3380, 60]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "handoff-needed-condition",
+              "leftValue": "={{ $json.nextAction === 'HUMAN_HANDOFF' || $json.responsePlan?.answerType === 'HUMAN_HANDOFF' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "handoff-is-needed",
+      "name": "Handoff Is Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3380, -160]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/handoff' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $json.conversation.id, reason: 'Handoff solicitado por Router V2: ' + ($json.analysis?.nextAction || $json.nextAction || 'HUMAN_HANDOFF') } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "mark-human-handoff",
+      "name": "Mark Human Handoff",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3600, -260],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "stop-human-handoff",
+      "name": "Stop After Human Handoff",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3820, -260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/router-v2/draft' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { baseline: $json.draftText, context: $json.responseContext } }}",
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "id": "optional-ai-draft",
+      "name": "Optional AI Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3600, -60],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $vars.ROUTER_V2_BACKEND_BASE_URL + '/api/internal/chat/sales-state' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "conversationId",
+              "value": "={{ $('Route Message V2').first().json.conversation.id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "recheck-automation-ownership",
+      "name": "Recheck Automation Ownership",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3820, 40],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "automation-still-allowed-condition",
+              "leftValue": "={{ $json.conversation?.botEnabled === true && $json.conversation?.status === 'AUTOMATICO' && !$json.conversation?.assignedUserId }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "automation-still-allowed",
+      "name": "Automation Still Allowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [4040, 40]
+    },
+    {
+      "parameters": {
+        "jsCode": "const router = $('Route Message V2').first().json;\nconst normalized = $('Normalize Router Input').first().json;\nconst messages = Array.isArray(router.outboundMessages) ? router.outboundMessages : [];\nlet finalText = typeof router.draftText === 'string' ? router.draftText.trim() : '';\ntry {\n  const drafted = $('Optional AI Draft').first().json;\n  if (typeof drafted.text === 'string' && drafted.text.trim()) finalText = drafted.text.trim();\n} catch {}\nif (!finalText) {\n  finalText = messages\n    .filter((message) => String(message.type || 'TEXT').toUpperCase() === 'TEXT')\n    .map((message) => typeof message.text === 'string' ? message.text.trim() : '')\n    .filter(Boolean)\n    .join('\\n');\n}\nfunction splitWhatsappText(value, maxLength = 4000) {\n  const chunks = [];\n  let remaining = String(value || '').trim();\n  while (remaining.length > maxLength) {\n    const candidate = remaining.slice(0, maxLength + 1);\n    const breakpoints = [candidate.lastIndexOf('\\n\\n'), candidate.lastIndexOf('\\n'), candidate.lastIndexOf(' ')];\n    const safeBreakpoint = breakpoints.find((index) => index >= Math.floor(maxLength * 0.6));\n    const cut = typeof safeBreakpoint === 'number' && safeBreakpoint > 0 ? safeBreakpoint : maxLength;\n    chunks.push(remaining.slice(0, cut).trim());\n    remaining = remaining.slice(cut).trimStart();\n  }\n  if (remaining) chunks.push(remaining);\n  return chunks;\n}\nconst recipient = router.conversation?.recipient || normalized.recipient;\nif ((messages.length || finalText) && !recipient) throw new Error('Router V2 did not return a valid WhatsApp recipient');\nconst prepared = [];\nlet insertedText = false;\nfor (const message of messages) {\n  const type = String(message.type || 'TEXT').toUpperCase();\n  if (type === 'TEXT') {\n    if (!insertedText) {\n      for (const chunk of splitWhatsappText(finalText || message.text)) prepared.push({ type: 'TEXT', content: chunk, mediaUrl: null });\n      insertedText = true;\n    }\n    continue;\n  }\n  let content = '';\n  let mediaUrl = null;\n  if (type === 'IMAGE') {\n    content = message.caption || 'Imagen del producto';\n    mediaUrl = message.imageUrl || message.mediaUrl || null;\n  } else if (type === 'DOCUMENT') {\n    content = message.caption || message.filename || 'Documento';\n    mediaUrl = message.documentUrl || message.mediaUrl || null;\n  } else if (type === 'VIDEO') {\n    content = message.caption || 'Video del producto';\n    mediaUrl = message.videoUrl || message.mediaUrl || null;\n  } else {\n    throw new Error(`Unsupported outbound type: ${type}`);\n  }\n  if (!mediaUrl) throw new Error(`${type} outbound message is missing mediaUrl`);\n  prepared.push({ type, content: String(content).trim(), mediaUrl });\n}\nif (!insertedText) {\n  for (const chunk of splitWhatsappText(finalText)) prepared.push({ type: 'TEXT', content: chunk, mediaUrl: null });\n}\nreturn prepared.map((message, index) => ({\n  json: {\n    channel: 'WHATSAPP',\n    conversationId: router.conversation.id,\n    recipient,\n    content: message.content,\n    type: message.type,\n    mediaUrl: message.mediaUrl,\n    agentId: 'router-v2-bot',\n    requestId: `router:${normalized.triggerMessageId}:${index + 1}`,\n    timestamp: new Date().toISOString()\n  }\n}));"
+      },
+      "id": "prepare-outbound-items",
+      "name": "Prepare Ordered Outbound",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4260, -60]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ROUTER_V2_OUTBOUND_WEBHOOK_URL }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 400
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "dispatch-outbound",
+      "name": "Dispatch via Outbound V2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4480, -60],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1500,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "outbound-v2-internal-api",
+          "name": "Outbound V2 Internal API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "router-completed",
+      "name": "Router V2 Completed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [4700, -60]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [[{ "node": "Normalize Router Input", "type": "main", "index": 0 }]]
+    },
+    "Normalize Router Input": {
+      "main": [[{ "node": "Wait for Message Fragments", "type": "main", "index": 0 }]]
+    },
+    "Wait for Message Fragments": {
+      "main": [[{ "node": "Batch Messages", "type": "main", "index": 0 }]]
+    },
+    "Batch Messages": {
+      "main": [[{ "node": "Batch Is Ready", "type": "main", "index": 0 }]]
+    },
+    "Batch Is Ready": {
+      "main": [
+        [{ "node": "Load Sales State", "type": "main", "index": 0 }],
+        [{ "node": "Stop Superseded Execution", "type": "main", "index": 0 }]
+      ]
+    },
+    "Load Sales State": {
+      "main": [[{ "node": "Automation Initially Allowed", "type": "main", "index": 0 }]]
+    },
+    "Automation Initially Allowed": {
+      "main": [
+        [{ "node": "Prepare Media Context", "type": "main", "index": 0 }],
+        [{ "node": "Stop - Human Owns Conversation", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Media Context": {
+      "main": [[{ "node": "Has Audio", "type": "main", "index": 0 }]]
+    },
+    "Has Audio": {
+      "main": [
+        [{ "node": "Audio Is Data URL", "type": "main", "index": 0 }],
+        [{ "node": "Needs Product Vision", "type": "main", "index": 0 }]
+      ]
+    },
+    "Audio Is Data URL": {
+      "main": [
+        [{ "node": "Use Audio Data URL", "type": "main", "index": 0 }],
+        [{ "node": "Audio URL Is Trusted Meta", "type": "main", "index": 0 }]
+      ]
+    },
+    "Audio URL Is Trusted Meta": {
+      "main": [
+        [{ "node": "Download Audio", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Audio Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Use Audio Data URL": {
+      "main": [
+        [{ "node": "Transcribe Audio", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Audio Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Download Audio": {
+      "main": [
+        [{ "node": "Audio to Data URL", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Audio Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Audio to Data URL": {
+      "main": [
+        [{ "node": "Transcribe Audio", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Audio Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Transcribe Audio": {
+      "main": [
+        [{ "node": "Transcription Is Ready", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Audio Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Transcription Is Ready": {
+      "main": [
+        [{ "node": "Needs Product Vision", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Audio Failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handoff Audio Failure": {
+      "main": [[{ "node": "Stop After Audio Handoff", "type": "main", "index": 0 }]]
+    },
+    "Needs Product Vision": {
+      "main": [
+        [{ "node": "Image Is Data URL", "type": "main", "index": 0 }],
+        [{ "node": "Build Router Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Image Is Data URL": {
+      "main": [
+        [{ "node": "Use Image Data URL", "type": "main", "index": 0 }],
+        [{ "node": "Image URL Is Trusted Meta", "type": "main", "index": 0 }]
+      ]
+    },
+    "Image URL Is Trusted Meta": {
+      "main": [
+        [{ "node": "Download Image", "type": "main", "index": 0 }],
+        [{ "node": "Build Router Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Use Image Data URL": {
+      "main": [
+        [{ "node": "Analyze Product Image", "type": "main", "index": 0 }],
+        [{ "node": "Build Router Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [{ "node": "Image to Data URL", "type": "main", "index": 0 }],
+        [{ "node": "Build Router Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Image to Data URL": {
+      "main": [
+        [{ "node": "Analyze Product Image", "type": "main", "index": 0 }],
+        [{ "node": "Build Router Payload", "type": "main", "index": 0 }]
+      ]
+    },
+    "Analyze Product Image": {
+      "main": [[{ "node": "Build Router Payload", "type": "main", "index": 0 }]]
+    },
+    "Build Router Payload": {
+      "main": [[{ "node": "Recheck Latest Message", "type": "main", "index": 0 }]]
+    },
+    "Recheck Latest Message": {
+      "main": [[{ "node": "Latest Message Still Ready", "type": "main", "index": 0 }]]
+    },
+    "Latest Message Still Ready": {
+      "main": [
+        [{ "node": "Route Message V2", "type": "main", "index": 0 }],
+        [{ "node": "Stop Superseded Execution", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route Message V2": {
+      "main": [
+        [{ "node": "Automation Is Allowed", "type": "main", "index": 0 }],
+        [{ "node": "Handoff Router Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handoff Router Error": {
+      "main": [[{ "node": "Stop After Router Error", "type": "main", "index": 0 }]]
+    },
+    "Automation Is Allowed": {
+      "main": [
+        [{ "node": "Handoff Is Needed", "type": "main", "index": 0 }],
+        [{ "node": "Stop - Human Owns Conversation", "type": "main", "index": 0 }]
+      ]
+    },
+    "Handoff Is Needed": {
+      "main": [
+        [{ "node": "Mark Human Handoff", "type": "main", "index": 0 }],
+        [{ "node": "Optional AI Draft", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mark Human Handoff": {
+      "main": [[{ "node": "Stop After Human Handoff", "type": "main", "index": 0 }]]
+    },
+    "Optional AI Draft": {
+      "main": [[{ "node": "Recheck Automation Ownership", "type": "main", "index": 0 }]]
+    },
+    "Recheck Automation Ownership": {
+      "main": [[{ "node": "Automation Still Allowed", "type": "main", "index": 0 }]]
+    },
+    "Automation Still Allowed": {
+      "main": [
+        [{ "node": "Prepare Ordered Outbound", "type": "main", "index": 0 }],
+        [{ "node": "Stop - Human Owns Conversation", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Ordered Outbound": {
+      "main": [[{ "node": "Dispatch via Outbound V2", "type": "main", "index": 0 }]]
+    },
+    "Dispatch via Outbound V2": {
+      "main": [[{ "node": "Router V2 Completed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": true,
+    "executionTimeout": 180
+  },
+  "pinData": {},
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -168,6 +168,7 @@ export async function PATCH(request: Request) {
             stage: "AWAITING_PRODUCT_QUERY",
             category: null,
             brand: null,
+            purchaseIntent: false,
             shownProducts: Prisma.JsonNull,
             selectedProductCode: null,
             quantity: null,
@@ -207,6 +208,10 @@ export async function PATCH(request: Request) {
 
     if (patch.brand !== undefined) {
       data.brand = patch.brand;
+    }
+
+    if (patch.purchaseIntent !== undefined) {
+      data.purchaseIntent = patch.purchaseIntent;
     }
 
     if (patch.shownProducts !== undefined) {
@@ -286,6 +291,9 @@ export async function PATCH(request: Request) {
 
           brand:
             patch.brand ?? null,
+
+          purchaseIntent:
+            patch.purchaseIntent ?? false,
 
           shownProducts:
             patch.shownProducts ?? undefined,
