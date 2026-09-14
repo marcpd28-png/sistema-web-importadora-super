@@ -67,8 +67,12 @@ function hasHardcodedInternalHeader(node) {
 }
 
 function readsExecuteWorkflow(node) {
-  const value = node?.parameters?.workflowId ?? node?.parameters?.workflow?.value;
-  return typeof value === "string" ? value : null;
+  const selector = node?.parameters?.workflowId ?? node?.parameters?.workflow?.value;
+  if (typeof selector === "string") return selector;
+  if (selector && typeof selector === "object" && typeof selector.value === "string") {
+    return selector.value;
+  }
+  return null;
 }
 
 function exportWorkflows(container) {
