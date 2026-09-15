@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { encryptWhatsappToken } from "@/lib/whatsapp-token-crypto";
 import { prisma } from "@/lib/prisma";
 import { exchangeMetaAuthorizationCode, extractGrantedPermissions, extractWhatsappPhoneNumbers, graphGet, metaErrorResponse } from "@/lib/meta-whatsapp";
+import { hasSubscribedMetaApp } from "@/lib/meta-review-checks";
 import { embeddedSignupExchangeSchema, getSessionInfoIds, resolveEmbeddedSignupPhone } from "@/lib/whatsapp-meta-schema";
 import { upsertLocalWhatsappIntegration } from "@/lib/whatsapp-integrations";
 
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
           verifiedName: phone.verifiedName,
         },
       },
-      subscribedApp: Array.isArray(subscribedApps.data) && subscribedApps.data.length > 0,
+      subscribedApp: hasSubscribedMetaApp(subscribedApps, process.env.META_APP_ID),
       realSendTested: false,
       realSendLabel: "Envío real: NO PROBADO",
     });

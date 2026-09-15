@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { extractGrantedPermissions, graphGet, metaErrorResponse } from "@/lib/meta-whatsapp";
+import { hasSubscribedMetaApp } from "@/lib/meta-review-checks";
 import { resolveWhatsappCredentials } from "@/lib/whatsapp-credentials";
 
 export const dynamic = "force-dynamic";
@@ -37,15 +38,16 @@ export async function POST() {
       businessLinkedFromSignup: Boolean(selected.businessId),
       wabaAccessible: waba.id === selected.wabaId,
       phoneAccessible: phone.id === selected.phoneNumberId,
-      subscribedApp: Array.isArray(subscribedApps.data) && subscribedApps.data.length > 0,
+      subscribedApp: hasSubscribedMetaApp(subscribedApps, process.env.META_APP_ID),
     };
+    const ok = Object.values(verified).every(Boolean);
 
     const grantedScopes = extractGrantedPermissions(permissionsPayload);
     await prisma.whatsappIntegration.update({
       where: { id: selected.id },
       data: {
         displayPhoneNumber: typeof phone.display_phone_number === "string" ? phone.display_phone_number : undefined,
-        lastVerifiedAt: new Date(),
+        lastVerifiedAt: ok ? new Date() : undefined,
         scopes: grantedScopes.length ? grantedScopes : undefined,
         status: "ACTIVE",
         verifiedName: typeof phone.verified_name === "string" ? phone.verified_name : undefined,
@@ -53,7 +55,7 @@ export async function POST() {
     });
 
     return NextResponse.json({
-      ok: Object.values(verified).every(Boolean),
+      ok,
       verified,
       diagnostics: {
         appId: process.env.META_APP_ID?.trim() || process.env.NEXT_PUBLIC_META_APP_ID?.trim() || null,

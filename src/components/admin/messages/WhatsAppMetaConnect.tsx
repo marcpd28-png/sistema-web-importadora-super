@@ -147,7 +147,11 @@ export function WhatsAppMetaConnect() {
         setSessionInfo(null);
         await loadStatus();
       })
-      .catch((error: unknown) => setMessage(error instanceof Error ? error.message : "No se pudo conectar WhatsApp."))
+      .catch((error: unknown) => {
+        setAuthorizationCode(null);
+        setSessionInfo(null);
+        setMessage(error instanceof Error ? error.message : "No se pudo conectar WhatsApp.");
+      })
       .finally(() => setBusy(false));
   }, [authorizationCode, busy, sessionInfo]);
 
