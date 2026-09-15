@@ -227,10 +227,7 @@ export async function getConversations(input: GetConversationsInput) {
       NOT: {
         contact: {
           is: {
-            OR: [
-              { externalId: { startsWith: "SIMULATOR:" } },
-              { tags: { has: "simulador" } },
-            ],
+            externalId: { startsWith: "SIMULATOR:" },
           },
         },
       },
