@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasSubscribedMetaApp } from "@/lib/meta-review-checks";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { encryptWhatsappToken } from "@/lib/whatsapp-token-crypto";
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
         verifiedName: integration.verifiedName,
         scopes: integration.scopes,
       },
-      subscribedApp: Array.isArray(subscribedApps.data) && subscribedApps.data.length > 0,
+      subscribedApp: hasSubscribedMetaApp(subscribedApps, process.env.META_APP_ID),
       realSendTested: false,
       realSendLabel: "Envío real: NO PROBADO",
     });

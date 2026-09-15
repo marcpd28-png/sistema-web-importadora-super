@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasSubscribedMetaApp } from "@/lib/meta-review-checks";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { graphGet, metaErrorResponse } from "@/lib/meta-whatsapp";
@@ -37,10 +38,12 @@ export async function POST() {
       businessAccessible: business.id === selected.businessId,
       wabaAccessible: waba.id === selected.wabaId,
       phoneAccessible: phone.id === selected.phoneNumberId,
-      subscribedApp: Array.isArray(subscribedApps.data) && subscribedApps.data.length > 0,
+      subscribedApp: hasSubscribedMetaApp(subscribedApps, process.env.META_APP_ID),
     };
 
-    await prisma.whatsappIntegration.update({ where: { id: selected.id }, data: { lastVerifiedAt: new Date(), status: "ACTIVE" } });
+    if (Object.values(verified).every(Boolean)) {
+      await prisma.whatsappIntegration.update({ where: { id: selected.id }, data: { lastVerifiedAt: new Date() } });
+    }
 
     return NextResponse.json({
       ok: Object.values(verified).every(Boolean),
