@@ -1201,3 +1201,18 @@
     max-width: 92%;
   }
 }
+
+.simulator-media-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simulator-media-message img {
+  border-radius: 10px;
+  display: block;
+  height: auto;
+  max-height: 280px;
+  max-width: min(320px, 100%);
+  object-fit: cover;
+}

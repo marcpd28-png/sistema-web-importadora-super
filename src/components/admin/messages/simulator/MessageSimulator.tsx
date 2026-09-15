@@ -254,7 +254,14 @@ export function MessageSimulator() {
                     {isCustomer ? <UserRound size={13} /> : <Bot size={13} />}
                     <span>{isCustomer ? "Cliente" : isBot ? "Bot" : "Sistema"}</span>
                   </div>
-                  <p>{message.content}</p>
+                  {message.messageType === "IMAGE" && message.mediaUrl ? (
+                    <div className="simulator-media-message">
+                      <img alt={message.content || "Imagen enviada"} src={message.mediaUrl} />
+                      {message.content ? <p>{message.content}</p> : null}
+                    </div>
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
                   <time>{formatTime(message.createdAt)}</time>
                 </div>
               );

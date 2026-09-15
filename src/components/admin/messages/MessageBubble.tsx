@@ -48,10 +48,28 @@ export function MessageBubble({ message }: Props) {
       
       <div className="message-content" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
         {isTextLike && <span>{message.content}</span>}
-        {message.messageType === "IMAGE" && (
+        {message.messageType === "IMAGE" && message.mediaUrl && (
+          <div style={{ margin: '4px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <img
+              alt={message.content || "Imagen enviada"}
+              src={message.mediaUrl}
+              style={{
+                borderRadius: '10px',
+                display: 'block',
+                height: 'auto',
+                maxHeight: '260px',
+                maxWidth: '100%',
+                objectFit: 'cover',
+              }}
+            />
+            {message.content ? (
+              <span style={{ fontSize: '13px', whiteSpace: 'pre-wrap' }}>{message.content}</span>
+            ) : null}
+          </div>
+        )}
+        {message.messageType === "IMAGE" && !message.mediaUrl && (
           <div style={{ margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-             <span style={{ fontSize: '16px' }}>📷</span>
-             <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.8 }}>Imagen recibida</span>
+            <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.8 }}>Imagen sin URL disponible</span>
           </div>
         )}
       </div>
