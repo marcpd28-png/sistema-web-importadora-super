@@ -48,6 +48,8 @@ La entrada de WhatsApp y ManyChat conserva el registro de mensajes reales, pero 
 
 ## Componentes del VPS
 
+Las consultas de productos siguen la [regla general de identificación y disponibilidad](product-search-rule.md): corrección prudente de escritura, conservación de modelo/capacidad/versión, disponibilidad consultada en vivo y protección de productos ocultos.
+
 - Web: `/home/IMPORTADORA`, PM2 `importadora`, puerto 4000; rama `codex/desarrollo-actualizado`.
 - Motor existente: `/home/IMPORTADORA-router-v2-staging`, PM2 `importadora-router-v2-staging`, puerto 4001; rama `codex/bc-router-simulador`.
 - Nginx envía `/api/internal/chat/router-v2*` y `/api/internal/chat/sales-state` al motor.
