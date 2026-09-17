@@ -78,3 +78,37 @@ agenda admite hasta 200 solicitudes y 100 temas; no se fusionan SKUs por similit
 La capa completa de perfiles comerciales, revisión humana y familias del documento
 inicial no se sustituye por este cambio: aquí se implementa la integración de consulta
 y seguimiento sobre los datos existentes.
+
+## Despliegue verificado — 17 de septiembre de 2026
+
+- Web: código `09c3a9201dab493821ff370fa1b601a3c614a1b1`, rama
+  `codex/desarrollo-actualizado`, PM2 `importadora`, puerto 4000.
+- Motor: `fe81989fe6c9dc7e937892d8f55717f5f6155866`, rama
+  `codex/bc-router-simulador`, PM2 `importadora-router-v2-staging`, puerto 4001.
+- Entrada del simulador `HVFMz7fCQXRNXB3U` publicada y comparada con el grafo
+  preparado. Versión: `7dfdb014-9303-454d-b74c-cf5c04c20928`.
+- Dos migraciones aplicadas; compilaciones completas de ambas aplicaciones,
+  TypeScript y ESLint de los archivos modificados sin errores.
+- 104 pruebas automatizadas aprobadas: 58 de web, 40 del motor y 6 de workflows.
+- Auditoría a las 23:49:48 UTC: 1.663 productos publicados, todos con stock,
+  recuperados exclusivamente por su código. Cero fallos, incluidos códigos con
+  puntos y sufijos espaciados como `N755 - SQ`. Es una fotografía del inventario,
+  no una cifra fija.
+
+La prueba HTTP verificó seis mensajes fragmentados, cinco solicitudes persistidas,
+un PDF descargable, la cotización mayorista de seis unidades al elegir un SKU,
+ausencia de catálogos duplicados, todos los atributos pedidos (con datos faltantes
+explícitos), autorización y rechazo de conversaciones reales.
+
+El recorrido completo panel/API administrativa → n8n → web/motor → simulador
+verificó la consulta mixta en 12,658 segundos desde el último mensaje, sin respuestas
+duplicadas de ejecuciones anteriores; cuatro fotografías de extensores de pantalla
+en 14,572 segundos; saludo, precio actual y conservación del producto seleccionado
+al continuar la compra. Los tiempos incluyen los 12 segundos de agrupación y son
+casos concretos, no un percentil de carga. Se eliminaron los contactos de prueba.
+
+Respaldo inicial de aplicación, entorno, base de datos y workflow, junto con
+`api-verification.json`, `workflow-verification.json` y `sku-audit.json`:
+`/home/IMPORTADORA-backups/bc-agenda-23c9545/`.
+Compilación y pruebas finales de web en `bc-agenda-62c1139/`; del motor en
+`bc-agenda-router-4b1a836/`, dentro del mismo directorio de respaldos.
