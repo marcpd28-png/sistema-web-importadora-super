@@ -11,6 +11,38 @@ Los errores del webhook se muestran en el panel; no se usa el webhook real de Wh
 3. Las demás solicitudes pasan por **BC - Simulador - Motor conversacional**: agrupación de mensajes, estado comercial, productos/precios/envíos/checkout y redacción opcional con IA.
 4. Las respuestas se registran en la conversación simulada. Estos flujos no contienen nodos para enviar mensajes a Meta ni ManyChat.
 
+## Saludo automático según la hora
+
+Las respuestas de catálogo y del motor conversacional se preparan y guardan juntas
+en `/api/internal/chat/simulator-batch`. Al comenzar cada respuesta se añade un
+saludo según la hora del servidor convertida a `America/Lima`:
+
+| Hora de Perú | Saludo |
+| --- | --- |
+| 05:00–11:59 | Buenos días |
+| 12:00–18:59 | Buenas tardes |
+| 19:00–04:59 | Buenas noches |
+
+El saludo aparece en el primer mensaje o pie de archivo, incluso si el cliente
+pregunta directamente por un producto. Conserva el contenido solicitado y no se
+repite en las fotos o archivos siguientes del mismo lote. Un saludo fijo al inicio
+de la respuesta se reemplaza por el correspondiente a la hora actual. Los reintentos
+conservan el mensaje ya registrado. Si añadir el saludo supera 4000 caracteres,
+se guarda como un mensaje de texto previo, sin recortar la respuesta.
+
+Ejemplo a las 20:00, para `hola catálogo`:
+`¡Buenas noches! 😊 Te comparto nuestro catálogo completo: …`
+
+Para aplicar este cambio hay que desplegar la web y publicar el workflow
+`router.json` actualizado, que también utiliza el endpoint de lotes. La rama de
+catálogo ya utiliza ese endpoint. Esta configuración sigue siendo exclusiva del
+simulador.
+
+Pruebas locales: `node --import tsx --test src/lib/chat-greeting.test.ts src/app/api/internal/chat/simulator-batch/route.test.ts`
+y `node --test scripts/test-bc-simulator.mjs`.
+
+## Configuración del entorno
+
 Los identificadores instalados están en `deployment.json`. Los archivos JSON usan referencias a las credenciales existentes en n8n; no incluyen claves.
 La entrada de WhatsApp y ManyChat conserva el registro de mensajes reales, pero sus conexiones hacia BC y el catálogo automático quedan desconectadas durante las pruebas. El envío manual se mantiene.
 

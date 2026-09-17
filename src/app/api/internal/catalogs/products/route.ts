@@ -40,8 +40,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true, matched: true, simulation: true, conversationId: conversation.id,
       requestId,
-      content: result.catalog ? `Aquí tienes el catálogo de ${result.label}: ${result.catalog.productCount} productos.`
-        : !result.scoped ? `Aquí puedes ver nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`
+      content: result.catalog ? `Te comparto el catálogo de ${result.label}: ${result.catalog.productCount} productos.`
+        : !result.scoped ? `Te comparto nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`
         : `No encontré productos publicados para el catálogo de ${result.label}. Puedes indicarme otra marca, categoría o tipo de producto.`,
       type: result.catalog ? "document" : "text", mediaUrl: result.catalog?.absoluteUrl ?? null,
       catalog: result.catalog ? { filename: result.catalog.filename, productCount: result.catalog.productCount, url: result.catalog.absoluteUrl } : null,

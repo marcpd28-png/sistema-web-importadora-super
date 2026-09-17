@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { triggerPusherEvent } from "@/lib/pusher-server";
+import { greetChatResponse } from "@/lib/chat-greeting";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ const schema = z.object({
   conversationId: z.string().min(1).max(191),
   requestId: z.string().min(1).max(191),
   messages: z.array(z.object({
-    type: z.enum(["TEXT", "IMAGE", "DOCUMENT"]),
+    type: z.enum(["TEXT", "IMAGE", "DOCUMENT", "VIDEO"]),
     content: z.string().trim().min(1).max(4000),
     mediaUrl: z.string().url().nullable().optional(),
   }).refine(m => m.type === "TEXT" || Boolean(m.mediaUrl), "Media URL required")).min(1).max(100),
@@ -30,12 +31,15 @@ export async function POST(request: Request) {
       } });
       if (!conversation?.contact.externalId?.startsWith("SIMULATOR:")) return { denied: true, messages: [] };
       if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return { skipped: true, messages: [] };
+      const existing = await tx.chatMessage.findUnique({ where: { externalMessageId: `simulated:${batchId}:0` } });
+      if (existing) return { duplicate: true, messages: [] };
       const started = Date.now();
-      const data = input.messages.map((message,index) => ({
+      const replies = greetChatResponse(input.messages, new Date(started));
+      const data = replies.map((message,index) => ({
         conversationId: input.conversationId, senderType: "BOT" as const, direction: "OUTBOUND" as const,
         messageType: message.type, content: message.content, mediaUrl: message.mediaUrl ?? null, status: "sent",
         externalMessageId: `simulated:${batchId}:${index}`, createdAt: new Date(started + index),
-        metadata: { agentId: "catalog-products-simulator", requestId: input.requestId, batchId, batchSize: input.messages.length, batchIndex: index },
+        metadata: { agentId: "bc-simulator", requestId: input.requestId, batchId, batchSize: replies.length, batchIndex: index },
       }));
       const inserted = await tx.chatMessage.createMany({ data, skipDuplicates: true });
       if (!inserted.count) return { duplicate: true, messages: [] };

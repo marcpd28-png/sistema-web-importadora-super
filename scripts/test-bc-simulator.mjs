@@ -51,6 +51,30 @@ test('router ignores real and duplicate incoming messages; simulator runs withou
  const outbound=w.nodes.find(n=>n.name==='Prepare Ordered Outbound').parameters.jsCode;
  const values={'Route Message V2':{conversation:{id:'test'},draftText:'Hola',outboundMessages:[]},'Normalize Router Input':{isSimulation:true,triggerMessageId:'m'},'Optional AI Draft':{}};
  const result=new Function('$',outbound)(name=>({first:()=>({json:values[name]})}));
- assert.equal(result[0].json.content,'Hola');
+ assert.deepEqual(result[0].json.messages,[{type:'TEXT',content:'Hola',mediaUrl:null}]);
+ assert.equal(result[0].json.requestId,'router:m');
  assert.equal(result[0].json.isSimulation,true);
+});
+
+test('product and catalog replies share the greeting batch endpoint, preserving media order',()=>{
+ const w=read('router');
+ const register=w.nodes.find(n=>n.name==='Registrar respuesta simulada').parameters;
+ assert.match(register.url,/\/chat\/simulator-batch$/);
+ const values={
+  'Route Message V2':{conversation:{id:'sim'},draftText:'Estos son los celulares Xiaomi.',outboundMessages:[
+   {type:'IMAGE',caption:'Redmi Note 14',imageUrl:'https://example.com/redmi.jpg'},
+   {type:'TEXT',text:'Estos son los celulares Xiaomi.'},
+   {type:'VIDEO',caption:'Detalle',videoUrl:'https://example.com/redmi.mp4'},
+  ]},
+  'Normalize Router Input':{isSimulation:true,triggerMessageId:'m'},'Optional AI Draft':{},
+ };
+ const code=w.nodes.find(n=>n.name==='Prepare Ordered Outbound').parameters.jsCode;
+ const result=new Function('$',code)(name=>({first:()=>({json:values[name]})}));
+ assert.equal(result.length,1);
+ const payload=new Function('$json','return '+register.jsonBody.slice(3,-2))(result[0].json);
+ assert.equal(payload.conversationId,'sim');
+ assert.equal(payload.messages.length,3);
+ assert.deepEqual(payload.messages.map(m=>m.type),['IMAGE','TEXT','VIDEO']);
+ assert.equal(payload.messages[0].mediaUrl,'https://example.com/redmi.jpg');
+ assert.equal(payload.messages[1].content,'Estos son los celulares Xiaomi.');
 });
