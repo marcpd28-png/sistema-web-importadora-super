@@ -18,8 +18,8 @@ test("search intersects color, budget and exclusions; numeric model never become
 });
 
 test("punctuation and suffixes distinguish exact ERP identifiers", () => {
-  const identity = createCatalogIndex([product("BT454", "UNO"), product("BT454.", "DOS"), product("PC388", "HUB"), product("PC388-SQ", "COOLER")]);
-  for (const code of ["BT454", "BT454.", "PC388", "PC388-SQ"]) assert.deepEqual(identity.select(`código ${code}`).products.map(p => p.code), [code]);
+  const identity = createCatalogIndex([product("BT454", "UNO"), product("BT454.", "DOS"), product("PC388", "HUB"), product("PC388-SQ", "COOLER"), product("O526- BLACK", "AUDIFONO")]);
+  for (const code of ["BT454", "BT454.", "PC388", "PC388-SQ", "O526- BLACK"]) assert.deepEqual(identity.select(`código ${code}`).products.map(p => p.code), [code]);
   assert.equal(identity.select("código PC388-UNKNOWN").products.length, 0);
 });
 

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     if (batch.media.length) return NextResponse.json({ ok: true, handled: false });
     const text = normalizeCommercialText(batch.content);
     // Existing purchase and human-handoff flows retain ownership of side-effecting operations.
-    if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|quiero comprar|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar)\b/.test(text)
+    if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|quiero comprar|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
       || /^(?:hola|buenos dias|buenas tardes|buenas noches|gracias|ok|si|no|comprar|lo quiero)$/.test(text)
       || (conversation.salesState?.stage && /CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(conversation.salesState.stage) && !/[?¿]|\b(?:catalogo|precio|informacion|garantia|stock|envios|cuanto|horario)\b/.test(batch.content))) {
       return NextResponse.json({ ok: true, handled: false });
@@ -61,7 +61,10 @@ export async function POST(request: Request) {
         const old = oldTopics[0];
         old.selectedCode = codes[0]; old.query = codes[0]; agenda.lastTopicId = old.id;
         for (const job of agenda.requests) {
-          if (job.topicId === topic.id) job.topicId = old.id;
+          if (job.topicId === topic.id) {
+            job.topicId = old.id;
+            if (job.kind === "SEARCH") { touched.delete(job.id); job.status = "ANSWERED"; job.answeredBy = input.triggerMessageId; }
+          }
           if (job.topicId === old.id && job.status === "NEEDS_CLARIFICATION") { job.status = "PENDING"; touched.add(job.id); }
         }
       }
