@@ -1,8 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { processIncomingMessage } from "@/lib/messages-service";
-import { prisma } from "@/lib/prisma";
-import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
+import { dispatchAutomation } from "@/lib/automations/execution-service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -229,53 +228,7 @@ export async function POST(request: NextRequest) {
 
     results.push(result);
 
-    // ==========================================
-    // SAAS INBOUND ROUTING (N8N INTERCEPTION)
-    // ==========================================
-    if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-      try {
-        // Busca si hay una automatización activa para WHATSAPP
-        const activeAutomation = await prisma.automation.findFirst({
-          where: { channel: "WHATSAPP", status: "ACTIVE" },
-          include: { 
-            versions: { 
-              where: { status: "PUBLISHED" },
-              orderBy: { version: "desc" },
-              take: 1
-            } 
-          }
-        });
-
-        if (activeAutomation && activeAutomation.versions.length > 0) {
-          const publishedVersion = activeAutomation.versions[0];
-          
-          // Crear un registro de ejecución en estado RUNNING (correlation tracking)
-          const execution = await prisma.automationExecution.create({
-            data: {
-              automationId: activeAutomation.id,
-              automationVersionId: publishedVersion.id,
-              conversationId: result.conversationId,
-              messageId: result.messageId,
-              status: "RUNNING",
-              correlationId: `${result.conversationId}-${result.messageId}`
-            }
-          });
-
-          // Disparar Webhook de n8n con el payload completo + IDs de correlación
-          await N8nAutomationProvider.triggerWebhook('wh-1', {
-            contactId: result.contactId,
-            conversationId: result.conversationId,
-            messageId: result.messageId,
-            executionId: execution.id,
-            content: getMessageContent(message, type),
-            phone: from,
-            metadata: message
-          });
-        }
-      } catch (routingErr) {
-        console.error("SaaS Automation Routing Error:", routingErr);
-      }
-    }
+    if (process.env.AUTOMATIONS_WHATSAPP_ENABLED === "true" && result.ok && !result.duplicate) after(() => dispatchAutomation(result.messageId));
 
   }
 

@@ -1,111 +1,48 @@
-import crypto from "crypto";
+import { createHash } from "node:crypto";
+import { flowSchema, validateFlow, type FlowDefinition } from "./flow-definition";
 
 export interface N8nWorkflow {
   name: string;
-  nodes: N8nNode[];
-  connections: Record<string, Record<string, N8nConnection[][]>>;
-  active: boolean;
-  settings: {
-    executionOrder: "v1";
-    saveExecutionProgress: boolean;
-    saveManualExecutions: boolean;
-    callerPolicy: "any";
-  };
+  nodes: Array<{
+    id: string; name: string; type: string; typeVersion: number; position: [number, number];
+    parameters: Record<string, unknown>; webhookId?: string;
+  }>;
+  connections: Record<string, { main: Array<Array<{ node: string; type: "main"; index: number }>> }>;
+  settings: { executionOrder: "v1"; executionTimeout: number; saveDataSuccessExecution: "none"; saveDataErrorExecution: "none" };
 }
 
-export interface N8nNode {
-  parameters: Record<string, any>;
-  id: string;
-  name: string;
-  type: string;
-  typeVersion: number;
-  position: [number, number];
+export function workflowPath(versionId: string) {
+  if (!/^[a-zA-Z0-9_-]{1,80}$/.test(versionId)) throw new Error("Identificador de versión inválido.");
+  return `importadora-flow-${versionId}`;
 }
 
-export interface N8nConnection {
-  node: string;
-  type: "main";
-  index: number;
-}
-
-/**
- * Convierte el formato nativo del canvas de React Flow (UI) 
- * en el formato exacto que ejecuta el motor n8n de Importadora Super.
- */
 export class FlowCompiler {
-  static compile(name: string, reactFlowNodes: any[], reactFlowEdges: any[]): N8nWorkflow {
-    // 1. Mapear nodos
-    const nodes: N8nNode[] = reactFlowNodes.map((rn) => {
-      // Dummy mapping. En producción leeremos el rn.type (SendMessageNode, etc.) 
-      // y lo convertiremos a un nodo real de n8n (ej. n8n-nodes-base.httpRequest)
-      
-      return {
-        id: rn.id,
-        name: rn.data?.label || `Node ${rn.id}`,
-        type: rn.type === "input" ? "n8n-nodes-base.webhook" : "n8n-nodes-base.noOp",
-        typeVersion: 1,
-        position: [Math.round(rn.position.x), Math.round(rn.position.y)],
-        parameters: {
-          path: `wh-${rn.id}`,
-          responseMode: "lastNode",
-          options: {},
-        }
-      };
-    });
-
-    // 2. Mapear conexiones
-    const connections: N8nWorkflow["connections"] = {};
-    
-    reactFlowEdges.forEach((edge) => {
-      const sourceName = nodes.find(n => n.id === edge.source)?.name;
-      const targetName = nodes.find(n => n.id === edge.target)?.name;
-      
-      if (!sourceName || !targetName) return;
-
-      if (!connections[sourceName]) {
-        connections[sourceName] = { main: [[]] };
-      }
-      
-      connections[sourceName].main[0].push({
-        node: targetName,
-        type: "main",
-        index: 0
-      });
-    });
-
+  // The app interprets the immutable graph, sharing its evaluator with preview.
+  // n8n orchestrates a signed execution, without holding any application secrets.
+  static compile(name: string, flow: FlowDefinition, versionId: string, callbackBaseUrl: string): N8nWorkflow {
+    const parsed = flowSchema.parse(flow);
+    const errors = validateFlow(parsed);
+    if (errors.length) throw new Error(errors.join(" "));
+    const callback = new URL("/api/internal/automations/execute", callbackBaseUrl);
+    if (!["https:", "http:"].includes(callback.protocol)) throw new Error("URL de retorno inválida.");
     return {
-      name: `[MANAGED] ${name}`,
-      nodes,
-      connections,
-      active: true,
-      settings: {
-        executionOrder: "v1",
-        saveExecutionProgress: true,
-        saveManualExecutions: false,
-        callerPolicy: "any"
-      }
+      name: `[Importadora] ${name} · ${versionId}`,
+      nodes: [
+        { id: "entry", name: "Mensaje autorizado", type: "n8n-nodes-base.webhook", typeVersion: 2, position: [0, 0], webhookId: versionId,
+          parameters: { httpMethod: "POST", path: workflowPath(versionId), responseMode: "lastNode", responseData: "firstEntryJson", options: {} } },
+        { id: "execute", name: "Ejecutar flujo publicado", type: "n8n-nodes-base.httpRequest", typeVersion: 4.2, position: [280, 0],
+          parameters: { method: "POST", url: callback.toString(), sendBody: true, specifyBody: "json",
+            jsonBody: `={{ { executionId: $json.body.executionId, expiresAt: $json.body.expiresAt, signature: $json.body.signature, versionId: ${JSON.stringify(versionId)}, providerExecutionId: $execution.id } }}`,
+            options: { timeout: 120000 } } },
+      ],
+      connections: { "Mensaje autorizado": { main: [[{ node: "Ejecutar flujo publicado", type: "main", index: 0 }]] } },
+      settings: { executionOrder: "v1", executionTimeout: 120, saveDataSuccessExecution: "none", saveDataErrorExecution: "none" },
     };
   }
 
-  /**
-   * Genera un hash criptográfico de la definición del workflow 
-   * ignorando metadatos visuales como posiciones (x, y) 
-   * para detectar un Drift (modificación manual en n8n).
-   */
-  static generateDriftHash(workflow: N8nWorkflow): string {
-    // Para el hash, ordenamos los nodos alfabéticamente por nombre
-    // y purgamos la propiedad "position" y campos volátiles.
-    const nodesForHash = workflow.nodes.map(n => ({
-      id: n.id,
-      name: n.name,
-      type: n.type,
-      parameters: n.parameters
-    })).sort((a, b) => a.name.localeCompare(b.name));
-
-    const connectionsForHash = workflow.connections; // El orden de keys en JS es impredecible, en prod usar stringify determinista
-
-    const payloadString = JSON.stringify({ nodes: nodesForHash, connections: connectionsForHash });
-    
-    return crypto.createHash("sha256").update(payloadString).digest("hex");
+  static generateDriftHash(workflow: N8nWorkflow) {
+    return createHash("sha256").update(JSON.stringify({
+      nodes: workflow.nodes.map((node) => ({ id: node.id, name: node.name, type: node.type, parameters: node.parameters })), connections: workflow.connections,
+    })).digest("hex");
   }
 }

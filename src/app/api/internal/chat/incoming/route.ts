@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { incomingMessageSchema, processIncomingMessage } from "@/lib/messages-service";
+import { dispatchAutomation } from "@/lib/automations/execution-service";
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
 
     // 3. Process the message
     const result = await processIncomingMessage(parsedData);
+    if (process.env.AUTOMATIONS_WHATSAPP_ENABLED === "true" && !result.duplicate && !result.simulation) after(() => dispatchAutomation(result.messageId));
 
     // 4. Return result for n8n to make automated decisions
     return NextResponse.json(result, { status: result.duplicate ? 200 : 201 });

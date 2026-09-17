@@ -1,106 +1,48 @@
-import { N8nWorkflow } from "./FlowCompiler";
+import type { N8nWorkflow } from "./FlowCompiler";
 
 export class N8nAutomationProvider {
-  private static get baseUrl() {
-    return process.env.N8N_URL || "http://187.127.248.226:5678";
-  }
-
-  private static get apiKey() {
-    return process.env.N8N_API_KEY || "ZLvLtVT5iUOHPPQf2eaB5Mkg3E6g2UXQnFhL6o8YzLM="; // Fallback from knowledge base
-  }
-
-  private static get isDev() {
-    return process.env.NODE_ENV === "development";
-  }
-
-  /**
-   * Despliega un workflow compilado a la instancia real de n8n.
-   * Maneja actualización si providerWorkflowId existe, o creación si es nuevo.
-   */
-  static async deployWorkflow(workflow: N8nWorkflow, providerWorkflowId?: string): Promise<string> {
-    const isDryRun = this.isDev;
-    
-    // Prefix name if dev to avoid collision in n8n
-    const finalName = isDryRun ? `[DEV] ${workflow.name}` : workflow.name;
-    const payload = { ...workflow, name: finalName };
-
-    const headers = {
-      "Content-Type": "application/json",
-      "X-N8N-API-KEY": this.apiKey
+  static get configuration() {
+    return {
+      baseUrl: (process.env.N8N_BASE_URL?.trim() || process.env.N8N_URL?.trim() || "").replace(/\/$/, ""),
+      apiKey: process.env.N8N_WRITE_API_KEY?.trim() || process.env.N8N_API_KEY?.trim(),
     };
-
-    try {
-      let url = `${this.baseUrl}/api/v1/workflows`;
-      let method = "POST";
-
-      if (providerWorkflowId) {
-        url = `${this.baseUrl}/api/v1/workflows/${providerWorkflowId}`;
-        method = "PUT";
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`n8n API Error: ${response.status} - ${errorData}`);
-      }
-
-      const data = await response.json();
-      return data.id; // Retorna el ID de n8n
-    } catch (error) {
-      console.error("N8nAutomationProvider Error:", error);
-      throw error;
-    }
   }
 
-  /**
-   * Activa o desactiva un workflow en n8n.
-   */
-  static async toggleWorkflow(providerWorkflowId: string, active: boolean): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/v1/workflows/${providerWorkflowId}/activate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-N8N-API-KEY": this.apiKey
-        },
-        body: JSON.stringify({ active })
-      });
-
-      if (!response.ok) {
-        throw new Error(`n8n API Error on activation: ${response.status}`);
-      }
-    } catch (error) {
-      console.error("N8nAutomationProvider Activation Error:", error);
-      throw error;
-    }
+  private static async api(path: string, method: string, body?: unknown) {
+    const { baseUrl, apiKey } = this.configuration;
+    if (!baseUrl || !apiKey) throw new Error("Configura la URL y la clave de escritura de n8n para publicar.");
+    const response = await fetch(`${baseUrl}/api/v1${path}`, {
+      method, headers: { "Content-Type": "application/json", "X-N8N-API-KEY": apiKey },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok) throw new Error(`n8n rechazó la operación (${response.status}). Revisa la conexión y los permisos de la clave.`);
+    if (response.status === 204) return null;
+    return response.json();
   }
 
-  /**
-   * Dispara el webhook de producción de n8n si hay una automatización activa.
-   */
-  static async triggerWebhook(path: string, payload: any): Promise<void> {
-    const isDryRun = this.isDev;
-    // En n8n, los webhooks de prueba son /webhook-test/, los de prod son /webhook/
-    const endpoint = isDryRun ? `/webhook-test/${path}` : `/webhook/${path}`;
-    
-    try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      
-      if (!response.ok) {
-        console.warn(`[N8n Provider] Webhook trigger returned ${response.status}`);
-      }
-    } catch (e) {
-      console.error("[N8n Provider] Webhook trigger failed:", e);
-    }
+  static async deployWorkflow(workflow: N8nWorkflow): Promise<string> {
+    const result = await this.api("/workflows", "POST", workflow);
+    if (typeof result?.id !== "string") throw new Error("n8n no devolvió el identificador del flujo.");
+    return result.id;
   }
 
+  static async toggleWorkflow(id: string, active: boolean) {
+    await this.api(`/workflows/${encodeURIComponent(id)}/${active ? "activate" : "deactivate"}`, "POST");
+  }
+
+  static async deleteWorkflow(id: string) {
+    await this.api(`/workflows/${encodeURIComponent(id)}`, "DELETE");
+  }
+
+  static async triggerWebhook(path: string, payload: unknown) {
+    const { baseUrl } = this.configuration;
+    if (!baseUrl) throw new Error("La conexión con n8n no está configurada.");
+    const response = await fetch(`${baseUrl}/webhook/${encodeURIComponent(path)}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(125_000),
+    });
+    if (!response.ok) throw new Error(`El flujo de n8n falló (${response.status}).`);
+    const result = await response.json();
+    if (result?.ok !== true) throw new Error("n8n no confirmó la ejecución del flujo.");
+  }
 }

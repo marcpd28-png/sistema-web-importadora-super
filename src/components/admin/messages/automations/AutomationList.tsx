@@ -1,118 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Play, Pause, AlertTriangle, Clock, Zap } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Plus, RefreshCw, Zap } from "lucide-react";
+import { automationRequest, statusLabels } from "./client";
+import "./automations.css";
 
-type AutomationPreview = {
-  id: string;
-  name: string;
-  status: string;
-  channel: string;
-  updatedAt: string;
-  _count: { executions: number };
-};
+type AutomationPreview = { id: string; name: string; description: string | null; status: string; channel: string; updatedAt: string; _count: { executions: number } };
 
 export function AutomationList() {
   const router = useRouter();
   const [automations, setAutomations] = useState<AutomationPreview[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/admin/automations")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setAutomations(data);
-        }
-      })
-      .finally(() => setLoading(false));
+  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [name, setName] = useState("Atención de Importadora Super");
+  const [template, setTemplate] = useState<"welcome" | "sales">("sales");
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try { setAutomations(await automationRequest<AutomationPreview[]>("/api/admin/automations")); }
+    catch (e) { setError(e instanceof Error ? e.message : "No se pudieron cargar los flujos."); }
+    finally { setLoading(false); }
   }, []);
-
-  const handleCreateNew = async () => {
+  useEffect(() => {
+    let live = true;
+    automationRequest<AutomationPreview[]>("/api/admin/automations")
+      .then((items) => { if (live) setAutomations(items); })
+      .catch((e: unknown) => { if (live) setError(e instanceof Error ? e.message : "No se pudieron cargar los flujos."); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, []);
+  async function create(event: React.FormEvent) {
+    event.preventDefault(); setCreating(true); setError("");
     try {
-      const res = await fetch("/api/admin/automations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Nueva automatización", channel: "WHATSAPP" }),
-      });
-      const data = await res.json();
-      if (data.id) {
-        // Redirigir al Flow Builder
-        router.push(`/admin/mensajes/automatizaciones/${data.id}`);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  return (
-    <div className="automation-list-shell" style={{ padding: "24px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
-          <h1 className="h4" style={{ margin: 0 }}>Automatizaciones</h1>
-          <p className="text-muted" style={{ margin: 0, fontSize: "14px" }}>
-            Administra los flujos y bots conversacionales
-          </p>
-        </div>
-        <button onClick={handleCreateNew} className="button is-primary">
-          <Plus size={16} />
-          <span>Nueva automatización</span>
-        </button>
-      </div>
-
-      {loading ? (
-        <div style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>Cargando automatizaciones...</div>
-      ) : automations.length === 0 ? (
-        <div style={{ padding: "60px", textAlign: "center", border: "1px dashed #e5e7eb", borderRadius: "8px" }}>
-          <Zap size={48} style={{ color: "#9ca3af", marginBottom: "16px" }} />
-          <h3 style={{ fontSize: "16px", marginBottom: "8px" }}>Sin automatizaciones</h3>
-          <p className="text-muted" style={{ marginBottom: "16px" }}>Comienza creando tu primer flujo conversacional.</p>
-          <button onClick={handleCreateNew} className="button is-primary">Empezar ahora</button>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
-                <th style={{ padding: "12px 16px" }}>Nombre</th>
-                <th style={{ padding: "12px 16px" }}>Canal</th>
-                <th style={{ padding: "12px 16px" }}>Estado</th>
-                <th style={{ padding: "12px 16px" }}>Última mod.</th>
-                <th style={{ padding: "12px 16px" }}>Ejecuciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {automations.map((a) => (
-                <tr 
-                  key={a.id} 
-                  style={{ borderBottom: "1px solid #e5e7eb", cursor: "pointer" }}
-                  onClick={() => router.push(`/admin/mensajes/automatizaciones/${a.id}`)}
-                >
-                  <td style={{ padding: "16px" }}>
-                    <strong>{a.name}</strong>
-                  </td>
-                  <td style={{ padding: "16px" }}>{a.channel}</td>
-                  <td style={{ padding: "16px" }}>
-                    <span style={{ 
-                      padding: "4px 8px", 
-                      borderRadius: "4px", 
-                      fontSize: "12px", 
-                      fontWeight: 600,
-                      backgroundColor: a.status === 'ACTIVE' ? '#dcfce7' : '#f3f4f6',
-                      color: a.status === 'ACTIVE' ? '#166534' : '#4b5563'
-                    }}>
-                      {a.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: "16px" }}>{new Date(a.updatedAt).toLocaleDateString()}</td>
-                  <td style={{ padding: "16px" }}>{a._count.executions}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+      const data = await automationRequest<{ id: string }>("/api/admin/automations", "POST", { name, template, channel: "WHATSAPP" });
+      router.push(`/admin/mensajes/automatizaciones/${data.id}`);
+    } catch (e) { setError(e instanceof Error ? e.message : "No se pudo crear el flujo."); setCreating(false); }
+  }
+  return <div className="automations-workspace">
+    <header className="automation-heading">
+      <div><p className="automation-eyebrow">ATENCIÓN AL CLIENTE</p><h1>Automatizaciones</h1><p>Configura respuestas, consulta productos y conecta a tus clientes con un asesor.</p></div>
+      <button className="btn btn-primary" onClick={() => setShowCreate(true)}><Plus size={17} />Nueva automatización</button>
+    </header>
+    {error && <div className="automation-alert" role="alert">{error} <button className="btn" onClick={() => void load()} disabled={loading || creating}><RefreshCw size={14} />Reintentar carga</button></div>}
+    {showCreate && <form className="automation-create" onSubmit={create}>
+      <h2>Crear un flujo</h2>
+      <fieldset disabled={creating}>
+        <label className="automation-field">Nombre<input value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} autoFocus /></label>
+        <label className="automation-field">Punto de partida<select value={template} onChange={(e) => setTemplate(e.target.value as "welcome" | "sales")}>
+          <option value="sales">Atención: bienvenida, productos y asesor</option><option value="welcome">Respuesta de bienvenida</option>
+        </select></label>
+        <p className="automation-hint">Se creará como borrador. Podrás editarlo y probarlo antes de publicarlo.</p>
+        <div className="automation-actions"><button type="button" className="btn" onClick={() => setShowCreate(false)}>Cancelar</button><button className="btn btn-primary" type="submit">{creating ? "Creando…" : "Crear borrador"}<ArrowRight size={16} /></button></div>
+      </fieldset>
+    </form>}
+    {loading ? <p role="status">Cargando automatizaciones…</p> : !error && automations.length === 0 ?
+      <div className="automation-empty"><Zap size={38} /><h2>Tu primera atención automática empieza aquí</h2><p>Crea un flujo de bienvenida o parte de una plantilla que consulta productos y deriva a un asesor.</p><button className="btn btn-primary" onClick={() => setShowCreate(true)}>Empezar ahora<ArrowRight size={16} /></button></div>
+      : <div className="automation-grid">{automations.map((automation) => <Link className="automation-card" key={automation.id} href={`/admin/mensajes/automatizaciones/${automation.id}`}>
+        <div className="automation-card-top"><Zap size={20} /><span className={`automation-status is-${automation.status.toLowerCase()}`}>{statusLabels[automation.status] || automation.status}</span></div>
+        <h2>{automation.name}</h2><p>{automation.description || "Flujo de atención por WhatsApp"}</p>
+        <div className="automation-card-meta"><span>{automation._count.executions} ejecuciones</span><span>{new Date(automation.updatedAt).toLocaleDateString("es-PE")}</span></div>
+        <div className="automation-card-link">Abrir flujo<ArrowRight size={16} /></div>
+      </Link>)}</div>}
+  </div>;
 }

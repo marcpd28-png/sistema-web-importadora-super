@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, PauseCircle } from "lucide-react";
+
+const executionLabels: Record<string, string> = {
+  SUCCESS: "Completado", FAILED: "Fallido", RUNNING: "En curso", QUEUED: "En cola", SKIPPED: "Omitido",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +39,8 @@ export default async function ActividadPage() {
                 <div style={{ marginTop: "2px" }}>
                   {log.status === "SUCCESS" && <CheckCircle2 color="#22c55e" size={20} />}
                   {log.status === "FAILED" && <XCircle color="#ef4444" size={20} />}
-                  {log.status === "RUNNING" && <Clock color="#eab308" size={20} />}
+                  {["RUNNING", "QUEUED"].includes(log.status) && <Clock color="#eab308" size={20} />}
+                  {log.status === "SKIPPED" && <PauseCircle color="#6b7280" size={20} />}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
@@ -44,7 +49,7 @@ export default async function ActividadPage() {
                       {format(log.startedAt, "dd MMM, HH:mm:ss", { locale: es })}
                     </span>
                   </div>
-                  <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "var(--text-muted)" }}>Canal: {log.automation.channel}</p>
+                  <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "var(--text-muted)" }}>Canal: {log.automation.channel} · {executionLabels[log.status] || log.status}</p>
                   
                   {log.error && (
                     <div style={{ background: "rgba(239, 68, 68, 0.1)", color: "#b91c1c", padding: "8px 12px", borderRadius: "4px", border: "1px solid rgba(239, 68, 68, 0.2)", fontSize: "12px", fontFamily: "monospace", overflowX: "auto" }}>
