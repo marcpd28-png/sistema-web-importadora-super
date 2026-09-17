@@ -25,11 +25,22 @@ export async function discoverRouterV2RetailProducts(input: {
   const filters: Array<Record<string, unknown>> = [];
 
   if (input.category?.trim()) {
+    const category = input.category.trim();
     filters.push({
-      category: {
-        contains: input.category.trim(),
-        mode: "insensitive",
-      },
+      OR: [
+        {
+          category: {
+            contains: category,
+            mode: "insensitive",
+          },
+        },
+        {
+          name: {
+            contains: category,
+            mode: "insensitive",
+          },
+        },
+      ],
     });
   }
 

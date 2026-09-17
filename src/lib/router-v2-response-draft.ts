@@ -176,8 +176,9 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
     answerType === "VARIANT_CLARIFICATION"
   ) {
     const options = context.sales.shownProducts;
-    const answer = options.length
-      ? `Encontré estas opciones:\n${options
+    const visibleOptions = options.slice(0, 5);
+    const answer = visibleOptions.length
+      ? `Encontré estas opciones:\n${visibleOptions
           .map((item) => {
             const price = money(item.unitPrice, currency);
             return `${item.position ?? "-"}. ${item.name}${price ? ` — ${price}` : ""}`;
@@ -193,10 +194,33 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
       context.sales.productName ??
       context.sales.productCode ??
       "el producto";
-    return appendResume(
-      `Perfecto, tengo identificado ${name}.`,
-      context,
-    );
+    const price = money(context.sales.unitPrice, currency);
+    const description =
+      context.product?.descriptionShort ??
+      context.product?.description ??
+      context.product?.descriptionFull ??
+      null;
+    const url =
+      context.product?.slug && context.catalog.retailStoreUrl
+        ? `${context.catalog.retailStoreUrl.replace(/\/$/, "")}/producto/${context.product.slug}`
+        : null;
+    const lines = [`Listo, encontré este producto: ${name}.`];
+
+    if (price) lines.push(`Precio vigente: ${price}.`);
+    if (description && description.trim() !== name.trim()) {
+      lines.push(description.trim());
+    }
+    if (context.product) {
+      lines.push(
+        context.product.available
+          ? "Está disponible actualmente."
+          : "Por ahora no figura disponible.",
+      );
+    }
+    lines.push("Hacemos envíos a Lima y provincias; también puedes continuar tu compra por este medio.");
+    if (url) lines.push(`Ficha del producto: ${url}`);
+
+    return appendResume(lines.join("\n"), context);
   }
 
   if (answerType === "PRODUCT_DETAILS") {
@@ -435,6 +459,14 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
 
   if (answerType === "PAYMENT_EVIDENCE_RECEIVED") {
     return `Recibí el voucher${context.sales.orderNumber ? ` del pedido ${context.sales.orderNumber}` : ""}. Queda pendiente de validación; todavía no lo marcaré como pago confirmado.`;
+  }
+
+  if (
+    answerType === "SALES_CONTINUE" &&
+    !context.sales.productCode &&
+    !context.sales.productName
+  ) {
+    return "Hola, bienvenido a Importaciones Super. ¿Qué producto estás buscando? Puedo ayudarte con precio, disponibilidad, imagen y el enlace para comprar.";
   }
 
   return appendResume("Continuemos con tu compra.", context);

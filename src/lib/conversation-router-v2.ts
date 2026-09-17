@@ -51,6 +51,19 @@ function normalize(value: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(?:scuter|scoter|escuter|eskuter|sccoter|scooters?)\b/g, "scooter")
+    .replace(/\b(?:parlntes?|parlente?s?|parlantes?)\b/g, "parlante")
+    .replace(/\b(?:audifnos?|audifon?s?|audifonos?|auriculare?s?|airpods?|airdots?)\b/g, "audifono")
+    .replace(/\b(?:microfnos?|microfonos?|microfono?s?|mic)\b/g, "microfono")
+    .replace(/\b(?:tablets?|tabletas?)\b/g, "tablet")
+    .replace(/\b(?:celulare?s?|cellulare?s?|telefonos?|moviles?|mobiles?)\b/g, "celular")
+    .replace(/\b(?:cargdor(?:es)?|cargadores?|charger|carga)\b/g, "cargador")
+    .replace(/\b(?:relojes?|smartwatch(?:es)?)\b/g, "smartwatch")
+    .replace(/\b(?:laptops?|notebooks?)\b/g, "laptop")
+    .replace(/\b(?:pantallas?|monitores?)\b/g, "pantalla")
+    .replace(/\b(?:mouses?|mauses?|ratones?)\b/g, "mouse")
+    .replace(/\b(?:routers?|ruters?)\b/g, "router")
+    .replace(/\belectric[oa](?:s)?\b/g, "electrico")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -76,6 +89,13 @@ export function analyzeRouterV2Message(input: {
 
   if (/\b(catalogo|pdf|lista de productos|lista de precios)\b/.test(text))
     add(intents, "CATALOG_REQUEST");
+
+  if (
+    /\b(busco|buscando|quiero saber|quisiera saber|tienes|tienen|hay|precio de|a cuanto esta|a cuanto estan|cuanto esta|cuanto estan)\b/.test(
+      text,
+    )
+  )
+    add(intents, "PRODUCT_SEARCH");
 
   if (/\b(precio|costo|cuanto cuesta|cuanto sale|a cuanto)\b/.test(text))
     add(intents, "PRICE_REQUEST");
@@ -138,7 +158,7 @@ export function analyzeRouterV2Message(input: {
   }
 
   const categoryMatch = text.match(
-    /\b(parlante|parlantes|microfono|microfonos|audifono|audifonos|tablet|tablets|scooter|scooters)\b/,
+    /\b(parlante|microfono|audifono|tablet|scooter|celular|cargador|cable|smartwatch|laptop|pantalla|mouse|teclado|router)\b/,
   );
 
   if (categoryMatch) {

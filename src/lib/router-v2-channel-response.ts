@@ -109,22 +109,6 @@ export function buildRouterV2OutboundMessages(input: {
     });
   }
 
-  if (
-    (context.answerType === "VARIANT_OPTIONS" ||
-      context.answerType === "VARIANT_CLARIFICATION") &&
-    context.sales.shownProducts.length > 0
-  ) {
-    for (const product of context.sales.shownProducts.slice(0, 5)) {
-      if (!product.imageUrl) continue;
-      const price = money(product.unitPrice, currency);
-      messages.push({
-        type: "IMAGE",
-        imageUrl: resolveServerMediaUrl(product.imageUrl),
-        caption: `${product.position ?? "-"}. ${product.name}${price ? `\nPrecio: ${price}` : ""}`,
-      });
-    }
-  }
-
   for (const text of splitRouterV2WhatsappText(input.draftText)) {
     messages.push({
       type: "TEXT",
