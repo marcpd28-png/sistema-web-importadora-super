@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isCatalogRequest, selectCatalogProducts, type CatalogCandidate } from "./catalog-selection";
+import { createCatalogIndex, isCatalogRequest, selectCatalogProducts, type CatalogCandidate } from "./catalog-selection";
 const products: CatalogCandidate[] = [
  {code:"A1",name:"AUDIFONO JBL TUNE 520",brand:null,category:"AURICULARES"},
  {code:"A2",name:"AUDIFONO JBL ENDURANCE",brand:null,category:"ACCESORIOS PARA CELULARES"},
@@ -40,4 +40,38 @@ test("excluye micrófonos para Partybox y corrige categorías heredadas contradi
  ];
  assert.deepEqual(selectCatalogProducts("catálogo parlantes",rows).products.map(p=>p.code),["S1"]);
  assert.deepEqual(selectCatalogProducts("catálogo audífonos",rows).products.map(p=>p.code),["H1"]);
+});
+
+test("incorpora categorías y marcas nuevas del inventario sin editar listas de código",()=>{
+ const rows: CatalogCandidate[] = [
+  {code:"C1",name:"CARGADOR NOVATEK 65W",brand:"Novatek",category:"ENERGIA PORTATIL Y ACCESORIOS"},
+  {code:"C2",name:"CARGADOR NOVATEK 30W",brand:null,category:null,categoryRef:{name:"ENERGIA PORTATIL Y ACCESORIOS"}},
+  {code:"C3",name:"CABLE ZENPOWER USB",brand:"ZenPower",category:"CABLEADO PROFESIONAL"},
+ ];
+ const index=createCatalogIndex(rows,["Novatek","ZenPower"]);
+ assert.equal(index.select("catálogo marca Novatek").products.length,2);
+ assert.equal(index.select("catálogo categoría ENERGIA PORTATIL Y ACCESORIOS").products.length,2);
+ assert.deepEqual(index.select("catálogo cargadores Novatek").products.map(p=>p.code).sort(),["C1","C2"]);
+ assert.deepEqual(index.select("catálogo CABLEADO PROFESIONAL ZenPower").products.map(p=>p.code),["C3"]);
+});
+
+test("cables, micrófonos y controles son tipos propios, no menciones en otro producto",()=>{
+ const rows: CatalogCandidate[] = [
+  {code:"CB1",name:"CABLE UGREEN USB",brand:null,category:"ACCESORIOS PARA CELULARES"},
+  {code:"AU1",name:"AUDIFONO JBL CON CABLE Y MICROFONO",brand:null,category:"AURICULARES"},
+  {code:"MI1",name:"PACK DE DOS MICROFONOS JBL",brand:null,category:"PERIFERICOS"},
+  {code:"CT1",name:"CONTROL REMOTO SUPER",brand:null,category:"NOVEDADES"},
+  {code:"XX1",name:"ESPECTROMETRO ORBITAL",brand:null,category:"INSTRUMENTOS NUEVOS"},
+ ];
+ const index=createCatalogIndex(rows,["UGREEN","JBL","SUPER"]);
+ for(const [query,code] of [["cables UGREEN","CB1"],["micrófonos JBL","MI1"],["controles","CT1"],["tipo espectrómetros","XX1"]]) {
+  assert.deepEqual(index.select(`catálogo ${query}`).products.map(p=>p.code),[code]);
+ }
+});
+
+test("cada SKU, incluso numérico, sin marca y sin categoría, es localizable",()=>{
+ const rows: CatalogCandidate[]=[...products,{code:"6",name:"MODELO SEIS",brand:null,category:null}];
+ const index=createCatalogIndex(rows);
+ for(const p of rows) assert.deepEqual(index.select(`catálogo código ${p.code}`).products.map(x=>x.code),[p.code]);
+ assert.deepEqual(index.select("catálogo JBL CHARGE 6").products.map(p=>p.code),["P1"]);
 });

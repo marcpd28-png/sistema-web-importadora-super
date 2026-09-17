@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         : `No encontré productos publicados para el catálogo de ${result.label}. Puedes indicarme otra marca o categoría.`,
       type: result.catalog ? "document" : "text", mediaUrl: result.catalog?.absoluteUrl ?? null,
       catalog: result.catalog ? { filename: result.catalog.filename, productCount: result.catalog.productCount, url: result.catalog.absoluteUrl } : null,
-      filters: { brands: result.brands, categories: result.categories, terms: result.terms },
+      filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },
     });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ ok: false, error: "Invalid request payload" }, { status: 400 });

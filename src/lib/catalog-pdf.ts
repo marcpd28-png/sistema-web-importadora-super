@@ -7,7 +7,8 @@ import sharp from "sharp";
 
 import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
-import { selectCatalogProducts } from "@/lib/catalog-selection";
+import { createCatalogIndex } from "@/lib/catalog-selection";
+import { getCatalogReferenceBrands } from "@/lib/catalog-reference-brands";
 import { resolveProductBrand } from "@/lib/product-discovery";
 
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
@@ -390,13 +391,14 @@ async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: stri
 export async function generateRequestedCatalogPdf(content: string) {
   const rows = await prisma.product.findMany({
     where: { isVisible: true },
-    select: { id: true, code: true, name: true, brand: true, category: true, imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
+    select: { id: true, code: true, name: true, brand: true, category: true, categoryRef: { select: { name: true } }, imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
       media: { orderBy: { sortOrder: "asc" }, select: { url: true } } },
   });
-  const selection = selectCatalogProducts(content, rows);
+  const index = createCatalogIndex(rows, await getCatalogReferenceBrands());
+  const selection = index.select(content);
   if (!selection.scoped || !selection.products.length) return { ...selection, catalog: null };
-  const products = selection.products.map(p => ({ ...p, imageUrls: [...new Set([p.localImageUrl, ...p.media.map(m => m.url), p.sourceImageUrl, p.imageUrl].filter((v): v is string => Boolean(v?.trim())))] }));
-  const fingerprint = createHash("sha256").update(`scoped-grid-v1:${selection.label}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  const products = selection.products.map(p => ({ ...p, brand: index.productBrand(p), imageUrls: [...new Set([p.localImageUrl, ...p.media.map(m => m.url), p.sourceImageUrl, p.imageUrl].filter((v): v is string => Boolean(v?.trim())))] }));
+  const fingerprint = createHash("sha256").update(`scoped-grid-v2:${selection.label}:${JSON.stringify(products.map(p => p.brand))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
   let generation = inFlightCatalogs.get(fingerprint);
   if (!generation) {
     generation = createScopedCatalogPdf(products, selection.label, fingerprint).finally(() => inFlightCatalogs.delete(fingerprint));

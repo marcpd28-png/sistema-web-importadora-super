@@ -1,7 +1,7 @@
 import { resolveProductBrand } from "./product-discovery";
 import { inferStoreCategoryName } from "./product-category-classifier";
 
-export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null };
+export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null };
 export function normalizeCatalogText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
@@ -19,7 +19,7 @@ const categories = [
 ];
 const ignored = new Set(normalizeCatalogText("hola buenas buenos dias tardes noches por favor porfa gracias me nos dan das da dar dame pasa pasan pasas pasame pasar manda mandan mandas mandame envia envian envias enviame enviarme darme pasarme mandarme enviar mostrar muestra muestrame mostrarme quisiera quiero necesito deseo puedes pueden podria podrias tienen tendran catalogo catalogos de del el la los las un una unos unas tus sus su tu ustedes sus todos todas todo productos producto articulos articulo ver y o para con en pdf por mayor al menor unidades unidad mayorista minorista compra comprar completo completa completos completas general disponible disponibles stock precio precios lista listado este esta esos esas" ).split(" "));
 function hasPhrase(text: string, phrase: string) { return (` ${text} `).includes(` ${phrase} `); }
-for (const word of ["marca", "marcas", "categoria", "categorias", "tipo", "tipos", "porfavor"]) ignored.add(word);
+for (const word of ["marca", "marcas", "categoria", "categorias", "tipo", "tipos", "porfavor", "codigo", "codigos", "modelo", "modelos", "compartir", "comparteme", "podrian", "podrias"]) ignored.add(word);
 function singular(value: string) { return value.length > 4 && value.endsWith("s") ? value.slice(0, -1) : value; }
 function nearWord(a: string, b: string) {
   if (a.length < 6 || b.length < 6 || Math.abs(a.length-b.length)>2) return false;
@@ -42,24 +42,86 @@ function matchesCategory(product: CatalogCandidate, category: typeof categories[
   return stored===normalizeCatalogText(category.stored) || inferred===category.stored;
 }
 
-/** Explicit request scope is evaluated afresh: a previous brand never leaks into a new category request. */
-export function selectCatalogProducts<T extends CatalogCandidate>(content: string, products: T[]) {
-  const text=normalizeCatalogText(content);
-  const knownBrands=new Map<string,string>();
-  for(const p of products) {const brand=resolveProductBrand(p);if(brand)knownBrands.set(normalizeCatalogText(brand),brand);}
-  const brands=[...knownBrands].filter(([key])=>hasPhrase(text,key)).sort((a,b)=>b[0].length-a[0].length);
-  let remainder=` ${text} `;
-  for(const [key] of brands) remainder=remainder.replaceAll(` ${key} `," ");
-  const tokens=remainder.trim().split(/\s+/).filter(Boolean);
-  const requestedCategories=categories.filter(c=>tokens.some(t=>c.aliases.includes(t) || c.aliases.some(a=>nearWord(t,a))));
-  const terms=tokens.filter(t=>!ignored.has(t) && !requestedCategories.some(c=>c.aliases.includes(t) || c.aliases.some(a=>nearWord(t,a))));
-  const scoped=brands.length>0 || requestedCategories.length>0 || terms.length>0;
-  const selected=products.filter(p=>{
-    if(brands.length && !brands.some(([key])=>normalizeCatalogText(resolveProductBrand(p)||"")===key)) return false;
-    if(requestedCategories.length && !requestedCategories.some(c=>matchesCategory(p,c))) return false;
-    const words=normalizeCatalogText(`${p.code} ${p.name} ${p.category||""}`).split(" ");
-    return terms.every(t=>words.some(w=>singular(w)===singular(t)));
-  }).sort((a,b)=> (resolveProductBrand(a)||"Otras marcas").localeCompare(resolveProductBrand(b)||"Otras marcas","es") || a.name.localeCompare(b.name,"es"));
-  const label=[requestedCategories.map(c=>c.label).join(" y "),brands.map(([,v])=>v).join(" y "),terms.join(" ")].filter(Boolean).join(" ");
-  return { products:selected, scoped, label:label||"productos", brands:brands.map(([,v])=>v), categories:requestedCategories.map(c=>c.label), terms };
+function wordMatches(a: string, b: string) {
+  if (a === b || singular(a) === singular(b)) return true;
+  // Spanish plurals: cargador/cargadores, control/controles, lápiz/lápices.
+  const forms = (w: string) => [w, ...(w.endsWith("es") ? [w.slice(0,-2)] : []), ...(w.endsWith("ces") ? [w.slice(0,-3)+"z"] : [])];
+  return forms(a).some(x => forms(b).includes(x));
+}
+
+const typePrefixes = new Set(["pack", "set", "kit", "de", "del", "dos", "tres", "un", "una", "mini", "m", "pla", "pl", "bt", "nuevo", "nueva"]);
+
+/** Build the vocabulary from inventory and ERP references; aliases only supplement that vocabulary. */
+export function createCatalogIndex<T extends CatalogCandidate>(products: T[], referenceBrands: string[] = []) {
+  const knownBrands = new Map<string,string>();
+  for (const value of [...referenceBrands, ...products.flatMap(p => [p.brand, resolveProductBrand(p)])]) {
+    const key = normalizeCatalogText(value || "");
+    if (key) knownBrands.set(key, value!.trim());
+  }
+  const brandEntries = [...knownBrands].sort((a,b) => b[0].length-a[0].length);
+  const categoryNames = new Map<string,string>();
+  for (const p of products) for (const value of [p.category, p.categoryRef?.name]) {
+    if (value?.trim()) categoryNames.set(normalizeCatalogText(value),value.trim());
+  }
+  const rows = products.map(product => {
+    const name = normalizeCatalogText(product.name.replace(/^\([^)]*\)\s*/, ""));
+    const explicitBrand = normalizeCatalogText(product.brand || "");
+    const brandKeys = explicitBrand
+      ? brandEntries.filter(([key]) => hasPhrase(explicitBrand,key)).map(([key]) => key)
+      : brandEntries.filter(([key]) => hasPhrase(name,key)).map(([key]) => key);
+    const displayBrand = knownBrands.get(brandKeys[0]) || product.brand || resolveProductBrand(product) || "Otras marcas";
+    let typeText = name;
+    for (const key of brandKeys) typeText = typeText.replaceAll(key, " ");
+    const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !/^\d+$/.test(w) && !/\d/.test(w)) || "";
+    return { product, name, brandKeys, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
+  });
+  const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
+
+  function select(content: string) {
+    const text = normalizeCatalogText(content);
+    const queryTerms = text.split(" ").filter(t => !ignored.has(t)).join(" ");
+    const exactCodes = rows.filter(r => hasPhrase(text,r.code) && (/\bcodigos?\b/.test(text) || (queryTerms === r.code && !knownBrands.has(r.code) && !/\b(?:marca|categoria)s?\b/.test(text)) || content.includes(`(${r.product.code})`)));
+    // An explicit SKU remains searchable even if it is numeric, unbranded or uncategorized.
+    const maxCodeLength = Math.max(0,...exactCodes.map(r => r.code.length));
+    const codeRows = exactCodes.filter(r => r.code.length === maxCodeLength);
+    if (codeRows.length) return { products: codeRows.map(r => r.product), scoped: true, label: codeRows.map(r => r.product.code).join(" / "), brands: [] as string[], categories: [] as string[], types: [] as string[], terms: codeRows.map(r => r.product.code) };
+
+    let remainder = ` ${text} `;
+    const strictCategory = /\bcategorias?\b/.test(text);
+    const requestedCategories: [string,string][] = [];
+    for (const [key,label] of [...categoryNames].sort((a,b) => b[0].length-a[0].length)) {
+      if (hasPhrase(remainder,key) && (strictCategory || (!(/\bmarcas?\b/.test(text) && knownBrands.has(key)) && !categories.some(c => c.aliases.includes(key))))) {
+        requestedCategories.push([key,label]);
+        remainder = remainder.replaceAll(` ${key} `," ");
+      }
+    }
+    const requestedBrands: [string,string][] = [];
+    for (const [key,label] of brandEntries) if (hasPhrase(remainder,key)) {
+      requestedBrands.push([key,label]);
+      remainder = remainder.replaceAll(` ${key} `," ");
+    }
+    const tokens = remainder.trim().split(/\s+/).filter(t => t && !ignored.has(t));
+    const aliases = requestedCategories.length ? [] : categories.filter(c => tokens.some(t => c.aliases.includes(t) || c.aliases.some(a => nearWord(t,a))));
+    const remaining = tokens.filter(t => !aliases.some(c => c.aliases.includes(t) || c.aliases.some(a => nearWord(t,a))));
+    const requestedTypes = !aliases.length && !remaining.some(t => /\d/.test(t))
+      ? remaining.slice(0,1).filter(t => types.some(kind => wordMatches(kind,t))) : [];
+    const terms = remaining.filter(t => !requestedTypes.includes(t));
+    const scoped = Boolean(requestedCategories.length || requestedBrands.length || aliases.length || requestedTypes.length || terms.length);
+    const selected = rows.filter(r => {
+      if (requestedCategories.length && !requestedCategories.some(([key]) => [r.product.category,r.product.categoryRef?.name].some(v => normalizeCatalogText(v || "") === key))) return false;
+      if (requestedBrands.length && !requestedBrands.some(([key]) => r.brandKeys.includes(key))) return false;
+      if (aliases.length && !aliases.some(c => matchesCategory(r.product,c))) return false;
+      if (requestedTypes.length && !requestedTypes.some(t => wordMatches(r.type,t))) return false;
+      return terms.every(t => r.words.some(w => wordMatches(w,t)));
+    }).sort((a,b) => a.displayBrand.localeCompare(b.displayBrand,"es") || a.product.name.localeCompare(b.product.name,"es"));
+    const labels = [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label),...requestedTypes];
+    const label = [...labels,...requestedBrands.map(([,v]) => v),...terms].join(" ") || "productos";
+    return { products: selected.map(r => r.product), scoped, label, brands: requestedBrands.map(([,v]) => v), categories: [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label)], types: requestedTypes, terms };
+  }
+  return { select, brands: [...knownBrands.values()], categories: [...categoryNames.values()], types,
+    productBrand: (product: T) => rows.find(r => r.product === product)?.displayBrand || "Otras marcas" };
+}
+
+export function selectCatalogProducts<T extends CatalogCandidate>(content: string, products: T[], referenceBrands: string[] = []) {
+  return createCatalogIndex(products,referenceBrands).select(content);
 }
