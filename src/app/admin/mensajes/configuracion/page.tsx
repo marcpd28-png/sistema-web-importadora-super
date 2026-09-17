@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { WhatsAppMetaConnect } from "@/components/admin/messages/WhatsAppMetaConnect";
+import { WhatsAppManyChatStatus } from "@/components/admin/messages/WhatsAppManyChatStatus";
 import { MessagingSettingsForm } from "@/components/admin/messages/MessagingSettingsForm";
 import { Bot, CheckCircle2, PauseCircle } from "lucide-react";
 import { toggleBotAction } from "./actions";
@@ -11,6 +11,9 @@ export default async function ConfiguracionPage() {
     botMasterSwitch: true,
     n8nWebhookUrl: "",
   };
+  const outboundConfigured = Boolean(
+    process.env.N8N_OUTBOUND_WEBHOOK_URL?.trim() && process.env.N8N_OUTBOUND_API_KEY?.trim(),
+  );
 
   return (
     <div className="messaging-settings-page">
@@ -18,7 +21,7 @@ export default async function ConfiguracionPage() {
         <div>
           <p className="messaging-settings-eyebrow">Centro de mensajes</p>
           <h1>Configuración de mensajería</h1>
-          <p>Conecta el canal y decide cómo se procesan los mensajes entrantes.</p>
+          <p>Revisa tu canal de ManyChat y decide cómo se procesan los mensajes entrantes.</p>
         </div>
         <span className={`messaging-settings-state ${settings.botMasterSwitch ? "is-active" : "is-paused"}`}>
           {settings.botMasterSwitch ? <CheckCircle2 size={15} /> : <PauseCircle size={15} />}
@@ -27,7 +30,7 @@ export default async function ConfiguracionPage() {
       </div>
 
       <div className="messaging-settings-stack">
-        <WhatsAppMetaConnect />
+        <WhatsAppManyChatStatus outboundConfigured={outboundConfigured} />
 
         <section className="messaging-settings-card">
           <div className="messaging-settings-toggle-row">
