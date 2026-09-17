@@ -11,6 +11,40 @@ const products: CatalogCandidate[] = [
  {code:"F1",name:"FUNDA PARA AUDIFONOS JBL",brand:null,category:"ACCESORIOS PARA CELULARES"},
 ];
 const codes=(query:string)=>selectCatalogProducts(query,products).products.map(p=>p.code).sort();
+
+const projectors: CatalogCandidate[] = [
+ {code:"PR1",name:"PROYECTOR HAVIT PJ215",brand:"HAVIT",category:"ENTRETENIMIENTO Y MULTIMEDIA"},
+ {code:"PR2",name:"PROYECTOR MAGCUBIC HY300",brand:"MAGCUBIC",category:"PROYECTORES"},
+ {code:"CB1",name:"CABLE HDMI PARA PROYECTOR HAVIT",brand:"HAVIT",category:"ACCESORIOS"},
+ {code:"AU1",name:"AUDIFONO HAVIT",brand:"HAVIT",category:"AURICULARES"},
+];
+
+test("busco y estoy buscando expresan la solicitud, no filtros del catálogo",()=>{
+ for(const query of [
+  "hola busco catalogo de proyectores",
+  "Hola, estoy buscando el catálogo de proyectores, por favor",
+  "Buenas noches, ando buscando catálogo de proyectores",
+  "Estamos buscando el catálogo de proyectores",
+  "Buscamos catálogo de proyectores",
+  "Quisiera buscar el catálogo de proyectores",
+ ]) {
+  const result=selectCatalogProducts(query,projectors);
+  assert.deepEqual(result.products.map(p=>p.code).sort(),["PR1","PR2"],query);
+  assert.equal(result.label,"proyectores");
+  assert.deepEqual(result.terms,[]);
+ }
+ assert.equal(selectCatalogProducts("hola estoy buscando el catálogo completo",projectors).scoped,false);
+});
+
+test("las frases de solicitud conservan marca, modelo, código y filtros desconocidos",()=>{
+ const index=createCatalogIndex(projectors);
+ for(const query of ["busco catálogo de proyectores HAVIT", "estoy buscando catálogo de proyectores PJ215", "busco catálogo código PR1"]) {
+  assert.deepEqual(index.select(query).products.map(p=>p.code),["PR1"],query);
+ }
+ for(const query of ["busco catálogo de proyectores marca inexistente", "busco catálogo de proyectores HY999", "busco catálogo de proyectores Sony"]) {
+  assert.deepEqual(index.select(query).products,[],query);
+ }
+});
 test("catálogo de marca contiene todos sus tipos y detecta la marca en el nombre",()=>{
  assert.deepEqual(codes("hola me dan el catalogo de los productos jbl?"),["A1","A2","B1","F1","P1"]);
 });

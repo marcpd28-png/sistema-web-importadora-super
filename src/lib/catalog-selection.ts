@@ -25,6 +25,8 @@ const categories = [
 const ignored = new Set(normalizeCatalogText("hola buenas buenos dias tardes noches por favor porfa gracias me nos dan das da dar dame pasa pasan pasas pasame pasar manda mandan mandas mandame envia envian envias enviame enviarme darme pasarme mandarme enviar mostrar muestra muestrame mostrarme quisiera quiero necesito deseo puedes pueden podria podrias tienen tendran catalogo catalogos de del el la los las un una unos unas tus sus su tu ustedes sus todos todas todo productos producto articulos articulo ver y o para con en pdf por mayor al menor unidades unidad mayorista minorista compra comprar completo completa completos completas general disponible disponibles stock precio precios lista listado este esta esos esas" ).split(" "));
 function hasPhrase(text: string, phrase: string) { return (` ${text} `).includes(` ${phrase} `); }
 for (const word of ["marca", "marcas", "categoria", "categorias", "tipo", "tipos", "porfavor", "codigo", "codigos", "modelo", "modelos", "compartir", "comparteme", "podrian", "podrias"]) ignored.add(word);
+// Request wording such as "busco" or "estoy buscando" is not a product constraint.
+for (const word of ["busco", "buscamos", "buscar", "buscando", "estoy", "estamos", "ando", "andamos"]) ignored.add(word);
 function singular(value: string) { return value.length > 4 && value.endsWith("s") ? value.slice(0, -1) : value; }
 function nearWord(a: string, b: string) {
   if (a.length < 6 || b.length < 6 || Math.abs(a.length-b.length)>2) return false;
