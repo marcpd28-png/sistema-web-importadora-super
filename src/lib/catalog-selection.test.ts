@@ -96,3 +96,10 @@ test("los tipos incluyen productos guardados bajo categorías generales",()=>{
  assert.deepEqual(index.select("catálogo tipo drones").products.map(p=>p.code).sort(),["D1","D2"]);
  assert.deepEqual(index.select("catálogo categoría drones").products.map(p=>p.code),["D1"]);
 });
+
+test("agrupa por la marca del producto aunque el nombre también diga original",()=>{
+ const product={code:"S1",name:"CARGADOR SAMSUNG ORIGINAL",brand:null,category:"ACCESORIOS"};
+ const index=createCatalogIndex([product],["SAMSUNG","ORIGINAL"]);
+ assert.equal(index.productBrand(product),"SAMSUNG");
+ assert.equal(index.select("catálogo Samsung").products.length,1);
+});

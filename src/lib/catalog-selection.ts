@@ -70,7 +70,9 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const brandKeys = explicitBrand
       ? brandEntries.filter(([key]) => hasPhrase(explicitBrand,key)).map(([key]) => key)
       : brandEntries.filter(([key]) => hasPhrase(name,key)).map(([key]) => key);
-    const displayBrand = knownBrands.get(brandKeys[0]) || product.brand || resolveProductBrand(product) || "Otras marcas";
+    const descriptiveBrands = new Set(["original", "generico", "generica", "s m", "sin marca"]);
+    const displayKey = brandKeys.find(key => !descriptiveBrands.has(key)) || brandKeys[0];
+    const displayBrand = knownBrands.get(displayKey) || product.brand || resolveProductBrand(product) || "Otras marcas";
     let typeText = ` ${name} `;
     for (const key of brandKeys) typeText = typeText.replaceAll(` ${key} `, " ");
     const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !ignored.has(w) && !/\d/.test(w)) || "";
