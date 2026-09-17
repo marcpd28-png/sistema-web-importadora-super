@@ -86,9 +86,13 @@ test("los tipos incluyen productos guardados bajo categorías generales",()=>{
   {code:"CA",name:"CAMARA PARA AUTO",brand:null,category:"ACCESORIOS PARA AUTO"},
   {code:"RE",name:"RELOJ DE PARED",brand:null,category:"NOVEDADES"},
   {code:"SW",name:"SMART WATCH",brand:null,category:"SMART WATCH Y SUS ACCESORIOS"},
+  {code:"D1",name:"DRON CON CAMARA",brand:null,category:"DRONES"},
+  {code:"D2",name:"DRON CON GPS",brand:null,category:"ENTRETENIMIENTO Y MULTIMEDIA"},
  ];
  const index=createCatalogIndex(rows,["HAVIT"]);
  for(const [q,code] of [["proyectores","PR"],["cámaras","CA"]]) assert.deepEqual(index.select(`catálogo ${q}`).products.map(p=>p.code),[code]);
  assert.deepEqual(index.select("catálogo relojes").products.map(p=>p.code).sort(),["RE","SW"]);
  assert.deepEqual(index.select("catálogo smartwatch").products.map(p=>p.code),["SW"]);
+ assert.deepEqual(index.select("catálogo tipo drones").products.map(p=>p.code).sort(),["D1","D2"]);
+ assert.deepEqual(index.select("catálogo categoría drones").products.map(p=>p.code),["D1"]);
 });

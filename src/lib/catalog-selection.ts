@@ -94,7 +94,8 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const strictCategory = /\bcategorias?\b/.test(text);
     const requestedCategories: [string,string][] = [];
     for (const [key,label] of [...categoryNames].sort((a,b) => b[0].length-a[0].length)) {
-      if (hasPhrase(remainder,key) && (strictCategory || (!(/\bmarcas?\b/.test(text) && knownBrands.has(key)) && !categories.some(c => c.aliases.includes(key))))) {
+      const isProductType = !key.includes(" ") && types.some(kind => wordMatches(kind,key));
+      if (hasPhrase(remainder,key) && (strictCategory || (!isProductType && !(/\bmarcas?\b/.test(text) && knownBrands.has(key)) && !categories.some(c => c.aliases.includes(key))))) {
         requestedCategories.push([key,label]);
         remainder = remainder.replaceAll(` ${key} `," ");
       }
