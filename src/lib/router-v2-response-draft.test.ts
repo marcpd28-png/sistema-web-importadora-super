@@ -128,3 +128,44 @@ test("insufficient quantity asks for less without exposing exact stock", () => {
   assert.match(text, /cantidad menor/i);
   assert.doesNotMatch(text, /\b\d+\b/);
 });
+
+test("full welcome uses current business data only for the first response", () => {
+  const context = baseContext("SALES_CONTINUE");
+  context.customerMessage = "hola";
+  context.catalog.retailStoreUrl = "https://tienda.example/catalogo";
+  context.business = {
+    businessName: "Tienda de prueba",
+    currencySymbol: "S/",
+    supportHours: "",
+    storeAddress: "Calle Prueba 123",
+    paymentMethods: ["Yape", "Plin", "transferencia bancaria"],
+    deliveryMethods: ["DELIVERY", "SHALOM", "RECOJO"],
+  };
+
+  const initial = buildRouterV2ResponseDraft(context, { isFirstResponse: true });
+  assert.ok(initial.includes(context.business.businessName));
+  assert.ok(initial.includes(context.catalog.retailStoreUrl));
+  assert.ok(initial.includes(context.business.storeAddress));
+  const followup = buildRouterV2ResponseDraft(context, { isFirstResponse: false });
+  assert.doesNotMatch(followup, /bienvenido|shalom|motorizado/i);
+  assert.ok(!followup.includes(context.catalog.retailStoreUrl));
+
+  context.answerType = "PRODUCT_UNAVAILABLE";
+  const productReply = buildRouterV2ResponseDraft(context, { isFirstResponse: true });
+  assert.doesNotMatch(productReply, /bienvenido|shalom|motorizado/i);
+});
+
+test("welcome respects explicitly disabled payment and delivery options", () => {
+  const context = baseContext("SALES_CONTINUE");
+  context.business = {
+    businessName: "Tienda de prueba",
+    currencySymbol: "S/",
+    supportHours: "",
+    storeAddress: "Calle Prueba 123",
+    paymentMethods: [],
+    deliveryMethods: [],
+  };
+  const text = buildRouterV2ResponseDraft(context);
+  assert.doesNotMatch(text, /yape|plin|transferencia|shalom|motorizado|Calle Prueba/i);
+  assert.doesNotMatch(text, /https?:\/\//);
+});

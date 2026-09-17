@@ -39,7 +39,12 @@ export async function getRouterV2BusinessKnowledge(): Promise<RouterV2BusinessKn
       "https://tiendavirtualsuper.com",
     wholesaleCatalogUrl:
       process.env.ROUTER_V2_WHOLESALE_CATALOG_URL?.trim() || null,
-    paymentMethods: splitList(process.env.ROUTER_V2_PAYMENT_METHODS),
-    deliveryMethods: splitList(process.env.ROUTER_V2_DELIVERY_METHODS),
+    // Store policies confirmed by the business; explicit env values still take precedence.
+    paymentMethods: splitList(
+      process.env.ROUTER_V2_PAYMENT_METHODS ?? "Yape, Plin, transferencia bancaria",
+    ),
+    deliveryMethods: splitList(
+      process.env.ROUTER_V2_DELIVERY_METHODS ?? "DELIVERY, SHALOM, RECOJO",
+    ),
   };
 }

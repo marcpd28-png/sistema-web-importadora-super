@@ -129,7 +129,46 @@ function formatProductDetails(context: ResponseContext) {
   return lines.join("\n");
 }
 
-export function buildRouterV2ResponseDraft(context: ResponseContext) {
+function buildWelcome(context: ResponseContext) {
+  const businessName = context.business?.businessName.trim() || "Importaciones Super";
+  const storeUrl = context.catalog.retailStoreUrl?.trim();
+  const address = context.business?.storeAddress.trim();
+  const paymentMethods = context.business?.paymentMethods ?? [];
+  const deliveryMethods = context.business?.deliveryMethods ?? [];
+  const offersDelivery = (method: string) => deliveryMethods.some(
+    (configured) => configuredDeliveryMatches(configured, method),
+  );
+  const sections = [`Hola, ¡Bienvenido a ${businessName}! 🛍️`];
+
+  if (storeUrl) {
+    sections.push(`🛒 Encuentra nuestro catálogo completo en la tienda virtual:\n${storeUrl}`);
+  }
+  sections.push("📄 ¿Buscas un catálogo específico? Dime la categoría o marca y te lo comparto en PDF.");
+  if (offersDelivery("DELIVERY")) {
+    sections.push("🛵 Enviamos a todo Lima con motorizado propio, previo pago por adelantado.");
+  }
+  if (offersDelivery("SHALOM")) {
+    sections.push("📦 También hacemos envíos a provincias por Shalom.");
+  }
+  if (offersDelivery("RECOJO")) {
+    sections.push(address
+      ? `📍 ¿Prefieres recoger tu pedido? Te esperamos en nuestra tienda: ${address}.`
+      : "📍 También puedes recoger tu pedido en nuestra tienda. Te confirmamos la dirección al coordinar el recojo.");
+  }
+  if (paymentMethods.length) {
+    const paymentList = paymentMethods.length > 1
+      ? `${paymentMethods.slice(0, -1).join(", ")} y ${paymentMethods.at(-1)}`
+      : paymentMethods[0];
+    sections.push(`💰 Métodos de pago: ${paymentList}.`);
+  }
+  sections.push("🔎 ¿Qué producto estás buscando? Estoy aquí para ayudarte. 😊");
+  return sections.join("\n\n");
+}
+
+export function buildRouterV2ResponseDraft(
+  context: ResponseContext,
+  options: { isFirstResponse?: boolean } = {},
+) {
   const currency = context.business?.currencySymbol || "S/";
   const answerType = context.answerType;
 
@@ -475,7 +514,9 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
     !context.sales.productCode &&
     !context.sales.productName
   ) {
-    return "Hola, bienvenido a Importaciones Super. ¿Qué producto estás buscando? Puedo ayudarte con precio, disponibilidad, imagen y el enlace para comprar.";
+    return options.isFirstResponse === false
+      ? "¿Qué producto estás buscando? 😊 Puedo ayudarte con precio, disponibilidad o un catálogo en PDF por categoría o marca."
+      : buildWelcome(context);
   }
 
   return appendResume("Continuemos con tu compra.", context);

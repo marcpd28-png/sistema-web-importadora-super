@@ -175,6 +175,15 @@ export async function POST(request: Request) {
         botEnabled: true,
         assignedUserId: true,
         salesState: true,
+        messages: {
+          where: {
+            direction: "OUTBOUND",
+            senderType: { in: ["BOT", "AGENT"] },
+            OR: [{ status: null }, { status: { notIn: ["failed", "pending"] } }],
+          },
+          select: { id: true },
+          take: 1,
+        },
         contact: {
           select: {
             externalId: true,
@@ -667,6 +676,7 @@ export async function POST(request: Request) {
 
     const draftText = buildRouterV2ResponseDraft(
       responseContext,
+      { isFirstResponse: conversation.messages.length === 0 },
     );
     const outboundMessages = buildRouterV2OutboundMessages({
       context: responseContext,
