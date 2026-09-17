@@ -1,4 +1,4 @@
-# Verificación del despliegue — 16 de septiembre de 2026 (Lima)
+# Verificación del despliegue — 17 de septiembre de 2026 (Lima)
 
 ## Ampliación a inventario, marcas y tipos de producto
 
@@ -18,7 +18,7 @@ Auditoría sobre el VPS: 1.630 productos publicados localizables por su código,
 | Código BT454. | 1 |
 | Audofnos JBL | 49 |
 
-Cada solicitud se validó mediante `POST /api/admin/conversations/simulate`, n8n y la respuesta persistida: un solo PDF, sin la pregunta previa por modalidad de compra. Se compararon los códigos extraídos de los nueve PDF con la selección esperada y se revisaron páginas renderizadas. Se corrigieron las coincidencias entre casacas/cámaras y los encabezados que anteponían la etiqueta «ORIGINAL» a Samsung.
+Cada solicitud se validó mediante `POST /api/admin/conversations/simulate`, n8n y la respuesta persistida: un solo PDF, sin la pregunta previa por modalidad de compra. Se compararon los códigos extraídos de los nueve PDF con la selección esperada y se revisaron páginas renderizadas. Se corrigieron las coincidencias entre casacas/cámaras y los encabezados que anteponían la etiqueta «ORIGINAL» a Samsung o «SUPER BASS» a JBL.
 
 Validación: 14 pruebas del selector/PDF y 4 del grafo de n8n, ESLint sin errores y compilación completa en el VPS. Registros en `/home/IMPORTADORA-backups/bc-universal-catalog-20260917/`. Se conserva la ejecución exclusiva del simulador.
 
