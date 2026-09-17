@@ -12,6 +12,73 @@ const products: CatalogCandidate[] = [
 ];
 const codes=(query:string)=>selectCatalogProducts(query,products).products.map(p=>p.code).sort();
 
+const chargingProducts: CatalogCandidate[] = [
+ {code:"CR1",name:"SQ CARGADOR M. SUPER TIPO C 35W",brand:null,category:"ACCESORIOS PARA CELULARES"},
+ {code:"CR2",name:"CARGADOR HONOR SUPER CARGA 66W",brand:"HONOR",category:"ACCESORIOS PARA CELULARES"},
+ {code:"CR3",name:"TRANSFORMER CARGADOR PORTATIL",brand:null,category:"ACCESORIOS"},
+ {code:"CR4",name:"COMBO CARGADOR SUPER CON CABLE",brand:null,category:"ACCESORIOS"},
+ {code:"FP1",name:"FUENTE DE PODER SUPER 12V",brand:"SUPER",category:"ENERGIA"},
+ {code:"CB1",name:"CABLE DE PODER SUPER",brand:"SUPER",category:"ACCESORIOS"},
+ {code:"CB2",name:"CABLE PARA CARGADOR SUPER",brand:"SUPER",category:"ACCESORIOS"},
+ {code:"GA1",name:"GATA HIDRAULICA CON CARGADOR DE BATERIA",brand:null,category:"ACCESORIOS PARA AUTO"},
+];
+
+test("separa los tipos del catálogo mayorista sin exigir ambos en un producto",()=>{
+ const index=createCatalogIndex(chargingProducts,["SUPER","HONOR"]);
+ for(const query of [
+  "pero tambien busco el catalogo mayorista de sus productos como cargadores y fuentes de poder",
+  "Además, quisiera el catálogo por mayor, por ejemplo cargadores y fuentes de poder",
+  "catálogo de cargadores, fuentes de poder",
+  "hola\nbusco catálogo mayorista\nde cargadores\ny fuentes de poder",
+ ]) {
+  const result=index.select(query);
+  assert.deepEqual(result.products.map(p=>p.code).sort(),["CR1","CR2","CR3","CR4","FP1"],query);
+  assert.equal(result.label,"cargadores y fuentes de poder");
+  assert.deepEqual(result.unmatchedScopes,[]);
+ }
+});
+
+test("si un tipo no coincide conserva el catálogo encontrado e informa cuál falta",()=>{
+ const rows=chargingProducts.filter(p=>p.code!=="FP1");
+ const index=createCatalogIndex(rows,["SUPER","HONOR"]);
+ const result=index.select("pero también busco el catálogo mayorista como cargadores y fuentes de poder");
+ assert.deepEqual(result.products.map(p=>p.code).sort(),["CR1","CR2","CR3","CR4"]);
+ assert.equal(result.label,"cargadores");
+ assert.deepEqual(result.unmatchedScopes,["fuentes de poder"]);
+ assert.deepEqual(index.select("catálogo fuentes de poder").products,[]);
+});
+
+test("marca compartida restringe ambos tipos; marcas por cláusula conservan su alcance",()=>{
+ const index=createCatalogIndex(chargingProducts,["SUPER","HONOR"]);
+ for(const query of ["catálogo cargadores y fuentes de poder SUPER", "catálogo cargadores y fuentes de poder marca Super Importaciones", "catálogo SUPER cargadores y fuentes de poder"]) {
+  assert.deepEqual(index.select(query).products.map(p=>p.code).sort(),["CR1","CR4","FP1"],query);
+ }
+ assert.deepEqual(index.select("catálogo cargadores HONOR y fuentes de poder SUPER").products.map(p=>p.code).sort(),["CR2","FP1"]);
+ assert.deepEqual(index.select("catálogo cargadores y fuentes de poder marca inexistente").products,[]);
+ assert.deepEqual(index.select("catálogo cargadores 999W y fuentes de poder 999V").products,[]);
+});
+
+test("Super Importaciones reconoce la marca propia y no confunde SUPER CARGA de otra marca",()=>{
+ const rows=[...chargingProducts,{code:"HON1",name:"CARGADOR HONOR SUPER CARGA 100W",brand:null,category:"ACCESORIOS"}];
+ const index=createCatalogIndex(rows,["SUPER","HONOR"]);
+ for(const query of ["catálogo cargadores Super Importaciones", "catálogo cargadores Importaciones Super", "catálogo cargadores marca SUPER"]) {
+  assert.deepEqual(index.select(query).products.map(p=>p.code).sort(),["CR1","CR4"],query);
+ }
+ assert.equal(index.productType(rows[0]),"cargador");
+});
+
+test("conjunciones internas de categorías y filtros de producto no se convierten en listas",()=>{
+ const rows: CatalogCandidate[]=[
+  {code:"A",name:"CARGADOR ABC 20W BLANCO Y NEGRO",brand:"ABC",category:"CARGADORES Y FUENTES DE PODER"},
+  {code:"B",name:"FUENTE DE PODER ABC 12V",brand:"ABC",category:"CARGADORES Y FUENTES DE PODER"},
+  {code:"C",name:"CARGADOR ABC 65W",brand:"ABC",category:"OTROS"},
+ ];
+ const index=createCatalogIndex(rows);
+ assert.deepEqual(index.select("catálogo categoría CARGADORES Y FUENTES DE PODER").products.map(p=>p.code).sort(),["A","B"]);
+ assert.deepEqual(index.select("catálogo cargadores 20W blanco y negro").products.map(p=>p.code),["A"]);
+ assert.deepEqual(index.select("catálogo cargadores marca inexistente").products,[]);
+});
+
 const projectors: CatalogCandidate[] = [
  {code:"PR1",name:"PROYECTOR HAVIT PJ215",brand:"HAVIT",category:"ENTRETENIMIENTO Y MULTIMEDIA"},
  {code:"PR2",name:"PROYECTOR MAGCUBIC HY300",brand:"MAGCUBIC",category:"PROYECTORES"},

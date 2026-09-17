@@ -37,15 +37,19 @@ export async function POST(request: Request) {
       });
     }
     const result = await generateRequestedCatalogPdf(input.content, extenders);
+    const missingScopeNote = result.catalog && result.unmatchedScopes.length
+      ? `\n\nSobre ${result.unmatchedScopes.join(" y ")}, no encontré coincidencias publicadas con ese nombre. ¿Puedes indicarme un modelo o enviarme una foto para ayudarte a identificar el producto?`
+      : "";
     return NextResponse.json({
       ok: true, matched: true, simulation: true, conversationId: conversation.id,
       requestId,
-      content: result.catalog ? `Te comparto el catálogo de ${result.label}: ${result.catalog.productCount} productos.`
+      content: result.catalog ? `Te comparto el catálogo de ${result.label}: ${result.catalog.productCount} productos.${missingScopeNote}`
         : !result.scoped ? `Te comparto nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`
         : `No encontré productos publicados para el catálogo de ${result.label}. Puedes indicarme otra marca, categoría o tipo de producto.`,
       type: result.catalog ? "document" : "text", mediaUrl: result.catalog?.absoluteUrl ?? null,
       catalog: result.catalog ? { filename: result.catalog.filename, productCount: result.catalog.productCount, url: result.catalog.absoluteUrl } : null,
       filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },
+      unmatchedScopes: result.unmatchedScopes,
     });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ ok: false, error: "Invalid request payload" }, { status: 400 });

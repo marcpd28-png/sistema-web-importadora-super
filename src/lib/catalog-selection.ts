@@ -17,6 +17,7 @@ const categories = [
   { label: "audífonos", stored: "AURICULARES", aliases: ["audifono", "audifonos", "audofnos", "auricular", "auriculares", "headphones", "headsets"] },
   { label: "parlantes", stored: "PARLANTES", aliases: ["parlante", "parlantes", "altavoz", "altavoces", "speaker", "speakers"] },
   { label: "proyectores", stored: "PROYECTORES", aliases: ["proyector", "proyectores"] },
+  { label: "cargadores", stored: "CARGADORES", aliases: ["cargador", "cargadores"] },
   { label: "cámaras", stored: "CAMARA DE SEGURIDAD", aliases: ["camara", "camaras"] },
   { label: "baterías", stored: "BATERIAS", aliases: ["bateria", "baterias"] },
   { label: "relojes inteligentes", stored: "SMART WATCH", aliases: ["smartwatch", "smartwatches"] },
@@ -27,6 +28,7 @@ function hasPhrase(text: string, phrase: string) { return (` ${text} `).includes
 for (const word of ["marca", "marcas", "categoria", "categorias", "tipo", "tipos", "porfavor", "codigo", "codigos", "modelo", "modelos", "compartir", "comparteme", "podrian", "podrias"]) ignored.add(word);
 // Request wording such as "busco" or "estoy buscando" is not a product constraint.
 for (const word of ["busco", "buscamos", "buscar", "buscando", "estoy", "estamos", "ando", "andamos"]) ignored.add(word);
+for (const word of ["pero", "tambien", "ademas", "como", "ejemplo"]) ignored.add(word);
 function singular(value: string) { return value.length > 4 && value.endsWith("s") ? value.slice(0, -1) : value; }
 function nearWord(a: string, b: string) {
   if (a.length < 6 || b.length < 6 || Math.abs(a.length-b.length)>2) return false;
@@ -43,6 +45,12 @@ function matchesCategory(product: CatalogCandidate, category: typeof categories[
   if (category.stored === "AURICULARES" && /^(parlante|speaker|proyector)/.test(primaryType)) return false;
   if (category.stored === "PARLANTES" && /^(audifono|auricular|headphone|proyector)/.test(primaryType)) return false;
   const stored=normalizeCatalogText(product.category || "");
+  if(category.stored === "CARGADORES") {
+    // A charger can follow an ERP prefix or a brand, but an item WITH/FOR a charger is not a charger.
+    const subject = name.split(/\b(?:con|para)\b/)[0];
+    return !/^(?:funda|estuche|soporte|cable|adaptador)/.test(primaryType) &&
+      (/\b(?:cargador(?:es)?|chargers?)\b/.test(subject) || stored === "cargadores");
+  }
   if(category.stored === "PROYECTORES") return /\bproyector(?:es)?\b/.test(name) || stored === "proyectores";
   if(category.stored === "SMART WATCH" || category.stored === "RELOJ") return stored.startsWith("smart watch") || /\bsmart ?watch\b/.test(name);
   const inferred=inferStoreCategoryName(product);
@@ -56,7 +64,7 @@ function wordMatches(a: string, b: string) {
   return forms(a).some(x => forms(b).includes(x));
 }
 
-const typePrefixes = new Set(["pack", "set", "kit", "de", "del", "dos", "tres", "un", "una", "mini", "m", "pla", "pl", "bt", "nuevo", "nueva"]);
+const typePrefixes = new Set(["pack", "set", "kit", "combo", "sq", "de", "del", "dos", "tres", "un", "una", "mini", "m", "pla", "pl", "bt", "nuevo", "nueva"]);
 
 /** Build the vocabulary from inventory and ERP references; aliases only supplement that vocabulary. */
 export function createCatalogIndex<T extends CatalogCandidate>(products: T[], referenceBrands: string[] = []) {
@@ -66,6 +74,9 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     if (key) knownBrands.set(key, value!.trim());
   }
   const brandEntries = [...knownBrands].sort((a,b) => b[0].length-a[0].length);
+  const normalizeBrandAliases = (content: string) => knownBrands.has("super")
+    ? content.replace(/\b(?:super\s+importaciones|importaciones\s+super)\b/gi, "SUPER")
+    : content;
   const categoryNames = new Map<string,string>();
   for (const p of products) for (const value of [p.category, p.categoryRef?.name]) {
     if (value?.trim()) categoryNames.set(normalizeCatalogText(value),value.trim());
@@ -75,7 +86,10 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const explicitBrand = normalizeCatalogText(product.brand || "");
     const brandKeys = explicitBrand
       ? brandEntries.filter(([key]) => hasPhrase(explicitBrand,key)).map(([key]) => key)
-      : brandEntries.filter(([key]) => hasPhrase(name,key)).map(([key]) => key);
+      : brandEntries.filter(([key]) => hasPhrase(
+        key === "super" ? name.replace(/\bsuper\s+(?:carga|bass|fast|charge)\b/g, "") : name,
+        key,
+      )).map(([key]) => key);
     const descriptiveBrands = new Set(["original", "generico", "generica", "s m", "sin marca"]);
     const namedBrands = brandKeys.filter(key => !descriptiveBrands.has(key));
     namedBrands.sort((a,b) => ` ${name} `.indexOf(` ${a} `) - ` ${name} `.indexOf(` ${b} `) || b.length-a.length);
@@ -88,7 +102,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
   });
   const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
 
-  function select(content: string) {
+  function selectSingle(content: string) {
     const text = normalizeCatalogText(content);
     const queryTerms = text.split(" ").filter(t => !ignored.has(t)).join(" ");
     const exactCodes = rows.filter(r => hasPhrase(text,r.code) && (/\bcodigos?\b/.test(text) || (queryTerms === r.code && !knownBrands.has(r.code) && !/\b(?:marca|categoria)s?\b/.test(text)) || content.includes(`(${r.product.code})`)));
@@ -138,6 +152,76 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const labels = [...(screenExtenders ? ["extensores de pantalla"] : []),...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label),...requestedTypes];
     const label = [...labels,...requestedBrands.map(([,v]) => v),...terms].join(" ") || "productos";
     return { products: selected.map(r => r.product), scoped, label, brands: requestedBrands.map(([,v]) => v), categories: [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label)], types: screenExtenders ? ["extensores de pantalla"] : requestedTypes, terms };
+  }
+
+  function startsWithScope(content: string) {
+    let scope = ` ${normalizeCatalogText(content)} `;
+    for (const [brand] of brandEntries) scope = scope.replaceAll(` ${brand} `, " ");
+    const words = scope.trim().split(" ").filter(t => t && !ignored.has(t));
+    const first = words[0];
+    if (!first) return false;
+    return types.some(kind => wordMatches(kind, first)) ||
+      categories.some(category => category.aliases.includes(first)) ||
+      [...categoryNames.keys()].some(key => hasPhrase(words.join(" "), key)) ||
+      /^(?:fuentes? (?:poder|alimentacion)|extensores? pantallas?)\b/.test(words.join(" "));
+  }
+
+  function splitScopes(content: string) {
+    // Keep punctuation until list boundaries are found; don't split compound categories or brands.
+    const text = content.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const protectedRanges: [number, number][] = [];
+    for (const key of [...categoryNames.keys(), ...knownBrands.keys()]) {
+      if (!/\b(?:y|e|o|u)\b/.test(key)) continue;
+      let start = text.indexOf(key);
+      while (start !== -1) {
+        protectedRanges.push([start, start + key.length]);
+        start = text.indexOf(key, start + key.length);
+      }
+    }
+    const parts: string[] = [];
+    let start = 0;
+    for (const match of text.matchAll(/\s+(?:y|e|o|u)\s+|[,;\n]+/g)) {
+      const at = match.index!;
+      if (protectedRanges.some(([from, to]) => at >= from && at < to)) continue;
+      const before = text.slice(start, at);
+      const after = text.slice(at + match[0].length);
+      if (!startsWithScope(before) || !startsWithScope(after)) continue;
+      parts.push(before);
+      start = at + match[0].length;
+    }
+    parts.push(text.slice(start));
+    return parts;
+  }
+
+  function select(content: string) {
+    content = normalizeBrandAliases(content);
+    const parts = splitScopes(content);
+    if (parts.length < 2) return { ...selectSingle(content), unmatchedScopes: [] as string[] };
+
+    let selections = parts.map(selectSingle);
+    // A single brand qualifies the list; separately branded clauses keep their own filters.
+    const branded = selections.filter(selection => selection.brands.length);
+    const explicitLastBrand = parts.at(-1)?.match(/\bmarcas?\s+(.+)$/)?.[1];
+    const sharedBrand = branded.length === 1 ? branded[0].brands.join(" ")
+      : branded.length === 0 ? explicitLastBrand : null;
+    if (sharedBrand) selections = selections.map((selection, i) => selection.brands.length
+      ? selection : selectSingle(`${parts[i]} marca ${sharedBrand}`));
+
+    const unique = (values: string[]) => [...new Set(values)];
+    const matched = selections.filter(selection => selection.products.length);
+    const chosenCodes = new Set(matched.flatMap(selection => selection.products.map(p => p.code)));
+    const humanLabel = (label: string) => label.replace(/\b(fuentes?) (poder|alimentacion)\b/g, "$1 de $2");
+    const selected = rows.filter(row => chosenCodes.has(row.product.code))
+      .sort((a, b) => a.displayBrand.localeCompare(b.displayBrand, "es") || a.product.name.localeCompare(b.product.name, "es"));
+    return {
+      products: selected.map(row => row.product), scoped: true,
+      label: unique((matched.length ? matched : selections).map(selection => humanLabel(selection.label))).join(" y "),
+      brands: unique(selections.flatMap(selection => selection.brands)),
+      categories: unique(selections.flatMap(selection => selection.categories)),
+      types: unique(selections.flatMap(selection => selection.types)),
+      terms: unique(selections.flatMap(selection => selection.terms)),
+      unmatchedScopes: selections.filter(selection => !selection.products.length).map(selection => humanLabel(selection.label)),
+    };
   }
   return { select, brands: [...knownBrands.values()], categories: [...categoryNames.values()], types,
     productType: (product: T) => rows.find(r => r.product === product)?.type || "",
