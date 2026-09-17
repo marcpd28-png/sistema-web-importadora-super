@@ -193,7 +193,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const simulation = conversation.contact.externalId.startsWith("SIMULATOR:");
+    const simulation = conversation.contact.externalId?.startsWith("SIMULATOR:") === true;
     const currentState = conversation.salesState
       ? serializeSalesState(conversation.salesState)
       : null;
