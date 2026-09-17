@@ -31,7 +31,10 @@ function nearWord(a: string, b: string) {
 function matchesCategory(product: CatalogCandidate, category: typeof categories[number]) {
   const name=normalizeCatalogText(product.name.replace(/^\([^)]*\)\s*/, ""));
   // A case/cable for headphones or a microphone for a speaker is not the device itself.
-  if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria)\b/.test(name)) return false;
+  const primaryType = name.match(/\b(?:audifonos?|auriculares?|headphones?|parlantes?|speakers?|proyectores?|fundas?|estuches?|soportes?|cables?|adaptadores?|microfonos?|baterias?)\b/)?.[0] || "";
+  if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria)/.test(primaryType)) return false;
+  if (category.stored === "AURICULARES" && /^(parlante|speaker|proyector)/.test(primaryType)) return false;
+  if (category.stored === "PARLANTES" && /^(audifono|auricular|headphone|proyector)/.test(primaryType)) return false;
   const stored=normalizeCatalogText(product.category || "");
   if(category.stored === "PROYECTORES") return /\bproyectores?\b/.test(name) || stored === "proyectores";
   if(category.stored === "SMART WATCH") return stored.startsWith("smart watch") || /\bsmart ?watch\b/.test(name);

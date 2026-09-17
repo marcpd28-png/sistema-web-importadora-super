@@ -32,3 +32,12 @@ test("solo intercepta solicitudes explícitas de catálogo",()=>{
  assert.equal(isCatalogRequest("CATÁLOGOS JBL"),true);
  assert.equal(isCatalogRequest("¿Tienen audífonos JBL?"),false);
 });
+test("excluye micrófonos para Partybox y corrige categorías heredadas contradictorias",()=>{
+ const rows: CatalogCandidate[]=[
+  {code:"M1",name:"PACK DE DOS MICROFONOS JBL PARTYBOX",brand:null,category:"ENTRETENIMIENTO Y MULTIMEDIA"},
+  {code:"H1",name:"AUDIFONO JBL TUNE",brand:null,category:"PARLANTES"},
+  {code:"S1",name:"PARLANTE CON MICROFONO",brand:null,category:"AURICULARES"},
+ ];
+ assert.deepEqual(selectCatalogProducts("catálogo parlantes",rows).products.map(p=>p.code),["S1"]);
+ assert.deepEqual(selectCatalogProducts("catálogo audífonos",rows).products.map(p=>p.code),["H1"]);
+});
