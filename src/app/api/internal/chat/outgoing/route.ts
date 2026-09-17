@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         where: { id: input.conversationId },
         select: { contact: { select: { externalId: true } } },
       });
-      if (!conversation?.contact.externalId.startsWith("SIMULATOR:")) {
+      if (!conversation?.contact.externalId?.startsWith("SIMULATOR:")) {
         return NextResponse.json({ ok: false, error: "Simulator conversation required" }, { status: 403 });
       }
     }
