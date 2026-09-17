@@ -37,9 +37,9 @@ test('all explicit catalog requests use the PDF branch before purchase-mode ques
  assert.match(catalog.nodes.find(n=>n.name==='Registrar catálogo simulado').parameters.jsonBody,/\$json.type/);
  const batch=catalog.nodes.find(n=>n.name==='Registrar catálogo simulado').parameters;
  assert.match(batch.url,/\/chat\/simulator-batch$/);
- const payload=new Function('$json','return '+batch.jsonBody.slice(3,-2));
+ const payload=new Function('$json','$','return '+batch.jsonBody.slice(3,-2));
  const outboundMessages=Array.from({length:4},(_,i)=>({type:'IMAGE',content:String(i),mediaUrl:'https://example.com/'+i+'.jpg'}));
- assert.deepEqual(payload({conversationId:'sim',requestId:'r',outboundMessages}).messages,outboundMessages);
+ assert.deepEqual(payload({conversationId:'sim',requestId:'r',outboundMessages},()=>({first:()=>({json:{triggerMessageId:'m'}})})).messages,outboundMessages);
 });
 test('router ignores real and duplicate incoming messages; simulator runs without a phone number',()=>{
  const w=read('router');
@@ -52,7 +52,8 @@ test('router ignores real and duplicate incoming messages; simulator runs withou
  const values={'Route Message V2':{conversation:{id:'test'},draftText:'Hola',outboundMessages:[]},'Normalize Router Input':{isSimulation:true,triggerMessageId:'m'},'Optional AI Draft':{}};
  const result=new Function('$',outbound)(name=>({first:()=>({json:values[name]})}));
  assert.deepEqual(result[0].json.messages,[{type:'TEXT',content:'Hola',mediaUrl:null}]);
- assert.equal(result[0].json.requestId,'router:m');
+ assert.equal(result[0].json.requestId,'bc:m');
+ assert.equal(result[0].json.triggerMessageId,'m');
  assert.equal(result[0].json.isSimulation,true);
 });
 

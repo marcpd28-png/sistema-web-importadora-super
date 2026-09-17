@@ -6,6 +6,7 @@ import { triggerPusherEvent } from "@/lib/pusher-server";
 import { getMessageMedia, safeMessageMediaUrl } from "@/lib/message-media";
 import { templateSelectionSchema } from "@/lib/message-templates";
 import { prepareTemplateSnapshot } from "@/lib/message-templates-service";
+import { lockSimulatorConversation } from "@/lib/simulator-input-batch";
 import {
   N8nOutboundError,
   sendN8nOutboundMessage,
@@ -691,8 +692,8 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     });
   }
 
-  const [message, updatedConversation] = await prisma.$transaction([
-    prisma.chatMessage.create({
+  const persist = (db: Prisma.TransactionClient, receivedAt: Date) => [
+    db.chatMessage.create({
       data: {
         conversationId: conversation.id,
         externalMessageId: parsed.externalMessageId,
@@ -702,18 +703,27 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
         content: parsed.content,
         mediaUrl: media.url,
         metadata: metadata as Prisma.InputJsonValue,
-        createdAt: timestamp,
+        createdAt: receivedAt,
         status: "delivered",
       },
     }),
-    prisma.conversation.update({
+    db.conversation.update({
       where: { id: conversation.id },
       data: {
-        lastMessageAt: timestamp,
+        lastMessageAt: receivedAt,
         unreadCount: { increment: 1 },
       },
     }),
-  ]);
+  ] as const;
+  const [message, updatedConversation] = isSimulator
+    ? await prisma.$transaction(async tx => {
+      await lockSimulatorConversation(tx, conversation.id);
+      const last = await tx.chatMessage.findFirst({ where: { conversationId: conversation.id }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { createdAt: true } });
+      // Replies may have multiple attachments with successive timestamps. Keep new input after them.
+      const receivedAt = new Date(Math.max(Date.now(), (last?.createdAt.getTime() ?? 0) + 1));
+      return Promise.all(persist(tx, receivedAt));
+    })
+    : await prisma.$transaction([...persist(prisma, timestamp)]);
 
   triggerPusherEvent(`chat-${updatedConversation.id}`, "new-message", message);
 

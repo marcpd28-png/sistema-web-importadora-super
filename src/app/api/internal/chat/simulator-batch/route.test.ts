@@ -22,6 +22,7 @@ test("el simulador guarda el saludo y la respuesta completa, sin duplicar ni res
   let now = new Date("2026-09-17T20:00:00-05:00").getTime();
   t.mock.method(Date, "now", () => now);
   const tx = {
+    $executeRaw: async () => 1,
     conversation: {
       findUnique: async () => ({ botEnabled, assignedUserId: null, status: "AUTOMATICO", contact: { externalId } }),
       update: async () => { updates++; },

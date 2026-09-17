@@ -12,9 +12,11 @@ let webhook: typeof import("../app/api/webhook/whatsapp/route").POST;
 
 before(async () => {
   global.prismaGlobal = {
+    $executeRaw: async () => 1,
     chatContact: { findUnique: async () => contact },
     conversation: { findFirst: async () => conversation, update: async () => conversation },
     chatMessage: {
+      findFirst: async () => [...saved].sort((a,b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime())[0] ?? null,
       findUnique: async ({ where }: { where: { externalMessageId: string } }) => saved.find((row) => row.externalMessageId === where.externalMessageId) ?? null,
       create: async ({ data }: { data: Record<string, unknown> }) => {
         const row = { id: `message-${saved.length}`, ...data };
@@ -22,7 +24,7 @@ before(async () => {
         return row;
       },
     },
-    $transaction: async (queries: Promise<unknown>[]) => Promise.all(queries),
+    $transaction: async (queries: Promise<unknown>[] | ((tx: PrismaClient) => Promise<unknown>)) => typeof queries === "function" ? queries(global.prismaGlobal!) : Promise.all(queries),
   } as unknown as PrismaClient;
   process.env.N8N_INTERNAL_API_KEY = "test-incoming-only";
   process.env.META_APP_SECRET = "test-webhook-only";
@@ -92,5 +94,20 @@ test("la recepción multimedia mantiene autenticación y rechaza enlaces ejecuta
   const count = saved.length;
   assert.equal((await incoming(request(payload("bad-auth", { type: "AUDIO" }), false))).status, 401);
   assert.equal((await incoming(request(payload("bad-url", { type: "AUDIO", mediaUrl: "javascript:alert(1)" })))).status, 400);
+  assert.equal(saved.length, count);
+});
+
+test("el simulador cuenta la pausa desde la recepción del servidor y mantiene el orden de mensajes", async t => {
+  const now = Date.parse("2030-01-01T10:00:00Z");
+  t.mock.method(Date, "now", () => now);
+  const send = (id: string, content: string) => incoming(request(payload(id, {
+    externalContactId: "SIMULATOR:receipt-check", timestamp: "2099-01-01T00:00:00Z", content, type: "TEXT",
+  })));
+  assert.equal((await send("sim-receipt-1", "hola")).status, 201);
+  assert.equal((saved.at(-1)!.createdAt as Date).getTime(), now);
+  assert.equal((await send("sim-receipt-2", "busco catálogo")).status, 201);
+  assert.equal((saved.at(-1)!.createdAt as Date).getTime(), now + 1);
+  const count = saved.length;
+  assert.equal((await send("sim-receipt-2", "busco catálogo")).status, 200);
   assert.equal(saved.length, count);
 });

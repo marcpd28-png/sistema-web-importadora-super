@@ -126,7 +126,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { conversationId: $json.conversationId, requestId: $json.requestId, messages: $json.outboundMessages || [{ content: $json.content, mediaUrl: $json.mediaUrl, type: String($json.type || 'document').toUpperCase() }] } }}",
+        "jsonBody": "={{ { conversationId: $json.conversationId, requestId: $json.requestId, triggerMessageId: $('Entrada persistida').first().json.triggerMessageId, messages: $json.outboundMessages || [{ content: $json.content, mediaUrl: $json.mediaUrl, type: String($json.type || 'document').toUpperCase() }] } }}",
         "options": {
           "timeout": 30000
         }

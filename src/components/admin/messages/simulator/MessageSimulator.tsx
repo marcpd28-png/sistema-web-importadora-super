@@ -166,11 +166,7 @@ export function MessageSimulator() {
         setNotice(payload.automationError);
       } else if (payload.automationTriggered) {
         setWaitingForN8n(true);
-        setNotice(
-          payload.automationName
-            ? `Flujo real disparado: ${payload.automationName}. Esperando respuesta de n8n...`
-            : "Webhook real de n8n disparado. Esperando respuesta...",
-        );
+        setNotice("Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
       }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "No se pudo simular el mensaje.");
@@ -219,7 +215,7 @@ export function MessageSimulator() {
         </button>
 
         <p className="message-simulator-help">
-          Esta conversacion queda aislada del inbox y solo se usa para probar n8n.
+          Puedes escribir la consulta en varios mensajes. El bot los agrupa después de 12 segundos sin recibir otro mensaje.
         </p>
       </aside>
 
