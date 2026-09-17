@@ -1,0 +1,9 @@
+{
+  "base": "https://n8n.tiendavirtualsuper.com",
+  "ids": {
+    "router": "YXvIlOEj45LpjONf",
+    "catalog": "JMBAcoKFStcNFfFm",
+    "incoming": "HVFMz7fCQXRNXB3U"
+  },
+  "mode": "simulator-only"
+}

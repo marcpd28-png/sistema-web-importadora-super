@@ -29,6 +29,15 @@ export async function POST(request: Request) {
     }
 
     const input = outgoingMessageSchema.parse(await request.json());
+    if (input.agentId.endsWith("-simulator")) {
+      const conversation = await prisma.conversation.findUnique({
+        where: { id: input.conversationId },
+        select: { contact: { select: { externalId: true } } },
+      });
+      if (!conversation?.contact.externalId.startsWith("SIMULATOR:")) {
+        return NextResponse.json({ ok: false, error: "Simulator conversation required" }, { status: 403 });
+      }
+    }
     const externalMessageId = input.externalMessageId ?? input.requestId ?? null;
     const existing = externalMessageId
       ? await prisma.chatMessage.findUnique({ where: { externalMessageId } })

@@ -104,9 +104,9 @@ export function MessageSimulator() {
         if (hasWorkflowReply) {
           setWaitingForN8n(false);
           setNotice("Respuesta recibida desde el flujo.");
-        } else if (attempts >= 15) {
+        } else if (attempts >= 60) {
           setWaitingForN8n(false);
-          setNotice("n8n fue disparado, pero no guardó una respuesta visible en 30 segundos.");
+          setNotice("BC no guardó una respuesta visible en 2 minutos. Revisa la ejecución en n8n.");
         }
       } catch (error) {
         if (!stopped) {

@@ -2,13 +2,12 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const SIMULATOR_WEBHOOK_PATH = "whatsapp";
+const SIMULATOR_WEBHOOK_PATH = "bc-simulator";
 
 const simulatorInputSchema = z.object({
   content: z.string().trim().min(1).max(1200),
@@ -27,18 +26,16 @@ function buildSimulatorExternalId(sessionKey: string) {
 }
 
 async function triggerSimulatorWebhook(path: string, payload: unknown) {
-  const simulatorBaseUrl = process.env.N8N_SIMULATOR_URL?.trim();
-
-  if (!simulatorBaseUrl) {
-    await N8nAutomationProvider.triggerWebhook(path, payload);
-    return;
-  }
+  const simulatorBaseUrl = process.env.N8N_SIMULATOR_URL?.trim()
+    || process.env.N8N_BASE_URL?.trim() || process.env.N8N_URL?.trim();
+  if (!simulatorBaseUrl) throw new Error("Falta configurar N8N_SIMULATOR_URL o N8N_BASE_URL.");
 
   const endpoint = new URL(`/webhook/${path}`, simulatorBaseUrl);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {
@@ -109,45 +106,14 @@ export async function POST(request: Request) {
       select: { botMasterSwitch: true },
     });
     let automationError: string | null = null;
-    let automationExecutionId: string | null = null;
-    let automationName: string | null = null;
+    const automationExecutionId: string | null = null;
+    const automationName = "BC - Simulador";
     let automationTriggered = false;
 
     if (settings?.botMasterSwitch === false) {
       automationError = "Bot global apagado en configuración.";
     } else {
       try {
-        const activeAutomation = await prisma.automation.findFirst({
-          where: { channel: "WHATSAPP", status: "ACTIVE" },
-          select: {
-            id: true,
-            name: true,
-            versions: {
-              where: { status: "PUBLISHED" },
-              orderBy: { version: "desc" },
-              take: 1,
-              select: { id: true },
-            },
-          },
-        });
-
-        const publishedVersion = activeAutomation?.versions[0] ?? null;
-
-        if (activeAutomation && publishedVersion) {
-          const execution = await prisma.automationExecution.create({
-            data: {
-              automationId: activeAutomation.id,
-              automationVersionId: publishedVersion.id,
-              conversationId: conversation.id,
-              correlationId: `${conversation.id}-${externalMessageId}`,
-              status: "RUNNING",
-            },
-          });
-
-          automationExecutionId = execution.id;
-        }
-
-        automationName = activeAutomation?.name ?? `Webhook directo ${SIMULATOR_WEBHOOK_PATH}`;
         await triggerSimulatorWebhook(SIMULATOR_WEBHOOK_PATH, {
           object: "whatsapp_business_account",
           entry: [
