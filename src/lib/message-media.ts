@@ -57,5 +57,7 @@ export function getMessageMedia(message: MediaMessage) {
 
 export function getMessageMediaSrc(message: MediaMessage & { id: string }) {
   const media = getMessageMedia(message);
-  return media.url ?? (media.mediaId ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : null);
+  // Meta webhook URLs require authorization and expire. Resolve them on the
+  // server whenever the original media ID is available, including old messages.
+  return media.mediaId ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : media.url;
 }

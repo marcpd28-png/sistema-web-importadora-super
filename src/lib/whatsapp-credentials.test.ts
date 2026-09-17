@@ -25,3 +25,16 @@ test("usa el fallback temporal cuando no hay integración guardada", () => {
     { accessToken: "token-env", phoneNumberId: "phone-env", source: "env", integrationId: null },
   );
 });
+
+test("un registro antiguo sin token descifrable usa el entorno del mismo número", () => {
+  assert.deepEqual(selectWhatsappCredentials(
+    { id: "legacy", phoneNumberId: "phone-123", accessTokenEncrypted: "legacy-placeholder" },
+    { accessToken: " token-env ", phoneNumberId: " phone-123 " },
+  ), { accessToken: "token-env", phoneNumberId: "phone-123", source: "env", integrationId: null });
+});
+
+test("el fallo de descifrado no permite usar el token de otro número ni uno vacío", () => {
+  const integration = { id: "legacy", phoneNumberId: "phone-123", accessTokenEncrypted: "legacy-placeholder" };
+  assert.throws(() => selectWhatsappCredentials(integration, { accessToken: "token-env", phoneNumberId: "other-phone" }), /formato no válido/);
+  assert.throws(() => selectWhatsappCredentials(integration, { accessToken: " ", phoneNumberId: "phone-123" }), /formato no válido/);
+});

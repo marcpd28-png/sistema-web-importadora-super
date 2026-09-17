@@ -42,6 +42,22 @@ navegador. Utiliza la integración activa del número receptor o sus credenciale
 de entorno correspondientes. No recupera archivos que Meta haya eliminado, ni
 archivos cuyos datos n8n nunca haya enviado a la aplicación.
 
+Cuando existe un `mediaId`, el reproductor y la imagen siempre utilizan la ruta
+autenticada del servidor, aunque Meta también haya incluido una URL en el
+webhook. Esas URLs requieren autorización y caducan; abrirlas directamente desde
+el navegador produce errores 401. Esto también se aplica a mensajes ya guardados.
+
+El flujo `01 - Incoming Messages` también debe conservar `type`, `mediaId`
+y `metadata` al normalizar el webhook y enviarlos como JSON al endpoint interno.
+`scripts/n8n/enable-inbox-media.mjs` aplica ese cambio sin alterar conexiones,
+credenciales, búsqueda de ManyChat ni aislamiento del simulador. Guardar primero
+el flujo anterior y publicar la versión modificada en n8n.
+
+Si un registro antiguo de integración no tiene un token descifrable, se permite
+usar el token del entorno únicamente cuando pertenece al mismo `phoneNumberId`.
+Una integración válida mantiene prioridad. Los mensajes guardados previamente
+sin identificador ni enlace de archivo necesitan reenviarse para recuperarlos.
+
 Referencia: [descarga de medios de Meta](https://www.postman.com/meta/whatsapp-business-platform/request/zsq66eh/download-media).
 
 ## Base de datos

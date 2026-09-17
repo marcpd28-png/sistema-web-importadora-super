@@ -14,17 +14,23 @@ export function selectWhatsappCredentials(
   integration: { accessTokenEncrypted: string; phoneNumberId: string; id: string } | null,
   env: { accessToken?: string; phoneNumberId?: string },
 ) {
-  if (integration) {
-    return {
-      accessToken: decryptWhatsappToken(integration.accessTokenEncrypted),
-      phoneNumberId: integration.phoneNumberId,
-      source: "database/oauth" as const,
-      integrationId: integration.id,
-    };
-  }
-
   const accessToken = env.accessToken?.trim();
   const phoneNumberId = env.phoneNumberId?.trim();
+
+  if (integration) {
+    try {
+      return {
+        accessToken: decryptWhatsappToken(integration.accessTokenEncrypted),
+        phoneNumberId: integration.phoneNumberId,
+        source: "database/oauth" as const,
+        integrationId: integration.id,
+      };
+    } catch (error) {
+      // Legacy connection records may not contain a decryptable token. The
+      // configured fallback must belong to this same business phone.
+      if (!accessToken || phoneNumberId !== integration.phoneNumberId) throw error;
+    }
+  }
 
   if (!accessToken || !phoneNumberId) {
     throw new Error("No hay una integración WhatsApp activa ni credenciales temporales configuradas.");

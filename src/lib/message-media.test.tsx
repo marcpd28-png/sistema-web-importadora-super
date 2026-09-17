@@ -43,6 +43,31 @@ test("acepta metadata cruda reenviada por n8n y URL multimedia anterior", () => 
   assert.equal(getMessageMediaSrc(message({ metadata: { mediaUrl: "https://cdn.example.com/old.ogg" } })), "https://cdn.example.com/old.ogg");
 });
 
+test("audios y stickers con URL protegida de Meta se cargan por la ruta autenticada", () => {
+  for (const type of ["AUDIO", "STICKER"] as const) {
+    const protectedUrl = "https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=456&ext=1&hash=expired";
+    const received = message({
+      messageType: type,
+      mediaUrl: protectedUrl,
+      metadata: { mediaId: "456", phoneNumberId: "123", message: {
+        type: type.toLowerCase(), [type.toLowerCase()]: { id: "456", url: protectedUrl },
+      } },
+    });
+    assert.equal(getMessageMediaSrc(received), "/api/admin/messages/message-1/media");
+    const html = renderToStaticMarkup(<MessageBubble message={received} />);
+    assert.match(html, /src="\/api\/admin\/messages\/message-1\/media"/);
+    assert.doesNotMatch(html, /lookaside|hash=expired/);
+    if (type === "AUDIO") assert.match(html, /href="\/api\/admin\/messages\/message-1\/media"/);
+  }
+});
+
+test("los medios antiguos con URL e ID en metadata también usan el servidor", () => {
+  const received = message({ messageType: "UNKNOWN", metadata: {
+    type: "sticker", sticker: { id: "456", url: "https://lookaside.fbsbx.com/expired" },
+  } });
+  assert.equal(getMessageMediaSrc(received), "/api/admin/messages/message-1/media");
+});
+
 test("los archivos faltantes conservan una burbuja comprensible", () => {
   for (const type of ["AUDIO", "STICKER"] as const) {
     const html = renderToStaticMarkup(<MessageBubble message={message({ messageType: type })} />);
