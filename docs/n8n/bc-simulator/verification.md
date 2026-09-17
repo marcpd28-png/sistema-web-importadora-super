@@ -1,5 +1,27 @@
 # Verificación del despliegue — 16 de septiembre de 2026 (Lima)
 
+## Ampliación a inventario, marcas y tipos de producto
+
+El selector incorpora las categorías del inventario, el registro de marcas del ERP y los tipos encontrados en los nombres de los productos. Permite combinar marca, categoría, tipo y términos de modelo. Una categoría explícita respeta la clasificación almacenada; un tipo puede incluir productos guardados en distintas categorías generales. Los SKU conservan su puntuación, incluido el caso real `BT454` frente a `BT454.`.
+
+Auditoría sobre el VPS: 1.630 productos publicados localizables por su código, 32 categorías, 110 marcas de referencia del ERP (112 nombres reconocidos al añadir marcas inferidas), sin fallos en las comprobaciones de cobertura. El script reproducible es `scripts/audit-bc-catalog-coverage.ts`. La asignación por marca depende del campo de marca o de su presencia en el nombre; no inventa una marca ausente en ambos. El registro del ERP se conserva en una caché privada persistente; se probó su recuperación con el ERP inaccesible.
+
+| Solicitud al simulador | Productos en el PDF |
+| --- | ---: |
+| Cables UGREEN | 2 |
+| Micrófonos JBL | 2 |
+| Cargadores Samsung | 4 |
+| Licuadoras | 8 |
+| Casacas | 4 |
+| Categoría DISPOSITIVOS DE ALMACENAMIENTO | 24 |
+| Marca UGREEN | 34 |
+| Código BT454. | 1 |
+| Audofnos JBL | 49 |
+
+Cada solicitud se validó mediante `POST /api/admin/conversations/simulate`, n8n y la respuesta persistida: un solo PDF, sin la pregunta previa por modalidad de compra. Se compararon los códigos extraídos de los nueve PDF con la selección esperada y se revisaron páginas renderizadas. Se corrigieron las coincidencias entre casacas/cámaras y los encabezados que anteponían la etiqueta «ORIGINAL» a Samsung.
+
+Validación: 14 pruebas del selector/PDF y 4 del grafo de n8n, ESLint sin errores y compilación completa en el VPS. Registros en `/home/IMPORTADORA-backups/bc-universal-catalog-20260917/`. Se conserva la ejecución exclusiva del simulador.
+
 ## Corrección de catálogos por marca y categoría
 
 La entrada de n8n ahora deriva toda solicitud explícita de catálogo al generador filtrado antes de consultar el modo de compra. Se verificaron las frases del usuario mediante el mismo endpoint del simulador, con una sola respuesta y un PDF descargable en cada caso:
