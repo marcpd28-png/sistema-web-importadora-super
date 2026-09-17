@@ -102,4 +102,6 @@ test("agrupa por la marca del producto aunque el nombre también diga original",
  const index=createCatalogIndex([product],["SAMSUNG","ORIGINAL"]);
  assert.equal(index.productBrand(product),"SAMSUNG");
  assert.equal(index.select("catálogo Samsung").products.length,1);
+ const jbl={...product,name:"AUDIFONO JBL TUNE 110 SUPER BASS"};
+ assert.equal(createCatalogIndex([jbl],["SUPER","JBL"]).productBrand(jbl),"JBL");
 });
