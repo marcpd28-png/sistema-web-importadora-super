@@ -1,5 +1,19 @@
 # Verificación del despliegue — 17 de septiembre de 2026 (Lima)
 
+## Comparación de fotos y PDF: extensores de pantalla
+
+Prueba real por el simulador y n8n, con PC401, PC402, O832 y O970:
+
+- `Información sobre las pantallas extensoras`: cuatro mensajes IMAGE, cada uno con foto, código y precio unitario. Respuesta en unos 4 segundos.
+- `Información sobre las pantallas extensoras en PDF`: un DOCUMENT de cuatro páginas A4, un producto con imagen grande por página. Respuesta en unos 4 segundos.
+- `Catálogo de cables UGREEN`: conserva su PDF de dos productos, respuesta en unos 2 segundos.
+
+Se comprobaron los cuatro códigos y las cuatro páginas del PDF, se revisaron visualmente todas las páginas y se descargaron las cuatro imágenes. Las fotos se pueden abrir a tamaño completo desde el simulador. La búsqueda excluye pantallas de proyector, cámaras con pantalla y extensores HDMI; reconoce también `extensores de pantalla` y modelos Blackview que usan `SCREEN` en el nombre.
+
+El flujo persiste cada respuesta completa mediante `/api/internal/chat/simulator-batch` en una transacción. Así, el refresco del simulador recibe las cuatro imágenes juntas. Se verificaron la ausencia de duplicados al repetir el mismo lote y el rechazo 403 de una conversación real. Esta presentación comparativa sigue limitada al simulador; las consultas genéricas de otras familias mantienen su buscador actual.
+
+Validación: 15 pruebas del selector/PDF y 4 del grafo de n8n; ESLint sin errores (advertencia preexistente por `img`); compilación completa del VPS y publicación de los flujos de entrada/catálogo. Registros en `/home/IMPORTADORA-backups/bc-extender-comparison-20260917/`.
+
 ## Ampliación a inventario, marcas y tipos de producto
 
 El selector incorpora las categorías del inventario, el registro de marcas del ERP y los tipos encontrados en los nombres de los productos. Permite combinar marca, categoría, tipo y términos de modelo. Una categoría explícita respeta la clasificación almacenada; un tipo puede incluir productos guardados en distintas categorías generales. Los SKU conservan su puntuación, incluido el caso real `BT454` frente a `BT454.`.
