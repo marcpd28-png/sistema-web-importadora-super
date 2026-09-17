@@ -16,6 +16,8 @@ La pestaña **Probar** ejecuta el borrador actual, incluidos cambios sin guardar
 
 ## Configuración del servidor
 
+Aplicar `npx prisma migrate deploy` antes de verificar creación y guardado. La migración `20260917170000_add_automation_version_updated_at` añade el campo `AutomationVersion.updatedAt` que faltaba en las migraciones originales, aunque el modelo Prisma ya lo requería.
+
 Variables necesarias para publicar:
 
 | Variable | Uso |
