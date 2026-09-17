@@ -129,3 +129,23 @@ test("quantities in a followup remain associated with the selected topic", () =>
   assert.equal(next.agenda.requests.at(-1)?.topicId, first.topics[0].id);
   assert.equal(next.agenda.requests.at(-1)?.quantity, 6);
 });
+
+test("catalog lists preserve per-clause brands when passing through the agenda", () => {
+  const rows = [product("J", "AUDIFONO JBL NEGRO"), product("S", "PARLANTE SUPER", { brand: "SUPER", category: "PARLANTES" }), product("X", "AUDIFONO SUPER", { brand: "SUPER" }), product("Y", "PARLANTE JBL", { category: "PARLANTES" })];
+  const result = planRequests(emptyAgenda(), [{ id: "a", content: "catálogo audífonos JBL y parlantes SUPER" }]);
+  assert.deepEqual(createCatalogIndex(rows).select(result.agenda.topics[0].query).products.map(p => p.code).sort(), ["J", "S"]);
+});
+
+test("a first product search with a color is not mistaken for a context correction", () => {
+  const result = planRequests(emptyAgenda(), [{ id: "a", content: "audífonos JBL negros hasta 100 soles" }]);
+  assert.equal(result.recognized, true);
+  assert.equal(result.agenda.requests[0].kind, "SEARCH");
+  assert(result.agenda.topics[0].query.includes("negros"));
+});
+
+test("battery capacity cannot answer a request for battery life", () => {
+  const { agenda } = planRequests(emptyAgenda(), [{ id: "a", content: "A1 cuánto dura la batería" }]);
+  const answer = answerProductRequest(agenda.requests[0], agenda.topics[0], [product("A1", "AUDIFONO", { specifications: [{ name: "Batería", value: "400 mAh" }] })]);
+  assert.match(answer.content, /Autonomía: no tengo ese dato confirmado/);
+  assert.equal(answer.status, "NEEDS_CLARIFICATION");
+});

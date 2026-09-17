@@ -18,7 +18,8 @@ export type AgendaTopic = RequestAgenda["topics"][number];
 export const emptyAgenda = (): RequestAgenda => ({ version: 1, lastTopicId: null, topics: [], requests: [] });
 
 export const SPECIFICATION_FIELDS = [
-  { key: "autonomia", label: "Autonomía", pattern: /\b(?:autonomia|duracion|dura|horas|bateria)\b/, names: /autonomia|duracion|bateria/ },
+  { key: "autonomia", label: "Autonomía", pattern: /\b(?:autonomia|duracion|dura|horas)\b/, names: /autonomia|duracion|horas/ },
+  { key: "bateria", label: "Batería", pattern: /\bbateria\b/, names: /bateria/ },
   { key: "potencia", label: "Potencia", pattern: /\b(?:potencia|watts?|rms|pmpo)\b/, names: /potencia|watts?|rms|pmpo/ },
   { key: "garantia", label: "Garantía", pattern: /\bgarantia\b/, names: /garantia/ },
   { key: "incluye", label: "Contenido de la caja", pattern: /\b(?:incluye|incluido|accesorios|que trae)\b/, names: /incluye|contenido|accesorios/ },
@@ -33,7 +34,8 @@ export const SPECIFICATION_FIELDS = [
 
 export function requestedSpecificationFields(question: string) {
   const text = normalizeCommercialText(question);
-  return SPECIFICATION_FIELDS.filter(field => field.pattern.test(text)).map(field => field.key);
+  const fields = SPECIFICATION_FIELDS.filter(field => field.pattern.test(text)).map(field => field.key);
+  return fields.includes("autonomia") ? fields.filter(field => field !== "bateria") : fields;
 }
 
 const NUMBERS: Record<string, number> = { dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, doce: 12 };
@@ -52,8 +54,8 @@ export function productSubject(content: string) {
     .replace(/\b(?:cu[aá]nto\s+(?:dura|cuesta|cuestan|sale|salen)|qu[eé]\s+(?:incluye|trae)|funciona\s+con|sistema\s+operativo)\b/gi, " ")
     .replace(/\b(?:para|por)\s+(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s*(?:unidades?|unds?|piezas?)?\b/gi, " ")
     .replace(/\b(?:dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/gi, " ")
-    .replace(/\b(?:tambi[eé]n|adem[aá]s|informaci[oó]n|informes|info|detalles|caracter[ií]sticas|especificaciones|sobre|acerca|precio|precios|cu[aá]nto|cu[aá]ntos|cuesta|cuestan|sale|salen|stock|disponibilidad|disponible|disponibles|bater[ií]a|autonom[ií]a|duraci[oó]n|dura|horas|potencia|garant[ií]a|incluye|incluido|accesorios|android|resoluci[oó]n|compatible|compatibilidad|conectividad|bluetooth|wifi|carga|puertos|medidas|dimensiones|peso|trae|tiene|ese|esa|este|esta|eso|del|el|la|los|las|de|y|que|cu[aá]l|cu[aá]les|es|son|dime|saber|quisiera|quiero|necesito|busco|tienes|tienen|hay|por|favor|me|puedes|dar|pasame|p[aá]same|pasa|manda|mandame|env[ií]ame|ver|cat[aá]logos?|pdf)\b/gi, " ")
-    .replace(/[¿?!,;]+/g, " ").replace(/\s+/g, " ").trim();
+    .replace(/\b(?:tambi[eé]n|adem[aá]s|informaci[oó]n|informes|info|detalles|caracter[ií]sticas|especificaciones|sobre|acerca|precio|precios|cu[aá]nto|cu[aá]ntos|cuesta|cuestan|sale|salen|stock|disponibilidad|disponible|disponibles|bater[ií]a|autonom[ií]a|duraci[oó]n|dura|horas|potencia|garant[ií]a|incluye|incluido|accesorios|android|resoluci[oó]n|compatible|compatibilidad|conectividad|bluetooth|wifi|carga|puertos|medidas|dimensiones|peso|trae|tiene|ese|esa|este|esta|eso|del|el|la|los|las|de|que|cu[aá]l|cu[aá]les|es|son|dime|saber|quisiera|quiero|necesito|busco|tienes|tienen|hay|por|favor|me|puedes|dar|pasame|p[aá]same|pasa|manda|mandame|env[ií]ame|ver|cat[aá]logos?|pdf)\b/gi, " ")
+    .replace(/[¿?!,;]+/g, " ").replace(/\s+/g, " ").trim().replace(/^(?:y|e|o|u)\s+|\s+(?:y|e|o|u)$/gi, "").replace(/^(?:y|e|o|u)$/i, "");
 }
 
 function commonTopic(query: string, topic: AgendaTopic) {
@@ -73,7 +75,7 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       const text = normalizeCommercialText(clause);
       if (/^(?:hola|gracias|ok|buenos dias|buenas tardes|buenas noches)$/.test(text)) continue;
       if (/\b(?:reintenta|reintentar|intenta otra vez|consulta pendiente)\b/.test(text)) {
-        for (const job of agenda.requests.filter(value => value.status === "PENDING")) touched.add(job.id);
+        for (const job of agenda.requests.filter(value => value.status === "PENDING" || value.status === "NEEDS_CLARIFICATION")) touched.add(job.id);
         recognized = touched.size > 0;
         continue;
       }
@@ -98,7 +100,7 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       if (!business && !catalog && (fields.length || /\b(?:informacion|info|detalles|caracteristicas|especificaciones)\b/.test(text))) kinds.push("INFORMATION");
       const query = business || quantityOnly ? "" : productSubject(clause);
       const filter = parseCommercialQuery(query);
-      const isCorrection = /\b(?:mejor|solo|solamente|cambia|blancos?|negros?|azules?|rojos?)\b/.test(text) && !kinds.length;
+      const isCorrection = !kinds.length && (/^(?:mejor|solo|solamente|cambia)\b/.test(text) || (filter.constraints.colors.length > 0 && !filter.text.trim()));
       let topic: AgendaTopic | undefined;
       const referenced = clause.match(/\b(?:el|la)\s+(primero|primera|segundo|segunda|tercero|tercera|cuarto|cuarta|quinto|quinta|\d+)\b/i);
       if (referenced) {

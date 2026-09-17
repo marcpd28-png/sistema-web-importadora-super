@@ -50,7 +50,16 @@ export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic 
     let missing = false;
     const lines = requested.map(field => {
       const rows = specifications.filter(spec => field.names.test(normalizeCommercialText(spec.name)));
-      if (!rows.length) { missing = true; return `${field.label}: no tengo ese dato confirmado en la ficha publicada.`; }
+      if (!rows.length) {
+        const excerpts = published ? [product.digitalProfile?.descriptionShort, product.digitalProfile?.descriptionFull].filter((value): value is string => Boolean(value))
+          .flatMap(value => value.replace(/<[^>]*>/g, " ").split(/\n|(?<=[.!?;])\s+/)).map(value => value.trim())
+          .filter(value => value && field.names.test(normalizeCommercialText(value))).slice(0, 2) : [];
+        if (excerpts.length) {
+          evidence.push(`DigitalProductProfile:${product.id}:${field.key}`);
+          return `${field.label} — ficha publicada: ${[...new Set(excerpts)].join(" ")}`;
+        }
+        missing = true; return `${field.label}: no tengo ese dato confirmado en la ficha publicada.`;
+      }
       rows.forEach(spec => evidence.push(`ProductSpecification:${product.id}:${spec.name}`));
       // Return the actual attribute name, preserving RMS/PMPO and native/supported distinctions.
       return rows.map(spec => `${spec.name}: ${spec.value}`).join("\n");
