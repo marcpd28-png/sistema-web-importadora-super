@@ -25,6 +25,15 @@ test('entry rejects real WhatsApp contacts even if dryRun is supplied',()=>{
  body.entry[0].changes[0].value.simulation.dryRun=false;
  assert.throws(()=>run(code,{body}),/Solo se admiten/);
 });
+test('all explicit catalog requests use the PDF branch before purchase-mode questions',()=>{
+ const condition=read('incoming').nodes.find(n=>n.name==='¿Solicita catálogo?').parameters.conditions.conditions[0].leftValue;
+ const evaluate=new Function('$json','return '+condition.slice(3,-2));
+ for(const content of ['hola me dan el catalogo de los productos jbl?','catálogo de audofnos jbl','me pasa el catálogo de sus audífonos','catálogo de parlantes','CATÁLOGOS SONY']) assert.equal(evaluate({content}),true,content);
+ assert.equal(evaluate({content:'precio del JBL charge 6'}),false);
+ const catalog=read('catalog');
+ assert.match(catalog.nodes.find(n=>n.name==='Generar catálogo PDF').parameters.url,/\/catalogs\/products$/);
+ assert.match(catalog.nodes.find(n=>n.name==='Registrar catálogo simulado').parameters.jsonBody,/\$json.type/);
+});
 test('router ignores real and duplicate incoming messages; simulator runs without a phone number',()=>{
  const w=read('router');
  const code=w.nodes.find(n=>n.name==='Normalize Router Input').parameters.jsCode;

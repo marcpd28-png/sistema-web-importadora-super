@@ -89,7 +89,7 @@
     },
     {
       "id": "733f56f7-7532-48e8-a869-14e067839e01",
-      "name": "¿Catálogo de proyectores?",
+      "name": "¿Solicita catálogo?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -107,7 +107,7 @@
           "conditions": [
             {
               "id": "02ed6da4-7b19-41ed-9ff2-97a59e960f98",
-              "leftValue": "={{ /\\bcatalogo\\b/.test($json.content.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()) && /\\bproyector(?:es)?\\b/.test($json.content.toLowerCase()) }}",
+              "leftValue": "={{ /\\bcatalogos?\\b/.test($json.content.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()) }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -205,14 +205,14 @@
       "main": [
         [
           {
-            "node": "¿Catálogo de proyectores?",
+            "node": "¿Solicita catálogo?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "¿Catálogo de proyectores?": {
+    "¿Solicita catálogo?": {
       "main": [
         [
           {

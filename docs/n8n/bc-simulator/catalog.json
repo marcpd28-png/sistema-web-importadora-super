@@ -17,7 +17,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://tiendavirtualsuper.com/api/internal/catalogs/projectors",
+        "url": "https://tiendavirtualsuper.com/api/internal/catalogs/products",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -126,7 +126,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { agentId: 'catalog-projectors-simulator', content: $json.content, conversationId: $json.conversationId, externalMessageId: 'simulated:' + $json.requestId, mediaUrl: $json.mediaUrl, provider: 'meta-cloud', requestId: $json.requestId, type: 'DOCUMENT' } }}",
+        "jsonBody": "={{ { agentId: 'catalog-products-simulator', content: $json.content, conversationId: $json.conversationId, externalMessageId: 'simulated:' + $json.requestId, mediaUrl: $json.mediaUrl, provider: 'meta-cloud', requestId: $json.requestId, type: String($json.type || 'document').toUpperCase() } }}",
         "options": {
           "timeout": 30000
         }

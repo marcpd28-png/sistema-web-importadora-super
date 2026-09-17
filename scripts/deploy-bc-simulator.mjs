@@ -5,6 +5,7 @@ import path from 'node:path';
 const base=(process.env.N8N_BASE_URL || process.env.N8N_URL || '').replace(/\/$/,'');
 const key=process.env.N8N_WRITE_API_KEY;
 const deferActivation=process.env.N8N_ACTIVATE_VIA_CLI==='1';
+const catalogOnly=process.argv.includes('--catalog-only');
 if(!base || !key) throw new Error('N8N_BASE_URL and N8N_WRITE_API_KEY are required');
 async function api(route,method='GET',body) {
  const res=await fetch(`${base}/api/v1${route}`,{method,headers:{'X-N8N-API-KEY':key,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(30000)});
@@ -16,8 +17,8 @@ if(before.nextCursor) throw new Error('Workflow pagination required before deplo
 const backup=path.join(execFileSync('git',['rev-parse','--absolute-git-dir'],{encoding:'utf8'}).trim(),'bc-n8n');
 mkdirSync(backup,{recursive:true});
 writeFileSync(path.join(backup,`before-deploy-${Date.now()}.json`),JSON.stringify(before,null,2));
-const ids={};
-for(const name of ['router','catalog','incoming']) {
+const ids=JSON.parse(readFileSync(new URL('../docs/n8n/bc-simulator/deployment.json',import.meta.url))).ids;
+for(const name of (catalogOnly ? ['catalog','incoming'] : ['router','catalog','incoming'])) {
  let raw=readFileSync(new URL(`../docs/n8n/bc-simulator/${name}.json`,import.meta.url),'utf8');
  raw=raw.replaceAll('__ROUTER_ID__',ids.router||'').replaceAll('__CATALOG_ID__',ids.catalog||'');
  const payload=JSON.parse(raw);
@@ -30,7 +31,7 @@ for(const name of ['router','catalog','incoming']) {
  console.log(`${name}: ${saved.id} ${deferActivation?'pending CLI publication':'active'}`);
 }
 // Keep real inbound capture and webhook acknowledgements; disconnect only automatic BC/catalog execution.
-for(const id of ['EZaAQCCbY3qWIWY1','386c7deddf33dbb8']) {
+for(const id of (catalogOnly ? [] : ['EZaAQCCbY3qWIWY1','386c7deddf33dbb8'])) {
  const live=await api(`/workflows/${id}`);
  const old=before.data.find(w=>w.id===id);
  if(live.updatedAt!==old.updatedAt) throw new Error(`Workflow ${id} changed concurrently; inspect before retrying`);

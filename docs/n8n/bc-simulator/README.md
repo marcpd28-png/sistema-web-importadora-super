@@ -7,7 +7,7 @@ Los errores del webhook se muestran en el panel; no se usa el webhook real de Wh
 ## Flujo desplegado
 
 1. **BC - Simulador - Entrada** valida `dryRun`, origen y contacto `SIMULATOR:`; persiste el mensaje y confirma la recepción.
-2. Una solicitud explícita de catálogo de proyectores genera el PDF mediante **BC - Simulador - Catálogo PDF**.
+2. Toda solicitud explícita de catálogo pasa directamente a **BC - Simulador - Catálogo PDF**, sin preguntar por compra mayorista o por unidades. `catálogo JBL` reúne todos los productos publicados JBL; `audífonos JBL` intersecta marca y categoría; `catálogo de audífonos` incluye todas las marcas, agrupadas. Se toleran variantes como `audofnos`. Un modelo/código adicional restringe la selección. Los productos sin foto también se incluyen. Sin filtros, devuelve el enlace general; sin coincidencias, lo informa sin enviar productos ajenos.
 3. Las demás solicitudes pasan por **BC - Simulador - Motor conversacional**: agrupación de mensajes, estado comercial, productos/precios/envíos/checkout y redacción opcional con IA.
 4. Las respuestas se registran en la conversación simulada. Estos flujos no contienen nodos para enviar mensajes a Meta ni ManyChat.
 
@@ -25,6 +25,7 @@ La entrada de WhatsApp y ManyChat conserva el registro de mensajes reales, pero 
 
 Ejecutar `node --test scripts/test-bc-simulator.mjs` y, en la rama del motor, `node --import tsx --test src/lib/router-v2-order-service.test.ts`.
 `node scripts/deploy-bc-simulator.mjs` requiere `N8N_BASE_URL` y `N8N_WRITE_API_KEY` y guarda una copia previa en el directorio privado de Git.
+Para actualizar únicamente entrada y catálogo: `node scripts/deploy-bc-simulator.mjs --catalog-only`. El endpoint del catálogo filtrado es `/api/internal/catalogs/products`; inicialmente solo admite conversaciones simuladas.
 Si la clave no tiene permiso de activación, definir `N8N_ACTIVATE_VIA_CLI=1`: el script guarda los cambios y deja pendiente publicar cada ID con `docker exec n8n n8n publish:workflow --id=ID` en el VPS y reiniciar n8n según indique su CLI.
 También deben publicarse las entradas existentes `EZaAQCCbY3qWIWY1` y `386c7deddf33dbb8` para aplicar el aislamiento.
 

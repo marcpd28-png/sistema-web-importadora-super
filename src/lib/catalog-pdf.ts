@@ -7,6 +7,8 @@ import sharp from "sharp";
 
 import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
+import { selectCatalogProducts } from "@/lib/catalog-selection";
+import { resolveProductBrand } from "@/lib/product-discovery";
 
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -312,4 +314,93 @@ export async function generateProjectorCatalogPdf() {
   });
   inFlightCatalogs.set(fingerprint, generation);
   return generation;
+}
+
+type ScopedCatalogItem = CatalogProductImage & { brand: string | null; category: string | null };
+
+export function renderScopedCatalogPdf(items: { image: Buffer | null; name: string; code: string; brand: string }[], title: string) {
+  return new Promise<Buffer>((resolve, reject) => {
+    const doc = new PDFDocument({ autoFirstPage: false, compress: true, size: "A4", margin: 0,
+      info: { Title: title, Author: "Importaciones Super", Subject: title } });
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("error", reject);
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    const pages = Math.ceil(items.length / 4);
+    for (let page = 0; page < pages; page++) {
+      doc.addPage();
+      doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(19);
+      let titleSize = 19;
+      while (doc.heightOfString(title, { width: 523 }) > 48 && titleSize > 10) doc.fontSize(--titleSize);
+      doc.text(title, 36, 26, { width: 523, height: 48, align: "center" });
+      doc.fillColor("#666666").font("Helvetica").fontSize(9)
+        .text(`Importaciones Super | ${items.length} productos | Agrupados por marca`, 36, 78, { width: 523, align: "center" });
+      for (let slot = 0; slot < 4; slot++) {
+        const item = items[page * 4 + slot];
+        if (!item) break;
+        const x = 28 + (slot % 2) * 274;
+        const y = 108 + Math.floor(slot / 2) * 342;
+        doc.roundedRect(x, y, 265, 330, 8).lineWidth(0.6).strokeColor("#DEDEEE").stroke();
+        doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(10)
+          .text(item.brand, x + 12, y + 12, { width: 241, align: "center", height: 26 });
+        if (item.image) doc.image(item.image, x + 12, y + 40, { fit: [241, 195], align: "center", valign: "center" });
+        else doc.fillColor("#777777").font("Helvetica").fontSize(12)
+          .text("Imagen no disponible", x + 12, y + 115, { width: 241, align: "center" });
+        doc.fillColor("#17172B").font("Helvetica-Bold").fontSize(11);
+        let size = 11;
+        while (doc.heightOfString(item.name, { width: 241 }) > 50 && size > 8) doc.fontSize(--size);
+        doc.text(item.name, x + 12, y + 249, { width: 241, height: 50, ellipsis: true, align: "center" });
+        doc.fillColor(BRAND_PRIMARY).font("Helvetica").fontSize(10)
+          .text(`Código: ${item.code}`, x + 12, y + 310, { width: 241, align: "center" });
+      }
+      doc.fillColor("#666666").font("Helvetica").fontSize(9)
+        .text(`${page + 1} / ${pages}`, 36, 810, { width: 523, align: "center" });
+    }
+    doc.end();
+  });
+}
+
+async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: string, fingerprint: string) {
+  const slug = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 70);
+  const filename = `catalogo-${slug}-${fingerprint}.pdf`;
+  const relativeUrl = `/uploads/catalogs/${filename}`;
+  const outputPath = path.join(CATALOG_DIRECTORY, filename);
+  const result = { absoluteUrl: buildPublicUrl(relativeUrl), filename, productCount: products.length, relativeUrl };
+  await mkdir(CATALOG_DIRECTORY, { recursive: true });
+  try { await access(outputPath); return { ...result, generated: false }; } catch { /* Generate below. */ }
+  const images: { image: Buffer | null; name: string; code: string; brand: string }[] = new Array(products.length);
+  let next = 0;
+  // Bound image decoding to avoid exhausting memory for a category with hundreds of products.
+  await Promise.all(Array.from({ length: Math.min(4, products.length) }, async () => {
+    while (next < products.length) {
+      const index = next++;
+      const product = products[index];
+      let image: Buffer | null = null;
+      try { image = await sharp(await loadFirstAvailableImage(product)).resize({ width: 800, height: 800, fit: "inside" }).jpeg({ quality: 78 }).toBuffer(); } catch { /* Keep the product even without a usable image. */ }
+      images[index] = { image, name: product.name, code: product.code, brand: resolveProductBrand(product) || "Otras marcas" };
+    }
+  }));
+  const pdf = await renderScopedCatalogPdf(images, `Catálogo de ${label}`);
+  const temporary = `${outputPath}.${process.pid}.tmp`;
+  try { await writeFile(temporary, pdf, { flag: "wx" }); await rename(temporary, outputPath); }
+  catch (error) { await unlink(temporary).catch(() => undefined); throw error; }
+  return { ...result, generated: true };
+}
+
+export async function generateRequestedCatalogPdf(content: string) {
+  const rows = await prisma.product.findMany({
+    where: { isVisible: true },
+    select: { id: true, code: true, name: true, brand: true, category: true, imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
+      media: { orderBy: { sortOrder: "asc" }, select: { url: true } } },
+  });
+  const selection = selectCatalogProducts(content, rows);
+  if (!selection.scoped || !selection.products.length) return { ...selection, catalog: null };
+  const products = selection.products.map(p => ({ ...p, imageUrls: [...new Set([p.localImageUrl, ...p.media.map(m => m.url), p.sourceImageUrl, p.imageUrl].filter((v): v is string => Boolean(v?.trim())))] }));
+  const fingerprint = createHash("sha256").update(`scoped-grid-v1:${selection.label}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  let generation = inFlightCatalogs.get(fingerprint);
+  if (!generation) {
+    generation = createScopedCatalogPdf(products, selection.label, fingerprint).finally(() => inFlightCatalogs.delete(fingerprint));
+    inFlightCatalogs.set(fingerprint, generation);
+  }
+  return { ...selection, catalog: await generation };
 }
