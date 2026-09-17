@@ -1,5 +1,22 @@
 # Verificación del despliegue — 16 de septiembre de 2026 (Lima)
 
+## Corrección de catálogos por marca y categoría
+
+La entrada de n8n ahora deriva toda solicitud explícita de catálogo al generador filtrado antes de consultar el modo de compra. Se verificaron las frases del usuario mediante el mismo endpoint del simulador, con una sola respuesta y un PDF descargable en cada caso:
+
+| Solicitud | Productos publicados en la prueba | PDF |
+| --- | ---: | ---: |
+| Catálogo JBL | 92 | 23 páginas |
+| Catálogo de audofnos JBL | 49 | 13 páginas |
+| Catálogo de audífonos, todas las marcas | 273 | 69 páginas |
+| Catálogo de parlantes, todas las marcas | 271 | 68 páginas |
+
+Los PDF se agrupan por marca e incluyen productos sin imagen. Se extrajeron todos sus códigos y se compararon con la selección original: coincidencia exacta en los cuatro archivos. Se revisaron visualmente páginas renderizadas. Los archivos generados quedan cacheados; las respuestas de integración tardaron unos 2 segundos. Sin coincidencias se responde por texto sin sustituir el filtro por otros productos.
+
+Validación: nueve pruebas del selector/PDF y cuatro del grafo de n8n, ESLint sin errores y compilación completa en el VPS. La compilación local superó TypeScript, pero no pudo generar el sitemap porque no hay PostgreSQL local. Los registros de esta corrección están en `/home/IMPORTADORA-backups/bc-catalog-filters-20260917/`.
+
+## Despliegue inicial (histórico)
+
 Las dos aplicaciones se compilaron correctamente en el VPS con Next.js 16.2.4 y TypeScript, y se reiniciaron sus procesos PM2. Los cinco flujos modificados en n8n quedaron publicados en su versión actual.
 
 Las pruebas de integración invocaron el mismo endpoint del panel, `POST /api/admin/conversations/simulate`, y comprobaron las respuestas guardadas en la base de datos:
