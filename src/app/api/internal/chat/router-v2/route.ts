@@ -193,6 +193,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const simulation = conversation.contact.externalId.startsWith("SIMULATOR:");
     const currentState = conversation.salesState
       ? serializeSalesState(conversation.salesState)
       : null;
@@ -571,6 +572,7 @@ export async function POST(request: Request) {
         conversationId: conversation.id,
         state: persistedState,
         currencySymbol: businessKnowledge.currencySymbol,
+        simulation,
       });
 
       if (
@@ -598,7 +600,7 @@ export async function POST(request: Request) {
     > | null = null;
 
     if (
-      checkoutDecision.paymentMethodToPersist &&
+      !simulation && checkoutDecision.paymentMethodToPersist &&
       persistedState?.orderNumber
     ) {
       paymentMethodUpdate =
@@ -617,7 +619,7 @@ export async function POST(request: Request) {
           null
         : null);
 
-    const orderStatus = requestedOrderNumber
+    const orderStatus = requestedOrderNumber && !simulation
       ? await getRouterV2OrderStatus(requestedOrderNumber)
       : null;
 
@@ -671,6 +673,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       automation,
+      simulation,
       conversation: {
         id: conversation.id,
         status: conversation.status,

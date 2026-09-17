@@ -52,8 +52,9 @@ export async function createRouterV2PendingOrder(input: {
   conversationId: string;
   state: SalesStateLike;
   currencySymbol?: string | null;
+  simulation?: boolean;
 }) {
-  if (input.state.orderNumber) {
+  if (input.state.orderNumber && !input.simulation) {
     const existing = await prisma.order.findUnique({
       where: { orderNumber: input.state.orderNumber },
       select: {
@@ -113,6 +114,21 @@ export async function createRouterV2PendingOrder(input: {
     return {
       status: "INVALID_SALES_STATE" as const,
       reason: "RUC_MISSING" as const,
+    };
+  }
+
+  // Simulator checkout keeps its order reference only in conversation sales state.
+  // Never create an Order or touch inventory / ERP for a simulator contact.
+  if (input.simulation) {
+    return {
+      status: "CREATED" as const,
+      order: {
+        id: `simulation:${input.conversationId}`,
+        orderNumber: `SIM-${input.conversationId.slice(-16).toUpperCase()}`,
+        status: "PENDING" as const,
+        paymentMethod: null,
+        total: price.total,
+      },
     };
   }
 
