@@ -13,3 +13,15 @@ Si una parte no coincide, el bot envía el PDF con los productos encontrados y p
 El filtro de publicación (`isVisible`) sigue aplicado antes de crear el índice. Se conserva el saludo horario y la espera de 12 segundos del simulador BC. No se activan canales de WhatsApp real ni se cambian precios o inventario.
 
 Validación: pruebas de selección y regresión del catálogo, mensajes agrupados, saludo, salida del simulador y aislamiento de flujos. El PDF conserva su diseño vigente; este cambio corrige los productos seleccionados y la explicación de coincidencias parciales.
+
+## Verificación en el VPS
+
+Código desplegado: `504fbc44ac59aced9b14cefeeae82351d6df608c`. Compilación completa aprobada, TypeScript y ESLint sin errores, 39 pruebas relacionadas aprobadas durante la corrección.
+
+- La frase exacta del cliente, después de una bienvenida, devuelve un PDF con 87 cargadores y pide modelo/foto únicamente para «fuentes de poder».
+- La misma consulta dividida en tres mensajes devuelve el mismo catálogo e identifica los tres mensajes de origen.
+- «Catálogo de cargadores de marca Super Importaciones» devuelve 28 productos. Se excluyen Honor Super Carga y Baseus Super SI del filtro de marca propia.
+- Los 1.666 productos publicados son localizables por su SKU. Se incluyen los cargadores con prefijo SQ y aquellos con el nombre inglés Charger; se excluye la gata hidráulica con cargador.
+- Ambos PDF se descargaron por HTTPS y se validaron como archivos PDF; ambos procesos PM2 quedaron online. Los contactos temporales del simulador fueron eliminados.
+
+Evidencia, auditoría de selección y copia anterior: `/home/IMPORTADORA-backups/catalog-lists-00e8a0e/`.
