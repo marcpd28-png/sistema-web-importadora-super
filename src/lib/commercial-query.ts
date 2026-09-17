@@ -3,10 +3,11 @@ export const normalizeCommercialText = (value: string) => value.normalize("NFD")
   .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 export function literalProductCodes(query: string, codes: string[]) {
-  return codes.filter(code => {
+  const occurrences = codes.flatMap(code => {
     const literal = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return new RegExp(`(?:^|[\\s(),;:!?¿¡])${literal}(?=$|[\\s(),;:!?¿¡])`, "i").test(query);
+    return [...query.matchAll(new RegExp(`(?:^|[\\s(),;:!?¿¡])(${literal})(?=$|[\\s(),;:!?¿¡])`, "gi"))].map(match => ({ code, start: match.index! + match[0].length - match[1].length, end: match.index! + match[0].length }));
   });
+  return [...new Set(occurrences.filter(item => !occurrences.some(other => other.start <= item.start && other.end >= item.end && other.end - other.start > item.end - item.start)).map(item => item.code))];
 }
 
 const COLORS: Record<string, string[]> = {

@@ -4,6 +4,7 @@ import { agendaSchema, emptyAgenda, planRequests, requestedQuantity } from "./bc
 import { answerProductRequest, splitAnswerText } from "./bc-request-answers";
 import { createCatalogIndex } from "./catalog-selection";
 import type { CommercialProduct } from "./commercial-catalog";
+import { literalProductCodes } from "./commercial-query";
 
 const product = (code: string, name: string, override = {}) => ({ id: code, code, name, brand: "JBL", category: "AURICULARES", stockUnits: 20, unitPrice: 90, wholesalePrice: 75, wholesaleMinQty: 6, boxPrice: null, unitsPerBox: null, unitLabel: "unidad", updatedAt: new Date("2026-09-17"), digitalProfile: { status: "PUBLICADA", descriptionShort: "Ficha aprobada" }, specifications: [], ...override }) as unknown as CommercialProduct;
 const products = [product("A1", "AUDIFONO JBL TUNE NEGRO"), product("A2", "AUDIFONO JBL TUNE BLANCO"), product("A3", "AUDIFONO JBL DIADEMA NEGRO"), product("A4", "AUDIFONO JBL NEGRO", { unitPrice: 130 }), product("P1", "PROYECTOR HY300", { brand: null, category: "PROYECTORES" }), product("P2", "PROYECTOR HY300 PRO", { brand: null, category: "PROYECTORES" })];
@@ -148,4 +149,9 @@ test("battery capacity cannot answer a request for battery life", () => {
   const answer = answerProductRequest(agenda.requests[0], agenda.topics[0], [product("A1", "AUDIFONO", { specifications: [{ name: "Batería", value: "400 mAh" }] })]);
   assert.match(answer.content, /Autonomía: no tengo ese dato confirmado/);
   assert.equal(answer.status, "NEEDS_CLARIFICATION");
+});
+
+test("spaced suffixes do not also select the base SKU; separate requested codes remain separate", () => {
+  assert.deepEqual(literalProductCodes("código N755 - SQ", ["N755", "N755 - SQ"]), ["N755 - SQ"]);
+  assert.deepEqual(literalProductCodes("códigos N755 y N755 - SQ", ["N755", "N755 - SQ"]).sort(), ["N755", "N755 - SQ"]);
 });
