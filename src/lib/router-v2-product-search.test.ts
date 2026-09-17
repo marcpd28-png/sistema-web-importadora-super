@@ -67,8 +67,8 @@ test("ambiguous spelling requires clarification instead of picking a different i
 });
 
 test("ERP punctuation and suffixes remain distinct before name normalization", () => {
-  const items = [product("BT454", "AUDIFONO UNO"), product("BT454.", "AUDIFONO DOS"), product("PC388", "HUB USB"), product("PC388-SQ", "COOLER LAPTOP")];
-  for (const code of ["BT454", "BT454.", "PC388", "PC388-SQ"]) {
+  const items = [product("BT454", "AUDIFONO UNO"), product("BT454.", "AUDIFONO DOS"), product("PC388", "HUB USB"), product("PC388-SQ", "COOLER LAPTOP"), product("O526- BLACK", "AUDIFONO TUNE")];
+  for (const code of ["BT454", "BT454.", "PC388", "PC388-SQ", "O526- BLACK"]) {
     assert.deepEqual(matchProductIdentities(`precio ${code}`, items).matches.map(item => item.code), [code]);
   }
   assert.equal(matchProductIdentities("PC388-UNKNOWN", items).matches.length, 0);

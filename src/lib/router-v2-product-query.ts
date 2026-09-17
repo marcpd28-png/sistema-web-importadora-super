@@ -78,9 +78,9 @@ export function matchProductIdentities(query: string, products: ProductIdentity[
   if (!tokens.length) return { tokens, matches: [] as ProductIdentity[], ambiguousSpelling: false };
 
   // Codes keep priority, including punctuation used by the ERP.
-  const literalTokens = query.toUpperCase().split(/[\s(),;:!?¿¡]+/).filter(Boolean);
+  const literalCode = (code: string) => new RegExp(`(?:^|[\\s(),;:!?¿¡])${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=$|[\\s(),;:!?¿¡])`, "i").test(query);
   const exact = products.filter((product) => [product.code, product.externalCode]
-    .some((code) => code && literalTokens.includes(code.toUpperCase()) && (/[A-Z]/i.test(code) || /\bc[oó]digo\b/i.test(query) || query.trim() === code)));
+    .some((code) => code && literalCode(code) && (/[A-Z]/i.test(code) || /\bc[oó]digo\b/i.test(query) || query.trim() === code)));
   if (exact.length) return { tokens, matches: exact, ambiguousSpelling: false };
 
   const indexed = products.map((product) => ({
