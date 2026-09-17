@@ -98,7 +98,9 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     let typeText = ` ${name} `;
     for (const key of brandKeys) typeText = typeText.replaceAll(` ${key} `, " ");
     const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !ignored.has(w) && !/\d/.test(w)) || "";
-    return { product, name, brandKeys, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
+    // SUPER in another brand's model name (e.g. BASEUS SUPER SI) is not our own brand.
+    const searchableBrands = brandKeys.filter(key => key !== "super" || Boolean(explicitBrand) || displayKey === "super");
+    return { product, name, brandKeys: searchableBrands, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
   });
   const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
 

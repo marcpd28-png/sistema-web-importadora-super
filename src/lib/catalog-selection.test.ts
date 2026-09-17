@@ -59,8 +59,11 @@ test("marca compartida restringe ambos tipos; marcas por cláusula conservan su 
 });
 
 test("Super Importaciones reconoce la marca propia y no confunde SUPER CARGA de otra marca",()=>{
- const rows=[...chargingProducts,{code:"HON1",name:"CARGADOR HONOR SUPER CARGA 100W",brand:null,category:"ACCESORIOS"}];
- const index=createCatalogIndex(rows,["SUPER","HONOR"]);
+ const rows=[...chargingProducts,
+  {code:"HON1",name:"CARGADOR HONOR SUPER CARGA 100W",brand:null,category:"ACCESORIOS"},
+  {code:"BASE1",name:"DADO BASEUS SUPER SI QUICK CHARGER",brand:null,category:"ACCESORIOS"},
+ ];
+ const index=createCatalogIndex(rows,["SUPER","HONOR","BASEUS"]);
  for(const query of ["catálogo cargadores Super Importaciones", "catálogo cargadores Importaciones Super", "catálogo cargadores marca SUPER"]) {
   assert.deepEqual(index.select(query).products.map(p=>p.code).sort(),["CR1","CR4"],query);
  }
