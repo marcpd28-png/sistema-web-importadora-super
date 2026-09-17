@@ -78,9 +78,13 @@ export function matchProductIdentities(query: string, products: ProductIdentity[
   if (!tokens.length) return { tokens, matches: [] as ProductIdentity[], ambiguousSpelling: false };
 
   // Codes keep priority, including punctuation used by the ERP.
-  const literalCode = (code: string) => new RegExp(`(?:^|[\\s(),;:!?¿¡])${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=$|[\\s(),;:!?¿¡])`, "i").test(query);
+  const occurrences = products.flatMap(product => [product.code, product.externalCode].filter((code): code is string => Boolean(code))).flatMap(code => {
+    const literal = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return [...query.matchAll(new RegExp(`(?:^|[\\s(),;:!?¿¡])(${literal})(?=$|[\\s(),;:!?¿¡])`, "gi"))].map(match => ({ code, start: match.index! + match[0].length - match[1].length, end: match.index! + match[0].length }));
+  });
+  const exactCodes = new Set(occurrences.filter(item => !occurrences.some(other => other.start <= item.start && other.end >= item.end && other.end - other.start > item.end - item.start)).map(item => item.code));
   const exact = products.filter((product) => [product.code, product.externalCode]
-    .some((code) => code && literalCode(code) && (/[A-Z]/i.test(code) || /\bc[oó]digo\b/i.test(query) || query.trim() === code)));
+    .some((code) => code && exactCodes.has(code) && (/[A-Z]/i.test(code) || /\bc[oó]digo\b/i.test(query) || query.trim() === code)));
   if (exact.length) return { tokens, matches: exact, ambiguousSpelling: false };
 
   const indexed = products.map((product) => ({
