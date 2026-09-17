@@ -6,6 +6,11 @@ Los errores del webhook se muestran en el panel; no se usa el webhook real de Wh
 
 ## Flujo desplegado
 
+Con `BC_REQUEST_AGENDA_ENABLED=true`, la [agenda de consultas](request-agenda.md)
+resuelve primero búsquedas, fichas, catálogos y preguntas mezcladas. Conserva las
+solicitudes pendientes entre mensajes y utiliza las ramas siguientes como respaldo
+para el saludo, atención humana, medios entrantes y checkout.
+
 1. **BC - Simulador - Entrada** valida `dryRun`, origen y contacto `SIMULATOR:`; persiste el mensaje y confirma la recepción.
 2. Toda solicitud explícita de catálogo pasa directamente a **BC - Simulador - Catálogo PDF**, sin preguntar por compra mayorista o por unidades. `catálogo JBL` reúne todos los productos publicados JBL; `audífonos JBL` intersecta marca y categoría; `catálogo de audífonos` incluye todas las marcas, agrupadas. Se toleran variantes como `audofnos`. Un modelo/código adicional restringe la selección. Los productos sin foto también se incluyen. Sin filtros, devuelve el enlace general; sin coincidencias, lo informa sin enviar productos ajenos.
 3. Las demás solicitudes pasan por **BC - Simulador - Motor conversacional**: agrupación de mensajes, estado comercial, productos/precios/envíos/checkout y redacción opcional con IA.

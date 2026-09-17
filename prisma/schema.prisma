@@ -264,6 +264,7 @@ model StoreSettings {
   n8nWebhookUrl       String?
   highlightMessage    String   @default("Precios por unidad y mayorista sincronizados con el ERP.")
   supportHours        String   @default("Lun a sáb 8:00 am - 7:00 pm")
+  storeAddress        String   @default("Jr. Huallaga 420, Cercado de Lima")
   primaryColor        String   @default("#2320DA")
   accentColor         String   @default("#2320DA")
   createdAt           DateTime @default(now())
@@ -818,6 +819,7 @@ model Conversation {
   unreadCount          Int                     @default(0)
   messages             ChatMessage[]
   salesState           ConversationSalesState?
+  requestAgenda        ConversationRequestAgenda?
   automationExecutions AutomationExecution[]
 
   @@index([contactId])
@@ -826,6 +828,14 @@ model Conversation {
   @@index([lastMessageAt(sort: Desc)])
   @@index([botEnabled])
   @@index([assignedUserId])
+}
+
+model ConversationRequestAgenda {
+  conversationId String       @id
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  revision       Int          @default(0)
+  state          Json
+  updatedAt      DateTime     @updatedAt
 }
 
 model ChatMessage {

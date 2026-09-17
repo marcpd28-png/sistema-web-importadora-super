@@ -1,0 +1,131 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { agendaSchema, emptyAgenda, planRequests, requestedQuantity } from "./bc-request-agenda";
+import { answerProductRequest, splitAnswerText } from "./bc-request-answers";
+import { createCatalogIndex } from "./catalog-selection";
+import type { CommercialProduct } from "./commercial-catalog";
+
+const product = (code: string, name: string, override = {}) => ({ id: code, code, name, brand: "JBL", category: "AURICULARES", stockUnits: 20, unitPrice: 90, wholesalePrice: 75, wholesaleMinQty: 6, boxPrice: null, unitsPerBox: null, unitLabel: "unidad", updatedAt: new Date("2026-09-17"), digitalProfile: { status: "PUBLICADA", descriptionShort: "Ficha aprobada" }, specifications: [], ...override }) as unknown as CommercialProduct;
+const products = [product("A1", "AUDIFONO JBL TUNE NEGRO"), product("A2", "AUDIFONO JBL TUNE BLANCO"), product("A3", "AUDIFONO JBL DIADEMA NEGRO"), product("A4", "AUDIFONO JBL NEGRO", { unitPrice: 130 }), product("P1", "PROYECTOR HY300", { brand: null, category: "PROYECTORES" }), product("P2", "PROYECTOR HY300 PRO", { brand: null, category: "PROYECTORES" })];
+const index = createCatalogIndex(products);
+
+test("search intersects color, budget and exclusions; numeric model never becomes Pro", () => {
+  assert.deepEqual(index.select("audífonos JBL negros hasta 100 soles que no sean de diadema").products.map(p => p.code), ["A1"]);
+  assert.deepEqual(index.select("proyector HY300").products.map(p => p.code), ["P1"]);
+  assert.deepEqual(index.select("proyector HY300 PRO").products.map(p => p.code), ["P2"]);
+  assert.deepEqual(index.select("audífonos JBL entre 100 y 150 soles").products.map(p => p.code), ["A4"]);
+  assert.deepEqual(index.select("audífonos JBL sin negros").products.map(p => p.code), ["A2"]);
+});
+
+test("punctuation and suffixes distinguish exact ERP identifiers", () => {
+  const identity = createCatalogIndex([product("BT454", "UNO"), product("BT454.", "DOS"), product("PC388", "HUB"), product("PC388-SQ", "COOLER")]);
+  for (const code of ["BT454", "BT454.", "PC388", "PC388-SQ"]) assert.deepEqual(identity.select(`código ${code}`).products.map(p => p.code), [code]);
+  assert.equal(identity.select("código PC388-UNKNOWN").products.length, 0);
+});
+
+test("six scattered messages retain each request and scope quantities to headphones", () => {
+  const { agenda } = planRequests(emptyAgenda(), ["Pásame catálogo de audífonos JBL", "Solo negros", "También quiero información del HY300", "¿Ese trae Android?", "¿Cuánto salen seis audífonos?", "¿Hacen envíos a Arequipa?"].map((content, i) => ({ id: `m${i}`, content })));
+  assert.equal(agenda.requests.length, 5);
+  const catalog = agenda.requests.find(r => r.kind === "CATALOG")!;
+  const price = agenda.requests.find(r => r.kind === "PRICE")!;
+  const information = agenda.requests.filter(r => r.kind === "INFORMATION");
+  assert.match(agenda.topics.find(t => t.id === catalog.topicId)!.query, /JBL.*negros/i);
+  assert.equal(price.topicId, catalog.topicId);
+  assert.equal(price.quantity, 6);
+  assert.equal(information[0].topicId, information[1].topicId);
+  assert.notEqual(price.topicId, information[0].topicId);
+  assert.deepEqual(information[1].fields, ["sistema"]);
+  assert(agendaSchema.safeParse(agenda).success);
+});
+
+test("a correction updates only the active topic and survives serialization/restart", () => {
+  const first = planRequests(emptyAgenda(), [{ id: "a", content: "catálogo audífonos JBL negros" }]).agenda;
+  first.requests[0].status = "ANSWERED";
+  const restored = agendaSchema.parse(JSON.parse(JSON.stringify(first)));
+  const next = planRequests(restored, [{ id: "b", content: "mejor blancos" }]);
+  assert.match(next.agenda.topics[0].query, /blancos/);
+  assert.doesNotMatch(next.agenda.topics[0].query, /negros/);
+  assert.equal(next.agenda.requests[0].status, "PENDING");
+  assert.deepEqual(next.agenda.requests[0].sourceMessageIds, ["a", "b"]);
+});
+
+test("multiple attributes are answered independently; missing warranty remains explicit", () => {
+  const { agenda } = planRequests(emptyAgenda(), [{ id: "a", content: "HY300: ¿cuánto dura la batería, qué potencia tiene y qué garantía?" }]);
+  const job = agenda.requests.find(r => r.kind === "INFORMATION")!;
+  const answer = answerProductRequest(job, agenda.topics[0], [product("P1", "PROYECTOR HY300", { specifications: [{ name: "Autonomía", value: "2 horas" }, { name: "Potencia RMS", value: "20 W" }] })]);
+  assert.match(answer.content, /Autonomía: 2 horas/);
+  assert.match(answer.content, /Potencia RMS: 20 W/);
+  assert.match(answer.content, /Garantía: no tengo ese dato confirmado/);
+  assert.equal(answer.status, "NEEDS_CLARIFICATION");
+});
+
+test("draft specifications never become confirmed facts", () => {
+  const { agenda } = planRequests(emptyAgenda(), [{ id: "a", content: "información HY300 potencia" }]);
+  const answer = answerProductRequest(agenda.requests[0], agenda.topics[0], [product("P1", "HY300", { digitalProfile: { status: "BORRADOR" }, specifications: [{ name: "Potencia", value: "9999 W" }] })]);
+  assert.doesNotMatch(answer.content, /9999/);
+  assert.equal(answer.status, "NEEDS_CLARIFICATION");
+});
+
+test("quote applies the existing wholesale rule and checks requested quantity against live stock", () => {
+  const { agenda } = planRequests(emptyAgenda(), [{ id: "a", content: "precio A1 por seis unidades" }]);
+  const answer = answerProductRequest(agenda.requests[0], agenda.topics[0], [products[0]]);
+  assert.match(answer.content, /75\.00[\s\S]*450\.00/);
+  assert.equal(answer.status, "ANSWERED");
+  assert.equal(answerProductRequest(agenda.requests[0], agenda.topics[0], [{ ...products[0], stockUnits: 2 }]).status, "NEEDS_CLARIFICATION");
+  assert.equal(requestedQuantity("HY300 256GB"), null);
+});
+
+test("a reply for shipping never clears a previously unresolved product question", () => {
+  const first = planRequests(emptyAgenda(), [{ id: "a", content: "precio audífonos JBL por seis unidades" }]).agenda;
+  first.requests[0].status = "NEEDS_CLARIFICATION";
+  const next = planRequests(first, [{ id: "b", content: "¿Hacen envíos por Shalom?" }]);
+  assert.equal(next.agenda.requests[0].status, "NEEDS_CLARIFICATION");
+  assert.equal(next.agenda.requests[1].kind, "SHIPPING");
+});
+
+test("long approved specifications are split without losing content", () => {
+  const content = "a".repeat(8000);
+  const chunks = splitAnswerText(content);
+  assert(chunks.every(chunk => chunk.length <= 3500));
+  assert.equal(chunks.join(""), content);
+});
+
+test("mixed requests in one message keep catalog filters separate from business questions", () => {
+  const result = planRequests(emptyAgenda(), [{ id: "m", content: "catálogo audífonos JBL y formas de pago y ¿hacen envíos por Shalom?" }]);
+  assert.deepEqual(result.agenda.requests.map(job => job.kind), ["CATALOG", "PAYMENT", "SHIPPING"]);
+  assert.match(result.agenda.topics[0].query, /audífonos JBL/);
+  assert(result.agenda.requests[0].topicId);
+  assert.equal(result.agenda.requests[1].topicId, null);
+});
+
+test("an explicit topic in a correction wins over the most recent unrelated product", () => {
+  const first = planRequests(emptyAgenda(), [{ id: "a", content: "catálogo audífonos JBL negros hasta 100 soles" }, { id: "b", content: "información HY300" }]).agenda;
+  const result = planRequests(first, [{ id: "c", content: "mejor blancos los audífonos" }]);
+  assert.match(result.agenda.topics[0].query, /blancos/);
+  assert.match(result.agenda.topics[0].query, /hasta 100 soles/);
+  assert.equal(result.agenda.topics[1].query, "HY300");
+});
+
+test("typos and capacity spacing keep the same identity without relaxing model digits", () => {
+  const found = createCatalogIndex([product("R1", "CELULAR REDMI NOTE 15 256GB", { brand: "XIAOMI" }), product("R2", "CELULAR REDMI NOTE 15 PRO 256GB", { brand: "XIAOMI" }), product("J1", "PARLANTE JBL CHARGE 6", { category: "PARLANTES" })]);
+  assert.deepEqual(found.select("Readmi note 15 256 GB").products.map(item => item.code), ["R1"]);
+  assert.deepEqual(found.select("parlante JBL chagre 6").products.map(item => item.code), ["J1"]);
+  assert.equal(found.select("parlante JBL charge 7").products.length, 0);
+});
+
+test("an ordinal never guesses between two product lists", () => {
+  const prior = planRequests(emptyAgenda(), [{ id: "a", content: "audífonos JBL" }, { id: "b", content: "parlantes SUPER" }]).agenda;
+  prior.topics[0].shownCodes = ["A1", "A2"]; prior.topics[1].shownCodes = ["P1", "P2"];
+  const next = planRequests(prior, [{ id: "c", content: "el segundo" }]);
+  assert.equal(next.recognized, true);
+  assert.equal(next.agenda.requests.at(-1)?.topicId, null);
+  assert(next.agenda.topics.every(topic => topic.selectedCode === null));
+});
+
+test("quantities in a followup remain associated with the selected topic", () => {
+  const first = planRequests(emptyAgenda(), [{ id: "a", content: "precio A1" }]).agenda;
+  const next = planRequests(first, [{ id: "b", content: "seis unidades" }]);
+  assert.equal(next.agenda.requests.at(-1)?.kind, "PRICE");
+  assert.equal(next.agenda.requests.at(-1)?.topicId, first.topics[0].id);
+  assert.equal(next.agenda.requests.at(-1)?.quantity, 6);
+});

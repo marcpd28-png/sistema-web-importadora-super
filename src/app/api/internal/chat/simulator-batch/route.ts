@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { greetChatResponse } from "@/lib/chat-greeting";
 import { lockSimulatorConversation, readSimulatorInputBatch } from "@/lib/simulator-input-batch";
+import { agendaSchema } from "@/lib/bc-request-agenda";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,9 @@ const schema = z.object({
   conversationId: z.string().min(1).max(191),
   requestId: z.string().min(1).max(191),
   triggerMessageId: z.string().min(1).max(191).optional(),
+  agenda: z.object({ expectedRevision: z.number().int().nonnegative(), state: agendaSchema }).optional(),
+  inventory: z.array(z.object({ id: z.string(), stockUnits: z.number(), unitPrice: z.string(), wholesalePrice: z.string().nullable(), wholesaleMinQty: z.number() })).max(10000).optional(),
+  selection: z.object({ code: z.string().max(64), quantity: z.number().int().positive().nullable() }).optional(),
   messages: z.array(z.object({
     type: z.enum(["TEXT", "IMAGE", "DOCUMENT", "VIDEO"]),
     content: z.string().trim().min(1).max(4000),
@@ -41,6 +45,18 @@ export async function POST(request: Request) {
       if (inputBatch && inputBatch.status !== "READY" && inputBatch.status !== "TOO_LARGE") {
         return { skipped: true, reason: inputBatch.status, messages: [] };
       }
+      if (input.agenda) {
+        if (!input.triggerMessageId || inputBatch?.status !== "READY") return { skipped: true, reason: "AGENDA_REQUIRES_READY_BATCH", messages: [] };
+        const previous = await tx.conversationRequestAgenda.findUnique({ where: { conversationId: input.conversationId } });
+        if ((previous?.revision ?? 0) !== input.agenda.expectedRevision) return { skipped: true, reason: "AGENDA_CHANGED", messages: [] };
+      }
+      if (input.inventory?.length) {
+        const live = await tx.product.findMany({ where: { id: { in: input.inventory.map(product => product.id) }, isVisible: true },
+          select: { id: true, stockUnits: true, unitPrice: true, wholesalePrice: true, wholesaleMinQty: true } });
+        if (input.inventory.some(product => !live.some(row => row.id === product.id && row.stockUnits === product.stockUnits && String(row.unitPrice) === product.unitPrice && (row.wholesalePrice === null ? null : String(row.wholesalePrice)) === product.wholesalePrice && row.wholesaleMinQty === product.wholesaleMinQty))) {
+          return { skipped: true, reason: "INVENTORY_CHANGED", messages: [] };
+        }
+      }
       const started = Date.now();
       const replies = greetChatResponse(input.messages, new Date(started));
       const data = replies.map((message,index) => ({
@@ -53,6 +69,24 @@ export async function POST(request: Request) {
       }));
       const inserted = await tx.chatMessage.createMany({ data, skipDuplicates: true });
       if (!inserted.count) return { duplicate: true, messages: [] };
+      if (input.agenda) {
+        await tx.conversationRequestAgenda.upsert({
+          where: { conversationId: input.conversationId },
+          create: { conversationId: input.conversationId, revision: 1, state: input.agenda.state },
+          update: { revision: { increment: 1 }, state: input.agenda.state },
+        });
+      }
+      if (input.selection && input.agenda) {
+        const selected = input.agenda.state.topics.find(topic => topic.id === input.agenda!.state.lastTopicId)?.selectedCode;
+        if (selected === input.selection.code) {
+          const state = await tx.conversationSalesState.findUnique({ where: { conversationId: input.conversationId }, select: { stage: true } });
+          // Keep checkout/customer/payment state intact while sharing an explicitly resolved SKU.
+          if (!state || !/CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(state.stage)) {
+            const data = { selectedProductCode: selected, quantity: input.selection.quantity, unitPrice: null, total: null, priceTier: null, stage: "AWAITING_PURCHASE_CONFIRMATION" };
+            await tx.conversationSalesState.upsert({ where: { conversationId: input.conversationId }, create: { conversationId: input.conversationId, ...data }, update: data });
+          }
+        }
+      }
       await tx.conversation.update({ where: { id: input.conversationId }, data: {
         lastMessageAt: data[data.length - 1].createdAt, unreadCount: { increment: inserted.count },
       } });

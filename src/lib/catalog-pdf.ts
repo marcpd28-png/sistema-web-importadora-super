@@ -7,8 +7,7 @@ import sharp from "sharp";
 
 import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
-import { createCatalogIndex } from "@/lib/catalog-selection";
-import { getCatalogReferenceBrands } from "@/lib/catalog-reference-brands";
+import { loadCommercialCatalog, type CommercialCatalog } from "@/lib/commercial-catalog";
 import { resolveProductBrand } from "@/lib/product-discovery";
 
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
@@ -49,6 +48,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
   const products = await prisma.product.findMany({
     where: {
       isVisible: true,
+      stockUnits: { gt: 0 },
       OR: [
         { name: { contains: "proyector", mode: "insensitive" } },
         { category: { contains: "proyector", mode: "insensitive" } },
@@ -389,33 +389,36 @@ async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: stri
   return { ...result, generated: true };
 }
 
-async function selectRequestedCatalog(content: string) {
-  const rows = await prisma.product.findMany({
-    where: { isVisible: true },
-    select: { id: true, code: true, name: true, unitPrice: true, brand: true, category: true, categoryRef: { select: { name: true } }, imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
-      media: { orderBy: { sortOrder: "asc" }, select: { url: true } } },
-  });
-  const index = createCatalogIndex(rows, await getCatalogReferenceBrands());
-  const selection = index.select(content);
+async function selectRequestedCatalog(content: string, snapshot?: CommercialCatalog) {
+  const catalog = snapshot ?? await loadCommercialCatalog();
+  const index = catalog.index;
+  const selection = catalog.search(content);
   const products = selection.products.map(p => ({ ...p, brand: index.productBrand(p), imageUrls: [...new Set([p.localImageUrl, ...p.media.map(m => m.url), p.sourceImageUrl, p.imageUrl].filter((v): v is string => Boolean(v?.trim())))] }));
   return { ...selection, products };
 }
 
-export async function generateRequestedCatalogPdf(content: string, largeImages = false) {
-  const selection = await selectRequestedCatalog(content);
+export async function generateRequestedCatalogPdf(content: string, largeImages = false, snapshot?: CommercialCatalog) {
+  const selection = await selectRequestedCatalog(content, snapshot);
   const products = selection.products;
   if (!selection.scoped || !products.length) return { ...selection, catalog: null };
-  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v1" : "scoped-grid-v2"}:${selection.label}:${JSON.stringify(products.map(p => p.brand))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v1" : "scoped-grid-v3"}:${content}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
   let generation = inFlightCatalogs.get(fingerprint);
   if (!generation) {
     generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightCatalogs.delete(fingerprint));
     inFlightCatalogs.set(fingerprint, generation);
   }
-  return { ...selection, catalog: await generation };
+  const generated = await generation;
+  const manifestDirectory = path.join(process.cwd(), ".cache", "catalog-manifests");
+  await mkdir(manifestDirectory, { recursive: true });
+  await writeFile(path.join(manifestDirectory, `${generated.filename}.json`), JSON.stringify({
+    version: 1, generatedAt: new Date().toISOString(), query: content, codes: products.map(p => p.code),
+    products: products.map(p => ({ code: p.code, stockUnits: p.stockUnits, unitPrice: String(p.unitPrice), updatedAt: p.updatedAt.toISOString() })),
+  }));
+  return { ...selection, catalog: generated };
 }
 
-export async function generateRequestedProductImages(content: string) {
-  const selection = await selectRequestedCatalog(content);
+export async function generateRequestedProductImages(content: string, snapshot?: CommercialCatalog) {
+  const selection = await selectRequestedCatalog(content, snapshot);
   await mkdir(CATALOG_DIRECTORY, { recursive: true });
   const outboundMessages = await Promise.all(selection.products.map(async (product, index) => {
     const caption = `${index + 1}/${selection.products.length} · ${product.name}\nCódigo: ${product.code} · Precio unitario: S/${Number(product.unitPrice).toFixed(2)}`;

@@ -1,0 +1,33 @@
+import { prisma } from "@/lib/prisma";
+import { createCatalogIndex } from "./catalog-selection";
+import { getCatalogReferenceBrands } from "./catalog-reference-brands";
+
+/** One inventory snapshot per request; no stock/price cache or writes to ERP products. */
+export async function loadCommercialCatalog() {
+  const [products, brands] = await Promise.all([
+    prisma.product.findMany({
+      where: { isVisible: true },
+      select: {
+        id: true, code: true, name: true, slug: true, unitLabel: true, unitPrice: true,
+        wholesalePrice: true, wholesaleMinQty: true, boxPrice: true, unitsPerBox: true,
+        stockUnits: true, brand: true, category: true, categoryRef: { select: { name: true } },
+        imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
+        media: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+        digitalProfile: { select: { status: true, descriptionShort: true, descriptionFull: true } },
+        specifications: { orderBy: { sortOrder: "asc" }, select: { name: true, value: true } },
+      },
+    }),
+    getCatalogReferenceBrands(),
+  ]);
+  const index = createCatalogIndex(products, brands);
+  const availableIndex = createCatalogIndex(products.filter(product => product.stockUnits > 0), brands);
+  return {
+    products, index,
+    search(query: string, availableOnly = true) {
+      return (availableOnly ? availableIndex : index).select(query);
+    },
+  };
+}
+
+export type CommercialCatalog = Awaited<ReturnType<typeof loadCommercialCatalog>>;
+export type CommercialProduct = CommercialCatalog["products"][number];

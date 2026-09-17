@@ -1,9 +1,13 @@
 import { resolveProductBrand } from "./product-discovery";
 import { inferStoreCategoryName } from "./product-category-classifier";
+import { literalProductCodes, matchesCommercialConstraints, matchesExplicitModelVersion, parseCommercialQuery } from "./commercial-query";
 
-export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null };
+export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null; unitPrice?: unknown };
 export function normalizeCatalogText(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/\bpro\s*\+/g, "pro plus ").replace(/(\d)\s+(gb|tb|mb|w|mah)\b/g, "$1$2")
+    .replace(/\b(?:readmi|redmy)\b/g, "redmi").replace(/\b(?:samsumg|sansung)\b/g, "samsung")
+    .replace(/\b(?:xiomi|xiaomy)\b/g, "xiaomi").replace(/[^a-z0-9]+/g, " ").trim();
 }
 export function isCatalogRequest(content: string) {
   return /\bcatalogos?\b/.test(normalizeCatalogText(content));
@@ -59,6 +63,7 @@ function matchesCategory(product: CatalogCandidate, category: typeof categories[
 
 function wordMatches(a: string, b: string) {
   if (a === b || singular(a) === singular(b)) return true;
+  if (/^\d+$/.test(a) && b.match(/^(\d+)(?:gb|tb|mb|w|mah)$/)?.[1] === a) return true;
   // Spanish plurals: cargador/cargadores, control/controles, lápiz/lápices.
   const forms = (w: string) => [w, ...(w.endsWith("es") ? [w.slice(0,-2)] : []), ...(w.endsWith("ces") ? [w.slice(0,-3)+"z"] : [])];
   return forms(a).some(x => forms(b).includes(x));
@@ -103,18 +108,23 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     return { product, name, brandKeys: searchableBrands, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
   });
   const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
+  const vocabulary = new Set(rows.flatMap(row => row.words));
 
   function selectSingle(content: string) {
+    const parsed = parseCommercialQuery(content);
+    const original = content;
+    content = parsed.text;
     const text = normalizeCatalogText(content);
     const queryTerms = text.split(" ").filter(t => !ignored.has(t)).join(" ");
     const exactCodes = rows.filter(r => hasPhrase(text,r.code) && (/\bcodigos?\b/.test(text) || (queryTerms === r.code && !knownBrands.has(r.code) && !/\b(?:marca|categoria)s?\b/.test(text)) || content.includes(`(${r.product.code})`)));
     // An explicit SKU remains searchable even if it is numeric, unbranded or uncategorized.
     const maxCodeLength = Math.max(0,...exactCodes.map(r => r.code.length));
     const normalizedCodeRows = exactCodes.filter(r => r.code.length === maxCodeLength);
-    const literalTokens = content.toLowerCase().split(/\s+/);
-    const literalCodeRows = normalizedCodeRows.filter(r => literalTokens.includes(r.product.code.toLowerCase()));
-    const codeRows = literalCodeRows.length ? literalCodeRows : normalizedCodeRows;
-    if (codeRows.length) return { products: codeRows.map(r => r.product), scoped: true, label: codeRows.map(r => r.product.code).join(" / "), brands: [] as string[], categories: [] as string[], types: [] as string[], terms: codeRows.map(r => r.product.code) };
+    const literalCodes = new Set(literalProductCodes(original, rows.map(r => r.product.code)));
+    const literalCodeRows = rows.filter(r => literalCodes.has(r.product.code) && (/[a-z]/i.test(r.product.code) || /\bcodigos?\b/.test(text) || queryTerms === r.code));
+    // Never collapse punctuation or suffixes of ERP codes. A normalized collision needs clarification.
+    const codeRows = literalCodeRows.length ? literalCodeRows : normalizedCodeRows.length === 1 && !/[.-]/.test(original) ? normalizedCodeRows : [];
+    if (codeRows.length) return { products: codeRows.filter(r => matchesCommercialConstraints(r.product, parsed.constraints)).map(r => r.product), scoped: true, label: codeRows.map(r => r.product.code).join(" / "), brands: [] as string[], categories: [] as string[], types: [] as string[], terms: codeRows.map(r => r.product.code) };
 
     let remainder = ` ${text} `;
     const screenExtenders = isScreenExtenderQuery(text);
@@ -144,12 +154,14 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const terms = remaining.filter(t => !requestedTypes.includes(t));
     const scoped = Boolean(screenExtenders || requestedCategories.length || requestedBrands.length || aliases.length || requestedTypes.length || terms.length);
     const selected = rows.filter(r => {
+      if (!matchesCommercialConstraints(r.product, parsed.constraints)) return false;
+      if (!matchesExplicitModelVersion(content, r.product.name)) return false;
       if (screenExtenders && !isScreenExtenderQuery(r.name)) return false;
       if (requestedCategories.length && !requestedCategories.some(([key]) => [r.product.category,r.product.categoryRef?.name].some(v => normalizeCatalogText(v || "") === key))) return false;
       if (requestedBrands.length && !requestedBrands.some(([key]) => r.brandKeys.includes(key))) return false;
       if (aliases.length && !aliases.some(c => c.aliases.some(a => wordMatches(r.type,a)) || matchesCategory(r.product,c))) return false;
       if (requestedTypes.length && !requestedTypes.some(t => wordMatches(r.type,t))) return false;
-      return terms.every(t => r.words.some(w => wordMatches(w,t)));
+      return terms.every(t => r.words.some(w => wordMatches(t,w) || (!vocabulary.has(t) && /^[a-z]{5,}$/.test(t) && /^[a-z]{5,}$/.test(w) && nearWord(t,w))));
     }).sort((a,b) => a.displayBrand.localeCompare(b.displayBrand,"es") || a.product.name.localeCompare(b.product.name,"es"));
     const labels = [...(screenExtenders ? ["extensores de pantalla"] : []),...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label),...requestedTypes];
     const label = [...labels,...requestedBrands.map(([,v]) => v),...terms].join(" ") || "productos";
