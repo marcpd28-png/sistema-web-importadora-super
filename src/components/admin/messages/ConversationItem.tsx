@@ -1,5 +1,5 @@
 import type { Conversation } from "@/types/messages";
-import { Bot, Globe, MessageSquare, User, UserRound } from "lucide-react";
+import { Bot, Globe, MessageSquare, UserRound } from "lucide-react";
 
 interface Props {
   conversation: Conversation;
@@ -9,6 +9,7 @@ interface Props {
 
 const MESSAGE_TYPE_LABELS: Record<string, string> = {
   AUDIO: "Audio",
+  STICKER: "Sticker",
   CONTACT: "Contacto",
   DOCUMENT: "Documento",
   IMAGE: "Imagen",

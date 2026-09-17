@@ -8,6 +8,7 @@ import { CustomerPanel } from "./CustomerPanel";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import type { ChatMessage, Conversation, MessageType } from "@/types/messages";
+import { templateSelectionSchema, type TemplateSelection } from "@/lib/message-templates";
 
 const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
@@ -208,6 +209,7 @@ export function MessagesWorkspace() {
   const [conversationHasMore, setConversationHasMore] = useState(false);
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([]);
   const [activeId, setActiveId] = useState<string | undefined>();
+  const activeIdRef = useRef<string | undefined>(undefined);
   const [messageTotal, setMessageTotal] = useState(0);
   const [messageHasMore, setMessageHasMore] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -222,6 +224,7 @@ export function MessagesWorkspace() {
   const conversationsRef = useRef<Conversation[]>([]);
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeId);
+  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
   const debouncedConversationKey = useMemo(() => JSON.stringify(debouncedFilters), [debouncedFilters]);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
@@ -457,9 +460,9 @@ export function MessagesWorkspace() {
     setMessageHasMore(false);
   };
 
-  const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT") => {
-    if (!activeId) {
-      return;
+  const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT", template?: TemplateSelection): Promise<boolean> => {
+    if (!activeId || activeIdRef.current !== activeId) {
+      return false;
     }
 
     const now = new Date();
@@ -474,7 +477,7 @@ export function MessagesWorkspace() {
       id: `m-new-${now.getTime()}`,
       mediaUrl: mediaUrl || null,
       messageType,
-      metadata: { requestId },
+      metadata: { requestId, ...(template ? { template } : {}) },
       senderType: "AGENT",
       status: "sending",
     };
@@ -503,7 +506,7 @@ export function MessagesWorkspace() {
 
     try {
       const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
-        body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined, requestId }),
+        body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined, requestId, template }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -515,19 +518,21 @@ export function MessagesWorkspace() {
 
       const savedMessage = (await response.json()) as ChatMessage;
       setActiveMessages((current) =>
-        mergeMessages(
+        activeIdRef.current !== activeId ? current : mergeMessages(
           current.filter((message) => message.id !== tempMessage.id),
           [savedMessage],
         ),
       );
+      return true;
     } catch (error) {
       const reason = error instanceof Error ? error.message : "No se pudo enviar el mensaje.";
       console.error("Send error", { requestId, reason });
       setActiveMessages((current) =>
-        current.map((message) => (message.id === tempMessage.id
-          ? { ...message, status: "failed", metadata: { requestId, error: reason } }
+        activeIdRef.current !== activeId ? current : current.map((message) => (message.id === tempMessage.id
+          ? { ...message, status: "failed", metadata: { requestId, error: reason, ...(template ? { template } : {}) } }
           : message)),
       );
+      return false;
     }
   };
 
@@ -664,7 +669,11 @@ export function MessagesWorkspace() {
                   <MessageBubble
                     key={message.id}
                     message={message}
-                    onRetry={(failed) => void handleSendMessage(failed.content, failed.mediaUrl ?? undefined, failed.messageType)}
+                    onRetry={(failed) => {
+                      const metadata = failed.metadata as Record<string, unknown> | null;
+                      const selection = templateSelectionSchema.safeParse(metadata?.template);
+                      void handleSendMessage(failed.content, failed.mediaUrl ?? undefined, failed.messageType, selection.success ? selection.data : undefined);
+                    }}
                   />
                 ))
               )}
@@ -679,7 +688,7 @@ export function MessagesWorkspace() {
             </div>
 
             <div className="chat-count">{activeMessages.length} de {messageTotal} mensajes cargados</div>
-            <MessageInput onSendMessage={handleSendMessage} />
+            <MessageInput key={activeConversation.id} contact={activeConversation.contact} onSendMessage={handleSendMessage} />
           </div>
 
           <CustomerPanel conversation={activeConversation} />

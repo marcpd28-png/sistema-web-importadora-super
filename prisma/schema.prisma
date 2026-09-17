@@ -122,6 +122,7 @@ enum MessageType {
   TEXT
   IMAGE
   AUDIO
+  STICKER
   VIDEO
   DOCUMENT
   LOCATION

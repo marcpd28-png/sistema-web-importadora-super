@@ -1,34 +1,57 @@
 import { useState, useRef } from "react";
 import type { KeyboardEvent, ChangeEvent } from "react";
-import { Paperclip, Send, Loader2 } from "lucide-react";
+import { FileText, Paperclip, Send, Loader2, X } from "lucide-react";
+import { TemplatePicker } from "./TemplatePicker";
+import type { TemplateSelection } from "@/lib/message-templates";
 
 interface Props {
-  onSendMessage: (content: string, mediaUrl?: string, type?: string) => Promise<void> | void;
+  onSendMessage: (content: string, mediaUrl?: string, type?: string, template?: TemplateSelection) => Promise<boolean>;
+  contact: { name?: string | null; phone?: string | null; phoneNormalized?: string | null };
 }
 
-export function MessageInput({ onSendMessage }: Props) {
+export function MessageInput({ onSendMessage, contact }: Props) {
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sendingRef = useRef(false);
+  const [isSending, setIsSending] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [template, setTemplate] = useState<(TemplateSelection & { name: string }) | undefined>();
+  const busy = isUploading || isSending;
 
-  const handleSend = () => {
-    if (message.trim()) {
-      onSendMessage(message.trim());
-      setMessage("");
+  const handleSend = async () => {
+    if (!message.trim() || busy || sendingRef.current) return;
+    if (template && (/\{\{|\}\}/.test(message) || message.trim().length > 4000)) {
+      setUploadError("Completa las variables y verifica que el mensaje no supere los 4000 caracteres.");
+      return;
     }
+    sendingRef.current = true;
+    setIsSending(true);
+    setShowTemplates(false);
+    setUploadError(null);
+    try {
+      if (await onSendMessage(message.trim(), undefined, "TEXT", template)) { setMessage(""); setTemplate(undefined); }
+      else setUploadError("El envío falló. Conservamos tu borrador; revisa el error del mensaje antes de reintentar.");
+    } catch { setUploadError("No se pudo enviar. Tu borrador se ha conservado."); }
+    finally { sendingRef.current = false; setIsSending(false); }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || busy || sendingRef.current) return;
+    if (template && (/\{\{|\}\}/.test(message) || message.trim().length > 4000)) {
+      setUploadError("Completa las variables y verifica el tamaño del mensaje antes de adjuntar.");
+      return;
+    }
 
     // Reset input
     if (fileInputRef.current) {
@@ -36,6 +59,8 @@ export function MessageInput({ onSendMessage }: Props) {
     }
 
     setIsUploading(true);
+    sendingRef.current = true;
+    setShowTemplates(false);
     setUploadError(null);
     try {
       const formData = new FormData();
@@ -61,13 +86,14 @@ export function MessageInput({ onSendMessage }: Props) {
       else if (file.type === "application/pdf") type = "DOCUMENT";
       
       const textContent = message.trim() || `Archivo adjunto: ${file.name}`;
-      await onSendMessage(textContent, data.url, type);
-      setMessage("");
+      if (await onSendMessage(textContent, data.url, type, template)) { setMessage(""); setTemplate(undefined); }
+      else setUploadError("No se pudo enviar el archivo. Conservamos tu borrador.");
     } catch (err) {
       console.error(err);
       setUploadError("No se pudo enviar el archivo. Revisa tu conexión e intenta nuevamente.");
     } finally {
       setIsUploading(false);
+      sendingRef.current = false;
     }
   };
 
@@ -77,6 +103,10 @@ export function MessageInput({ onSendMessage }: Props) {
 
   return (
     <div className="chat-input-container">
+      {showTemplates && <TemplatePicker contact={contact} hasDraft={!!message.trim()} onClose={() => setShowTemplates(false)} onSelect={(content, selection, name) => {
+        setMessage(content); setTemplate({ ...selection, name }); setShowTemplates(false); setUploadError(null); textareaRef.current?.focus();
+      }} />}
+      {template && <div className="template-draft-label"><span>Plantilla: {template.name} · Puedes editar el texto antes de enviar.</span><button className="icon-btn" type="button" disabled={busy} aria-label="Quitar plantilla y borrar su texto" title="Quitar plantilla y borrar su texto" onClick={() => { setTemplate(undefined); setMessage(""); }}><X size={14} /></button></div>}
       <div className="chat-input-wrapper">
         <input 
           type="file" 
@@ -91,12 +121,14 @@ export function MessageInput({ onSendMessage }: Props) {
           title="Adjuntar" 
           type="button" 
           onClick={triggerFileInput}
-          disabled={isUploading}
+          disabled={busy}
         >
           {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Paperclip size={18} />}
         </button>
+        <button aria-label="Usar plantilla" aria-expanded={showTemplates} className="icon-btn" title="Usar plantilla" type="button" disabled={busy} onClick={() => setShowTemplates((open) => !open)}><FileText size={18} /></button>
         
         <textarea 
+          ref={textareaRef}
           aria-describedby="message-input-help"
           aria-label="Mensaje para el cliente"
           className="chat-input-textarea" 
@@ -104,7 +136,7 @@ export function MessageInput({ onSendMessage }: Props) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={isUploading}
+          disabled={busy}
           rows={1}
         />
         
@@ -113,11 +145,11 @@ export function MessageInput({ onSendMessage }: Props) {
             aria-label="Enviar mensaje"
             className="icon-btn" 
             onClick={handleSend}
-            disabled={!message.trim() || isUploading}
+            disabled={!message.trim() || busy}
             title="Enviar"
             type="button"
           >
-            <Send size={18} />
+            {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
           </button>
         </div>
       </div>

@@ -1,8 +1,43 @@
+"use client";
+
+import { useState } from "react";
 import type { ChatMessage } from "@/types/messages";
+import { getMessageMedia, getMessageMediaSrc } from "@/lib/message-media";
 
 interface Props {
   message: ChatMessage;
   onRetry?: (message: ChatMessage) => void;
+}
+
+function MessageMedia({ type, src, content }: { type: string; src: string | null; content: string }) {
+  const [failed, setFailed] = useState(false);
+  const label = type === "AUDIO" ? "Audio" : type === "STICKER" ? "Sticker" : "Imagen";
+  return (
+    <div style={{ margin: "4px 0", display: "flex", flexDirection: "column", gap: "6px", maxWidth: "100%" }}>
+      {type === "AUDIO" && <span style={{ fontSize: "12px", fontWeight: 600 }}>Audio</span>}
+      {src && !failed ? type === "AUDIO" ? (
+        <audio aria-label="Audio del mensaje" controls preload="none" src={src} onError={() => setFailed(true)} style={{ width: "300px", maxWidth: "100%" }}>
+          Tu navegador no permite reproducir este audio.
+        </audio>
+      ) : (
+        // Native images preserve animated stickers and authenticated media URLs.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt={type === "STICKER" ? "Sticker" : content || "Imagen enviada"}
+          src={src}
+          onError={() => setFailed(true)}
+          style={{ display: "block", borderRadius: type === "STICKER" ? 0 : "10px", width: type === "STICKER" ? "160px" : undefined, height: type === "STICKER" ? "160px" : "auto", maxHeight: "260px", maxWidth: "100%", objectFit: "contain" }}
+        />
+      ) : (
+        <span role="status" style={{ fontSize: "13px", color: "#667781" }}>
+          {failed ? `No se pudo cargar el ${label.toLowerCase()}.` : `${label} recibido. Archivo no disponible.`}
+        </span>
+      )}
+      {failed && src && <button type="button" onClick={() => setFailed(false)} style={{ alignSelf: "flex-start", fontSize: "12px", textDecoration: "underline" }}>Volver a cargar</button>}
+      {type === "AUDIO" && src && <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "12px", textDecoration: "underline" }}>Abrir audio</a>}
+      {content && !/^(audio|sticker|imagen|image) recibido$/i.test(content.trim()) && <span style={{ fontSize: "13px" }}>{content}</span>}
+    </div>
+  );
 }
 
 export function MessageBubble({ message, onRetry }: Props) {
@@ -25,8 +60,9 @@ export function MessageBubble({ message, onRetry }: Props) {
   const dateObj = new Date(message.createdAt);
   const timeStr = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
 
-  // If it's UNKNOWN or TEXT, we just render the content as text.
-  const isTextLike = message.messageType === "TEXT" || message.messageType === "UNKNOWN";
+  const media = getMessageMedia(message);
+  const mediaSrc = getMessageMediaSrc(message);
+  const hasMediaRenderer = ["IMAGE", "AUDIO", "STICKER"].includes(media.type);
 
   return (
     <div className={`message-bubble ${bubbleClass}`} style={{
@@ -51,31 +87,7 @@ export function MessageBubble({ message, onRetry }: Props) {
       </div>
       
       <div className="message-content" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
-        {isTextLike && <span>{message.content}</span>}
-        {message.messageType === "IMAGE" && message.mediaUrl && (
-          <div style={{ margin: '4px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <img
-              alt={message.content || "Imagen enviada"}
-              src={message.mediaUrl}
-              style={{
-                borderRadius: '10px',
-                display: 'block',
-                height: 'auto',
-                maxHeight: '260px',
-                maxWidth: '100%',
-                objectFit: 'cover',
-              }}
-            />
-            {message.content ? (
-              <span style={{ fontSize: '13px', whiteSpace: 'pre-wrap' }}>{message.content}</span>
-            ) : null}
-          </div>
-        )}
-        {message.messageType === "IMAGE" && !message.mediaUrl && (
-          <div style={{ margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.8 }}>Imagen sin URL disponible</span>
-          </div>
-        )}
+        {hasMediaRenderer ? <MessageMedia key={mediaSrc ?? message.id} type={media.type} src={mediaSrc} content={message.content} /> : <span>{message.content || "Mensaje recibido"}</span>}
       </div>
       
       <span style={{ fontSize: '10px', color: '#667781', textAlign: 'right', marginTop: '4px' }}>

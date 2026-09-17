@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { triggerPusherEvent } from "@/lib/pusher-server";
+import { templateSnapshotSchema } from "@/lib/message-templates";
 
 const outgoingMessageSchema = z.object({
   agentId: z.string().trim().min(1).max(120).default("router-v2-bot"),
@@ -15,6 +16,7 @@ const outgoingMessageSchema = z.object({
   requestId: z.string().trim().min(1).max(120).optional(),
   type: z.nativeEnum(MessageType).default("TEXT"),
   status: z.enum(["sent", "failed"]).default("sent"),
+  template: templateSnapshotSchema.optional(),
 });
 
 function isAuthorized(request: Request) {
@@ -65,9 +67,12 @@ export async function POST(request: Request) {
             agentId: input.agentId,
             provider: input.provider,
             requestId: input.requestId ?? null,
+            ...(input.template ? { template: input.template } : {}),
             ...(input.status === "failed" ? {
-              error: "No se pudo enviar el PDF por WhatsApp. Revisa los permisos de envío de la integración y la ventana de conversación.",
-              errorCode: "WHATSAPP_DOCUMENT_SEND_FAILED",
+              error: input.template
+                ? "No se pudo enviar la respuesta guardada. Revisa la ejecución del flujo en n8n."
+                : "No se pudo enviar el PDF por WhatsApp. Revisa los permisos de envío de la integración y la ventana de conversación.",
+              errorCode: input.template ? "SAVED_REPLY_SEND_FAILED" : "WHATSAPP_DOCUMENT_SEND_FAILED",
             } : {}),
           },
           senderType: "BOT",

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { normalizeWhatsappPhone } from "@/lib/utils";
+import type { TemplateSnapshot } from "@/lib/message-templates";
 
 const DEFAULT_TIMEOUT_MS = 12_000;
 
@@ -22,6 +23,7 @@ export type N8nOutboundMessageInput = {
   mediaUrl?: string | null;
   agentId: string;
   requestId: string;
+  template?: TemplateSnapshot;
 };
 
 export type N8nOutboundMessageResult = {
@@ -137,6 +139,7 @@ export async function sendN8nOutboundMessage(
         agentId: input.agentId,
         requestId,
         timestamp: new Date().toISOString(),
+        ...(input.template ? { template: input.template } : {}),
       }),
       signal: controller.signal,
     });

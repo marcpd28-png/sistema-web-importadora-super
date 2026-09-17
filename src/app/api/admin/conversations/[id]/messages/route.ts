@@ -6,6 +6,7 @@ import {
   sendInternalMessage,
 } from "@/lib/messages-service";
 import { N8nOutboundError } from "@/lib/n8n-outbound";
+import { MessageTemplateError } from "@/lib/message-templates-service";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,9 @@ export async function POST(
 
     return NextResponse.json(message);
   } catch (error: unknown) {
+    if (error instanceof MessageTemplateError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }

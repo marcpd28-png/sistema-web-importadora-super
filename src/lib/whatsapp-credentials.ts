@@ -41,14 +41,17 @@ export function selectDeterministicActiveWhatsappIntegration<T extends { id: str
   )[0] ?? null;
 }
 
-export async function resolveActiveWhatsappCredentials(): Promise<WhatsappCredentials> {
+export async function resolveActiveWhatsappCredentials(phoneNumberId?: string | null): Promise<WhatsappCredentials> {
   const integrations = await prisma.whatsappIntegration.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", ...(phoneNumberId ? { phoneNumberId } : {}) },
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }, { id: "desc" }],
     select: { id: true, accessTokenEncrypted: true, phoneNumberId: true, updatedAt: true, createdAt: true },
   });
 
   const integration = selectDeterministicActiveWhatsappIntegration(integrations);
+  if (!integration && phoneNumberId && process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() !== phoneNumberId) {
+    throw new Error("No hay credenciales para el número que recibió este archivo.");
+  }
   return selectWhatsappCredentials(integration, {
     accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
     phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,

@@ -3,6 +3,9 @@ import { Channel, ConversationState, MessageType, Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { triggerPusherEvent } from "@/lib/pusher-server";
+import { getMessageMedia, safeMessageMediaUrl } from "@/lib/message-media";
+import { templateSelectionSchema } from "@/lib/message-templates";
+import { prepareTemplateSnapshot } from "@/lib/message-templates-service";
 import {
   N8nOutboundError,
   sendN8nOutboundMessage,
@@ -89,8 +92,16 @@ export const incomingMessageSchema = z.object({
   phone: z.string().max(32).optional(),
   name: z.string().max(180),
   externalMessageId: z.string().min(1).max(120),
-  type: z.nativeEnum(MessageType).default("UNKNOWN"),
-  content: z.string(),
+  type: z.preprocess(
+    (value) => typeof value === "string" ? value.trim().toUpperCase() : value,
+    z.nativeEnum(MessageType).default("UNKNOWN"),
+  ),
+  content: z.string().default(""),
+  mediaUrl: z.preprocess(
+    (value) => value === null || value === "" ? undefined : value,
+    z.string().trim().refine((value) => Boolean(safeMessageMediaUrl(value)), "URL multimedia inválida").optional(),
+  ),
+  mediaId: optionalTrimmedString.pipe(z.string().max(120).optional()),
   timestamp: z.string().datetime(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
@@ -299,6 +310,7 @@ export async function getConversations(input: GetConversationsInput) {
             id: true,
             content: true,
             messageType: true,
+            metadata: true,
             senderType: true,
             createdAt: true,
           },
@@ -313,7 +325,7 @@ export async function getConversations(input: GetConversationsInput) {
   return {
     items: conversations.map(({ messages, ...conversation }) => ({
       ...conversation,
-      lastMessage: messages[0] ?? null,
+      lastMessage: messages[0] ? { ...messages[0], messageType: getMessageMedia(messages[0]).type } : null,
     })),
     total,
     page,
@@ -408,6 +420,7 @@ const sendMessageSchema = z.object({
   type: z.nativeEnum(MessageType).default("TEXT"),
   mediaUrl: z.string().url().optional(),
   requestId: z.string().uuid(),
+  template: templateSelectionSchema.optional(),
 });
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
@@ -482,6 +495,8 @@ export async function sendInternalMessage(
   }
 
   const outboundType = parsed.type.toLowerCase() as N8nOutboundMessageType;
+  const template = parsed.template ? await prepareTemplateSnapshot(parsed.template, parsed.content) : undefined;
+  const metadata = { requestId: parsed.requestId, ...(template ? { template } : {}) };
   const message = await prisma.chatMessage.create({
       data: {
         conversationId,
@@ -490,7 +505,7 @@ export async function sendInternalMessage(
         messageType: parsed.type,
         content: parsed.content,
         mediaUrl: parsed.mediaUrl,
-        metadata: { requestId: parsed.requestId },
+        metadata,
         status: "pending",
       },
   });
@@ -502,7 +517,7 @@ export async function sendInternalMessage(
     const sent = await sendN8nOutboundMessage({
       agentId, channel: "WHATSAPP", content: parsed.content, conversationId,
       manychatSubscriberId, mediaUrl: parsed.mediaUrl ?? null, recipient,
-      requestId: parsed.requestId, type: outboundType,
+      requestId: parsed.requestId, type: outboundType, template,
     });
 
     return prisma.$transaction(async (tx) => {
@@ -510,7 +525,7 @@ export async function sendInternalMessage(
         where: { id: message.id },
         data: {
           externalMessageId: sent.messageId,
-          metadata: { provider: sent.provider, requestId: sent.requestId },
+          metadata: { ...metadata, provider: sent.provider, requestId: sent.requestId },
           status: "sent",
         },
       });
@@ -533,7 +548,7 @@ export async function sendInternalMessage(
     const safeReason = error instanceof N8nOutboundError ? error.message : "No se pudo iniciar el envío hacia n8n.";
     const failed = await prisma.chatMessage.update({
       where: { id: message.id },
-      data: { status: "failed", metadata: { requestId: parsed.requestId, error: safeReason } },
+      data: { status: "failed", metadata: { ...metadata, error: safeReason } },
     });
     triggerPusherEvent(`chat-${conversationId}`, "new-message", failed);
     console.warn("[outbound] failed", { requestId: parsed.requestId, conversationId, messageId: message.id });
@@ -569,6 +584,8 @@ export async function updateConversation(id: string, input: UpdateConversationIn
 
 export async function processIncomingMessage(input: IncomingMessageInput) {
   const parsed = incomingMessageSchema.parse(input);
+  const metadata = parsed.mediaId ? { ...parsed.metadata, mediaId: parsed.mediaId } : parsed.metadata;
+  const media = getMessageMedia({ messageType: parsed.type, mediaUrl: parsed.mediaUrl, metadata });
   const timestamp = new Date(parsed.timestamp);
   const isSimulator = parsed.externalContactId.startsWith("SIMULATOR:");
   const normalizedPhone = normalizeMessagePhone(parsed.phone ?? (isSimulator ? "" : parsed.externalContactId));
@@ -681,9 +698,10 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
         externalMessageId: parsed.externalMessageId,
         direction: "INBOUND",
         senderType: "CUSTOMER",
-        messageType: parsed.type,
+        messageType: media.type,
         content: parsed.content,
-        metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+        mediaUrl: media.url,
+        metadata: metadata as Prisma.InputJsonValue,
         createdAt: timestamp,
         status: "delivered",
       },

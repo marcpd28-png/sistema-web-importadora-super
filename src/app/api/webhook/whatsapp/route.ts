@@ -49,6 +49,8 @@ function mapMetaMessageType(type: string | null) {
   switch (type) {
     case "audio":
       return "AUDIO";
+    case "sticker":
+      return "STICKER";
     case "contacts":
       return "CONTACT";
     case "document":
@@ -86,7 +88,7 @@ function getMessageContent(message: JsonRecord, type: string | null) {
     return getInteractiveText(asRecord(message.interactive)) ?? "Respuesta interactiva recibida";
   }
 
-  if (type === "image" || type === "video" || type === "document" || type === "audio") {
+  if (type === "image" || type === "video" || type === "document" || type === "audio" || type === "sticker") {
     const media = asRecord(message[type]);
     return getString(media, "caption") ?? `${mapMetaMessageType(type).toLowerCase()} recibido`;
   }
