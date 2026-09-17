@@ -4,7 +4,7 @@ import { z } from "zod";
 import { serializeSalesState } from "@/lib/conversation-sales-state";
 import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 import { prisma } from "@/lib/prisma";
-import { discoverExactProducts } from "@/lib/product-discovery";
+import { productQueryTokens } from "@/lib/router-v2-product-query";
 import { evaluateRouterV2AutomationPolicy } from "@/lib/router-v2-automation-policy";
 import { getRouterV2BusinessKnowledge } from "@/lib/router-v2-business-knowledge";
 import { resolveRouterV2CatalogFlow } from "@/lib/router-v2-catalog-flow";
@@ -322,26 +322,15 @@ export async function POST(request: Request) {
       retailStatePatch,
     );
 
-    const exactProductResolution =
-      analysis.slots.brand && analysis.slots.model
-        ? await discoverExactProducts({
-            brand: analysis.slots.brand,
-            model: analysis.slots.model,
-          })
-        : null;
-
-    const exactProductDecision =
-      buildRouterV2ProductDecision(exactProductResolution);
-
     const genericSearchAllowedStage =
       !currentState?.stage ||
       currentState.stage === "AWAITING_PRODUCT_QUERY";
     const shouldTryGenericTextProduct =
-      !exactProductResolution &&
       catalogDecision.action === "NONE" &&
       (
         analysis.nextAction === "RESOLVE_PRODUCT" ||
         (Boolean(productQuestion) && !currentState?.selectedProductCode) ||
+        (["PRICE", "STOCK", "WHOLESALE", "DETAILS"].includes(productQuestion ?? "") && productQueryTokens(input.content).length > 0) ||
         looksLikeProductCode(input.content) ||
         (genericSearchAllowedStage &&
           (analysis.intents.length === 0 ||
@@ -373,7 +362,6 @@ export async function POST(request: Request) {
     );
 
     const productDecision =
-      exactProductDecision ??
       genericProductDecision ??
       visualDecision;
 
@@ -385,7 +373,7 @@ export async function POST(request: Request) {
       shouldResolveShownProductReference({
         stage: currentState?.stage,
         hasProductResolution: Boolean(
-          exactProductResolution || genericProductDecision,
+          genericProductDecision,
         ),
         shownProducts: priorShownProducts,
         quantity: analysis.slots.quantity,
@@ -423,7 +411,7 @@ export async function POST(request: Request) {
       finalAction: nextAction,
       productDecision,
       productReference,
-      quantity: mergedContext.quantity,
+      quantity: productDecision ? analysis.slots.quantity : mergedContext.quantity,
       purchaseIntent: mergedContext.purchaseIntent,
     });
 
@@ -434,13 +422,16 @@ export async function POST(request: Request) {
           ? null
           : mergedContext.selectedProductCode;
 
-    const commercialPrice =
+    const quantityForPricing = "quantity" in proposedStatePatch
+      ? proposedStatePatch.quantity as number | null
+      : mergedContext.quantity;
+    let commercialPrice =
       selectedProductCodeForPricing &&
-      mergedContext.quantity &&
-      mergedContext.quantity > 0
+      quantityForPricing &&
+      quantityForPricing > 0
         ? await resolveCommercialPrice(
             selectedProductCodeForPricing,
-            mergedContext.quantity,
+            quantityForPricing,
           )
         : null;
 
@@ -468,7 +459,7 @@ export async function POST(request: Request) {
       proposedStatePatch.total = null;
     }
 
-    const responseAction =
+    let responseAction =
       commercialPrice?.status === "INSUFFICIENT_STOCK"
         ? "ASK_AVAILABLE_QUANTITY"
         : nextAction;
@@ -480,11 +471,23 @@ export async function POST(request: Request) {
           ? null
           : currentState?.selectedProductCode ?? null;
 
-    const productInformation = selectedProductCodeForInfo
+    let productInformation = selectedProductCodeForInfo
       ? await getRouterV2ProductInformation(
           selectedProductCodeForInfo,
         )
       : null;
+
+    // Recheck a previously selected item too: it may have sold out or been hidden.
+    if (selectedProductCodeForInfo && (!productInformation || !productInformation.available) &&
+        !["HUMAN_HANDOFF", "ANSWER_ORDER_STATUS"].includes(nextAction)) {
+      responseAction = productInformation ? "PRODUCT_OUT_OF_STOCK" : "PRODUCT_UNAVAILABLE";
+      proposedStatePatch = buildRouterV2DecisionStatePatch({
+        basePatch: proposedStatePatch, finalAction: responseAction,
+        productDecision: null, productReference: null,
+      });
+      productInformation = null;
+      commercialPrice = null;
+    }
 
     const productSpecification =
       productQuestion === "SPECIFICATION" && productInformation
@@ -690,7 +693,6 @@ export async function POST(request: Request) {
       mergedContext,
       catalogDecision,
       retailDiscovery,
-      exactProductResolution,
       textProductResolution,
       productDecision,
       productReference,

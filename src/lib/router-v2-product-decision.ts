@@ -1,12 +1,22 @@
 import type { discoverExactProducts } from "@/lib/product-discovery";
+import type { resolveRouterV2TextProduct } from "@/lib/router-v2-text-product-resolver";
 
 type ProductResolution =
-  Awaited<ReturnType<typeof discoverExactProducts>>;
+  Awaited<ReturnType<typeof discoverExactProducts>> | Awaited<ReturnType<typeof resolveRouterV2TextProduct>>;
 
 export function buildRouterV2ProductDecision(
   resolution: ProductResolution | null,
 ) {
   if (!resolution) return null;
+
+  if (resolution.status === "UNAVAILABLE") {
+    return {
+      action: resolution.unavailableReason === "OUT_OF_STOCK"
+        ? "PRODUCT_OUT_OF_STOCK" as const : "PRODUCT_UNAVAILABLE" as const,
+      shownProducts: [],
+      selectedProductCandidate: null,
+    };
+  }
 
   const shownProducts = resolution.matches
     .slice(0, 20)

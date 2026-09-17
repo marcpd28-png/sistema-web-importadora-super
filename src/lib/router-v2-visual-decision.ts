@@ -5,6 +5,13 @@ export function buildRouterV2VisualDecision(
 ) {
   if (!resolution) return null;
 
+  if (resolution.status === "UNAVAILABLE") {
+    return {
+      action: resolution.unavailableReason === "OUT_OF_STOCK" ? "PRODUCT_OUT_OF_STOCK" as const : "PRODUCT_UNAVAILABLE" as const,
+      shownProducts: [], selectedProductCandidate: null,
+    };
+  }
+
   if (
     resolution.status === "NO_IMAGE_HINTS" ||
     resolution.status === "LOW_CONFIDENCE" ||

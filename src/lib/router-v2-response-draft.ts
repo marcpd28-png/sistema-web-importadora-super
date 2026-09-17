@@ -1,4 +1,5 @@
 import type { buildRouterV2ResponseContext } from "@/lib/router-v2-response-context";
+import { productQueryTokens } from "@/lib/router-v2-product-query";
 
 type ResponseContext = ReturnType<typeof buildRouterV2ResponseContext>;
 
@@ -165,6 +166,14 @@ export function buildRouterV2ResponseDraft(context: ResponseContext) {
 
   if (answerType === "IMAGE_PRODUCT_CLARIFICATION") {
     return "Recibí la imagen, pero todavía no puedo asegurar qué producto exacto es. Envíame una foto donde se vea la marca, modelo, código o etiqueta de la caja para identificarlo sin adivinar.";
+  }
+
+  if (answerType === "PRODUCT_UNAVAILABLE" || answerType === "PRODUCT_OUT_OF_STOCK") {
+    const label = productQueryTokens(context.customerMessage).join(" ");
+    const subject = label ? `el producto que consultas (${label})` : "el producto que consultas";
+    return answerType === "PRODUCT_OUT_OF_STOCK"
+      ? `Por ahora ${subject} está agotado. ¿Quieres que busque alternativas disponibles?`
+      : `Por ahora no tengo disponible ${subject} en nuestro catálogo. ¿Quieres que busque alternativas disponibles?`;
   }
 
   if (answerType === "PRODUCT_CLARIFICATION") {

@@ -31,10 +31,15 @@ export function buildRouterV2DecisionStatePatch(input: {
     ...input.basePatch,
   };
 
-  if (input.finalAction === "ASK_PRODUCT_CLARIFICATION") {
+  if (["ASK_PRODUCT_CLARIFICATION", "PRODUCT_OUT_OF_STOCK", "PRODUCT_UNAVAILABLE"].includes(input.finalAction)) {
     patch.stage = "AWAITING_PRODUCT_QUERY";
     patch.shownProducts = null;
     patch.selectedProductCode = null;
+    patch.quantity = null;
+    patch.unitPrice = null;
+    patch.priceTier = null;
+    patch.total = null;
+    patch.purchaseIntent = false;
     return patch;
   }
 
@@ -42,9 +47,13 @@ export function buildRouterV2DecisionStatePatch(input: {
     patch.stage = "AWAITING_MODEL_SELECTION";
 
     if (input.productDecision?.action === "ASK_VARIANT") {
+      patch.quantity = input.quantity ?? null;
       patch.shownProducts =
         input.productDecision.shownProducts ?? [];
       patch.selectedProductCode = null;
+      patch.unitPrice = null;
+      patch.priceTier = null;
+      patch.total = null;
     }
 
     return patch;
@@ -74,6 +83,11 @@ export function buildRouterV2DecisionStatePatch(input: {
 
     patch.selectedProductCode = selected.code;
     patch.shownProducts = null;
+    patch.quantity = input.quantity ?? null;
+    // A previous product's quote must not become this product's price.
+    patch.unitPrice = null;
+    patch.priceTier = null;
+    patch.total = null;
 
     if (input.quantity && input.quantity > 0)
       patch.stage = "AWAITING_PRICE_CONFIRMATION";

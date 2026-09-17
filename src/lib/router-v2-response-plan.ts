@@ -13,6 +13,8 @@ export type RouterV2AnswerType =
   | "DOCUMENT"
   | "ORDER_STATUS"
   | "PRODUCT_CLARIFICATION"
+  | "PRODUCT_UNAVAILABLE"
+  | "PRODUCT_OUT_OF_STOCK"
   | "IMAGE_PRODUCT_CLARIFICATION"
   | "VARIANT_OPTIONS"
   | "VARIANT_CLARIFICATION"
@@ -162,6 +164,10 @@ export function buildRouterV2ResponsePlan(input: {
 
   if (input.finalAction === "HUMAN_HANDOFF") {
     return { answerType: "HUMAN_HANDOFF", resumeAction: "NONE" };
+  }
+
+  if (input.finalAction === "PRODUCT_UNAVAILABLE" || input.finalAction === "PRODUCT_OUT_OF_STOCK") {
+    return { answerType: input.finalAction, resumeAction: "NONE" };
   }
 
   if (input.catalogDecision?.action === "ASK_PURCHASE_MODE") {

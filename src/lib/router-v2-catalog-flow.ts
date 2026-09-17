@@ -1,4 +1,6 @@
 import type { RouterV2Analysis } from "@/lib/conversation-router-v2";
+import { hasSpecificProductQuery, productQueryTokens } from "@/lib/router-v2-product-query";
+import { detectRouterV2ProductQuestion } from "@/lib/router-v2-product-question";
 
 export type RouterV2ShoppingMode = "WHOLESALE" | "RETAIL";
 
@@ -101,8 +103,11 @@ export function resolveRouterV2CatalogFlow(input: {
   const currentMode = readShoppingMode(customerData);
   const requestedCatalog = input.analysis.intents.includes("CATALOG_REQUEST");
   const explicitMode = detectShoppingMode(input.content);
+  const asksAboutProduct = Boolean(detectRouterV2ProductQuestion(input.content)) && productQueryTokens(input.content).length > 0;
   const isBroadRetailSearch =
     !input.analysis.intents.includes("EXACT_PRODUCT") &&
+    !hasSpecificProductQuery(input.content) &&
+    !asksAboutProduct &&
     (input.analysis.intents.includes("PRODUCT_SEARCH") ||
       input.analysis.intents.includes("BRAND_SEARCH"));
 
@@ -134,6 +139,9 @@ export function resolveRouterV2CatalogFlow(input: {
   }
 
   if (pendingCatalog) {
+    if (hasSpecificProductQuery(input.content) || asksAboutProduct) {
+      return { action: "NONE", mode: null, patch: { customerData: { ...customerData, catalogPending: false } } };
+    }
     if (!explicitMode) {
       return {
         action: "ASK_PURCHASE_MODE",
