@@ -10,6 +10,7 @@ async function main() {
   const brands = await getCatalogReferenceBrands();
   const index = createCatalogIndex(products, brands);
   const failures: { kind: string; query: string; missing?: string[]; actual?: string[] }[] = [];
+  if (!brands.length) failures.push({ kind: "erp", query: "Brand reference registry unavailable" });
   for (const p of products) {
     const query = `catálogo código ${p.code}`;
     const actual = index.select(query).products.map(p => p.code);
@@ -34,8 +35,15 @@ async function main() {
     brandCounts[brand] = selected.size;
     if (missing.length) failures.push({ kind: "brand", query, missing });
   }
-  const typeCounts = Object.fromEntries(index.types.map(type => [type,index.select(`catálogo tipo ${type}`).products.length]));
-  for (const [type,count] of Object.entries(typeCounts)) if (!count) failures.push({ kind: "type", query: type });
+  const typeCounts: Record<string,number> = {};
+  for (const type of index.types) {
+    const result = index.select(`catálogo tipo ${type}`);
+    const selected = new Set(result.products.map(p => p.code));
+    const expected = products.filter(p => index.productType(p) === type);
+    const missing = expected.filter(p => !selected.has(p.code)).map(p => p.code);
+    typeCounts[type] = selected.size;
+    if (!result.scoped || missing.length) failures.push({ kind: "type", query: type, missing });
+  }
   const report = { checkedAt: new Date().toISOString(), products: products.length, erpBrands: brands.length,
     categories: index.categories.length, brands: index.brands.length, types: index.types.length, categoryCounts, brandCounts, typeCounts, failures };
   if (process.argv[2]) writeFileSync(process.argv[2],JSON.stringify(report,null,2));

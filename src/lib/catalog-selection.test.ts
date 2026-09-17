@@ -62,9 +62,11 @@ test("cables, micrófonos y controles son tipos propios, no menciones en otro pr
   {code:"MI1",name:"PACK DE DOS MICROFONOS JBL",brand:null,category:"PERIFERICOS"},
   {code:"CT1",name:"CONTROL REMOTO SUPER",brand:null,category:"NOVEDADES"},
   {code:"XX1",name:"ESPECTROMETRO ORBITAL",brand:null,category:"INSTRUMENTOS NUEVOS"},
+  {code:"CC1",name:"CASACA IMPERMEABLE",brand:null,category:"NOVEDADES"},
+  {code:"CM1",name:"CAMARA WIFI",brand:null,category:"CAMARA DE SEGURIDAD"},
  ];
  const index=createCatalogIndex(rows,["UGREEN","JBL","SUPER"]);
- for(const [query,code] of [["cables UGREEN","CB1"],["micrófonos JBL","MI1"],["controles","CT1"],["tipo espectrómetros","XX1"]]) {
+ for(const [query,code] of [["cables UGREEN","CB1"],["micrófonos JBL","MI1"],["controles","CT1"],["tipo espectrómetros","XX1"],["casacas","CC1"]]) {
   assert.deepEqual(index.select(`catálogo ${query}`).products.map(p=>p.code),[code]);
  }
 });

@@ -72,7 +72,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const displayBrand = knownBrands.get(brandKeys[0]) || product.brand || resolveProductBrand(product) || "Otras marcas";
     let typeText = ` ${name} `;
     for (const key of brandKeys) typeText = typeText.replaceAll(` ${key} `, " ");
-    const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !/^\d+$/.test(w) && !/\d/.test(w)) || "";
+    const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !ignored.has(w) && !/\d/.test(w)) || "";
     return { product, name, brandKeys, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
   });
   const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
@@ -104,8 +104,11 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
       remainder = remainder.replaceAll(` ${key} `," ");
     }
     const tokens = remainder.trim().split(/\s+/).filter(t => t && !ignored.has(t));
-    const aliases = requestedCategories.length ? [] : categories.filter(c => tokens.some(t => c.aliases.includes(t) || c.aliases.some(a => nearWord(t,a))));
-    const remaining = tokens.filter(t => !aliases.some(c => c.aliases.includes(t) || c.aliases.some(a => nearWord(t,a))));
+    // A real inventory type takes precedence over fuzzy spelling corrections (casacas ≠ cámaras).
+    const aliasMatches = (t: string, c: typeof categories[number]) => c.aliases.includes(t) ||
+      (!types.some(kind => wordMatches(kind,t)) && c.aliases.some(a => nearWord(t,a)));
+    const aliases = requestedCategories.length ? [] : categories.filter(c => tokens.some(t => aliasMatches(t,c)));
+    const remaining = tokens.filter(t => !aliases.some(c => aliasMatches(t,c)));
     const requestedTypes = !aliases.length && !remaining.some(t => /\d/.test(t))
       ? remaining.slice(0,1).filter(t => types.some(kind => wordMatches(kind,t))) : [];
     const terms = remaining.filter(t => !requestedTypes.includes(t));
@@ -122,6 +125,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     return { products: selected.map(r => r.product), scoped, label, brands: requestedBrands.map(([,v]) => v), categories: [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label)], types: requestedTypes, terms };
   }
   return { select, brands: [...knownBrands.values()], categories: [...categoryNames.values()], types,
+    productType: (product: T) => rows.find(r => r.product === product)?.type || "",
     productBrand: (product: T) => rows.find(r => r.product === product)?.displayBrand || "Otras marcas" };
 }
 
