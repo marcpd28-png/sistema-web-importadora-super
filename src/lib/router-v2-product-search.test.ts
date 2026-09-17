@@ -66,6 +66,14 @@ test("ambiguous spelling requires clarification instead of picking a different i
   assert.equal(matchProductIdentities("charg9", identities).matches.length, 0);
 });
 
+test("ERP punctuation and suffixes remain distinct before name normalization", () => {
+  const items = [product("BT454", "AUDIFONO UNO"), product("BT454.", "AUDIFONO DOS"), product("PC388", "HUB USB"), product("PC388-SQ", "COOLER LAPTOP")];
+  for (const code of ["BT454", "BT454.", "PC388", "PC388-SQ"]) {
+    assert.deepEqual(matchProductIdentities(`precio ${code}`, items).matches.map(item => item.code), [code]);
+  }
+  assert.equal(matchProductIdentities("PC388-UNKNOWN", items).matches.length, 0);
+});
+
 test("availability rule protects hidden data and applies to every product family", async (t) => {
   const rows = inventory.map((item) => ({ ...item }));
   const originalFindMany = prisma.product.findMany;
