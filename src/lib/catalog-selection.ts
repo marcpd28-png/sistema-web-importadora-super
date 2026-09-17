@@ -70,8 +70,8 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
       ? brandEntries.filter(([key]) => hasPhrase(explicitBrand,key)).map(([key]) => key)
       : brandEntries.filter(([key]) => hasPhrase(name,key)).map(([key]) => key);
     const displayBrand = knownBrands.get(brandKeys[0]) || product.brand || resolveProductBrand(product) || "Otras marcas";
-    let typeText = name;
-    for (const key of brandKeys) typeText = typeText.replaceAll(key, " ");
+    let typeText = ` ${name} `;
+    for (const key of brandKeys) typeText = typeText.replaceAll(` ${key} `, " ");
     const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !/^\d+$/.test(w) && !/\d/.test(w)) || "";
     return { product, name, brandKeys, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
   });
@@ -83,7 +83,10 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const exactCodes = rows.filter(r => hasPhrase(text,r.code) && (/\bcodigos?\b/.test(text) || (queryTerms === r.code && !knownBrands.has(r.code) && !/\b(?:marca|categoria)s?\b/.test(text)) || content.includes(`(${r.product.code})`)));
     // An explicit SKU remains searchable even if it is numeric, unbranded or uncategorized.
     const maxCodeLength = Math.max(0,...exactCodes.map(r => r.code.length));
-    const codeRows = exactCodes.filter(r => r.code.length === maxCodeLength);
+    const normalizedCodeRows = exactCodes.filter(r => r.code.length === maxCodeLength);
+    const literalTokens = content.toLowerCase().split(/\s+/);
+    const literalCodeRows = normalizedCodeRows.filter(r => literalTokens.includes(r.product.code.toLowerCase()));
+    const codeRows = literalCodeRows.length ? literalCodeRows : normalizedCodeRows;
     if (codeRows.length) return { products: codeRows.map(r => r.product), scoped: true, label: codeRows.map(r => r.product.code).join(" / "), brands: [] as string[], categories: [] as string[], types: [] as string[], terms: codeRows.map(r => r.product.code) };
 
     let remainder = ` ${text} `;

@@ -11,7 +11,7 @@ export async function getCatalogReferenceBrands() {
   if (pending) return pending;
   pending = (async () => {
     try {
-      const client = new FacturadorClient({ ...getFacturadorConfig(), timeoutMs: 4000, maxRetries: 0 });
+      const client = new FacturadorClient({ ...getFacturadorConfig(), timeoutMs: 8000, maxRetries: 0 });
       const rows = await client.getBrands();
       cached = [...new Set(buildBrandLookup(rows).values())].map(v => v.trim()).filter(Boolean);
       refreshAt = Date.now() + 5 * 60_000;

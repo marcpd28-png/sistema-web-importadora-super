@@ -70,7 +70,9 @@ test("cables, micrófonos y controles son tipos propios, no menciones en otro pr
 });
 
 test("cada SKU, incluso numérico, sin marca y sin categoría, es localizable",()=>{
- const rows: CatalogCandidate[]=[...products,{code:"6",name:"MODELO SEIS",brand:null,category:null}];
+ const rows: CatalogCandidate[]=[...products,{code:"6",name:"MODELO SEIS",brand:null,category:null},
+  {code:"BT454",name:"MODELO UNO",brand:null,category:null},
+  {code:"BT454.",name:"MODELO DOS",brand:null,category:null}];
  const index=createCatalogIndex(rows);
  for(const p of rows) assert.deepEqual(index.select(`catálogo código ${p.code}`).products.map(x=>x.code),[p.code]);
  assert.deepEqual(index.select("catálogo JBL CHARGE 6").products.map(p=>p.code),["P1"]);
