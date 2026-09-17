@@ -79,3 +79,16 @@ test("cada SKU, incluso numérico, sin marca y sin categoría, es localizable",(
  for(const p of rows) assert.deepEqual(index.select(`catálogo código ${p.code}`).products.map(x=>x.code),[p.code]);
  assert.deepEqual(index.select("catálogo JBL CHARGE 6").products.map(p=>p.code),["P1"]);
 });
+
+test("los tipos incluyen productos guardados bajo categorías generales",()=>{
+ const rows: CatalogCandidate[]=[
+  {code:"PR",name:"PROYECTOR HAVIT PJ215",brand:null,category:"ENTRETENIMIENTO Y MULTIMEDIA"},
+  {code:"CA",name:"CAMARA PARA AUTO",brand:null,category:"ACCESORIOS PARA AUTO"},
+  {code:"RE",name:"RELOJ DE PARED",brand:null,category:"NOVEDADES"},
+  {code:"SW",name:"SMART WATCH",brand:null,category:"SMART WATCH Y SUS ACCESORIOS"},
+ ];
+ const index=createCatalogIndex(rows,["HAVIT"]);
+ for(const [q,code] of [["proyectores","PR"],["cámaras","CA"]]) assert.deepEqual(index.select(`catálogo ${q}`).products.map(p=>p.code),[code]);
+ assert.deepEqual(index.select("catálogo relojes").products.map(p=>p.code).sort(),["RE","SW"]);
+ assert.deepEqual(index.select("catálogo smartwatch").products.map(p=>p.code),["SW"]);
+});

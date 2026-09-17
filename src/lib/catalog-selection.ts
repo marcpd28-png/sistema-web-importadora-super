@@ -15,7 +15,8 @@ const categories = [
   { label: "proyectores", stored: "PROYECTORES", aliases: ["proyector", "proyectores"] },
   { label: "cámaras", stored: "CAMARA DE SEGURIDAD", aliases: ["camara", "camaras"] },
   { label: "baterías", stored: "BATERIAS", aliases: ["bateria", "baterias"] },
-  { label: "relojes inteligentes", stored: "SMART WATCH", aliases: ["smartwatch", "smartwatches", "reloj", "relojes"] },
+  { label: "relojes inteligentes", stored: "SMART WATCH", aliases: ["smartwatch", "smartwatches"] },
+  { label: "relojes", stored: "RELOJ", aliases: ["reloj", "relojes"] },
 ];
 const ignored = new Set(normalizeCatalogText("hola buenas buenos dias tardes noches por favor porfa gracias me nos dan das da dar dame pasa pasan pasas pasame pasar manda mandan mandas mandame envia envian envias enviame enviarme darme pasarme mandarme enviar mostrar muestra muestrame mostrarme quisiera quiero necesito deseo puedes pueden podria podrias tienen tendran catalogo catalogos de del el la los las un una unos unas tus sus su tu ustedes sus todos todas todo productos producto articulos articulo ver y o para con en pdf por mayor al menor unidades unidad mayorista minorista compra comprar completo completa completos completas general disponible disponibles stock precio precios lista listado este esta esos esas" ).split(" "));
 function hasPhrase(text: string, phrase: string) { return (` ${text} `).includes(` ${phrase} `); }
@@ -36,8 +37,8 @@ function matchesCategory(product: CatalogCandidate, category: typeof categories[
   if (category.stored === "AURICULARES" && /^(parlante|speaker|proyector)/.test(primaryType)) return false;
   if (category.stored === "PARLANTES" && /^(audifono|auricular|headphone|proyector)/.test(primaryType)) return false;
   const stored=normalizeCatalogText(product.category || "");
-  if(category.stored === "PROYECTORES") return /\bproyectores?\b/.test(name) || stored === "proyectores";
-  if(category.stored === "SMART WATCH") return stored.startsWith("smart watch") || /\bsmart ?watch\b/.test(name);
+  if(category.stored === "PROYECTORES") return /\bproyector(?:es)?\b/.test(name) || stored === "proyectores";
+  if(category.stored === "SMART WATCH" || category.stored === "RELOJ") return stored.startsWith("smart watch") || /\bsmart ?watch\b/.test(name);
   const inferred=inferStoreCategoryName(product);
   return stored===normalizeCatalogText(category.stored) || inferred===category.stored;
 }
@@ -116,7 +117,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const selected = rows.filter(r => {
       if (requestedCategories.length && !requestedCategories.some(([key]) => [r.product.category,r.product.categoryRef?.name].some(v => normalizeCatalogText(v || "") === key))) return false;
       if (requestedBrands.length && !requestedBrands.some(([key]) => r.brandKeys.includes(key))) return false;
-      if (aliases.length && !aliases.some(c => matchesCategory(r.product,c))) return false;
+      if (aliases.length && !aliases.some(c => c.aliases.some(a => wordMatches(r.type,a)) || matchesCategory(r.product,c))) return false;
       if (requestedTypes.length && !requestedTypes.some(t => wordMatches(r.type,t))) return false;
       return terms.every(t => r.words.some(w => wordMatches(w,t)));
     }).sort((a,b) => a.displayBrand.localeCompare(b.displayBrand,"es") || a.product.name.localeCompare(b.product.name,"es"));
