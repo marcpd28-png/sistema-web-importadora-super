@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ChatMessage } from "@/types/messages";
 import { getMessageMedia, getMessageMediaSrc } from "@/lib/message-media";
+import { MessageImageViewer } from "./MessageImageViewer";
 
 interface Props {
   message: ChatMessage;
@@ -20,13 +21,11 @@ function MessageMedia({ type, src, content }: { type: string; src: string | null
           Tu navegador no permite reproducir este audio.
         </audio>
       ) : (
-        // Native images preserve animated stickers and authenticated media URLs.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <MessageImageViewer
           alt={type === "STICKER" ? "Sticker" : content || "Imagen enviada"}
           src={src}
+          sticker={type === "STICKER"}
           onError={() => setFailed(true)}
-          style={{ display: "block", borderRadius: type === "STICKER" ? 0 : "10px", width: type === "STICKER" ? "160px" : undefined, height: type === "STICKER" ? "160px" : "auto", maxHeight: "260px", maxWidth: "100%", objectFit: "contain" }}
         />
       ) : (
         <span role="status" style={{ fontSize: "13px", color: "#667781" }}>
