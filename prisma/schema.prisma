@@ -960,12 +960,31 @@ model AutomationExecution {
 // VENTAS (Chat Sales State)
 // ==========================================
 
+enum SalesConversationStage {
+  AWAITING_PRODUCT_QUERY
+  AWAITING_BRAND_SELECTION
+  AWAITING_MODEL_SELECTION
+  AWAITING_PURCHASE_CONFIRMATION
+  AWAITING_QUANTITY
+  AWAITING_PRICE_CONFIRMATION
+  AWAITING_CUSTOMER_DATA
+  AWAITING_DOCUMENT_TYPE
+  AWAITING_DOCUMENT_DATA
+  AWAITING_DELIVERY_METHOD
+  AWAITING_DELIVERY_DETAILS
+  AWAITING_ORDER_CONFIRMATION
+  AWAITING_PAYMENT_METHOD
+  AWAITING_PAYMENT_CONFIRMATION
+  ORDER_CREATED
+  COMPLETED
+}
+
 model ConversationSalesState {
   id             String       @id @default(cuid())
   conversationId String       @unique
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  stage String @default("AWAITING_PRODUCT_QUERY") @db.VarChar(50)
+  stage SalesConversationStage @default(AWAITING_PRODUCT_QUERY)
 
   category            String?  @db.VarChar(120)
   brand               String?  @db.VarChar(120)

@@ -82,7 +82,7 @@ export async function POST(request: Request) {
           const state = await tx.conversationSalesState.findUnique({ where: { conversationId: input.conversationId }, select: { stage: true } });
           // Keep checkout/customer/payment state intact while sharing an explicitly resolved SKU.
           if (!state || !/CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(state.stage)) {
-            const data = { selectedProductCode: selected, quantity: input.selection.quantity, unitPrice: null, total: null, priceTier: null, stage: "AWAITING_PURCHASE_CONFIRMATION" };
+            const data = { selectedProductCode: selected, quantity: input.selection.quantity, unitPrice: null, total: null, priceTier: null, stage: "AWAITING_PURCHASE_CONFIRMATION" as const };
             await tx.conversationSalesState.upsert({ where: { conversationId: input.conversationId }, create: { conversationId: input.conversationId, ...data }, update: data });
           }
         }
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ ok: false, error: "Invalid request payload" }, { status: 400 });
-    console.error("[simulator-batch] failed", error instanceof Error ? error.name : "UnknownError");
+    console.error("[simulator-batch] failed", error instanceof Error ? error.name : "UnknownError", error && typeof error === "object" && "code" in error ? String(error.code) : "");
     return NextResponse.json({ ok: false, error: "SIMULATOR_BATCH_FAILED" }, { status: 500 });
   }
 }

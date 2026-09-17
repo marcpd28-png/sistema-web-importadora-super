@@ -36,6 +36,10 @@ independiente relacionada con Conversation. No cambia productos, precios, stock,
 identificadores ERP ni las variantes existentes. Reconcilia además el campo
 StoreSettings.storeAddress que ya utiliza el esquema del motor.
 
+La migración `20260918020000_align_sales_stage_enum` alinea el tipo de etapa
+comercial de Prisma con el enum que ya utiliza BC en PostgreSQL. Conserva los
+valores existentes y permite que la web comparta la selección sin errores de tipo.
+
 El endpoint de lotes guarda agenda y mensajes en una sola transacción, con bloqueo
 por conversación, revisión optimista e idempotencia `bc:<último mensaje>`.
 Antes de publicar verifica que el mensaje siga vigente, la atención siga automática
