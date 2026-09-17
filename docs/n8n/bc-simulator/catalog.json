@@ -121,12 +121,12 @@
       "typeVersion": 4.5,
       "parameters": {
         "method": "POST",
-        "url": "https://tiendavirtualsuper.com/api/internal/chat/outgoing",
+        "url": "https://tiendavirtualsuper.com/api/internal/chat/simulator-batch",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { agentId: 'catalog-products-simulator', content: $json.content, conversationId: $json.conversationId, externalMessageId: 'simulated:' + $json.requestId, mediaUrl: $json.mediaUrl, provider: 'meta-cloud', requestId: $json.requestId, type: String($json.type || 'document').toUpperCase() } }}",
+        "jsonBody": "={{ { conversationId: $json.conversationId, requestId: $json.requestId, messages: $json.outboundMessages || [{ content: $json.content, mediaUrl: $json.mediaUrl, type: String($json.type || 'document').toUpperCase() }] } }}",
         "options": {
           "timeout": 30000
         }

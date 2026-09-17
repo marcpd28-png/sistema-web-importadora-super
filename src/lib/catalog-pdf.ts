@@ -183,7 +183,7 @@ async function loadFirstAvailableImage(product: CatalogProductImage) {
   throw new Error(`No available image for product ${product.id}`);
 }
 
-export function renderCatalogImagePdf(images: { image: Buffer; name: string; code: string }[]) {
+export function renderCatalogImagePdf(images: { image: Buffer | null; name: string; code: string }[], title = "Catálogo de Proyectores") {
   return new Promise<Buffer>((resolve, reject) => {
     const document = new PDFDocument({
       autoFirstPage: false,
@@ -192,8 +192,8 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
       info: {
         Author: "Importaciones Super",
         Creator: "Tienda Virtual Importaciones Super",
-        Subject: "Catálogo visual de proyectores",
-        Title: "Catálogo de Proyectores",
+        Subject: title,
+        Title: title,
       },
       margin: 0,
       size: "A4",
@@ -216,17 +216,18 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
         .fillColor(BRAND_PRIMARY)
         .font("Helvetica-Bold")
         .fontSize(23)
-        .text("CATÁLOGO DE PROYECTORES", marginX, 30, {
+        .text(title.toUpperCase(), marginX, 30, {
           align: "center",
           width: imageWidth,
         });
       document.moveTo(marginX, 66).lineTo(pageWidth - marginX, 66)
         .lineWidth(2).strokeColor(BRAND_PRIMARY).stroke();
-      document.image(product.image, marginX, headerHeight, {
+      if (product.image) document.image(product.image, marginX, headerHeight, {
         align: "center",
         fit: [imageWidth, 605],
         valign: "center",
       });
+      else document.fillColor("#666666").font("Helvetica").fontSize(16).text("Imagen no disponible", marginX, 350, { width: imageWidth, align: "center" });
       document.fillColor("#17172B").font("Helvetica-Bold").fontSize(17);
       let nameSize = 17;
       while (document.heightOfString(product.name, { width: imageWidth }) > 56 && nameSize > 11) {
@@ -361,7 +362,7 @@ export function renderScopedCatalogPdf(items: { image: Buffer | null; name: stri
   });
 }
 
-async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: string, fingerprint: string) {
+async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: string, fingerprint: string, largeImages = false) {
   const slug = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 70);
   const filename = `catalogo-${slug}-${fingerprint}.pdf`;
   const relativeUrl = `/uploads/catalogs/${filename}`;
@@ -377,32 +378,61 @@ async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: stri
       const index = next++;
       const product = products[index];
       let image: Buffer | null = null;
-      try { image = await sharp(await loadFirstAvailableImage(product)).resize({ width: 800, height: 800, fit: "inside" }).jpeg({ quality: 78 }).toBuffer(); } catch { /* Keep the product even without a usable image. */ }
+      try { image = await sharp(await loadFirstAvailableImage(product)).resize({ width: largeImages ? 1600 : 800, height: largeImages ? 1600 : 800, fit: "inside", withoutEnlargement: true }).jpeg({ quality: largeImages ? 90 : 78 }).toBuffer(); } catch { /* Keep the product even without a usable image. */ }
       images[index] = { image, name: product.name, code: product.code, brand: resolveProductBrand(product) || "Otras marcas" };
     }
   }));
-  const pdf = await renderScopedCatalogPdf(images, `Catálogo de ${label}`);
+  const pdf = largeImages ? await renderCatalogImagePdf(images, "Extensores de pantalla") : await renderScopedCatalogPdf(images, `Catálogo de ${label}`);
   const temporary = `${outputPath}.${process.pid}.tmp`;
   try { await writeFile(temporary, pdf, { flag: "wx" }); await rename(temporary, outputPath); }
   catch (error) { await unlink(temporary).catch(() => undefined); throw error; }
   return { ...result, generated: true };
 }
 
-export async function generateRequestedCatalogPdf(content: string) {
+async function selectRequestedCatalog(content: string) {
   const rows = await prisma.product.findMany({
     where: { isVisible: true },
-    select: { id: true, code: true, name: true, brand: true, category: true, categoryRef: { select: { name: true } }, imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
+    select: { id: true, code: true, name: true, unitPrice: true, brand: true, category: true, categoryRef: { select: { name: true } }, imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
       media: { orderBy: { sortOrder: "asc" }, select: { url: true } } },
   });
   const index = createCatalogIndex(rows, await getCatalogReferenceBrands());
   const selection = index.select(content);
-  if (!selection.scoped || !selection.products.length) return { ...selection, catalog: null };
   const products = selection.products.map(p => ({ ...p, brand: index.productBrand(p), imageUrls: [...new Set([p.localImageUrl, ...p.media.map(m => m.url), p.sourceImageUrl, p.imageUrl].filter((v): v is string => Boolean(v?.trim())))] }));
-  const fingerprint = createHash("sha256").update(`scoped-grid-v2:${selection.label}:${JSON.stringify(products.map(p => p.brand))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  return { ...selection, products };
+}
+
+export async function generateRequestedCatalogPdf(content: string, largeImages = false) {
+  const selection = await selectRequestedCatalog(content);
+  const products = selection.products;
+  if (!selection.scoped || !products.length) return { ...selection, catalog: null };
+  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v1" : "scoped-grid-v2"}:${selection.label}:${JSON.stringify(products.map(p => p.brand))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
   let generation = inFlightCatalogs.get(fingerprint);
   if (!generation) {
-    generation = createScopedCatalogPdf(products, selection.label, fingerprint).finally(() => inFlightCatalogs.delete(fingerprint));
+    generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightCatalogs.delete(fingerprint));
     inFlightCatalogs.set(fingerprint, generation);
   }
   return { ...selection, catalog: await generation };
+}
+
+export async function generateRequestedProductImages(content: string) {
+  const selection = await selectRequestedCatalog(content);
+  await mkdir(CATALOG_DIRECTORY, { recursive: true });
+  const outboundMessages = await Promise.all(selection.products.map(async (product, index) => {
+    const caption = `${index + 1}/${selection.products.length} · ${product.name}\nCódigo: ${product.code} · Precio unitario: S/${Number(product.unitPrice).toFixed(2)}`;
+    const fingerprint = getCatalogFingerprint([product]);
+    const filename = `producto-${fingerprint}.jpg`;
+    const output = path.join(CATALOG_DIRECTORY, filename);
+    try {
+      try { await access(output); } catch {
+        const bytes = await loadFirstAvailableImage(product);
+        const temporary = `${output}.${crypto.randomUUID()}.tmp`;
+        await writeFile(temporary, bytes);
+        await rename(temporary, output);
+      }
+      return { type: "IMAGE" as const, content: caption, mediaUrl: buildPublicUrl(`/uploads/catalogs/${filename}`), code: product.code };
+    } catch {
+      return { type: "TEXT" as const, content: `${caption}\nImagen no disponible.`, mediaUrl: null, code: product.code };
+    }
+  }));
+  return { ...selection, outboundMessages };
 }

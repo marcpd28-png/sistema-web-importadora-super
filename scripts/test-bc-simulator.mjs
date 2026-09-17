@@ -30,9 +30,16 @@ test('all explicit catalog requests use the PDF branch before purchase-mode ques
  const evaluate=new Function('$json','return '+condition.slice(3,-2));
  for(const content of ['hola me dan el catalogo de los productos jbl?','catálogo de audofnos jbl','me pasa el catálogo de sus audífonos','catálogo de parlantes','CATÁLOGOS SONY']) assert.equal(evaluate({content}),true,content);
  assert.equal(evaluate({content:'precio del JBL charge 6'}),false);
+ for(const content of ['Información sobre las pantallas extensoras','extensores de pantalla','extensores de pantalla en PDF']) assert.equal(evaluate({content}),true,content);
+ assert.equal(evaluate({content:'extensor HDMI'}),false);
  const catalog=read('catalog');
  assert.match(catalog.nodes.find(n=>n.name==='Generar catálogo PDF').parameters.url,/\/catalogs\/products$/);
  assert.match(catalog.nodes.find(n=>n.name==='Registrar catálogo simulado').parameters.jsonBody,/\$json.type/);
+ const batch=catalog.nodes.find(n=>n.name==='Registrar catálogo simulado').parameters;
+ assert.match(batch.url,/\/chat\/simulator-batch$/);
+ const payload=new Function('$json','return '+batch.jsonBody.slice(3,-2));
+ const outboundMessages=Array.from({length:4},(_,i)=>({type:'IMAGE',content:String(i),mediaUrl:'https://example.com/'+i+'.jpg'}));
+ assert.deepEqual(payload({conversationId:'sim',requestId:'r',outboundMessages}).messages,outboundMessages);
 });
 test('router ignores real and duplicate incoming messages; simulator runs without a phone number',()=>{
  const w=read('router');

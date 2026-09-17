@@ -107,7 +107,7 @@
           "conditions": [
             {
               "id": "02ed6da4-7b19-41ed-9ff2-97a59e960f98",
-              "leftValue": "={{ /\\bcatalogos?\\b/.test($json.content.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()) }}",
+              "leftValue": "={{ (() => { const text = $json.content.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase(); return /\\bcatalogos?\\b/.test(text) || (/\\bextensor(?:a|as|es|s)?\\b/.test(text) && /\\b(?:pantallas?|screens?|monitores?)\\b/.test(text)); })() }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",

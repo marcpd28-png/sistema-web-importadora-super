@@ -256,7 +256,9 @@ export function MessageSimulator() {
                   </div>
                   {message.messageType === "IMAGE" && message.mediaUrl ? (
                     <div className="simulator-media-message">
-                      <img alt={message.content || "Imagen enviada"} src={message.mediaUrl} />
+                      <a href={message.mediaUrl} target="_blank" rel="noreferrer" title="Ver imagen completa">
+                        <img alt={message.content || "Imagen enviada"} src={message.mediaUrl} />
+                      </a>
                       {message.content ? <p>{message.content}</p> : null}
                     </div>
                   ) : message.messageType === "DOCUMENT" && message.mediaUrl ? (

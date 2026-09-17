@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateRequestedCatalogPdf } from "@/lib/catalog-pdf";
-import { isCatalogRequest } from "@/lib/catalog-selection";
+import { generateRequestedCatalogPdf, generateRequestedProductImages } from "@/lib/catalog-pdf";
+import { isCatalogRequest, isScreenExtenderQuery, normalizeCatalogText } from "@/lib/catalog-selection";
 import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
 
@@ -14,7 +14,8 @@ export async function POST(request: Request) {
   }
   try {
     const input = schema.parse(await request.json());
-    if (!isCatalogRequest(input.content)) return NextResponse.json({ ok: true, matched: false });
+    const extenders = isScreenExtenderQuery(input.content);
+    if (!isCatalogRequest(input.content) && !extenders) return NextResponse.json({ ok: true, matched: false });
     const conversation = await prisma.conversation.findUnique({ where: { id: input.conversationId }, select: {
       id: true, status: true, botEnabled: true, assignedUserId: true, contact: { select: { externalId: true } }, salesState: { select: { customerData: true } },
     } });
@@ -22,14 +23,23 @@ export async function POST(request: Request) {
     // This endpoint is initially exclusive to the simulator, as requested for BC.
     if (!conversation.contact.externalId?.startsWith("SIMULATOR:")) return NextResponse.json({ ok: false, error: "Simulator conversation required" }, { status: 403 });
     if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return NextResponse.json({ ok: true, matched: true, skipped: "HUMAN_OWNS_CONVERSATION" });
-    const result = await generateRequestedCatalogPdf(input.content);
+    const requestId = input.requestId || `catalog:${input.triggerMessageId || crypto.randomUUID()}`;
     const customerData = conversation.salesState?.customerData;
     if (customerData && typeof customerData === "object" && !Array.isArray(customerData) && customerData.catalogPending === true) {
       await prisma.conversationSalesState.updateMany({ where: { conversationId: conversation.id }, data: { customerData: { ...customerData, catalogPending: false } } });
     }
+    if (extenders && !isCatalogRequest(input.content) && !/\bpdf\b/.test(normalizeCatalogText(input.content))) {
+      const result = await generateRequestedProductImages(input.content);
+      return NextResponse.json({
+        ok: true, matched: true, simulation: true, conversationId: conversation.id, requestId,
+        outboundMessages: result.outboundMessages.length ? result.outboundMessages : [{ type: "TEXT", content: `No encontré productos publicados para ${result.label}.`, mediaUrl: null }],
+        filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },
+      });
+    }
+    const result = await generateRequestedCatalogPdf(input.content, extenders);
     return NextResponse.json({
       ok: true, matched: true, simulation: true, conversationId: conversation.id,
-      requestId: input.requestId || `catalog:${input.triggerMessageId || crypto.randomUUID()}`,
+      requestId,
       content: result.catalog ? `Aquí tienes el catálogo de ${result.label}: ${result.catalog.productCount} productos.`
         : !result.scoped ? `Aquí puedes ver nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`
         : `No encontré productos publicados para el catálogo de ${result.label}. Puedes indicarme otra marca, categoría o tipo de producto.`,

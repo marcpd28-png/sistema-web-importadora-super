@@ -8,6 +8,10 @@ export function normalizeCatalogText(value: string) {
 export function isCatalogRequest(content: string) {
   return /\bcatalogos?\b/.test(normalizeCatalogText(content));
 }
+export function isScreenExtenderQuery(content: string) {
+  const text = normalizeCatalogText(content);
+  return /\bextensor(?:a|as|es|s)?\b/.test(text) && /\b(?:pantallas?|screens?|monitores?)\b/.test(text);
+}
 
 const categories = [
   { label: "audífonos", stored: "AURICULARES", aliases: ["audifono", "audifonos", "audofnos", "auricular", "auriculares", "headphones", "headsets"] },
@@ -95,6 +99,8 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     if (codeRows.length) return { products: codeRows.map(r => r.product), scoped: true, label: codeRows.map(r => r.product.code).join(" / "), brands: [] as string[], categories: [] as string[], types: [] as string[], terms: codeRows.map(r => r.product.code) };
 
     let remainder = ` ${text} `;
+    const screenExtenders = isScreenExtenderQuery(text);
+    if (screenExtenders) remainder = remainder.replace(/\b(?:extensor(?:a|as|es|s)?|pantallas?|screens?|monitores?|informacion|info|sobre|detalles|fotos?|imagenes?|grandes?)\b/g, " ");
     const strictCategory = /\bcategorias?\b/.test(text);
     const requestedCategories: [string,string][] = [];
     for (const [key,label] of [...categoryNames].sort((a,b) => b[0].length-a[0].length)) {
@@ -115,20 +121,21 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
       (!types.some(kind => wordMatches(kind,t)) && c.aliases.some(a => nearWord(t,a)));
     const aliases = requestedCategories.length ? [] : categories.filter(c => tokens.some(t => aliasMatches(t,c)));
     const remaining = tokens.filter(t => !aliases.some(c => aliasMatches(t,c)));
-    const requestedTypes = !aliases.length && !remaining.some(t => /\d/.test(t))
+    const requestedTypes = !screenExtenders && !aliases.length && !remaining.some(t => /\d/.test(t))
       ? remaining.slice(0,1).filter(t => types.some(kind => wordMatches(kind,t))) : [];
     const terms = remaining.filter(t => !requestedTypes.includes(t));
-    const scoped = Boolean(requestedCategories.length || requestedBrands.length || aliases.length || requestedTypes.length || terms.length);
+    const scoped = Boolean(screenExtenders || requestedCategories.length || requestedBrands.length || aliases.length || requestedTypes.length || terms.length);
     const selected = rows.filter(r => {
+      if (screenExtenders && !isScreenExtenderQuery(r.name)) return false;
       if (requestedCategories.length && !requestedCategories.some(([key]) => [r.product.category,r.product.categoryRef?.name].some(v => normalizeCatalogText(v || "") === key))) return false;
       if (requestedBrands.length && !requestedBrands.some(([key]) => r.brandKeys.includes(key))) return false;
       if (aliases.length && !aliases.some(c => c.aliases.some(a => wordMatches(r.type,a)) || matchesCategory(r.product,c))) return false;
       if (requestedTypes.length && !requestedTypes.some(t => wordMatches(r.type,t))) return false;
       return terms.every(t => r.words.some(w => wordMatches(w,t)));
     }).sort((a,b) => a.displayBrand.localeCompare(b.displayBrand,"es") || a.product.name.localeCompare(b.product.name,"es"));
-    const labels = [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label),...requestedTypes];
+    const labels = [...(screenExtenders ? ["extensores de pantalla"] : []),...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label),...requestedTypes];
     const label = [...labels,...requestedBrands.map(([,v]) => v),...terms].join(" ") || "productos";
-    return { products: selected.map(r => r.product), scoped, label, brands: requestedBrands.map(([,v]) => v), categories: [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label)], types: requestedTypes, terms };
+    return { products: selected.map(r => r.product), scoped, label, brands: requestedBrands.map(([,v]) => v), categories: [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label)], types: screenExtenders ? ["extensores de pantalla"] : requestedTypes, terms };
   }
   return { select, brands: [...knownBrands.values()], categories: [...categoryNames.values()], types,
     productType: (product: T) => rows.find(r => r.product === product)?.type || "",

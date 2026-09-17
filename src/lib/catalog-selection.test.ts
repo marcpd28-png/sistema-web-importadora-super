@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCatalogIndex, isCatalogRequest, selectCatalogProducts, type CatalogCandidate } from "./catalog-selection";
+import { createCatalogIndex, isCatalogRequest, isScreenExtenderQuery, selectCatalogProducts, type CatalogCandidate } from "./catalog-selection";
 const products: CatalogCandidate[] = [
  {code:"A1",name:"AUDIFONO JBL TUNE 520",brand:null,category:"AURICULARES"},
  {code:"A2",name:"AUDIFONO JBL ENDURANCE",brand:null,category:"ACCESORIOS PARA CELULARES"},
@@ -104,4 +104,23 @@ test("agrupa por la marca del producto aunque el nombre también diga original",
  assert.equal(index.select("catálogo Samsung").products.length,1);
  const jbl={...product,name:"AUDIFONO JBL TUNE 110 SUPER BASS"};
  assert.equal(createCatalogIndex([jbl],["SUPER","JBL"]).productBrand(jbl),"JBL");
+});
+
+test("pantallas extensoras incluye los cuatro modelos y excluye otras pantallas y extensores",()=>{
+ const rows: CatalogCandidate[] = [
+  {code:"PC401",name:'SQ EXTENSOR DE PANTALLA PARA LAPTOP PARA 2 PANTALLAS DE 14',brand:null,category:"LAPTOP"},
+  {code:"PC402",name:'SQ EXTENSOR DE PANTALLA PARA LAPTOP PARA UNA PANTALLA DE 14',brand:null,category:"LAPTOP"},
+  {code:"O832",name:'BLACKVIEW EXTENSOR SCREEN GREY BLACK SCM6 14 pantalla',brand:null,category:"DISPOSITIVOS PORTATILES"},
+  {code:"O970",name:'BLACKVIEW EXTENSOR SCREEN GREY BLACK SCM8 15.3',brand:null,category:"DISPOSITIVOS PORTATILES"},
+  {code:"NO1",name:'PANTALLA ECRAN PARA PROYECTOR',brand:null,category:"ENTRETENIMIENTO"},
+  {code:"NO2",name:'EXTENSOR HDMI INALAMBRICO',brand:null,category:"NOVEDADES"},
+  {code:"NO3",name:'CAMARA CON PANTALLA',brand:null,category:"AUTO"},
+ ];
+ for(const query of ['Información sobre las pantallas extensoras','extensores de pantalla','catálogo de pantallas extensoras','extensores de pantalla en PDF','fotos de extensores de pantalla']) {
+  assert.equal(isScreenExtenderQuery(query),true);
+  assert.deepEqual(selectCatalogProducts(query,rows).products.map(p=>p.code).sort(),['O832','O970','PC401','PC402']);
+ }
+ assert.deepEqual(selectCatalogProducts('catálogo de extensores de pantalla BLACKVIEW SCM8',rows).products.map(p=>p.code),['O970']);
+ assert.equal(isScreenExtenderQuery('pantallas de proyector'),false);
+ assert.equal(isScreenExtenderQuery('extensor HDMI'),false);
 });
