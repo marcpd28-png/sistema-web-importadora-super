@@ -112,3 +112,11 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Pasaron 85 pruebas, TypeScript, ESLint y compilación. Web publicada y activada con respaldo, motor `486c434`.
 - Segunda ejecución completada en VPS: SKU N1321 → sí → 2 → sí → nombre → boleta/DNI → recojo → mejor 3 → confirmo → Yape → imagen de comprobante de prueba. La cantidad corregida aplicó precio mayorista (3 × 115 = 345); se conservaron datos, se creó referencia SIM y la evidencia quedó recibida pero NO verificada. No existe pedido real asociado. Contacto temporal eliminado.
 - Evidencia: `2026-09-18-checkout-live.json`. Este recorrido sí atraviesa el simulador administrativo, los workflows n8n publicados y los dos servicios desplegados. No acredita toda variante de venta ni interpretación visual, y no se marca el objetivo completo.
+
+## Preguntas intermedias sin reiniciar la compra
+
+- La prueba completa con una pregunta de envío reprodujo pérdida de etapa: AWAITING_QUANTITY volvía a AWAITING_PURCHASE_CONFIRMATION al publicar la respuesta de la agenda.
+- Corregido en web `99b30b1`: publicar información sobre el mismo SKU no vuelve a inicializar la selección, cantidad, cotización ni etapa. Una selección distinta mantiene las reglas de cambio existentes.
+- Pasaron las pruebas que reproducían el reinicio, TypeScript, ESLint y las 85 regresiones del build aislado. Publicado en Git y activado en VPS con respaldo.
+- Recorrido completo por API del simulador y n8n: pregunta de envío al pedir cantidad, pregunta sobre Yape al confirmar precio, datos, entrega, cambio a tres unidades, pedido SIM y comprobante pendiente de validación. Correcto, sin pedido real; contacto temporal eliminado. Evidencia `2026-09-18-checkout-interruptions.json`.
+- Mantener pendiente el alcance restante: interpretación visual/social real, cambios de datos y de pedidos existentes, varios artículos y evaluación con más conversaciones reales anonimizadas. No hay confirmación de proveedor/presupuesto de IA todavía.
