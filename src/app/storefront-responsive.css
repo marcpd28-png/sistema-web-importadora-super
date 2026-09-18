@@ -201,7 +201,7 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
 
   .store-assistant-panel {
     right: 8px;
-    width: min(480px, calc(100vw - 16px));
+    width: min(480px, calc(100% - 16px));
     height: min(640px, calc(100dvh - 16px - env(safe-area-inset-bottom)));
   }
 
