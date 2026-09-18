@@ -62,5 +62,10 @@ export function groupCommercialFragments(messages: CommercialMessage[], lexicon?
 /** Split at a conjunction only if the following clause introduces an operation.
  * Product lists (cargadores y fuentes) and price ranges (entre 50 y 100) survive. */
 export function commercialClauses(content: string) {
-  return content.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|(?:saber\s+)?cu[aá]nto|se\s+puede\s+pagar|puedo\s+pagar|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|stock\b|disponibilidad\b|informaci[oó]n\b|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio|d[oó]nde|horario|direcci[oó]n))/i).filter(value => value.trim());
+  const urls: string[] = [];
+  let marker = "\uE000URL";
+  while (content.includes(marker)) marker += "_";
+  const protectedContent = content.replace(/https?:\/\/[^\s<>"']+/gi, url => `${marker}${urls.push(url) - 1}\uE001`);
+  return protectedContent.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|(?:saber\s+)?cu[aá]nto|se\s+puede\s+pagar|puedo\s+pagar|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|stock\b|disponibilidad\b|informaci[oó]n\b|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio|d[oó]nde|horario|direcci[oó]n))/i)
+    .filter(value => value.trim()).map(value => urls.reduce((text, url, i) => text.replaceAll(`${marker}${i}\uE001`, url), value));
 }

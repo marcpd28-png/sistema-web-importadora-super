@@ -42,6 +42,14 @@ async function main() {
   try {
     const product = await prisma.product.create({ data: { code: `QA${Date.now()}`, slug: `memory-${run}`, name: "VENTILADOR DE PRUEBA", imageUrl: "https://example.com/ventilador.jpg", unitPrice: 37, stockUnits: 10, isVisible: true } });
     products.push(product.id);
+    const social = await conversation(await customer());
+    const socialReplies = await send(social.id, ["aceptan yape", "precio de este https://www.tiktok.com/@tienda/video/123?precio=99&stock=1", "seis unidades", "envíos a Arequipa", "gracias"]);
+    assert(socialReplies.indexOf("Métodos de pago:") < socialReplies.indexOf("referencia de TikTok"));
+    assert(socialReplies.indexOf("referencia de TikTok") < socialReplies.indexOf("Modalidades de entrega:"));
+    assert.doesNotMatch(socialReplies, /Total:|sin stock/);
+    const socialAgenda = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: social.id } });
+    assert.deepEqual((socialAgenda.state as { requests: { kind: string }[] }).requests.map(job => job.kind), ["PAYMENT", "PRICE", "SHIPPING"]);
+    assert.match(await send(social.id, `me refiero a ${product.code}`), /6 unidad\(es\): S\/ 37\.00/);
     const grouped = await conversation(await customer());
     const ordered = await send(grouped.id, [`precio ${product.code}`, "seis unidades", `stock ${product.code}`, "aceptan yape", "envíos a Arequipa"]);
     assert.match(ordered, /6 unidad\(es\): S\/ 37\.00/);

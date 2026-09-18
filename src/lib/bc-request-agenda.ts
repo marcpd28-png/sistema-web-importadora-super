@@ -35,7 +35,7 @@ export const SPECIFICATION_FIELDS = [
 ];
 
 export function requestedSpecificationFields(question: string) {
-  const text = normalizeCommercialText(question);
+  const text = normalizeCommercialText(question.replace(/https?:\/\/[^\s<>"']+/gi, " "));
   const fields = SPECIFICATION_FIELDS.filter(field => field.pattern.test(text))
     .sort((a, b) => text.search(a.pattern) - text.search(b.pattern)).map(field => field.key);
   return fields.includes("autonomia") ? fields.filter(field => field !== "bateria") : fields;
@@ -43,7 +43,7 @@ export function requestedSpecificationFields(question: string) {
 
 const NUMBERS: Record<string, number> = { dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, doce: 12 };
 export function requestedQuantity(content: string) {
-  const text = normalizeCommercialText(content);
+  const text = normalizeCommercialText(content.replace(/https?:\/\/[^\s<>"']+/gi, " "));
   const match = text.match(/\b(?:por|para|quiero|necesito|salen|cuestan|cotiza|cotizar|mejor)\s+(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/) || text.match(/\b(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s+(?:unidades|unds|piezas)\b/);
   if (match && /^(?:w|watts?|v|voltios?|gb|tb|mb|mah|cm|mm|kg|rpm|pulgadas?|soles?)\b/.test(text.slice(match.index! + match[0].length).trim())) return null;
   const value = match ? NUMBERS[match[1]] ?? Number(match[1]) : null;
@@ -85,7 +85,7 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
     const sourceIds = message.sourceMessageIds!;
     const clauses = commercialClauses(message.content);
     for (const clause of clauses) {
-      const text = normalizeCommercialText(clause);
+      const text = normalizeCommercialText(clause.replace(/https?:\/\/[^\s<>"']+/gi, " "));
       if (/^(?:hola|gracias|ok|buenos dias|buenas tardes|buenas noches)$/.test(text)) continue;
       if (/\b(?:reintenta|reintentar|intenta otra vez|consulta pendiente)\b/.test(text)) {
         for (const job of agenda.requests.filter(value => value.status === "PENDING" || value.status === "NEEDS_CLARIFICATION")) touched.add(job.id);

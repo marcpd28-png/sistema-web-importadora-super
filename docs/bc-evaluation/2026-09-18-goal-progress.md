@@ -80,3 +80,11 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Reproducción PostgreSQL: «aceptan yape / precio del sopladorcito / seis unidades / envíos a Arequipa / gracias» adelantaba la explicación de memoria a la pregunta de pago. Se difiere esa explicación hasta la primera solicitud de su producto y se emite una sola vez.
 - La integración verifica pago → explicación de referencia recordada → cotización actual → envío. Pasaron además 26 pruebas de agenda/persistencia/memoria, 9 verificaciones del flujo n8n, TypeScript y ESLint.
 - Auditoría remota actualizada: web `4686af7` (incluye cambios recientes de PDF), motor `d8e607b`, ambos limpios y online. Memoria desactivada y proveedor IA sin configurar. La revisión web local coincide con el servidor; los cambios ajenos de PDF se conservan.
+
+## Referencias sociales: separación de URL y pregunta
+
+- El despliegue anterior quedó verificado en `2026-09-18-deployment-memory-checkout.md`.
+- Se detectó y corrigió localmente que `?precio=99&stock=1` dentro de un enlace generaba solicitudes adicionales. La separación de cláusulas conserva URL completas; parámetros del enlace no determinan intención, cantidad ni características.
+- Referencias de TikTok, Instagram, Facebook, YouTube y Pinterest se reconocen por dominio real, sin descargar URLs ni confundir dominios parecidos. Para consultas de producto sin identificación confirmada, se explica que el contenido no se ha visto y se solicita captura/modelo/código. La consulta permanece pendiente, en su orden. Esto NO implementa visión ni extracción de contenido social.
+- Pasaron 84 pruebas de regresión, TypeScript y ESLint. Se añadió un recorrido PostgreSQL para aclarar el código y recuperar las seis unidades, pero aún NO pudo ejecutarse: Docker Desktop local está detenido/fallando al arrancar y PostgreSQL no responde. No se usó la base productiva para sustituir esta prueba.
+- Estos cambios de referencias sociales aún son locales, sin desplegar. Falta comprobar la integración nueva, las ramas de catálogo/fotos con enlaces y la comprensión del contenido accesible.

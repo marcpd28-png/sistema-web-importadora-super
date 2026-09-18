@@ -3,6 +3,7 @@ import { normalizeCommercialText } from "./commercial-query";
 import type { CommercialProduct } from "./commercial-catalog";
 import { getLinePricing } from "./pricing";
 import { getBotProductImageUrls, isBotProductAvailable } from "./bot-product-availability";
+import { customerSocialPlatforms } from "./customer-social-reference";
 
 export type BusinessAnswers = { supportHours: string; storeAddress: string; paymentMethods: string[]; deliveryMethods: string[] };
 export type RequestAnswer = { content: string; status: AgendaRequest["status"]; evidence: string[] };
@@ -46,6 +47,11 @@ export function answerBusinessRequest(request: AgendaRequest, business: Business
 }
 
 export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean; scopes?: ProductScope[] } = {}): RequestAnswer {
+  const platforms = customerSocialPlatforms(`${request.question} ${topic?.query || ""}`);
+  if (platforms.length && !topic?.selectedCode) return {
+    content: `Recibí tu referencia de ${platforms.join(" y ")}. Aún no he podido ver el contenido del enlace para identificar el producto. Envíame una captura donde se vea, o su marca, modelo o código, y continúo con esta consulta.`,
+    status: "NEEDS_CLARIFICATION", evidence: [],
+  };
   products = products.filter(product => product.isVisible);
   if (topic) { topic.selectedCode = null; topic.shownCodes = []; topic.shownGroups = []; }
   if (topic && options.scopes && options.scopes.length > 1) {
