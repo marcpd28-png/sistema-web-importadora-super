@@ -14,7 +14,7 @@ if (!args.includes('--execute-simulator')) {
 }
 const option = (name, fallback) => args.find(arg => arg.startsWith(name + '='))?.slice(name.length + 1) || fallback;
 const output = path.resolve(option('--output', '.cache/bc-evaluation/run.json'));
-const corpus = JSON.parse(fs.readFileSync(path.join(__dirname, 'cases.json'), 'utf8'));
+const corpus = JSON.parse(fs.readFileSync(path.resolve(option('--corpus', path.join(__dirname, 'cases.json'))), 'utf8'));
 const selected = new Set(option('--cases', '').split(',').filter(Boolean));
 const cases = corpus.cases.filter(item => !selected.size || selected.has(item.id));
 const origin = new URL(option('--origin', 'http://127.0.0.1:4000')).origin;

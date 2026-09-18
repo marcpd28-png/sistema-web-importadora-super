@@ -48,6 +48,12 @@ export function requestedQuantity(content: string) {
 
 /** Keep model punctuation intact; remove question wording before querying the catalog. */
 export function productSubject(content: string) {
+  // Browsing vocabulary belongs to the catalog index. Removing attribute words here
+  // destroys categories such as ACCESORIOS DE CUIDADO PERSONAL or CARGA PORTATIL.
+  const browsing = /\b(?:busco|buscando|catalogos?|categorias?|marcas?|modelos|productos|articulos|tienes|tienen|venden|manejan|accesorios (?:de|para))\b/.test(normalizeCommercialText(content));
+  if (browsing && !/\b(?:cuanto dura|que incluye|que trae|que garantia|que potencia)\b/.test(normalizeCommercialText(content))) {
+    return content.replace(/[¿?!,;]+/g, " ").replace(/\s+/g, " ").trim();
+  }
   return content
     .replace(/\b(?:fotos?|im[aá]genes?|fotograf[ií]as?)\b/gi, " ")
     .replace(/\b(?:salen|cuestan|quiero|necesito|cotiza|cotizar)\s+\d+\s*(?:unidades?|unds?|piezas?)?\b/gi, " ")

@@ -2,7 +2,7 @@ import { resolveProductBrand } from "./product-discovery";
 import { inferStoreCategoryName } from "./product-category-classifier";
 import { literalProductCodes, matchesCommercialConstraints, matchesExplicitModelVersion, parseCommercialQuery } from "./commercial-query";
 
-export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null; unitPrice?: unknown };
+export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null; unitPrice?: unknown; specifications?: { name: string; value: string }[] };
 export function normalizeCatalogText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/\bpro\s*\+/g, "pro plus ").replace(/(\d)\s+(gb|tb|mb|w|mah)\b/g, "$1$2")
@@ -33,6 +33,16 @@ for (const word of ["marca", "marcas", "categoria", "categorias", "tipo", "tipos
 // Request wording such as "busco" or "estoy buscando" is not a product constraint.
 for (const word of ["busco", "buscamos", "buscar", "buscando", "estoy", "estamos", "ando", "andamos"]) ignored.add(word);
 for (const word of ["pero", "tambien", "ademas", "como", "ejemplo"]) ignored.add(word);
+for (const word of ["que", "cual", "cuales", "tienes", "tenemos", "venden", "manejan", "ofrecen", "informacion", "info", "sobre", "detalles"]) ignored.add(word);
+
+function canonicalBrand(value: string) {
+  return /^(?:super|importaciones super|super importaciones|super importaciones super)$/.test(normalizeCatalogText(value)) ? "SUPER" : value.trim();
+}
+
+function catalogProductBrand(product: CatalogCandidate) {
+  const value = product.brand?.trim() || product.specifications?.find(spec => normalizeCatalogText(spec.name) === "marca")?.value.trim();
+  return value ? canonicalBrand(value) : null;
+}
 function singular(value: string) { return value.length > 4 && value.endsWith("s") ? value.slice(0, -1) : value; }
 function nearWord(a: string, b: string) {
   if (a.length < 6 || b.length < 6 || Math.abs(a.length-b.length)>2) return false;
@@ -74,13 +84,14 @@ const typePrefixes = new Set(["pack", "set", "kit", "combo", "sq", "de", "del", 
 /** Build the vocabulary from inventory and ERP references; aliases only supplement that vocabulary. */
 export function createCatalogIndex<T extends CatalogCandidate>(products: T[], referenceBrands: string[] = []) {
   const knownBrands = new Map<string,string>();
-  for (const value of [...referenceBrands, ...products.flatMap(p => [p.brand, resolveProductBrand(p)])]) {
-    const key = normalizeCatalogText(value || "");
-    if (key) knownBrands.set(key, value!.trim());
+  for (const value of [...referenceBrands, ...products.flatMap(p => [catalogProductBrand(p), resolveProductBrand(p)])]) {
+    const brand = value ? canonicalBrand(value) : "";
+    const key = normalizeCatalogText(brand);
+    if (key) knownBrands.set(key, brand);
   }
   const brandEntries = [...knownBrands].sort((a,b) => b[0].length-a[0].length);
   const normalizeBrandAliases = (content: string) => knownBrands.has("super")
-    ? content.replace(/\b(?:super\s+importaciones|importaciones\s+super)\b/gi, "SUPER")
+    ? content.replace(/\b(?:super\s*\/\s*importaciones\s+super|super\s+importaciones|importaciones\s+super)\b/gi, "SUPER")
     : content;
   const categoryNames = new Map<string,string>();
   for (const p of products) for (const value of [p.category, p.categoryRef?.name]) {
@@ -88,9 +99,10 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
   }
   const rows = products.map(product => {
     const name = normalizeCatalogText(product.name.replace(/^\([^)]*\)\s*/, ""));
-    const explicitBrand = normalizeCatalogText(product.brand || "");
+    const storedBrand = catalogProductBrand(product);
+    const explicitBrand = normalizeCatalogText(storedBrand || "");
     const brandKeys = explicitBrand
-      ? brandEntries.filter(([key]) => hasPhrase(explicitBrand,key)).map(([key]) => key)
+      ? [explicitBrand]
       : brandEntries.filter(([key]) => hasPhrase(
         key === "super" ? name.replace(/\bsuper\s+(?:carga|bass|fast|charge)\b/g, "") : name,
         key,
@@ -99,7 +111,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const namedBrands = brandKeys.filter(key => !descriptiveBrands.has(key));
     namedBrands.sort((a,b) => ` ${name} `.indexOf(` ${a} `) - ` ${name} `.indexOf(` ${b} `) || b.length-a.length);
     const displayKey = namedBrands[0] || brandKeys[0];
-    const displayBrand = product.brand?.trim() || knownBrands.get(displayKey) || resolveProductBrand(product) || "Otras marcas";
+    const displayBrand = storedBrand || knownBrands.get(displayKey) || resolveProductBrand(product) || "Otras marcas";
     let typeText = ` ${name} `;
     for (const key of brandKeys) typeText = typeText.replaceAll(` ${key} `, " ");
     const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !ignored.has(w) && !/\d/.test(w)) || "";
@@ -120,7 +132,12 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     // An explicit SKU remains searchable even if it is numeric, unbranded or uncategorized.
     const maxCodeLength = Math.max(0,...exactCodes.map(r => r.code.length));
     const normalizedCodeRows = exactCodes.filter(r => r.code.length === maxCodeLength);
-    const literalCodes = new Set(literalProductCodes(original, rows.map(r => r.product.code)));
+    const inventoryCodes = rows.map(r => r.product.code);
+    const exactLiteralCodes = literalProductCodes(original, inventoryCodes);
+    // A sentence-ending period is punctuation unless it identifies a real dotted SKU.
+    // Prefer the literal match so BT454 and BT454. remain different products.
+    const literalCodes = new Set(exactLiteralCodes.length ? exactLiteralCodes
+      : literalProductCodes(original.replace(/\.(?=\s*$)/, ""), inventoryCodes));
     const literalCodeRows = rows.filter(r => literalCodes.has(r.product.code) && (/[a-z]/i.test(r.product.code) || /\bcodigos?\b/.test(text) || queryTerms === r.code));
     // Never collapse punctuation or suffixes of ERP codes. A normalized collision needs clarification.
     const codeRows = literalCodeRows.length ? literalCodeRows : normalizedCodeRows.length === 1 && !/[.-]/.test(original) ? normalizedCodeRows : [];
