@@ -21,6 +21,7 @@ import {
   updateRouterV2OrderPaymentMethod,
 } from "@/lib/router-v2-order-service";
 import { resolveRouterV2PaymentSelection } from "@/lib/router-v2-payment-selection";
+import { hasRouterV2PaymentEvidence } from "@/lib/router-v2-payment-evidence";
 import { shouldPersistRouterV2State } from "@/lib/router-v2-persistence-policy";
 import { buildRouterV2ProductDecision } from "@/lib/router-v2-product-decision";
 import {
@@ -131,16 +132,12 @@ function shouldAttemptCheckout(input: {
   }
 
   if (stage === "AWAITING_PAYMENT_CONFIRMATION") {
-    const isEvidence =
-      Boolean(input.mediaUrl) ||
-      ["IMAGE", "DOCUMENT"].includes(
-        (input.messageType ?? "").toUpperCase(),
-      );
+    const isEvidence = hasRouterV2PaymentEvidence(input);
     return isEvidence || input.analysisNextAction === "CONTINUE_SALES_FLOW";
   }
 
   if (stage === "AWAITING_DOCUMENT_TYPE") {
-    const exactDocumentChoice = /^(boleta|factura)[.!]?$/i.test(
+    const exactDocumentChoice = /^(boleta|factura)(?:\s+(?:con\s+)?(?:(?:dni|ruc)\s*:?\s*)?\d{8,11})?[.!]?$/i.test(
       input.content.trim(),
     );
     return (
@@ -334,7 +331,10 @@ export async function POST(request: Request) {
     const genericSearchAllowedStage =
       !currentState?.stage ||
       currentState.stage === "AWAITING_PRODUCT_QUERY";
+    const isPaymentEvidenceStage = currentState?.stage === "AWAITING_PAYMENT_CONFIRMATION";
+    const incomingPaymentEvidence = isPaymentEvidenceStage && hasRouterV2PaymentEvidence(input);
     const shouldTryGenericTextProduct =
+      !incomingPaymentEvidence &&
       catalogDecision.action === "NONE" &&
       (
         analysis.nextAction === "RESOLVE_PRODUCT" ||
@@ -356,12 +356,9 @@ export async function POST(request: Request) {
         ? buildRouterV2ProductDecision(textProductResolution)
         : null;
 
-    const isPaymentEvidenceStage =
-      currentState?.stage === "AWAITING_PAYMENT_CONFIRMATION";
     const hasImageMessage =
       !isPaymentEvidenceStage &&
-      (Boolean(input.mediaUrl) ||
-        (input.messageType ?? "").toUpperCase() === "IMAGE");
+      (input.messageType ?? "").toUpperCase() === "IMAGE";
 
     const visualResolution = hasImageMessage
       ? await resolveRouterV2VisualProduct(input.visualHints ?? null)
@@ -396,14 +393,7 @@ export async function POST(request: Request) {
         )
       : null;
 
-    const incomingPaymentEvidence =
-      isPaymentEvidenceStage &&
-      (Boolean(input.mediaUrl) ||
-        ["IMAGE", "DOCUMENT"].includes(
-          (input.messageType ?? "").toUpperCase(),
-        ));
-
-    const analysisNextAction = incomingPaymentEvidence
+    const analysisNextAction = incomingPaymentEvidence && analysis.nextAction !== "HUMAN_HANDOFF"
       ? "CONTINUE_SALES_FLOW"
       : analysis.nextAction;
 
@@ -434,7 +424,10 @@ export async function POST(request: Request) {
     const quantityForPricing = "quantity" in proposedStatePatch
       ? proposedStatePatch.quantity as number | null
       : mergedContext.quantity;
+    // Once an order exists, catalog edits must not reprice or invalidate its payment flow.
+    const hasConfirmedOrder = Boolean(currentState?.orderNumber);
     let commercialPrice =
+      !hasConfirmedOrder &&
       selectedProductCodeForPricing &&
       quantityForPricing &&
       quantityForPricing > 0
@@ -487,7 +480,7 @@ export async function POST(request: Request) {
       : null;
 
     // Recheck a previously selected item too: it may have sold out or been hidden.
-    if (selectedProductCodeForInfo && (!productInformation || !productInformation.available || !productInformation.imageUrl) &&
+    if (!hasConfirmedOrder && selectedProductCodeForInfo && (!productInformation || !productInformation.available || !productInformation.imageUrl) &&
         !["HUMAN_HANDOFF", "ANSWER_ORDER_STATUS"].includes(nextAction)) {
       responseAction = !productInformation ? "PRODUCT_UNAVAILABLE"
         : productInformation.available ? "PRODUCT_NO_PHOTO"
@@ -557,6 +550,17 @@ export async function POST(request: Request) {
           createPendingOrder: false,
           paymentMethodToPersist: null,
         };
+
+    const priceChangedBeforeOrder = projectedBeforeCheckout.stage === "AWAITING_ORDER_CONFIRMATION" && !currentState?.orderNumber &&
+      analysisNextAction !== "HUMAN_HANDOFF" && commercialPrice?.status === "READY" &&
+      (currentState?.total == null || Number(currentState.total) !== commercialPrice.total ||
+        currentState?.unitPrice == null || Number(currentState.unitPrice) !== commercialPrice.unitPrice);
+    if (priceChangedBeforeOrder) {
+      checkoutDecision.createPendingOrder = false;
+      checkoutDecision.patch.stage = "AWAITING_ORDER_CONFIRMATION";
+      checkoutDecision.step = "ASK_ORDER_CONFIRMATION";
+      checkoutDecision.consumedInput = true;
+    }
 
     proposedStatePatch = mergeRouterV2StatePatches(
       currentStateRecord,
@@ -676,7 +680,7 @@ export async function POST(request: Request) {
       orderStatus,
     });
 
-    const draftText = buildRouterV2ResponseDraft(
+    const draftText = (priceChangedBeforeOrder ? "El precio cambió desde el último resumen. Revisa el importe actualizado antes de confirmar.\n\n" : "") + buildRouterV2ResponseDraft(
       responseContext,
       { isFirstResponse: conversation.messages.length === 0 },
     );

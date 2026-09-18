@@ -22,10 +22,13 @@ test("simulated checkout validates price but never reads or writes real orders",
     const result = await createRouterV2PendingOrder({ conversationId: "test-conversation", state, simulation: true });
     assert.equal(result.status, "CREATED");
     if (result.status === "CREATED") {
-      assert.match(result.order.orderNumber, /^SIM-/);
+      assert.match(result.order.orderNumber ?? "", /^SIM-/);
       assert.equal(result.order.total, 200);
     }
     const invalid = await createRouterV2PendingOrder({ conversationId: "test", state: { ...state, quantity: 11 }, simulation: true });
     assert.equal(invalid.status, "INVALID_SALES_STATE");
+    const changed = await createRouterV2PendingOrder({ conversationId: "test", state: { ...state, total: 180, unitPrice: 90 }, simulation: true });
+    assert.equal(changed.status, "INVALID_SALES_STATE");
+    if (changed.status === "INVALID_SALES_STATE") assert.equal(changed.reason, "PRICE_CHANGED");
   } finally { global.prismaGlobal = previous; }
 });

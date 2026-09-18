@@ -211,7 +211,7 @@ export function analyzeRouterV2Message(input: {
   }
 
   if (
-    input.mediaUrl ||
+    (input.mediaUrl && (input.messageType ?? "").toUpperCase() !== "AUDIO") ||
     ["IMAGE", "VIDEO", "DOCUMENT"].includes(
       (input.messageType ?? "").toUpperCase(),
     ) ||

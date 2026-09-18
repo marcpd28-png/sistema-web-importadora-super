@@ -1,8 +1,8 @@
-import sharp, { type Sharp } from "sharp";
+import sharp, { type Metadata, type Sharp } from "sharp";
 
 const PRODUCT_IMAGE_TRIM_THRESHOLD = 10;
 
-function shouldTrimImage(metadata: sharp.Metadata) {
+function shouldTrimImage(metadata: Metadata) {
   const pages = metadata.pages ?? 1;
   const format = metadata.format ?? "";
 

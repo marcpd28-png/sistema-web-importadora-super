@@ -6,6 +6,8 @@ import { resolveCommercialPrice } from "@/lib/router-v2-commercial-price";
 type SalesStateLike = {
   selectedProductCode?: string | null;
   quantity?: number | null;
+  unitPrice?: number | null;
+  total?: number | null;
   customerData?: unknown;
   documentData?: unknown;
   deliveryData?: unknown;
@@ -96,6 +98,10 @@ export async function createRouterV2PendingOrder(input: {
   }
 
   const customerName = readString(input.state.customerData, "name");
+  if ((input.state.unitPrice != null && Number(input.state.unitPrice) !== price.unitPrice) ||
+      (input.state.total != null && Number(input.state.total) !== price.total)) {
+    return { status: "INVALID_SALES_STATE" as const, reason: "PRICE_CHANGED" as const };
+  }
   const customerPhone = readString(input.state.customerData, "phone");
   const customerEmail = readString(input.state.customerData, "email");
   const documentType = readString(input.state.documentData, "type");

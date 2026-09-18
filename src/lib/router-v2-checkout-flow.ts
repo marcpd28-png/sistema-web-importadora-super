@@ -1,3 +1,5 @@
+import { hasRouterV2PaymentEvidence } from "./router-v2-payment-evidence";
+
 type CheckoutStateLike = {
   stage?: string | null;
   customerData?: unknown;
@@ -121,19 +123,12 @@ function detectDocumentType(text: string) {
 }
 
 function detectDocumentNumber(text: string, type: string | null) {
-  const digits = text.replace(/\D/g, "");
-
-  if (type === "FACTURA") {
-    const match = digits.match(/\d{11}/);
-    return match?.[0] ?? null;
-  }
-
-  if (type === "BOLETA") {
-    const match = digits.match(/\d{8}/);
-    return match?.[0] ?? null;
-  }
-
-  return null;
+  const length = type === "FACTURA" ? 11 : type === "BOLETA" ? 8 : null;
+  if (!length) return null;
+  // Never concatenate unrelated numbers or truncate a phone/RUC into a DNI.
+  const matches = text.match(new RegExp(`(?<!\\d)\\d{${length}}(?!\\d)`, "g")) ?? [];
+  const unique = [...new Set(matches)];
+  return unique.length === 1 ? unique[0] : null;
 }
 
 function paymentAllowed(method: string, allowed: string[]) {
@@ -238,8 +233,8 @@ export function resolveRouterV2CheckoutFlow(input: {
 
     if (!affirmative(text)) return result("ASK_PRICE_CONFIRMATION");
 
-    const contactName = usableContactName(input.contact?.name);
-    const contactPhone = normalizeCustomerPhone(input.contact?.phone);
+    const contactName = usableContactName(readString(customerData, "name")) || usableContactName(input.contact?.name);
+    const contactPhone = normalizeCustomerPhone(readString(customerData, "phone")) || normalizeCustomerPhone(input.contact?.phone);
 
     if (contactName || contactPhone) {
       patch.customerData = {
@@ -282,14 +277,18 @@ export function resolveRouterV2CheckoutFlow(input: {
       consumed = true;
     }
 
+    const nameText = incomingPhone
+      ? text.replace(/\+?\d[\d\s().-]{7,20}\d/g, "").replace(/\b(?:mi\s+)?(?:telefono|teléfono|celular|cel|whatsapp)\s*:?/gi, "").replace(/[,;:\s.-]+$/g, "").trim()
+      : text;
+    const incomingName = nameText.replace(/^(?:me llamo|mi nombre es|soy)\s+/i, "").trim();
     if (
       !currentName &&
-      !incomingPhone &&
-      text.length >= 3 &&
-      !affirmative(text) &&
-      !negative(text)
+      incomingName.length >= 3 &&
+      /^[\p{L}][\p{L}\s.'-]*$/u.test(incomingName) &&
+      !affirmative(incomingName) &&
+      !negative(incomingName)
     ) {
-      currentName = text.slice(0, 180);
+      currentName = incomingName.slice(0, 180);
       nextCustomerData = {
         ...nextCustomerData,
         name: currentName,
@@ -331,12 +330,14 @@ export function resolveRouterV2CheckoutFlow(input: {
     const type = detectDocumentType(text);
     if (!type) return result("ASK_DOCUMENT_TYPE");
 
+    const number = detectDocumentNumber(text, type);
     patch.documentData = {
       ...documentData,
       type,
+      number,
     };
-    patch.stage = "AWAITING_DOCUMENT_DATA";
-    return result("ASK_DOCUMENT_DATA", true);
+    patch.stage = number ? "AWAITING_DELIVERY_METHOD" : "AWAITING_DOCUMENT_DATA";
+    return result(number ? "ASK_DELIVERY_METHOD" : "ASK_DOCUMENT_DATA", true);
   }
 
   if (state.stage === "AWAITING_DOCUMENT_DATA") {
@@ -451,11 +452,7 @@ export function resolveRouterV2CheckoutFlow(input: {
   }
 
   if (state.stage === "AWAITING_PAYMENT_CONFIRMATION") {
-    const hasEvidence =
-      Boolean(input.mediaUrl) ||
-      ["IMAGE", "DOCUMENT"].includes(
-        (input.messageType ?? "").toUpperCase(),
-      );
+    const hasEvidence = hasRouterV2PaymentEvidence(input);
 
     if (!hasEvidence) return result("ASK_PAYMENT_EVIDENCE");
 

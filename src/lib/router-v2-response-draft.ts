@@ -437,11 +437,11 @@ export function buildRouterV2ResponseDraft(
   }
 
   if (answerType === "CHECKOUT_CUSTOMER_DATA") {
-    return "Continuemos con el pedido. Indícame tu nombre completo.";
+    return "¡Vamos con tu pedido! 🙂 ¿Me indicas tu nombre completo?";
   }
 
   if (answerType === "CHECKOUT_DOCUMENT_TYPE") {
-    return "Perfecto. ¿Necesitas boleta o factura?";
+    return "¡Perfecto! 🙂 ¿Necesitas boleta o factura?";
   }
 
   if (answerType === "CHECKOUT_DOCUMENT_DATA") {
@@ -453,7 +453,7 @@ export function buildRouterV2ResponseDraft(
   if (answerType === "CHECKOUT_DELIVERY_METHOD") {
     const methods = context.business?.deliveryMethods ?? [];
     return methods.length
-      ? `¿Cómo deseas recibir tu pedido? Opciones configuradas: ${methods.join(", ")}.`
+      ? `¿Cómo deseas recibir tu pedido? 📦 Puedes elegir: ${methods.join(", ")}.`
       : "Todavía no tengo configurados métodos oficiales de entrega en el bot. Prefiero no registrar una modalidad hasta que esa configuración esté definida.";
   }
 
@@ -477,7 +477,19 @@ export function buildRouterV2ResponseDraft(
     const number = context.sales.orderNumber
       ? ` Pedido ${context.sales.orderNumber}.`
       : "";
-    return `Ya tengo los datos principales del pedido.${number}${total ? ` Total: ${total}.` : ""} ¿Confirmas que todo está correcto?`;
+    const sales = context.sales;
+    return [
+      `Revisemos tu pedido 🙂${number}`,
+      sales.productCode ? `Producto: ${sales.productName || sales.productCode} (${sales.productCode}).` : "",
+      sales.quantity ? `Cantidad: ${sales.quantity}. Precio por unidad: ${money(sales.unitPrice, currency) || "pendiente"}.` : "",
+      sales.customerName ? `Cliente: ${sales.customerName}.` : "",
+      sales.customerPhone ? `Teléfono: ${sales.customerPhone}.` : "",
+      sales.documentType ? `Comprobante: ${sales.documentType}${sales.documentNumber ? ` — ${sales.documentNumber}` : ""}.` : "",
+      sales.deliveryMethod ? `Entrega: ${sales.deliveryMethod}${sales.deliveryDetails ? ` — ${sales.deliveryDetails}` : ""}.` : "",
+      total ? `Total de productos: ${total}.` : "",
+      sales.deliveryMethod && sales.deliveryMethod !== "RECOJO" ? "El costo de envío está pendiente de confirmar y no está incluido en ese total." : "",
+      "¿Confirmas que estos datos están correctos?",
+    ].filter(Boolean).join("\n");
   }
 
   if (answerType === "ORDER_CHANGES_REQUESTED") {
@@ -489,7 +501,7 @@ export function buildRouterV2ResponseDraft(
     if (!methods.length) {
       return "El pedido quedó preparado, pero todavía no están configurados los métodos de pago oficiales en el bot. Un asesor deberá confirmarlos antes de continuar.";
     }
-    return `Pedido ${context.sales.orderNumber ?? "registrado"}. ¿Qué método de pago prefieres? Tenemos: ${methods.join(", ")}.`;
+    return `¡Listo! Registré tu pedido${context.sales.orderNumber ? ` ${context.sales.orderNumber}` : ""}. 🙂 ¿Cómo prefieres pagar? Tenemos: ${methods.join(", ")}.`;
   }
 
   if (answerType === "PAYMENT_CONFIGURATION_MISSING") {
@@ -504,11 +516,11 @@ export function buildRouterV2ResponseDraft(
   }
 
   if (answerType === "CHECKOUT_PAYMENT_EVIDENCE") {
-    return "Método de pago registrado. Cuando realices el pago, envíame el voucher. El bot lo registrará como evidencia, pero no marcará el pedido como pagado hasta que sea validado.";
+    return "¡Listo, registré tu método de pago! 🙂 Cuando pagues, envíame el voucher por aquí. Tu pago quedará pendiente de validación hasta que lo revisemos.";
   }
 
   if (answerType === "PAYMENT_EVIDENCE_RECEIVED") {
-    return `Recibí el voucher${context.sales.orderNumber ? ` del pedido ${context.sales.orderNumber}` : ""}. Queda pendiente de validación; todavía no lo marcaré como pago confirmado.`;
+    return `¡Gracias! Recibí el voucher${context.sales.orderNumber ? ` del pedido ${context.sales.orderNumber}` : ""}. 🙂 Tu pago queda pendiente de validación; aún no está confirmado.`;
   }
 
   if (
@@ -521,5 +533,5 @@ export function buildRouterV2ResponseDraft(
       : buildWelcome(context);
   }
 
-  return appendResume("Continuemos con tu compra.", context);
+  return appendResume("¡Sigamos con tu compra! 🙂", context);
 }
