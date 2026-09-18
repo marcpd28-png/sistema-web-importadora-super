@@ -1,0 +1,373 @@
+{
+  "auditedAt": "2026-09-18T07:01:37.201Z",
+  "methodology": "Read-only inventory snapshot; phrasing invariance against the same selector short query is NOT independent relevance or real-customer accuracy. Synthetic guards use independent expected codes. No messages sent or PDFs generated.",
+  "inventory": {
+    "visible": 1688,
+    "inStock": 1688,
+    "availableWithPhotoReference": 1643,
+    "missingBrandColumn": 1687,
+    "missingBothBrandColumnAndAttribute": 806,
+    "withoutSpecifications": 4,
+    "publishedProfiles": 1379,
+    "withoutPhotoReference": 45
+  },
+  "phrasing": {
+    "tested": 910,
+    "identical": 260,
+    "groups": {
+      "short": {
+        "tested": 130,
+        "identical": 130
+      },
+      "case_accents": {
+        "tested": 130,
+        "identical": 130
+      },
+      "conditional": {
+        "tested": 130,
+        "identical": 0
+      },
+      "purpose": {
+        "tested": 130,
+        "identical": 0
+      },
+      "polite": {
+        "tested": 130,
+        "identical": 0
+      },
+      "help": {
+        "tested": 130,
+        "identical": 0
+      },
+      "followup": {
+        "tested": 130,
+        "identical": 0
+      }
+    },
+    "changed": 650,
+    "zeroResults": 650,
+    "failureSamples": [
+      {
+        "scope": "catálogo categoría PARLANTES",
+        "phrasing": "conditional",
+        "query": "Buen día, ¿sería posible que me compartieran catálogo categoría PARLANTES cuando puedan?",
+        "expectedCount": 290,
+        "actualCount": 0,
+        "missingCount": 290,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría PARLANTES",
+        "phrasing": "purpose",
+        "query": "Estoy armando mi pedido y me gustaría revisar catálogo categoría PARLANTES antes de decidir.",
+        "expectedCount": 290,
+        "actualCount": 0,
+        "missingCount": 290,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría PARLANTES",
+        "phrasing": "polite",
+        "query": "Necesitaría por favor catálogo categoría PARLANTES para evaluar opciones.",
+        "expectedCount": 290,
+        "actualCount": 0,
+        "missingCount": 290,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría PARLANTES",
+        "phrasing": "help",
+        "query": "¿Me ayudarías a conseguir catálogo categoría PARLANTES? Es para mi negocio.",
+        "expectedCount": 290,
+        "actualCount": 0,
+        "missingCount": 290,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría PARLANTES",
+        "phrasing": "followup",
+        "query": "Quedo atento a que me faciliten catálogo categoría PARLANTES, muchas gracias.",
+        "expectedCount": 290,
+        "actualCount": 0,
+        "missingCount": 290,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría NOVEDADES",
+        "phrasing": "conditional",
+        "query": "Buen día, ¿sería posible que me compartieran catálogo categoría NOVEDADES cuando puedan?",
+        "expectedCount": 121,
+        "actualCount": 0,
+        "missingCount": 121,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría NOVEDADES",
+        "phrasing": "purpose",
+        "query": "Estoy armando mi pedido y me gustaría revisar catálogo categoría NOVEDADES antes de decidir.",
+        "expectedCount": 121,
+        "actualCount": 0,
+        "missingCount": 121,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría NOVEDADES",
+        "phrasing": "polite",
+        "query": "Necesitaría por favor catálogo categoría NOVEDADES para evaluar opciones.",
+        "expectedCount": 121,
+        "actualCount": 0,
+        "missingCount": 121,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría NOVEDADES",
+        "phrasing": "help",
+        "query": "¿Me ayudarías a conseguir catálogo categoría NOVEDADES? Es para mi negocio.",
+        "expectedCount": 121,
+        "actualCount": 0,
+        "missingCount": 121,
+        "additionalCount": 0,
+        "pass": false
+      },
+      {
+        "scope": "catálogo categoría NOVEDADES",
+        "phrasing": "followup",
+        "query": "Quedo atento a que me faciliten catálogo categoría NOVEDADES, muchas gracias.",
+        "expectedCount": 121,
+        "actualCount": 0,
+        "missingCount": 121,
+        "additionalCount": 0,
+        "pass": false
+      }
+    ]
+  },
+  "guards": {
+    "tested": 16,
+    "passed": 7,
+    "results": [
+      {
+        "id": "device_not_accessory",
+        "query": "catálogo audífonos JBL Bluetooth",
+        "expected": [
+          "A1"
+        ],
+        "actual": [
+          "A2",
+          "A1"
+        ],
+        "pass": false
+      },
+      {
+        "id": "tv_not_tv_box",
+        "query": "catálogo tv",
+        "expected": [
+          "TV1"
+        ],
+        "actual": [
+          "TVB"
+        ],
+        "pass": false
+      },
+      {
+        "id": "no_cross_family_typo",
+        "query": "catálogo shaver",
+        "expected": [],
+        "actual": [
+          "W1"
+        ],
+        "pass": false
+      },
+      {
+        "id": "base_not_pro",
+        "query": "catálogo Redmi note 14 256GB",
+        "expected": [
+          "R1"
+        ],
+        "actual": [
+          "R1"
+        ],
+        "pass": true
+      },
+      {
+        "id": "literal_code",
+        "query": "código BT454",
+        "expected": [
+          "BT454"
+        ],
+        "actual": [
+          "BT454"
+        ],
+        "pass": true
+      },
+      {
+        "id": "literal_dotted_code",
+        "query": "código BT454.",
+        "expected": [
+          "BT454."
+        ],
+        "actual": [
+          "BT454."
+        ],
+        "pass": true
+      },
+      {
+        "id": "negated_color",
+        "query": "catálogo cargadores SUPER sin blanco",
+        "expected": [
+          "C1"
+        ],
+        "actual": [
+          "C1"
+        ],
+        "pass": true
+      },
+      {
+        "id": "global_budget",
+        "query": "catálogo cargadores y audífonos, todos hasta 100 soles",
+        "expected": [
+          "C1",
+          "A1"
+        ],
+        "actual": [
+          "A2",
+          "A1",
+          "C2",
+          "C1"
+        ],
+        "pass": false
+      },
+      {
+        "id": "shared_color",
+        "query": "catálogo cargadores y audífonos, todos negros",
+        "expected": [
+          "C1",
+          "A1"
+        ],
+        "actual": [
+          "A1",
+          "C2",
+          "C1"
+        ],
+        "pass": false
+      },
+      {
+        "id": "unknown_brand",
+        "query": "catálogo cargadores marca INEXISTENTE",
+        "expected": [],
+        "actual": [],
+        "pass": true
+      },
+      {
+        "id": "power_is_not_money",
+        "query": "catálogo cargadores hasta 100W",
+        "actual": {
+          "colors": [],
+          "excluded": [],
+          "minPrice": null,
+          "maxPrice": 100
+        },
+        "pass": false
+      },
+      {
+        "id": "price_and_stock",
+        "messages": [
+          "precio y stock del JBL charge 6"
+        ],
+        "kinds": [
+          "PRICE",
+          "STOCK"
+        ],
+        "actualKinds": [
+          "PRICE",
+          "STOCK"
+        ],
+        "catalogSubjects": [],
+        "lastQuantity": null,
+        "pass": true
+      },
+      {
+        "id": "product_and_payment",
+        "messages": [
+          "el cargador SUPER de 65W cuánto sale y se puede pagar con Yape"
+        ],
+        "kinds": [
+          "PRICE",
+          "PAYMENT"
+        ],
+        "actualKinds": [
+          "PAYMENT"
+        ],
+        "catalogSubjects": [],
+        "pass": false
+      },
+      {
+        "id": "product_and_shipping",
+        "messages": [
+          "necesito cargadores SUPER y saber cuánto cuesta el envío"
+        ],
+        "kinds": [
+          "SEARCH",
+          "SHIPPING"
+        ],
+        "actualKinds": [
+          "SHIPPING"
+        ],
+        "catalogSubjects": [],
+        "pass": false
+      },
+      {
+        "id": "split_catalog",
+        "messages": [
+          "quiero catálogo",
+          "de cargadores",
+          "y de audífonos"
+        ],
+        "kinds": [
+          "CATALOG"
+        ],
+        "catalogContains": [
+          "cargadores",
+          "audífonos"
+        ],
+        "actualKinds": [
+          "CATALOG",
+          "SEARCH"
+        ],
+        "catalogSubjects": [
+          "quiero catálogo"
+        ],
+        "pass": false
+      },
+      {
+        "id": "quantity_followup",
+        "messages": [
+          "precio JBL charge 6",
+          "dos unidades"
+        ],
+        "kinds": [
+          "PRICE"
+        ],
+        "lastQuantity": 2,
+        "actualKinds": [
+          "PRICE"
+        ],
+        "catalogSubjects": [],
+        "pass": true
+      }
+    ]
+  },
+  "source": {
+    "webRevision": "683eae27fa862fbd88da4bba1dfd56f592efc762",
+    "routerRevision": "d8e607b6b2632a6feecca08e224ad83f4fad2a67",
+    "note": "The audited application revision was checked before execution. Later working-tree changes are not included."
+  },
+  "privateFullReport": "/home/IMPORTADORA/.cache/bc-prevention-20260918/report.json"
+}
