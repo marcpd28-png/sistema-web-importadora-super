@@ -680,7 +680,12 @@ export async function POST(request: Request) {
       orderStatus,
     });
 
-    const draftText = (priceChangedBeforeOrder ? "El precio cambió desde el último resumen. Revisa el importe actualizado antes de confirmar.\n\n" : "") + buildRouterV2ResponseDraft(
+    const changedQuoteNotice = priceChangedBeforeOrder
+      ? currentState?.quantity !== quantityForPricing
+        ? "Actualicé la cantidad de tu pedido. Revisa el total antes de confirmar.\n\n"
+        : "El precio cambió desde el último resumen. Revisa el importe actualizado antes de confirmar.\n\n"
+      : "";
+    const draftText = changedQuoteNotice + buildRouterV2ResponseDraft(
       responseContext,
       { isFirstResponse: conversation.messages.length === 0 },
     );

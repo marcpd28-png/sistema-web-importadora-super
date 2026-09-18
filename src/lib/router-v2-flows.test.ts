@@ -161,6 +161,13 @@ test("quantity can be corrected while confirming price", () => {
   assert.ok(analysis.intents.includes("QUANTITY"));
 });
 
+test("final summary accepts explicit quantity corrections, but not bare document/address numbers", () => {
+  for (const [content, expected] of [["mejor 4", 4], ["cambia a 6 unidades", 6], ["12345678", undefined], ["42", undefined]] as const) {
+    const analysis = applyRouterV2ContextualSlots({ analysis: analyzeRouterV2Message({ content }), content, stage: "AWAITING_ORDER_CONFIRMATION" });
+    assert.equal(analysis.slots.quantity, expected, content);
+  }
+});
+
 test("purchase confirmation advances to quantity", () => {
   const checkout = resolveRouterV2CheckoutFlow({
     content: "sí",

@@ -30,10 +30,16 @@ export function applyRouterV2ContextualSlots(input: {
 
   if (
     input.stage !== "AWAITING_QUANTITY" &&
-    input.stage !== "AWAITING_PRICE_CONFIRMATION"
+    input.stage !== "AWAITING_PRICE_CONFIRMATION" &&
+    input.stage !== "AWAITING_ORDER_CONFIRMATION"
   ) {
     return input.analysis;
   }
+
+  // At the final summary, a bare number could be a document/address correction.
+  // Change quantity only when the customer explicitly asks for it.
+  if (input.stage === "AWAITING_ORDER_CONFIRMATION" &&
+      !/^(?:mejor|cambia(?:lo)?\s+a|pon(?:me)?|serian|serían|quiero|dame)\s+/i.test(input.content.trim())) return input.analysis;
 
   const quantity = parseContextualQuantity(input.content);
   if (quantity === null) return input.analysis;
