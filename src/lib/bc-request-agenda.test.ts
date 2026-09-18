@@ -220,3 +220,16 @@ test("una foto y cuatro mensajes mantienen pago, precio por cantidad y envío en
     }
   }
 });
+
+test("dos fotos en cinco mensajes conservan sus precios y referencias separados", () => {
+  const plan = planRequests(emptyAgenda(), [
+    { id: "i1", content: "", imageReference: { code: "A1", label: "la foto 1 de este grupo" } },
+    { id: "q1", content: "precio de este" },
+    { id: "i2", content: "", imageReference: { code: "P1", label: "la foto 2 de este grupo" } },
+    { id: "q2", content: "precio de este" },
+    { id: "p", content: "aceptan yape" },
+  ], index);
+  assert.deepEqual(plan.agenda.requests.map(job => job.kind), ["PRICE", "PRICE", "PAYMENT"]);
+  assert.deepEqual(plan.agenda.requests.slice(0, 2).map(job => plan.agenda.topics.find(topic => topic.id === job.topicId)?.selectedCode), ["A1", "P1"]);
+  assert.deepEqual(plan.agenda.requests.slice(0, 2).map(job => job.sourceMessageIds), [["i1", "q1"], ["i2", "q2"]]);
+});

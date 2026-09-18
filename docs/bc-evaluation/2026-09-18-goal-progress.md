@@ -137,3 +137,12 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Se amplió la prueba `scripts/bc-evaluation/checkout-live.cjs` con las correcciones de documento para comprobar también el paso por el simulador y n8n.
 - Continúan pendientes otras correcciones de datos, varios artículos y comprensión visual general; el objetivo completo sigue abierto.
 - Recorrido real completado en VPS por simulador → n8n → motor: boleta→factura/RUC→boleta/DNI, cantidad tres, total 345 y recojo conservados, pedido SIM solo tras confirmar y voucher pendiente de validación. Sin pedidos reales; contacto temporal eliminado. Evidencia: `2026-09-18-checkout-documents.json`.
+
+## Fotos y preguntas intercaladas en un mismo grupo
+
+- Web `8f7f632`, publicada y activa con compilación aislada y respaldo. Antes cualquier adjunto descartaba la agenda completa. Ahora los grupos de imágenes y texto fuera del checkout conservan consultas y referencias en orden. Un adjunto individual y los comprobantes del checkout mantienen su flujo especializado.
+- Una foto original idéntica y única del catálogo puede identificar el código sin proveedor de IA. Si no se identifica, se responde una aclaración específica para esa foto, sin inventar precio ni omitir pago/envío u otras consultas. Cada imagen conserva su tema separado; foto + pregunta + cantidad forman una sola consulta con todos sus mensajes de origen.
+- No se aprende «foto 1 de este grupo» como alias permanente del cliente. Una aclaración posterior por código recupera la cantidad pendiente. Audios y otros adjuntos continúan en el flujo especializado; esto no demuestra comprensión visual general de capturas o redes.
+- Pasaron 86 pruebas de regresión, TypeScript, ESLint, build e integración del handler con base PostgreSQL temporal. Prueba adicional de dos fotos en cinco mensajes pasó y verifica que cada precio conserva su producto y sus mensajes de origen.
+- Verificación administrativa → n8n → agenda en VPS: cinco mensajes con foto real N1321 produjeron pago → precio de dos unidades (258) → envío. Con foto desconocida: pago → aclaración de foto → envío, cantidad dos pendiente, ningún precio inventado. Ambos sin respuestas tardías duplicadas; contactos temporales eliminados. Evidencia: `2026-09-18-mixedimage-live.json`.
+- El objetivo sigue abierto: comprensión visual/social general, más variantes de compra y correcciones de datos, y evaluación más amplia de conversaciones reales.
