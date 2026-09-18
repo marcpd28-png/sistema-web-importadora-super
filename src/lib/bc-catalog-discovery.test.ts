@@ -68,3 +68,14 @@ test("sentence punctuation does not lose an exact model while real dotted SKUs r
   }
   assert.deepEqual(inventory.select("código N2221-OTRO").products, []);
 });
+
+test("battery discovery excludes battery chargers while retaining portable power banks and cells", () => {
+  const inventory = createCatalogIndex([
+    { code: "CH", name: "CARGADOR DE BATERIA 5 EN 1", brand: null, category: "ACCESORIOS PARA AUTO" },
+    { code: "PW", name: "CARGADOR PORTATIL 5000MAH", brand: null, category: "ACCESORIOS PARA CELULARES" },
+    { code: "BT", name: "BATERIA RECARGABLE", brand: null, category: "BATERIAS" },
+    { code: "AA", name: "PILA ALCALINA", brand: null, category: "ARTICULOS PARA EL HOGAR" },
+  ]);
+  assert.deepEqual(inventory.select("Estoy buscando productos de baterías. ¿Qué tienen disponibles?").products.map(product => product.code).sort(), ["AA", "BT", "PW"]);
+  assert.deepEqual(inventory.select("cargadores de batería").products.map(product => product.code), ["CH"]);
+});

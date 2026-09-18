@@ -54,10 +54,12 @@ function nearWord(a: string, b: string) {
 function matchesCategory(product: CatalogCandidate, category: typeof categories[number]) {
   const name=normalizeCatalogText(product.name.replace(/^\([^)]*\)\s*/, ""));
   // A case/cable for headphones or a microphone for a speaker is not the device itself.
-  const primaryType = name.match(/\b(?:audifonos?|auriculares?|headphones?|parlantes?|speakers?|proyectores?|fundas?|estuches?|soportes?|cables?|adaptadores?|microfonos?|baterias?)\b/)?.[0] || "";
-  if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria)/.test(primaryType)) return false;
+  const primaryType = name.match(/\b(?:audifonos?|auriculares?|headphones?|parlantes?|speakers?|proyectores?|fundas?|estuches?|soportes?|cables?|adaptadores?|microfonos?|baterias?|cargador(?:es)?|chargers?|pilas?)\b/)?.[0] || "";
+  if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria|cargador|charger)/.test(primaryType)) return false;
   if (category.stored === "AURICULARES" && /^(parlante|speaker|proyector)/.test(primaryType)) return false;
   if (category.stored === "PARLANTES" && /^(audifono|auricular|headphone|proyector)/.test(primaryType)) return false;
+  if (category.stored === "BATERIAS" && /^(?:funda|estuche|soporte|cable|adaptador|microfono|cargador|charger)/.test(primaryType)
+    && !/\b(?:cargador portatil|power ?bank)\b/.test(name)) return false;
   const stored=normalizeCatalogText(product.category || "");
   if(category.stored === "CARGADORES") {
     // A charger can follow an ERP prefix or a brand, but an item WITH/FOR a charger is not a charger.
@@ -164,7 +166,10 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     // A real inventory type takes precedence over fuzzy spelling corrections (casacas ≠ cámaras).
     const aliasMatches = (t: string, c: typeof categories[number]) => c.aliases.includes(t) ||
       (!types.some(kind => wordMatches(kind,t)) && c.aliases.some(a => nearWord(t,a)));
-    const aliases = requestedCategories.length ? [] : categories.filter(c => tokens.some(t => aliasMatches(t,c)));
+    // Lists are already separated by splitScopes. Within one scope the first type
+    // is the item: "cargador de batería" must not mean chargers OR batteries.
+    const firstAlias = requestedCategories.length ? undefined : tokens.flatMap(t => categories.filter(c => aliasMatches(t,c)))[0];
+    const aliases = firstAlias ? [firstAlias] : [];
     const remaining = tokens.filter(t => !aliases.some(c => aliasMatches(t,c)));
     const requestedTypes = !screenExtenders && !aliases.length && !remaining.some(t => /\d/.test(t))
       ? remaining.slice(0,1).filter(t => types.some(kind => wordMatches(kind,t))) : [];
