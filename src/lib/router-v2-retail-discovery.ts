@@ -1,4 +1,4 @@
-import { getPreferredProductImageUrl } from "@/lib/product-media";
+import { getBotProductImageUrls } from "@/lib/bot-product-availability";
 import { prisma } from "@/lib/prisma";
 
 export type RouterV2RetailProduct = {
@@ -98,7 +98,6 @@ export async function discoverRouterV2RetailProducts(input: {
       AND: filters,
     },
     orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
-    take,
     select: {
       code: true,
       slug: true,
@@ -106,6 +105,7 @@ export async function discoverRouterV2RetailProducts(input: {
       brand: true,
       category: true,
       localImageUrl: true,
+      sourceImageUrl: true,
       imageUrl: true,
       media: {
         orderBy: { sortOrder: "asc" },
@@ -119,17 +119,13 @@ export async function discoverRouterV2RetailProducts(input: {
     },
   });
 
-  const matches = products.map((product) => ({
+  const matches = products.filter(product => getBotProductImageUrls(product).length).slice(0, take).map((product) => ({
     code: product.code,
     slug: product.slug,
     name: product.name,
     brand: product.brand,
     category: product.category,
-    imageUrl: getPreferredProductImageUrl({
-      localImageUrl: product.localImageUrl,
-      imageUrl: product.imageUrl,
-      media: product.media,
-    }),
+    imageUrl: getBotProductImageUrls(product)[0],
     unitPrice: Number(product.unitPrice),
     wholesalePrice:
       product.wholesalePrice === null ? null : Number(product.wholesalePrice),

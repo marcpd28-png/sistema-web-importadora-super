@@ -207,12 +207,14 @@ export function buildRouterV2ResponseDraft(
     return "Recibí la imagen, pero todavía no puedo asegurar qué producto exacto es. Envíame una foto donde se vea la marca, modelo, código o etiqueta de la caja para identificarlo sin adivinar.";
   }
 
-  if (answerType === "PRODUCT_UNAVAILABLE" || answerType === "PRODUCT_OUT_OF_STOCK") {
+  if (answerType === "PRODUCT_UNAVAILABLE" || answerType === "PRODUCT_OUT_OF_STOCK" || answerType === "PRODUCT_NO_PHOTO" || answerType === "PRODUCT_OUT_OF_STOCK_NO_PHOTO") {
     const label = productQueryTokens(context.customerMessage).join(" ");
     const subject = label ? `el producto que consultas (${label})` : "el producto que consultas";
-    return answerType === "PRODUCT_OUT_OF_STOCK"
-      ? `Por ahora ${subject} está agotado. ¿Quieres que busque alternativas disponibles?`
-      : `Por ahora no tengo disponible ${subject} en nuestro catálogo. ¿Quieres que busque alternativas disponibles?`;
+    if (answerType === "PRODUCT_NO_PHOTO") return `Sobre ${subject}: este producto actualmente no tiene una foto disponible.`;
+    if (answerType === "PRODUCT_OUT_OF_STOCK" || answerType === "PRODUCT_OUT_OF_STOCK_NO_PHOTO") {
+      return `Sobre ${subject}: este producto actualmente se encuentra sin stock.${answerType === "PRODUCT_OUT_OF_STOCK_NO_PHOTO" ? " Tampoco tiene una foto disponible." : ""}`;
+    }
+    return `Por ahora no tengo disponible ${subject} en nuestro catálogo. ¿Quieres que busque alternativas disponibles?`;
   }
 
   if (answerType === "PRODUCT_CLARIFICATION") {

@@ -1,4 +1,5 @@
 import type { RouterV2VisualResolution } from "@/lib/router-v2-visual-product-resolver";
+import { unavailableProductAction } from "@/lib/router-v2-text-product-resolver";
 
 export function buildRouterV2VisualDecision(
   resolution: RouterV2VisualResolution | null,
@@ -7,7 +8,7 @@ export function buildRouterV2VisualDecision(
 
   if (resolution.status === "UNAVAILABLE") {
     return {
-      action: resolution.unavailableReason === "OUT_OF_STOCK" ? "PRODUCT_OUT_OF_STOCK" as const : "PRODUCT_UNAVAILABLE" as const,
+      action: unavailableProductAction(resolution.unavailableReason),
       shownProducts: [], selectedProductCandidate: null,
     };
   }

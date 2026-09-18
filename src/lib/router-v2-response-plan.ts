@@ -15,6 +15,8 @@ export type RouterV2AnswerType =
   | "PRODUCT_CLARIFICATION"
   | "PRODUCT_UNAVAILABLE"
   | "PRODUCT_OUT_OF_STOCK"
+  | "PRODUCT_NO_PHOTO"
+  | "PRODUCT_OUT_OF_STOCK_NO_PHOTO"
   | "IMAGE_PRODUCT_CLARIFICATION"
   | "VARIANT_OPTIONS"
   | "VARIANT_CLARIFICATION"
@@ -166,7 +168,7 @@ export function buildRouterV2ResponsePlan(input: {
     return { answerType: "HUMAN_HANDOFF", resumeAction: "NONE" };
   }
 
-  if (input.finalAction === "PRODUCT_UNAVAILABLE" || input.finalAction === "PRODUCT_OUT_OF_STOCK") {
+  if (input.finalAction === "PRODUCT_UNAVAILABLE" || input.finalAction === "PRODUCT_OUT_OF_STOCK" || input.finalAction === "PRODUCT_NO_PHOTO" || input.finalAction === "PRODUCT_OUT_OF_STOCK_NO_PHOTO") {
     return { answerType: input.finalAction, resumeAction: "NONE" };
   }
 

@@ -487,9 +487,11 @@ export async function POST(request: Request) {
       : null;
 
     // Recheck a previously selected item too: it may have sold out or been hidden.
-    if (selectedProductCodeForInfo && (!productInformation || !productInformation.available) &&
+    if (selectedProductCodeForInfo && (!productInformation || !productInformation.available || !productInformation.imageUrl) &&
         !["HUMAN_HANDOFF", "ANSWER_ORDER_STATUS"].includes(nextAction)) {
-      responseAction = productInformation ? "PRODUCT_OUT_OF_STOCK" : "PRODUCT_UNAVAILABLE";
+      responseAction = !productInformation ? "PRODUCT_UNAVAILABLE"
+        : productInformation.available ? "PRODUCT_NO_PHOTO"
+        : productInformation.imageUrl ? "PRODUCT_OUT_OF_STOCK" : "PRODUCT_OUT_OF_STOCK_NO_PHOTO";
       proposedStatePatch = buildRouterV2DecisionStatePatch({
         basePatch: proposedStatePatch, finalAction: responseAction,
         productDecision: null, productReference: null,

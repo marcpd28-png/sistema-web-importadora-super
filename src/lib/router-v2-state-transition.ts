@@ -31,7 +31,7 @@ export function buildRouterV2DecisionStatePatch(input: {
     ...input.basePatch,
   };
 
-  if (["ASK_PRODUCT_CLARIFICATION", "PRODUCT_OUT_OF_STOCK", "PRODUCT_UNAVAILABLE"].includes(input.finalAction)) {
+  if (["ASK_PRODUCT_CLARIFICATION", "PRODUCT_OUT_OF_STOCK", "PRODUCT_UNAVAILABLE", "PRODUCT_NO_PHOTO", "PRODUCT_OUT_OF_STOCK_NO_PHOTO"].includes(input.finalAction)) {
     patch.stage = "AWAITING_PRODUCT_QUERY";
     patch.shownProducts = null;
     patch.selectedProductCode = null;

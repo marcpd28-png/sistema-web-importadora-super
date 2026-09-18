@@ -16,7 +16,7 @@ import { analyzeRouterV2Message } from "@/lib/conversation-router-v2";
 function product(id: string, name: string, brand = "", overrides = {}) {
   return { id, code: id, externalCode: null, name, brand, category: null, slug: id,
     isVisible: true, stockUnits: 5, unitPrice: 99, wholesalePrice: null, wholesaleMinQty: 3,
-    imageUrl: null, localImageUrl: null, media: [], ...overrides };
+    imageUrl: "/uploads/products/photo.jpg", localImageUrl: null, media: [], ...overrides };
 }
 const inventory = [
   product("CE105", "CELULAR REDMI NOTE 15 8+256GB BLACK", "XIAOMI", { isVisible: false, stockUnits: 0, unitPrice: 899 }),
@@ -84,7 +84,7 @@ test("availability rule protects hidden data and applies to every product family
     if (args.where?.isVisible) found = found.filter((p) => p.isVisible);
     if (args.where?.stockUnits) found = found.filter((p) => p.stockUnits > args.where!.stockUnits!.gt);
     return found.slice(0, args.take).map((p) => Object.fromEntries(Object.keys(args.select).map((key) => [key, p[key as keyof typeof p]])));
-  }) as typeof prisma.product.findMany;
+  }) as unknown as typeof prisma.product.findMany;
   const hidden = await resolveRouterV2TextProduct("Readmi note 15 de 256, precio x favor");
   assert.equal(hidden.status, "UNAVAILABLE");
   assert.equal(hidden.unavailableReason, "NOT_PUBLIC");
@@ -98,6 +98,18 @@ test("availability rule protects hidden data and applies to every product family
   assert.equal((await resolveRouterV2TextProduct("JBL charge 6")).status, "MULTIPLE");
   assert.equal((await resolveRouterV2TextProduct("JBL charge 99")).status, "NOT_FOUND");
   assert.equal((await resolveRouterV2TextProduct("precio por favor")).status, "NO_QUERY");
+
+  rows.find(p => p.id === "JB6B")!.imageUrl = "/uploads/placeholder.jpg";
+  const withPhoto = await resolveRouterV2TextProduct("JBL charge 6");
+  assert.deepEqual(withPhoto.matches.map(p => p.code), ["JB6"]);
+  const withoutPhoto = await resolveRouterV2TextProduct("JB6B");
+  assert.equal(withoutPhoto.unavailableReason, "NO_PHOTO");
+  assert.deepEqual(withoutPhoto.matches, []);
+  assert.equal(buildRouterV2ProductDecision(withoutPhoto)?.action, "PRODUCT_NO_PHOTO");
+  rows.find(p => p.id === "JB6B")!.stockUnits = 0;
+  assert.equal((await resolveRouterV2TextProduct("JB6B")).unavailableReason, "OUT_OF_STOCK_NO_PHOTO");
+  const visualNoPhoto = await resolveRouterV2VisualProduct({ code: "JB6B", confidence: 0.95 });
+  assert.equal(visualNoPhoto.status, "UNAVAILABLE");
 
   // Cached identity must never cache commercial availability or price.
   rows.find((p) => p.id === "SA55")!.unitPrice = 149;
@@ -123,7 +135,17 @@ test("availability rule protects hidden data and applies to every product family
   assert.doesNotMatch(draft, /899|123|246|S\/|identificar|comprar este/);
   assert.deepEqual(buildRouterV2OutboundMessages({ context, draftText: draft }).map((m) => m.type), ["TEXT"]);
   const stockPlan = buildRouterV2ResponsePlan({ finalAction: "PRODUCT_OUT_OF_STOCK", state: null });
-  assert.match(buildRouterV2ResponseDraft(buildRouterV2ResponseContext({ customerMessage: "JBL charge 7", responsePlan: stockPlan, state: null, commercialPrice: null })), /agotado.*alternativas/);
+  assert.match(buildRouterV2ResponseDraft(buildRouterV2ResponseContext({ customerMessage: "JBL charge 7", responsePlan: stockPlan, state: null, commercialPrice: null })), /actualmente se encuentra sin stock/);
+  for (const action of ["PRODUCT_NO_PHOTO", "PRODUCT_OUT_OF_STOCK_NO_PHOTO"]) {
+    const unavailablePlan = buildRouterV2ResponsePlan({ finalAction: action, state: null });
+    assert.equal(unavailablePlan.resumeAction, "NONE");
+    const unavailableContext = buildRouterV2ResponseContext({ customerMessage: "parlante JBL", responsePlan: unavailablePlan, state: null, commercialPrice: null });
+    const message = buildRouterV2ResponseDraft(unavailableContext);
+    assert.match(message, /foto disponible/);
+    assert.doesNotMatch(message, /S\/|comprar|99/);
+    assert.deepEqual(buildRouterV2OutboundMessages({ context: unavailableContext, draftText: message }).map(m => m.type), ["TEXT"]);
+    assert.equal(buildRouterV2DecisionStatePatch({ basePatch: { selectedProductCode: "JB6B", total: 99 }, finalAction: action, productDecision: null, productReference: null }).selectedProductCode, null);
+  }
 });
 
 test("specific product questions are not swallowed by retail/catalog mode", () => {

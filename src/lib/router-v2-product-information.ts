@@ -1,4 +1,4 @@
-import { getPreferredProductImageUrl } from "@/lib/product-media";
+import { getBotProductImageUrls } from "@/lib/bot-product-availability";
 import { prisma } from "@/lib/prisma";
 
 function normalize(value: string) {
@@ -62,6 +62,7 @@ export async function getRouterV2ProductInformation(
       technicalSpecs: true,
       imageUrl: true,
       localImageUrl: true,
+      sourceImageUrl: true,
       unitPrice: true,
       wholesalePrice: true,
       wholesaleMinQty: true,
@@ -120,11 +121,7 @@ export async function getRouterV2ProductInformation(
     technicalSpecs: product.technicalSpecs,
     descriptionShort: publishedProfile?.descriptionShort ?? null,
     descriptionFull: publishedProfile?.descriptionFull ?? null,
-    imageUrl: getPreferredProductImageUrl({
-      localImageUrl: product.localImageUrl,
-      imageUrl: product.imageUrl,
-      media: product.media,
-    }),
+    imageUrl: getBotProductImageUrls(product)[0] ?? null,
     media: product.media,
     unitPrice: Number(product.unitPrice),
     wholesalePrice:
