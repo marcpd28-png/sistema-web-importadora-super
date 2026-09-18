@@ -15,7 +15,7 @@ const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalog
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
 const BRAND_PRIMARY = "#2320DA";
-const CATALOG_LAYOUT_VERSION = "all-catalogs-two-products-v7";
+const CATALOG_LAYOUT_VERSION = "all-catalogs-mobile-borderless-v8";
 
 type CatalogProductImage = {
   id: string;
@@ -260,48 +260,47 @@ type ScopedCatalogItem = CatalogProductImage & { brand: string | null; category:
 
 export function renderScopedCatalogPdf(items: { image: Buffer | null; name: string; code: string; brand: string }[], title: string) {
   return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ autoFirstPage: false, compress: true, size: "A4", layout: "landscape", margin: 0,
+    // A long portrait sheet keeps two products while giving each the full phone width.
+    const pageWidth = 595.28;
+    const pageHeight = 1683.78;
+    const doc = new PDFDocument({ autoFirstPage: false, compress: true, size: [pageWidth, pageHeight], margin: 0,
       info: { Title: title, Author: "Importaciones Super", Subject: title } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
     doc.on("error", reject);
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     const productsPerPage = 2;
-    const pageWidth = 841.89;
-    const margin = 24;
-    const gap = 16;
+    const margin = 18;
+    const headerHeight = 72;
+    const gap = 28;
     const contentWidth = pageWidth - margin * 2;
-    const cardWidth = (contentWidth - gap) / productsPerPage;
-    const innerWidth = cardWidth - 24;
+    const productHeight = (pageHeight - headerHeight - 26 - gap) / productsPerPage;
+    const imageHeight = productHeight - 64;
     const pages = Math.ceil(items.length / productsPerPage);
     for (let page = 0; page < pages; page++) {
       doc.addPage();
-      doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(19);
-      let titleSize = 19;
-      while (doc.heightOfString(title, { width: contentWidth }) > 44 && titleSize > 10) doc.fontSize(--titleSize);
-      doc.text(title, margin, 16, { width: contentWidth, height: 44, align: "center" });
-      doc.fillColor("#666666").font("Helvetica").fontSize(9)
-        .text(`Importaciones Super | ${items.length} productos | Agrupados por marca`, margin, 66, { width: contentWidth, align: "center" });
+      doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(18);
+      let titleSize = 18;
+      while (doc.heightOfString(title, { width: contentWidth }) > 32 && titleSize > 10) doc.fontSize(--titleSize);
+      doc.text(title, margin, 12, { width: contentWidth, height: 32, ellipsis: true, align: "center" });
+      doc.fillColor("#666666").font("Helvetica").fontSize(10)
+        .text(`Importaciones Super | ${items.length} productos`, margin, 48, { width: contentWidth, align: "center" });
       for (let slot = 0; slot < productsPerPage; slot++) {
         const item = items[page * productsPerPage + slot];
         if (!item) break;
-        const x = margin + slot * (cardWidth + gap);
-        const y = 90;
-        doc.roundedRect(x, y, cardWidth, 464, 8).lineWidth(0.6).strokeColor("#DEDEEE").stroke();
-        doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(10)
-          .text(item.brand, x + 12, y + 10, { width: innerWidth, align: "center", height: 24 });
-        if (item.image) doc.image(item.image, x + 12, y + 36, { fit: [innerWidth, 350], align: "center", valign: "center" });
-        else doc.fillColor("#777777").font("Helvetica").fontSize(12)
-          .text("Imagen no disponible", x + 12, y + 200, { width: innerWidth, align: "center" });
-        doc.fillColor("#17172B").font("Helvetica-Bold").fontSize(11);
-        let size = 11;
-        while (doc.heightOfString(item.name, { width: innerWidth }) > 38 && size > 8) doc.fontSize(--size);
-        doc.text(item.name, x + 12, y + 396, { width: innerWidth, height: 38, ellipsis: true, align: "center" });
-        doc.fillColor(BRAND_PRIMARY).font("Helvetica").fontSize(10)
-          .text(`Código: ${item.code}`, x + 12, y + 442, { width: innerWidth, height: 16, ellipsis: true, align: "center" });
+        const y = headerHeight + slot * (productHeight + gap);
+        if (item.image) doc.image(item.image, margin, y, { fit: [contentWidth, imageHeight], align: "center", valign: "center" });
+        else doc.fillColor("#777777").font("Helvetica").fontSize(14)
+          .text("Imagen no disponible", margin, y + imageHeight / 2, { width: contentWidth, align: "center" });
+        doc.fillColor("#17172B").font("Helvetica-Bold").fontSize(14);
+        let size = 14;
+        while (doc.heightOfString(item.name, { width: contentWidth }) > 34 && size > 11) doc.fontSize(--size);
+        doc.text(item.name, margin, y + imageHeight + 8, { width: contentWidth, height: 34, ellipsis: true, align: "center" });
+        doc.fillColor(BRAND_PRIMARY).font("Helvetica").fontSize(12)
+          .text(`Código: ${item.code}`, margin, y + imageHeight + 46, { width: contentWidth, height: 18, ellipsis: true, align: "center" });
       }
-      doc.fillColor("#666666").font("Helvetica").fontSize(9)
-        .text(`${page + 1} / ${pages}`, margin, 572, { width: contentWidth, align: "center" });
+      doc.fillColor("#666666").font("Helvetica").fontSize(10)
+        .text(`${page + 1} / ${pages}`, margin, pageHeight - 16, { width: contentWidth, align: "center" });
     }
     doc.end();
   });
