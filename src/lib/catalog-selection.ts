@@ -104,7 +104,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const storedBrand = catalogProductBrand(product);
     const explicitBrand = normalizeCatalogText(storedBrand || "");
     const brandKeys = explicitBrand
-      ? [explicitBrand]
+      ? brandEntries.filter(([key]) => hasPhrase(explicitBrand, key)).map(([key]) => key)
       : brandEntries.filter(([key]) => hasPhrase(
         key === "super" ? name.replace(/\bsuper\s+(?:carga|bass|fast|charge)\b/g, "") : name,
         key,

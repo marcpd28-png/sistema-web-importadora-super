@@ -56,6 +56,15 @@ test("brand metadata has precedence over compatibility mentions in a product nam
   assert.deepEqual(inventory.select("cargadores Samsung").products.map(product => product.code), ["Y"]);
 });
 
+test("compound manufacturer and sub-brand metadata remains searchable by either declared name", () => {
+  const inventory = createCatalogIndex([
+    { code: "R", name: "AUDIFONO BUDS", brand: null, category: "AURICULARES", specifications: [{ name: "Marca", value: "Xiaomi / Redmi" }] },
+  ], ["Xiaomi", "Redmi"]);
+  for (const brand of ["Xiaomi", "Redmi", "Xiaomi / Redmi"]) {
+    assert.deepEqual(inventory.select(`auriculares marca ${brand}`).products.map(product => product.code), ["R"]);
+  }
+});
+
 test("sentence punctuation does not lose an exact model while real dotted SKUs remain distinct", () => {
   const inventory = createCatalogIndex([
     { code: "N2221", name: "PROYECTOR HY500 PRO", brand: null, category: "PROYECTORES" },
