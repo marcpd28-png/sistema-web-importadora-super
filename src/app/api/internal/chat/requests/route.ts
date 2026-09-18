@@ -15,6 +15,7 @@ import { checkoutOwnsReply } from "@/lib/bc-checkout-routing";
 import { matchCatalogSourceImage } from "@/lib/router-v2-catalog-image-match";
 import { matchCatalogImageText } from "@/lib/router-v2-local-ocr";
 import type { CommercialMessage } from "@/lib/commercial-language";
+import { hasPurchaseIntent, splitPurchaseAdditions } from "@/lib/commercial-purchase-language";
 import { frequentCustomerFields, readCustomerMemory, recallCustomerProduct } from "@/lib/bc-customer-memory";
 
 export const runtime = "nodejs";
@@ -40,8 +41,10 @@ export async function POST(request: Request) {
     if (batch.media.length && (batch.fragments.length < 2 || batch.media.some(media => media.messageType !== "IMAGE") ||
         conversation.salesState?.stage?.startsWith("AWAITING_") && !["AWAITING_PRODUCT_QUERY", "AWAITING_PURCHASE_CONFIRMATION"].includes(conversation.salesState.stage))) return NextResponse.json({ ok: true, handled: false });
     const text = normalizeCommercialText(batch.content);
+    const multiPurchase = hasPurchaseIntent(batch.content) && splitPurchaseAdditions(batch.content).length > 1;
     // Existing purchase and human-handoff flows retain ownership of side-effecting operations.
-    if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|quiero comprar|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
+    if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
+      || !multiPurchase && /\bquiero comprar\b/.test(text)
       || /^(?:hola|buenos dias|buenas tardes|buenas noches|gracias|ok|si|no|comprar|lo quiero)$/.test(text)
       || checkoutOwnsReply(conversation.salesState?.stage, batch.content)) {
       return NextResponse.json({ ok: true, handled: false });
@@ -180,12 +183,13 @@ export async function POST(request: Request) {
       }
       if (!replies.length || replies.length > 90) return NextResponse.json({ ok: true, handled: false });
       const selectedTopic = agenda.topics.find(topic => topic.id === agenda.lastTopicId);
+      const purchaseTopics = new Set(agenda.requests.filter(job => job.purchaseRequested && job.status !== "CANCELLED").map(job => job.topicId));
       const selectedQuantity = [...agenda.requests].reverse().find(job => job.topicId === selectedTopic?.id && job.kind === "PRICE")?.quantity ?? null;
       const response = await persistBatch(new Request(new URL("../simulator-batch", request.url), { method: "POST", headers: { "content-type": "application/json", "x-internal-api-key": key }, body: JSON.stringify({
         ...input, requestId: `bc:${input.triggerMessageId}`, messages: replies,
         ...(memory ? { customerMemoryRevision: storedMemory?.revision ?? 0 } : {}),
         agenda: { expectedRevision: conversation.requestAgenda?.revision ?? 0, state: agendaSchema.parse(agenda) },
-        ...(selectedTopic ? { selection: { code: selectedTopic.selectedCode, quantity: selectedQuantity } } : {}),
+        ...(selectedTopic && purchaseTopics.size < 2 ? { selection: { code: selectedTopic.selectedCode, quantity: selectedQuantity } } : {}),
         inventory: catalog.products.filter(product => checked.has(product.id)).map(product => ({ id: product.id, updatedAt: product.updatedAt.toISOString(), stockUnits: product.stockUnits, unitPrice: String(product.unitPrice), wholesalePrice: product.wholesalePrice === null ? null : String(product.wholesalePrice), wholesaleMinQty: product.wholesaleMinQty })),
       }) }));
       const result = await response.json();

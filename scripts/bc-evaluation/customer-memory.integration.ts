@@ -42,6 +42,24 @@ async function main() {
     return replies.map(row => row.content).join("\n");
   }
   try {
+    const speakerName = "PARLANTE JBL PARTYBOX 330 BLACK";
+    const droneName = "DRON DJI AVATA 360 MOTION FLY MORE COMBO";
+    for (const fixture of [{ code: "O1008", name: speakerName, stockUnits: 17 }, { code: "O1001", name: droneName, stockUnits: 1 }]) {
+      const row = await prisma.product.create({ data: { ...fixture, slug: `memory-${run}-${fixture.code}`, imageUrl: "https://example.com/product.jpg", unitPrice: 100, isVisible: true } });
+      products.push(row.id);
+    }
+    const purchase = await conversation(await customer());
+    const purchaseReply = await send(purchase.id, `me interesa este producto ${speakerName} lo deseo comprar y tambien ${droneName} este quiero 2 unidades de este`);
+    assert(purchaseReply.indexOf(speakerName) >= 0 && purchaseReply.indexOf(speakerName) < purchaseReply.indexOf(droneName), purchaseReply);
+    assert.match(purchaseReply, /Cuántas unidades/);
+    assert.match(purchaseReply, /insuficientes para las 2 solicitadas/);
+    assert.doesNotMatch(purchaseReply, /No pude identificar/);
+    const purchaseAgenda = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: purchase.id } });
+    assert.deepEqual((purchaseAgenda.state as { requests: { quantity: number | null; purchaseRequested: boolean }[] }).requests.map(job => [job.quantity, job.purchaseRequested]), [[null, true], [2, true]]);
+    assert.equal(await prisma.conversationSalesState.findUnique({ where: { conversationId: purchase.id } }), null, "multi-product request must not silently enter a single-product checkout");
+    assert.match(await send(purchase.id, "del parlante quiero 1 unidad"), /1 unidad\(es\): S\/ 100\.00/);
+    const adjusted = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: purchase.id } });
+    assert.deepEqual((adjusted.state as { requests: { quantity: number | null }[] }).requests.map(job => job.quantity), [1, 2]);
     const product = await prisma.product.create({ data: { code: "N1321", slug: `memory-${run}`, name: "VENTILADOR DE PRUEBA", imageUrl: "https://example.com/ventilador.jpg", unitPrice: 37, stockUnits: 10, isVisible: true } });
     products.push(product.id);
     const photo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jT5sAAAAASUVORK5CYII=';
@@ -149,7 +167,7 @@ image.save(sys.stdout.buffer,format='JPEG')
     console.log("PASS: PostgreSQL memory migration, confirmed correction, cross-session recall, fresh price, learned FAQs with current specifications, no feedback loop, contact isolation, hidden SKU exclusion and cascade deletion");
   } finally {
     await prisma.chatContact.deleteMany({ where: { id: { in: contacts }, name: "Memory integration" } });
-    await prisma.product.deleteMany({ where: { id: { in: products }, slug: `memory-${run}` } });
+    await prisma.product.deleteMany({ where: { id: { in: products }, slug: { startsWith: `memory-${run}` } } });
     await prisma.$disconnect();
   }
 }

@@ -84,7 +84,7 @@ export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic 
     const availability = !inStock.length
       ? `Este producto actualmente se encuentra sin stock.${noPhoto ? " Tampoco tiene una foto disponible." : ""}`
       : "Este producto actualmente no tiene una foto disponible.";
-    return { content: `Sobre «${topic.query}»: ${availability}`, status: "ANSWERED", evidence: products.map(product => `Product:${product.id}:${product.updatedAt.toISOString()}`) };
+    return { content: `Sobre «${topic.query}»: ${availability}`, status: request.purchaseRequested ? "NEEDS_CLARIFICATION" : "ANSWERED", evidence: products.map(product => `Product:${product.id}:${product.updatedAt.toISOString()}`) };
   }
   products = available;
   if (products.length > 1) {
@@ -99,6 +99,10 @@ export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic 
   const title = `${product.name} (${product.code})`;
   if (request.kind === "STOCK") return { content: `${title}: ${product.stockUnits > 0 ? `${product.stockUnits} unidades disponibles al consultar` : "sin stock actualmente"}.`, status: "ANSWERED", evidence };
   if (request.kind === "PRICE") {
+    if (request.purchaseRequested && request.quantity === null) return {
+      content: `${title}\nSí, identifiqué el producto que deseas comprar. ¿Cuántas unidades necesitas de este producto?`,
+      status: "NEEDS_CLARIFICATION", evidence,
+    };
     const quantity = request.quantity || 1;
     if (product.stockUnits < quantity) return { content: `${title}: ${product.stockUnits > 0 ? `hay ${product.stockUnits} unidades, insuficientes para las ${quantity} solicitadas` : "sin stock actualmente"}. No puedo confirmar esa cotización.`, status: "NEEDS_CLARIFICATION", evidence };
     const pricing = getLinePricing({ ...product, unitPrice: Number(product.unitPrice), wholesalePrice: product.wholesalePrice == null ? null : Number(product.wholesalePrice), boxPrice: product.boxPrice == null ? null : Number(product.boxPrice) }, quantity);

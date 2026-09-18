@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { describeCommercialConstraints, normalizeCommercialText, parseCommercialQuery } from "./commercial-query";
 import { commercialClauses, groupCommercialFragments, type CommercialLexicon, type CommercialMessage } from "./commercial-language";
+import { hasPurchaseIntent, purchaseSubject, splitPurchaseAdditions } from "./commercial-purchase-language";
 
 export const agendaRequestSchema = z.object({
   id: z.string(), kind: z.enum(["CATALOG", "SEARCH", "INFORMATION", "PRICE", "STOCK", "SHIPPING", "PAYMENT", "STORE"]),
   topicId: z.string().nullable(), question: z.string(), fields: z.array(z.string()), quantity: z.number().int().positive().nullable(),
   sourceMessageIds: z.array(z.string()), status: z.enum(["PENDING", "NEEDS_CLARIFICATION", "ANSWERED", "CANCELLED"]),
   answeredBy: z.string().nullable(), evidence: z.array(z.string()).default([]),
+  purchaseRequested: z.boolean().optional(),
 });
 export const agendaSchema = z.object({
   version: z.literal(1), lastTopicId: z.string().nullable(),
@@ -61,9 +63,9 @@ export function productSubject(content: string, preserveAttributes = false) {
   }
   let subject = content
     .replace(/\b(?:fotos?|im[aá]genes?|fotograf[ií]as?)\b/gi, " ")
-    .replace(/\b(?:salen|cuestan|quiero|necesito|cotiza|cotizar)\s+\d+\s*(?:unidades?|unds?|piezas?)?\b/gi, " ")
+    .replace(/\b(?:salen|cuestan|quiero|necesito|cotiza|cotizar)\s+\d+\s*(?:unidad(?:es)?|unds?|piezas?)?\b/gi, " ")
     .replace(/\b(?:cu[aá]nto\s+(?:dura|cuesta|cuestan|sale|salen)|qu[eé]\s+(?:incluye|trae)|funciona\s+con|sistema\s+operativo)\b/gi, " ")
-    .replace(/\b(?:para|por)\s+(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s*(?:unidades?|unds?|piezas?)?\b/gi, " ")
+    .replace(/\b(?:para|por)\s+(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s*(?:unidad(?:es)?|unds?|piezas?)?\b/gi, " ")
     .replace(/\b(?:dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/gi, " ")
     .replace(/\b(?:tambi[eé]n|adem[aá]s|informaci[oó]n|informes|info|detalles|caracter[ií]sticas|especificaciones|sobre|acerca|precio|precios|cu[aá]nto|cu[aá]ntos|cuesta|cuestan|sale|salen|stock|disponibilidad|disponible|disponibles|trae|tiene|ese|esa|este|esta|eso|del|el|la|los|las|de|que|cu[aá]l|cu[aá]les|es|son|dime|saber|quisiera|quiero|necesito|busco|tienes|tienen|hay|por|favor|me|puedes|dar|pasame|p[aá]same|pasa|manda|mandame|env[ií]ame|ver|cat[aá]logos?|pdf)\b/gi, " ");
   if (!preserveAttributes) subject = subject.replace(/\b(?:bater[ií]a|autonom[ií]a|duraci[oó]n|dura|horas|potencia|garant[ií]a|incluye|incluido|accesorios|android|resoluci[oó]n|compatible|compatibilidad|conectividad|bluetooth|wifi|carga|puertos|medidas|dimensiones|peso)\b/gi, " ");
@@ -82,6 +84,7 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
   const touched = new Set<string>();
   let recognized = false;
   let unsupported = false;
+  let purchaseContext = false;
   for (const message of groupCommercialFragments(messages, lexicon)) {
     const sourceIds = message.sourceMessageIds!;
     if (message.imageReference) {
@@ -95,7 +98,9 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
         sourceMessageIds: [...sourceIds], status: "PENDING", answeredBy: null, evidence: [] });
       touched.add(id); recognized = true;
     }
-    const clauses = commercialClauses(message.content);
+    const purchasing = hasPurchaseIntent(message.content) || purchaseContext && /^(?:y\s+)?(?:tambien|ademas)\b/.test(normalizeCommercialText(message.content));
+    if (purchasing) purchaseContext = true;
+    const clauses = splitPurchaseAdditions(message.content).flatMap(commercialClauses);
     for (const clause of clauses) {
       const text = normalizeCommercialText(clause.replace(/https?:\/\/[^\s<>"']+/gi, " "));
       if (/^(?:hola|gracias|ok|buenos dias|buenas tardes|buenas noches)$/.test(text)) continue;
@@ -112,7 +117,7 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
       }
       const fields = requestedSpecificationFields(clause);
       const kinds: AgendaRequest["kind"][] = [];
-      const quantityOnly = /^(?:mejor\s+)?(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s+(?:unidades?|unds?|piezas?)$/.test(text);
+      const quantityOnly = /^(?:mejor\s+)?(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s+(?:unidad(?:es)?|unds?|piezas?)$/.test(text);
       if (quantityOnly) kinds.push("PRICE");
       const catalog = /\bcatalogos?\b/.test(text);
       if (catalog) kinds.push("CATALOG");
@@ -120,12 +125,14 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
       if (/\b(?:pago|pagos|yape|plin|transferencia|aceptan tarjetas?)\b/.test(text)) kinds.push("PAYMENT");
       if (/\b(?:direccion|horario|ubicacion|donde estan|donde queda)\b/.test(text)) kinds.push("STORE");
       const business = kinds.some(kind => ["SHIPPING", "PAYMENT", "STORE"].includes(kind));
+      let purchaseRequested = purchasing && !business && !catalog;
       if (!business && /\b(?:precio|precios|cuesta|cuestan|salen|cotiza|cotizar|cuanto sale|cuanto por)\b/.test(text)) kinds.push("PRICE");
+      if (purchaseRequested && !kinds.includes("PRICE")) kinds.push("PRICE");
       if (!business && /\b(?:stock|disponibilidad|cuantas unidades|hay disponibles)\b/.test(text)) kinds.push("STOCK");
       const information = /\b(?:informacion|info|detalles|caracteristicas|especificaciones)\b/.test(text) || fields.length > 0 && /\b(?:cuanto dura|que|cual|tiene|trae|incluye|garantia|potencia|autonomia|medidas|dimensiones)\b/.test(text);
       if (!business && !catalog && information) kinds.push("INFORMATION");
       const imageDeictic = message.imageReference && /^(?:quiero|tienes|tienen|busco|necesito)?\s*(?:este|esta|ese|esa)(?:\s+producto)?[?.!]*$/.test(text);
-      const query = business || quantityOnly || imageDeictic ? "" : productSubject(clause, !information);
+      const query = business || quantityOnly || imageDeictic ? "" : productSubject(purchaseRequested ? purchaseSubject(clause) : clause, !information);
       const filter = parseCommercialQuery(query);
       const isCorrection = !kinds.length && (/^(?:mejor|solo|solamente|cambia)\b/.test(text) || (filter.constraints.colors.length > 0 && !filter.text.trim()));
       let topic: AgendaTopic | undefined;
@@ -166,6 +173,11 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
         continue;
       }
       if (topic) agenda.lastTopicId = topic.id;
+      const pendingPurchase = topic && agenda.requests.findLast(job => job.topicId === topic.id && job.purchaseRequested && job.status !== "CANCELLED");
+      if (pendingPurchase && requestedQuantity(clause) !== null && !business) {
+        purchaseRequested = true;
+        if (!kinds.includes("PRICE")) kinds.push("PRICE");
+      }
       if (!kinds.length && topic && (query || referenced)) {
         const pending = agenda.requests.filter(value => value.topicId === topic!.id && value.status === "NEEDS_CLARIFICATION");
         if (pending.length) for (const request of pending) { request.status = "PENDING"; request.sourceMessageIds = [...new Set([...request.sourceMessageIds, ...sourceIds])]; touched.add(request.id); }
@@ -175,16 +187,20 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
       for (const kind of kinds) {
         // A quantity fragment in the same burst refines the quote; it must not produce
         // an initial one-unit quote followed by a contradictory second quote.
-        const refining = quantityOnly && topic ? agenda.requests.findLast(job => touched.has(job.id) && job.topicId === topic.id && job.kind === "PRICE") : undefined;
+        const refining = kind === "PRICE" && topic && (quantityOnly || purchaseRequested) ? agenda.requests.findLast(job =>
+          job.topicId === topic.id && job.kind === "PRICE" && (touched.has(job.id) || job.purchaseRequested && job.status !== "CANCELLED")) : undefined;
         if (refining) {
-          refining.quantity = requestedQuantity(clause);
+          refining.quantity = requestedQuantity(clause) ?? refining.quantity;
+          refining.status = "PENDING";
+          touched.add(refining.id);
           refining.sourceMessageIds = [...new Set([...refining.sourceMessageIds, ...sourceIds])];
           refining.question += `; ${clause.trim()}`;
           continue;
         }
         const id = `${message.id}:${agenda.requests.length}:${kind}`;
         agenda.requests.push({ id, kind, topicId: business ? null : topic?.id ?? null, question: clause.trim(), fields: kind === "INFORMATION" ? fields : [],
-          quantity: requestedQuantity(clause), sourceMessageIds: [...sourceIds], status: "PENDING", answeredBy: null, evidence: [] });
+          quantity: requestedQuantity(clause), sourceMessageIds: [...sourceIds], status: "PENDING", answeredBy: null, evidence: [],
+          ...(purchaseRequested ? { purchaseRequested: true } : {}) });
         touched.add(id); recognized = true;
       }
     }
@@ -206,3 +222,4 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
   agenda.topics = agenda.topics.filter(topic => retainedTopics.has(topic.id) || topic.id === agenda.lastTopicId);
   return { agenda, touched: [...touched], recognized, unsupported };
 }
+
