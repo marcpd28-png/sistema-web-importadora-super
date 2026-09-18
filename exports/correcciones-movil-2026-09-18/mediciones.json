@@ -1,0 +1,90 @@
+[
+  {
+    "card": 127,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 121.546875,
+    "width": 320
+  },
+  {
+    "card": 147,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 160.265625,
+    "width": 360
+  },
+  {
+    "card": 155,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 174.9375,
+    "width": 375
+  },
+  {
+    "card": 162,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 189.65625,
+    "width": 390
+  },
+  {
+    "card": 173,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 211.328125,
+    "width": 412
+  },
+  {
+    "card": 182,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 229.109375,
+    "width": 430
+  },
+  {
+    "card": 284,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 437.875,
+    "width": 640
+  },
+  {
+    "card": 176,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 438.875,
+    "width": 641
+  },
+  {
+    "card": 176,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 565.5625,
+    "width": 768
+  },
+  {
+    "card": 225,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 528.3125,
+    "width": 1024
+  },
+  {
+    "card": 240,
+    "overflow": false,
+    "priceClips": 0,
+    "qtyClips": 0,
+    "search": 913.796875,
+    "width": 1440
+  }
+]
