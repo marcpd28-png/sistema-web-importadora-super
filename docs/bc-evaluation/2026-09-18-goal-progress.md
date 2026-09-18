@@ -96,3 +96,11 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Publicado `a743c90` en Git y activado en la web con compilación aislada y respaldo de la versión anterior. El primer intento de build rechazó el enlace a node_modules; se corrigió usando una copia privada y la compilación pasó. Motor continúa `cd87fc0`.
 - Verificación HTTP administrativa → n8n → PostgreSQL en VPS: cinco mensajes produjeron pago → referencia TikTok pendiente → envío; cantidad seis preservada; sin cotización ni stock inventado y cero respuestas tardías/duplicadas. Contacto temporal eliminado. Evidencia privada en `/home/IMPORTADORA-backups/bc-social-a743c90/live-results.json`.
 - Sigue pendiente interpretar contenido visual/social real y validar enlaces en ramas de catálogo/fotos. Se consultó al usuario su preferencia entre proveedor con presupuesto objetivo de US$50/100 mensuales o evaluar modelo local; no se activó consumo de IA.
+
+## Corrección de cantidad al revisar el pedido
+
+- Motor `486c434`, publicado en Git y activado en VPS con compilación aislada y respaldo. Reconoce «mejor 4» o «cambia a 6 unidades» al revisar el pedido; números sueltos no se interpretan como cantidad en esa etapa.
+- El resumen recalcula el importe y conserva nombre, teléfono, documento y entrega. Indica que cambió la cantidad y exige confirmar el resumen antes de crear el pedido.
+- Pasaron 64 pruebas del motor, TypeScript y ESLint. Integración en base temporal aislada del VPS: 3→4 unidades (120→160), cambio posterior de tarifa (180), nueva confirmación y recepción de comprobante pendiente de validación. Base de pruebas eliminada.
+- Verificación HTTP sobre el motor desplegado: N1321, 1→2 unidades, total 258, datos conservados y pedido aún sin crear. Primer intento con L516 se descartó porque el producto no tenía foto utilizable y activó correctamente la regla de disponibilidad; no se cambiaron sus datos. Todos los contactos temporales se eliminaron.
+- Sigue pendiente corregir otros datos durante el checkout, cambios sobre pedidos ya creados, cesta con varios productos y el resto del objetivo. Esto no prueba todavía una venta completa por n8n ni verificación bancaria.
