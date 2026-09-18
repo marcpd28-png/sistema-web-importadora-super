@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "fixture": "generated JPEG screenshot with labeled code; not a real social post",
+  "code": "N1321",
+  "stage": "AWAITING_QUANTITY",
+  "model": "local-tesseract-labeled-code",
+  "ocrMs": 539,
+  "answers": [
+    "¡Buenas tardes! 😊 (N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E",
+    "Listo, encontré este producto: (N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E.\nPrecio vigente: S/129.00.\nEstá disponible actualmente.\nHacemos envíos a Lima y provincias; también puedes continuar tu compra por este medio.\nFicha del producto: https://tiendavirtualsuper.com/producto/n1321-cudy-ac1200-gigabit-wi-fi-router-wr1300e-n1321-6918\n\n¿Cuántas unidades deseas?"
+  ]
+}
