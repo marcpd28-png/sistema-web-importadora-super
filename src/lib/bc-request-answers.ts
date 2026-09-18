@@ -47,6 +47,10 @@ export function answerBusinessRequest(request: AgendaRequest, business: Business
 }
 
 export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean; scopes?: ProductScope[] } = {}): RequestAnswer {
+  if (topic?.imageReference && !topic.selectedCode) return {
+    content: `Recibí ${topic.imageReference}, pero aún no pude identificar el producto con certeza. Dime su marca, modelo o código para continuar con esta consulta.`,
+    status: "NEEDS_CLARIFICATION", evidence: [],
+  };
   const platforms = customerSocialPlatforms(`${request.question} ${topic?.query || ""}`);
   if (platforms.length && !topic?.selectedCode) return {
     content: `Recibí tu referencia de ${platforms.join(" y ")}. Aún no he podido ver el contenido del enlace para identificar el producto. Envíame una captura donde se vea, o su marca, modelo o código, y continúo con esta consulta.`,

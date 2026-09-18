@@ -31,7 +31,7 @@ export function extractCommercialSubject(text: string, isEntity: (word: string) 
   return words.slice(start, end).join(" ");
 }
 
-export type CommercialMessage = { id: string; content: string; sourceMessageIds?: string[] };
+export type CommercialMessage = { id: string; content: string; sourceMessageIds?: string[]; imageReference?: { code: string | null; label: string } };
 export type CommercialLexicon = { fragmentKind(content: string): "subject" | "qualifier" | null };
 const operation = /\b(?:catalogos?|precio|precios|cuanto|cuesta|cuestan|stock|informacion|info|garantia|envios?|envian|shalom|yape|plin|pagos?|direccion|horario|ubicacion|reintenta|cancela)\b/;
 
@@ -50,7 +50,7 @@ export function groupCommercialFragments(messages: CommercialMessage[], lexicon?
       !/\b(?:unidades?|unds?|piezas?)$/.test(text) && !/^(?:hola|gracias|ok|si|no)$/.test(text) &&
       (/^(?:de|del|marca|modelo|tipo)\b/.test(text) || /^(?:y|e|o|u)\b/.test(text) && /\bcatalogos?\b/.test(prior) || catalogContinuation || (kind === "qualifier" && Boolean(lexicon?.fragmentKind(priorSubject))) ||
         /\b(?:catalogos?|precio|informacion|busco|necesito|quiero)(?:\s+(?:de|del|por mayor|mayorista|en pdf))*$/.test(prior));
-    if (last && fragment) {
+    if (last && fragment && !message.imageReference && !last.imageReference) {
       const listJoin = catalogContinuation && kind === "subject" && !/^(?:de|del|y|e|o|u)\b/.test(text) && !/\bcatalogos?$/.test(prior);
       last.content += `${listJoin ? " y" : ""} ${message.content}`;
       last.sourceMessageIds!.push(...(message.sourceMessageIds || [message.id]));

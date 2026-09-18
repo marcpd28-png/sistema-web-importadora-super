@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { catalogImageContentHash } from "../../src/lib/router-v2-catalog-image-match";
 
 async function main() {
   const url = new URL(process.env.DATABASE_URL || "http://invalid");
@@ -22,14 +23,14 @@ async function main() {
   async function conversation(contactId: string) {
     return prisma.conversation.create({ data: { contactId, status: "AUTOMATICO", botEnabled: true } });
   }
-  async function send(conversationId: string, content: string | string[]) {
+  async function send(conversationId: string, content: string | (string | { content: string; mediaUrl: string })[]) {
     // Age only this fixture's timeline to exercise the production quiet-period gate without sleeping.
     const history = await prisma.chatMessage.findMany({ where: { conversationId } });
     for (const row of history) await prisma.chatMessage.update({ where: { id: row.id }, data: { createdAt: new Date(row.createdAt.getTime() - 30000) } });
     const parts = typeof content === "string" ? [content] : content;
     const inbound = [];
     const started = Date.now() - 15000 - parts.length;
-    for (const [index, part] of parts.entries()) inbound.push(await prisma.chatMessage.create({ data: { conversationId, direction: "INBOUND", senderType: "CUSTOMER", messageType: "TEXT", content: part, createdAt: new Date(started + index) } }));
+    for (const [index, part] of parts.entries()) inbound.push(await prisma.chatMessage.create({ data: { conversationId, direction: "INBOUND", senderType: "CUSTOMER", messageType: typeof part === "string" ? "TEXT" : "IMAGE", content: typeof part === "string" ? part : part.content, mediaUrl: typeof part === "string" ? null : part.mediaUrl, createdAt: new Date(started + index) } }));
     const message = inbound.at(-1)!;
     const response = await POST(new Request("http://localhost/api/internal/chat/requests", { method: "POST", headers: { "content-type": "application/json", "x-internal-api-key": process.env.N8N_INTERNAL_API_KEY! }, body: JSON.stringify({ conversationId, triggerMessageId: message.id }) }));
     const body = await response.json();
@@ -42,6 +43,21 @@ async function main() {
   try {
     const product = await prisma.product.create({ data: { code: `QA${Date.now()}`, slug: `memory-${run}`, name: "VENTILADOR DE PRUEBA", imageUrl: "https://example.com/ventilador.jpg", unitPrice: 37, stockUnits: 10, isVisible: true } });
     products.push(product.id);
+    const photo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jT5sAAAAASUVORK5CYII=';
+    await prisma.product.update({ where: { id: product.id }, data: { sourceImageContentHash: catalogImageContentHash(photo) } });
+    const images = await conversation(await customer());
+    const imageReplies = await send(images.id, ["aceptan yape", { content: "", mediaUrl: photo }, "precio de este", "seis unidades", "envíos a Arequipa"]);
+    assert.match(imageReplies, /6 unidad\(es\): S\/ 37\.00/);
+    assert(imageReplies.indexOf("Métodos de pago:") < imageReplies.indexOf("Total:"));
+    assert(imageReplies.indexOf("Total:") < imageReplies.indexOf("Modalidades de entrega:"));
+    const unknown = await conversation(await customer());
+    const unknownReplies = await send(unknown.id, ["aceptan yape", { content: "", mediaUrl: "https://example.invalid/unknown.jpg" }, "precio de este", "seis unidades", "envíos a Arequipa"]);
+    assert(unknownReplies.indexOf("Métodos de pago:") < unknownReplies.indexOf("la foto 1"));
+    assert(unknownReplies.indexOf("la foto 1") < unknownReplies.indexOf("Modalidades de entrega:"));
+    assert.doesNotMatch(unknownReplies, /Total:|sin stock/);
+    assert.match(await send(unknown.id, `me refiero a ${product.code}`), /6 unidad\(es\): S\/ 37\.00/);
+    const unknownMemory = await prisma.customerConversationMemory.findUnique({ where: { contactId: unknown.contactId } });
+    assert.doesNotMatch(JSON.stringify(unknownMemory?.state), /foto 1/);
     const social = await conversation(await customer());
     const socialReplies = await send(social.id, ["aceptan yape", "precio de este https://www.tiktok.com/@tienda/video/123?precio=99&stock=1", "seis unidades", "envíos a Arequipa", "gracias"]);
     assert(socialReplies.indexOf("Métodos de pago:") < socialReplies.indexOf("referencia de TikTok"));

@@ -12,6 +12,8 @@ import { buildPublicUrl } from "@/lib/site-url";
 import { POST as persistBatch } from "../simulator-batch/route";
 import { customerMemoryEnabled } from "@/lib/bc-customer-memory-store";
 import { checkoutOwnsReply } from "@/lib/bc-checkout-routing";
+import { matchCatalogSourceImage } from "@/lib/router-v2-catalog-image-match";
+import type { CommercialMessage } from "@/lib/commercial-language";
 import { frequentCustomerFields, readCustomerMemory, recallCustomerProduct } from "@/lib/bc-customer-memory";
 
 export const runtime = "nodejs";
@@ -33,7 +35,9 @@ export async function POST(request: Request) {
     if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return NextResponse.json({ ok: true, handled: true, skipped: "HUMAN_OWNS_CONVERSATION" });
     const batch = await readSimulatorInputBatch(prisma, input.conversationId, input.triggerMessageId);
     if (batch.status !== "READY") return NextResponse.json({ ok: true, handled: true, skipped: batch.status });
-    if (batch.media.length) return NextResponse.json({ ok: true, handled: false });
+    // Single attachments and checkout evidence retain the existing media flow.
+    if (batch.media.length && (batch.fragments.length < 2 || batch.media.some(media => media.messageType !== "IMAGE") ||
+        conversation.salesState?.stage?.startsWith("AWAITING_") && !["AWAITING_PRODUCT_QUERY", "AWAITING_PURCHASE_CONFIRMATION"].includes(conversation.salesState.stage))) return NextResponse.json({ ok: true, handled: false });
     const text = normalizeCommercialText(batch.content);
     // Existing purchase and human-handoff flows retain ownership of side-effecting operations.
     if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|quiero comprar|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
@@ -41,7 +45,15 @@ export async function POST(request: Request) {
       || checkoutOwnsReply(conversation.salesState?.stage, batch.content)) {
       return NextResponse.json({ ok: true, handled: false });
     }
-    const inbound = await prisma.chatMessage.findMany({ where: { conversationId: input.conversationId, id: { in: batch.messageIds } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true } });
+    const inbound: CommercialMessage[] = await prisma.chatMessage.findMany({ where: { conversationId: input.conversationId, id: { in: batch.messageIds } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true } });
+    for (const [index, media] of batch.media.entries()) {
+      const message = inbound.find(item => item.id === media.messageId);
+      if (!message) continue;
+      const match = await matchCatalogSourceImage(media.mediaUrl, hash => prisma.product.findMany({
+        where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2,
+      }));
+      message.imageReference = { code: match?.hints.code ?? null, label: `la foto ${index + 1} de este grupo` };
+    }
     const previous = conversation.requestAgenda ? agendaSchema.parse(conversation.requestAgenda.state) : emptyAgenda();
     const initialCatalog = await loadCommercialCatalog();
     let storedMemory = customerMemoryEnabled() ? await prisma.customerConversationMemory.findUnique({ where: { contactId: conversation.contactId } }) : null;
@@ -77,7 +89,7 @@ export async function POST(request: Request) {
       }
       const replies: { type: "TEXT" | "DOCUMENT" | "IMAGE"; content: string; mediaUrl?: string | null }[] = [];
       const memoryNotices = new Map<string, string>();
-      if (memory) for (const topic of agenda.topics.filter(value => !value.selectedCode && agenda.requests.some(job => touched.has(job.id) && job.topicId === value.id))) {
+      if (memory) for (const topic of agenda.topics.filter(value => !value.imageReference && !value.selectedCode && agenda.requests.some(job => touched.has(job.id) && job.topicId === value.id))) {
         // Never narrow a valid catalog query using an old purchase or restore an invisible SKU.
         if (catalog.search(topic.query, false).products.length) continue;
         const code = recallCustomerProduct(memory, topic.query);
@@ -95,7 +107,12 @@ export async function POST(request: Request) {
           memoryNotices.delete(topic.id);
         }
         try {
-          if (job.kind === "CATALOG") {
+          if (topic?.imageReference && !topic.selectedCode) {
+            const answer = answerProductRequest(job, topic, []);
+            if (!answered.has(answer.content)) replies.push({ type: "TEXT", content: answer.content });
+            answered.add(answer.content);
+            job.status = answer.status; job.evidence = [];
+          } else if (job.kind === "CATALOG") {
             const query = topic?.query || "catálogo";
             const selection = catalog.search(query, false);
             const result = await generateRequestedCatalogPdf(query, false, catalog, selection);

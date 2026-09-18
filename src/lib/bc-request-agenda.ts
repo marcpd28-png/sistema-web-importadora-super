@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { describeCommercialConstraints, normalizeCommercialText, parseCommercialQuery } from "./commercial-query";
-import { commercialClauses, groupCommercialFragments, type CommercialLexicon } from "./commercial-language";
+import { commercialClauses, groupCommercialFragments, type CommercialLexicon, type CommercialMessage } from "./commercial-language";
 
 export const agendaRequestSchema = z.object({
   id: z.string(), kind: z.enum(["CATALOG", "SEARCH", "INFORMATION", "PRICE", "STOCK", "SHIPPING", "PAYMENT", "STORE"]),
@@ -11,6 +11,7 @@ export const agendaRequestSchema = z.object({
 export const agendaSchema = z.object({
   version: z.literal(1), lastTopicId: z.string().nullable(),
   topics: z.array(z.object({ id: z.string(), query: z.string(), selectedCode: z.string().nullable(), shownCodes: z.array(z.string()),
+    imageReference: z.string().optional(),
     shownGroups: z.array(z.object({ query: z.string(), codes: z.array(z.string()) })).optional() })).max(100),
   requests: z.array(agendaRequestSchema).max(200),
 });
@@ -76,13 +77,24 @@ function commonTopic(query: string, topic: AgendaTopic) {
   return tokens.length > 0 && tokens.every(token => words.includes(token) || words.includes(token.replace(/s$/, "")));
 }
 
-export function planRequests(previous: RequestAgenda, messages: { id: string; content: string }[], lexicon?: CommercialLexicon) {
+export function planRequests(previous: RequestAgenda, messages: CommercialMessage[], lexicon?: CommercialLexicon) {
   const agenda = structuredClone(previous);
   const touched = new Set<string>();
   let recognized = false;
   let unsupported = false;
   for (const message of groupCommercialFragments(messages, lexicon)) {
     const sourceIds = message.sourceMessageIds!;
+    if (message.imageReference) {
+      const reference = message.imageReference;
+      const topic = { id: `${message.id}:image`, query: reference.code || reference.label, selectedCode: reference.code,
+        shownCodes: [] as string[], imageReference: reference.label };
+      agenda.topics.push(topic);
+      agenda.lastTopicId = topic.id;
+      const id = `${message.id}:image:SEARCH`;
+      agenda.requests.push({ id, kind: "SEARCH", topicId: topic.id, question: reference.label, fields: [], quantity: null,
+        sourceMessageIds: [...sourceIds], status: "PENDING", answeredBy: null, evidence: [] });
+      touched.add(id); recognized = true;
+    }
     const clauses = commercialClauses(message.content);
     for (const clause of clauses) {
       const text = normalizeCommercialText(clause.replace(/https?:\/\/[^\s<>"']+/gi, " "));
@@ -112,7 +124,8 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       if (!business && /\b(?:stock|disponibilidad|cuantas unidades|hay disponibles)\b/.test(text)) kinds.push("STOCK");
       const information = /\b(?:informacion|info|detalles|caracteristicas|especificaciones)\b/.test(text) || fields.length > 0 && /\b(?:cuanto dura|que|cual|tiene|trae|incluye|garantia|potencia|autonomia|medidas|dimensiones)\b/.test(text);
       if (!business && !catalog && information) kinds.push("INFORMATION");
-      const query = business || quantityOnly ? "" : productSubject(clause, !information);
+      const imageDeictic = message.imageReference && /^(?:quiero|tienes|tienen|busco|necesito)?\s*(?:este|esta|ese|esa)(?:\s+producto)?[?.!]*$/.test(text);
+      const query = business || quantityOnly || imageDeictic ? "" : productSubject(clause, !information);
       const filter = parseCommercialQuery(query);
       const isCorrection = !kinds.length && (/^(?:mejor|solo|solamente|cambia)\b/.test(text) || (filter.constraints.colors.length > 0 && !filter.text.trim()));
       let topic: AgendaTopic | undefined;
@@ -176,6 +189,16 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       }
     }
   }
+  // A photo followed by its price/specification question is one request, not a
+  // generic product answer plus a second quote. Preserve the image's provenance.
+  agenda.requests = agenda.requests.filter(job => {
+    if (!job.id.endsWith(":image:SEARCH") || !touched.has(job.id)) return true;
+    const questions = agenda.requests.filter(other => other.topicId === job.topicId && other.id !== job.id && touched.has(other.id));
+    if (!questions.length) return true;
+    for (const question of questions) question.sourceMessageIds = [...new Set([...job.sourceMessageIds, ...question.sourceMessageIds])];
+    touched.delete(job.id);
+    return false;
+  });
   // Retain every unresolved request; bounded completed history never silently evicts pending work.
   const completed = agenda.requests.filter(value => ["ANSWERED", "CANCELLED"].includes(value.status)).slice(-50);
   agenda.requests = [...completed, ...agenda.requests.filter(value => !["ANSWERED", "CANCELLED"].includes(value.status))];

@@ -31,7 +31,7 @@ export function learnCustomerMemory(input: {
   for (const topic of input.next.topics) {
     const previous = input.previous.topics.find(old => old.id === topic.id);
     const code = topic.selectedCode;
-    if (!code || !previous || previous.selectedCode === code) continue;
+    if (!code || !previous || previous.imageReference || previous.selectedCode === code) continue;
     const phrase = normalizePhrase(previous.query);
     if (!validPhrase(phrase) || phrase === normalizePhrase(code)) continue;
     const confirmations = input.messages.filter(message => {

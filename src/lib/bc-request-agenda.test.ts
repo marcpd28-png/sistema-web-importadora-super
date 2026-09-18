@@ -196,3 +196,27 @@ test("spaced suffixes do not also select the base SKU; separate requested codes 
   assert.deepEqual(literalProductCodes("código N755 - SQ", ["N755", "N755 - SQ"]), ["N755 - SQ"]);
   assert.deepEqual(literalProductCodes("códigos N755 y N755 - SQ", ["N755", "N755 - SQ"]).sort(), ["N755", "N755 - SQ"]);
 });
+
+test("una foto y cuatro mensajes mantienen pago, precio por cantidad y envío en orden", () => {
+  for (const code of ["A1", null]) {
+    const plan = planRequests(emptyAgenda(), [
+      { id: "p", content: "aceptan yape" },
+      { id: "i", content: "", imageReference: { code, label: "la foto 1 de este grupo" } },
+      { id: "q", content: "precio de este" },
+      { id: "n", content: "seis unidades" },
+      { id: "e", content: "envíos a Arequipa" },
+    ], index);
+    assert.deepEqual(plan.agenda.requests.map(job => job.kind), ["PAYMENT", "PRICE", "SHIPPING"]);
+    const price = plan.agenda.requests[1];
+    assert.equal(price.quantity, 6);
+    assert.deepEqual(price.sourceMessageIds, ["i", "q", "n"]);
+    const topic = plan.agenda.topics.find(item => item.id === price.topicId)!;
+    assert.equal(topic.selectedCode, code);
+    if (!code) {
+      const answer = answerProductRequest(price, topic, products);
+      assert.equal(answer.status, "NEEDS_CLARIFICATION");
+      assert.match(answer.content, /la foto 1/);
+      assert.doesNotMatch(answer.content, /90|75|stock/);
+    }
+  }
+});
