@@ -7,6 +7,10 @@ test("agenda and answers commit together only for the current batch, stock and r
   const previous = global.prismaGlobal;
   const key = process.env.N8N_INTERNAL_API_KEY;
   process.env.N8N_INTERNAL_API_KEY = "agenda-test";
+  const memoryFlag = process.env.BC_CUSTOMER_MEMORY_ENABLED;
+  process.env.BC_CUSTOMER_MEMORY_ENABLED = "true";
+  t.after(() => { if (memoryFlag === undefined) delete process.env.BC_CUSTOMER_MEMORY_ENABLED; else process.env.BC_CUSTOMER_MEMORY_ENABLED = memoryFlag; });
+  let learningWrites = 0;
   t.after(() => { global.prismaGlobal = previous; if (key === undefined) delete process.env.N8N_INTERNAL_API_KEY; else process.env.N8N_INTERNAL_API_KEY = key; });
   let row: { revision: number; state: RequestAgenda } | null = null;
   let published = 0;
@@ -20,7 +24,8 @@ test("agenda and answers commit together only for the current batch, stock and r
   const inbound = { id: "m1", content: "precio A1", direction: "INBOUND", senderType: "CUSTOMER", messageType: "TEXT", mediaUrl: null, createdAt: new Date(Date.now() - 15000) };
   const tx = {
     $executeRaw: async () => 1,
-    conversation: { findUnique: async () => ({ botEnabled: true, assignedUserId: human ? "agent" : null, status: "AUTOMATICO", contact: { externalId: "SIMULATOR:agenda-test" } }), update: async () => ({}) },
+    conversation: { findUnique: async () => ({ contactId: "customer-test", botEnabled: true, assignedUserId: human ? "agent" : null, status: "AUTOMATICO", contact: { externalId: "SIMULATOR:agenda-test" } }), update: async () => ({}) },
+    customerConversationMemory: { findUnique: async ({ where }: { where: { contactId: string } }) => { assert.equal(where.contactId, "customer-test"); return null; }, upsert: async () => { learningWrites++; return {}; } },
     conversationRequestAgenda: {
       findUnique: async () => row,
       upsert: async ({ create, update }: { create: { revision: number; state: RequestAgenda }; update: { state: RequestAgenda } }) => { row = row ? { revision: row.revision + 1, state: update.state } : create; return row; },
@@ -53,8 +58,11 @@ test("agenda and answers commit together only for the current batch, stock and r
   updatedAt = new Date("2026-09-18T00:01:00Z");
   assert.equal((await send()).reason, "INVENTORY_CHANGED", "photo or metadata edits invalidate prepared replies");
   updatedAt = originalUpdatedAt;
+  assert.equal((await send(0, { customerMemoryRevision: 99 })).reason, "CUSTOMER_MEMORY_CHANGED");
+  assert.equal(learningWrites, 0, "stale batches and inventory changes cannot teach the customer memory");
   assert.equal((await send()).ok, true);
   assert.equal(published, 1);
+  assert.equal(learningWrites, 1);
   assert.equal((row as { revision: number } | null)?.revision, 1);
   assert.equal((await send()).reason, "AGENDA_CHANGED");
   assert.equal(published, 1);
@@ -65,6 +73,7 @@ test("agenda and answers commit together only for the current batch, stock and r
   assert.equal((await send(1)).skipped, true);
   assert.equal(published, 1);
   human = false;
+  assert.equal(learningWrites, 1, "duplicates, old revisions and human-owned sessions cannot teach memory");
   const unavailable = planRequests(emptyAgenda(), [{ id: "m1", content: "parlante JBL" }]).agenda;
   assert.equal(unavailable.topics[0].selectedCode, null);
   assert.equal((await send(1, { agenda: { expectedRevision: 1, state: unavailable }, selection: { code: null, quantity: null } })).ok, true);

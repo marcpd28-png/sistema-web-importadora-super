@@ -28,7 +28,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const body=$input.first().json.body;\nconst v=body?.entry?.[0]?.changes?.[0]?.value;\nconst m=v?.messages?.[0];\nif(v?.simulation?.dryRun!==true || v?.simulation?.source!=='admin-simulator' || !String(m?.from||'').startsWith('SIMULATOR:') || !String(m?.id||'').startsWith('SIM-CUSTOMER-') || typeof m?.text?.body!=='string' || !m.text.body.trim()) throw new Error('Solo se admiten mensajes del simulador de BC');\nreturn [{json:{channel:'WHATSAPP',externalContactId:m.from,externalMessageId:m.id,content:m.text.body,timestamp:new Date(Number(m.timestamp)*1000).toISOString(),name:v.contacts?.[0]?.profile?.name||'Cliente Simulador'}}];"
+        "jsCode": "const body=$input.first().json.body;\nconst v=body?.entry?.[0]?.changes?.[0]?.value;\nconst m=v?.messages?.[0];\nconst type=String(m?.type||'text').toLowerCase();\nconst content=type==='text' ? m?.text?.body : m?.[type]?.caption || '';\nconst mediaUrl=type==='text' ? null : m?.[type]?.link;\nconst validMedia=['image','audio'].includes(type) && typeof mediaUrl==='string' && mediaUrl.startsWith('data:'+type+'/') && mediaUrl.length <= 5592508;\nif(v?.simulation?.dryRun!==true || v?.simulation?.source!=='admin-simulator' || !String(m?.from||'').startsWith('SIMULATOR:') || !String(m?.id||'').startsWith('SIM-CUSTOMER-') || typeof content!=='string' || (type==='text' ? !content.trim() : !validMedia)) throw new Error('Solo se admiten mensajes del simulador de BC');\nreturn [{json:{channel:'WHATSAPP',externalContactId:m.from,externalMessageId:m.id,type:type.toUpperCase(),content,mediaUrl,timestamp:new Date(Number(m.timestamp)*1000).toISOString(),name:v.contacts?.[0]?.profile?.name||'Cliente Simulador'}}];"
       }
     },
     {
@@ -84,7 +84,7 @@
         80
       ],
       "parameters": {
-        "jsCode": "const saved=$input.first().json;\nif(saved.simulation!==true || saved.duplicate===true) return [];\nconst original=$('Validar simulación').first().json;\nreturn [{json:{...saved,content:original.content,triggerMessageId:saved.messageId,requestId:'catalog:'+saved.messageId}}];"
+        "jsCode": "const saved=$input.first().json;\nif(saved.simulation!==true || saved.duplicate===true) return [];\nconst original=$('Validar simulación').first().json;\nreturn [{json:{...saved,content:original.content,messageType:original.type,mediaUrl:original.mediaUrl,triggerMessageId:saved.messageId,requestId:'catalog:'+saved.messageId}}];"
       }
     },
     {
@@ -107,7 +107,7 @@
           "conditions": [
             {
               "id": "02ed6da4-7b19-41ed-9ff2-97a59e960f98",
-              "leftValue": "={{ (() => { const text = $json.content.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase(); return /\\bcatalogos?\\b/.test(text) || (/\\bextensor(?:a|as|es|s)?\\b/.test(text) && /\\b(?:pantallas?|screens?|monitores?)\\b/.test(text)); })() }}",
+              "leftValue": "={{ !$json.hasMedia && !$json.mediaUrl && (() => { const text = $json.content.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase(); return /\\bcatalogos?\\b/.test(text) || (/\\bextensor(?:a|as|es|s)?\\b/.test(text) && /\\b(?:pantallas?|screens?|monitores?)\\b/.test(text)); })() }}",
               "rightValue": true,
               "operator": {
                 "type": "boolean",
@@ -344,7 +344,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "parameters": {
-        "jsCode": "const batch = $input.first().json.batch;\nif (batch?.status !== 'READY') return [];\nconst saved = $('Preparar BC').first().json;\nreturn [{ json: { ...saved, content: batch.content, triggerMessageId: batch.latestMessageId, requestId: 'bc:' + batch.latestMessageId, messageIds: batch.messageIds } }];"
+        "jsCode": "const batch = $input.first().json.batch;\nif (batch?.status !== 'READY') return [];\nconst saved = $('Preparar BC').first().json;\nreturn [{ json: { ...saved, content: batch.content, hasMedia: Boolean(batch.media?.length), triggerMessageId: batch.latestMessageId, requestId: 'bc:' + batch.latestMessageId, messageIds: batch.messageIds } }];"
       }
     },
     {

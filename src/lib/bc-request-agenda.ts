@@ -36,7 +36,8 @@ export const SPECIFICATION_FIELDS = [
 
 export function requestedSpecificationFields(question: string) {
   const text = normalizeCommercialText(question);
-  const fields = SPECIFICATION_FIELDS.filter(field => field.pattern.test(text)).map(field => field.key);
+  const fields = SPECIFICATION_FIELDS.filter(field => field.pattern.test(text))
+    .sort((a, b) => text.search(a.pattern) - text.search(b.pattern)).map(field => field.key);
   return fields.includes("autonomia") ? fields.filter(field => field !== "bateria") : fields;
 }
 

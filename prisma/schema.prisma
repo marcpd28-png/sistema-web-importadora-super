@@ -797,11 +797,20 @@ model ChatContact {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   conversations   Conversation[]
+  conversationMemory CustomerConversationMemory?
 
   @@unique([channel, externalId])
   @@index([phone])
   @@index([phoneNormalized])
   @@index([name])
+}
+
+model CustomerConversationMemory {
+  contactId String @id
+  contact ChatContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  revision Int @default(0)
+  state Json
+  updatedAt DateTime @updatedAt
 }
 
 model Conversation {
@@ -989,6 +998,7 @@ model ConversationSalesState {
   category            String?  @db.VarChar(120)
   brand               String?  @db.VarChar(120)
   shownProducts       Json?
+  purchaseIntent      Boolean @default(false)
   selectedProductCode String?  @db.VarChar(64)
   quantity            Int?
   unitPrice           Decimal? @db.Decimal(10, 2)

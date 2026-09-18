@@ -10,6 +10,27 @@ const product = (code: string, name: string, override = {}) => ({ id: code, code
 const products = [product("A1", "AUDIFONO JBL TUNE NEGRO"), product("A2", "AUDIFONO JBL TUNE BLANCO"), product("A3", "AUDIFONO JBL DIADEMA NEGRO"), product("A4", "AUDIFONO JBL NEGRO", { unitPrice: 130 }), product("P1", "PROYECTOR HY300", { brand: null, category: "PROYECTORES" }), product("P2", "PROYECTOR HY300 PRO", { brand: null, category: "PROYECTORES" })];
 const index = createCatalogIndex(products);
 
+test("cinco mensajes distinguen una, tres, cuatro o cinco consultas en su orden", () => {
+  const scenarios = [
+    { messages: ["precio", "de audífonos", "JBL", "negros", "seis unidades"], kinds: ["PRICE"] },
+    { messages: ["precio A1", "seis unidades", "stock P1", "aceptan yape", "gracias"], kinds: ["PRICE", "STOCK", "PAYMENT"] },
+    { messages: ["precio A1", "seis unidades", "stock P1", "aceptan yape", "horario"], kinds: ["PRICE", "STOCK", "PAYMENT", "STORE"] },
+    { messages: ["precio A1", "stock P1", "aceptan yape", "horario", "envíos a Arequipa"], kinds: ["PRICE", "STOCK", "PAYMENT", "STORE", "SHIPPING"] },
+  ];
+  for (const scenario of scenarios) {
+    const { agenda } = planRequests(emptyAgenda(), scenario.messages.map((content, i) => ({ id: `m${i}`, content })), index);
+    assert.deepEqual(agenda.requests.map(job => job.kind), scenario.kinds, scenario.messages.join(" / "));
+    if (scenario.kinds.length < 5) assert.equal(agenda.requests[0].quantity, 6);
+  }
+});
+
+test("consultas de productos y negocio en un mensaje mantienen su orden y tema", () => {
+  const { agenda } = planRequests(emptyAgenda(), [{ id: "m1", content: "precio A1 y stock P1 y aceptan yape" }], index);
+  assert.deepEqual(agenda.requests.map(job => job.kind), ["PRICE", "STOCK", "PAYMENT"]);
+  assert.deepEqual(agenda.requests.map(job => agenda.topics.find(topic => topic.id === job.topicId)?.query ?? null), ["A1", "P1", null]);
+  assert.deepEqual(planRequests(emptyAgenda(), [{ id: "m2", content: "A1 qué garantía y qué potencia tiene" }], index).agenda.requests[0].fields, ["garantia", "potencia"]);
+});
+
 test("el saludo y tres catálogos seguidos conservan cada familia y la marca JBL", () => {
   const rows = [
     product("J1", "PARLANTE JBL CHARGE", { category: "PARLANTES" }),

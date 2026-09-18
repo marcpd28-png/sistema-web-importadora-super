@@ -44,10 +44,11 @@ export function groupCommercialFragments(messages: CommercialMessage[], lexicon?
     const last = grouped.at(-1);
     const prior = last ? normalizeCommercialText(last.content) : "";
     const kind = lexicon?.fragmentKind(message.content);
+    const priorSubject = prior.replace(/\b(?:precio|precios|informacion|info|stock|catalogos?)\b/g, " ").replace(/^\s*(?:de|del)\s+/, "").trim();
     const catalogContinuation = /\bcatalogos?\b/.test(prior) && Boolean(kind);
     const fragment = !operation.test(text) && !/^(?:solo|solamente|mejor|cambia|prefiero|el|la)\b/.test(text) &&
       !/\b(?:unidades?|unds?|piezas?)$/.test(text) && !/^(?:hola|gracias|ok|si|no)$/.test(text) &&
-      (/^(?:de|del|marca|modelo|tipo)\b/.test(text) || /^(?:y|e|o|u)\b/.test(text) && /\bcatalogos?\b/.test(prior) || catalogContinuation || (kind === "qualifier" && Boolean(lexicon?.fragmentKind(last?.content || ""))) ||
+      (/^(?:de|del|marca|modelo|tipo)\b/.test(text) || /^(?:y|e|o|u)\b/.test(text) && /\bcatalogos?\b/.test(prior) || catalogContinuation || (kind === "qualifier" && Boolean(lexicon?.fragmentKind(priorSubject))) ||
         /\b(?:catalogos?|precio|informacion|busco|necesito|quiero)(?:\s+(?:de|del|por mayor|mayorista|en pdf))*$/.test(prior));
     if (last && fragment) {
       const listJoin = catalogContinuation && kind === "subject" && !/^(?:de|del|y|e|o|u)\b/.test(text) && !/\bcatalogos?$/.test(prior);
@@ -61,5 +62,5 @@ export function groupCommercialFragments(messages: CommercialMessage[], lexicon?
 /** Split at a conjunction only if the following clause introduces an operation.
  * Product lists (cargadores y fuentes) and price ranges (entre 50 y 100) survive. */
 export function commercialClauses(content: string) {
-  return content.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|(?:saber\s+)?cu[aá]nto|se\s+puede\s+pagar|puedo\s+pagar|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio|d[oó]nde|horario|direcci[oó]n))/i).filter(value => value.trim());
+  return content.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|(?:saber\s+)?cu[aá]nto|se\s+puede\s+pagar|puedo\s+pagar|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|stock\b|disponibilidad\b|informaci[oó]n\b|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio|d[oó]nde|horario|direcci[oó]n))/i).filter(value => value.trim());
 }

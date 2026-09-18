@@ -90,7 +90,7 @@ export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic 
   if (request.kind === "INFORMATION") {
     const published = product.digitalProfile?.status === "PUBLICADA";
     const specifications = published ? product.specifications : [];
-    const requested = request.fields.length ? SPECIFICATION_FIELDS.filter(field => request.fields.includes(field.key)) : [];
+    const requested = request.fields.flatMap(key => SPECIFICATION_FIELDS.filter(field => field.key === key));
     let missing = false;
     const lines = requested.map(field => {
       const rows = specifications.filter(spec => field.names.test(normalizeCommercialText(spec.name)));

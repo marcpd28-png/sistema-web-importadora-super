@@ -41,6 +41,7 @@ export function buildChatInputBatch(messages: ChatInputMessage[], triggerMessage
   }
   return {
     ...common, status: "READY" as const, content,
+    fragments: pending.map(m => ({ messageId: m.id, messageType: m.messageType, content: m.content })),
     media: pending.filter(m => m.mediaUrl).map(m => ({ messageId: m.id, messageType: m.messageType, mediaUrl: m.mediaUrl! })),
   };
 }

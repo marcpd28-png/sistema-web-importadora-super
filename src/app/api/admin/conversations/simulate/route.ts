@@ -4,17 +4,11 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
+import { simulatorInputSchema, simulatorWebhookMessage } from "@/lib/simulator-message";
 
 export const dynamic = "force-dynamic";
 
 const SIMULATOR_WEBHOOK_PATH = "bc-simulator";
-
-const simulatorInputSchema = z.object({
-  content: z.string().trim().min(1).max(1200),
-  name: z.string().trim().min(1).max(180).default("Cliente Simulador"),
-  phone: z.string().trim().max(32).default("+51 999 888 777"),
-  sessionKey: z.string().trim().min(1).max(80).default("default"),
-});
 
 function buildSimulatorExternalId(sessionKey: string) {
   const letters = Array.from(sessionKey)
@@ -130,13 +124,11 @@ export async function POST(request: Request) {
                       },
                     ],
                     messages: [
-                      {
+                      simulatorWebhookMessage(input, {
                         from: externalId,
                         id: externalMessageId,
-                        text: { body: input.content },
                         timestamp: String(Math.floor(now.getTime() / 1000)),
-                        type: "text",
-                      },
+                      }),
                     ],
                     metadata: {
                       display_phone_number: input.phone,

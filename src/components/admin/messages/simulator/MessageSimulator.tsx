@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Bug, FileDown, RefreshCw, Send, UserRound } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
+import { SIMULATOR_MEDIA_ACCEPT, SIMULATOR_MEDIA_MAX_BYTES } from "@/lib/simulator-message";
 
 type SimulatorResponse = {
   automationError: string | null;
@@ -42,6 +43,9 @@ function formatTime(value: Date | string) {
 
 export function MessageSimulator() {
   const [content, setContent] = useState("");
+  const [attachment, setAttachment] = useState<{ type: "IMAGE" | "AUDIO"; dataUrl: string; name: string } | null>(null);
+  const [readingFile, setReadingFile] = useState(false);
+  const fileVersion = useRef(0);
   const [name, setName] = useState("Cliente Simulador");
   const [phone, setPhone] = useState("+51 999 888 777");
   const [sessionKey, setSessionKey] = useState(() => createSessionKey());
@@ -54,7 +58,7 @@ export function MessageSimulator() {
   const [notice, setNotice] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  const canSend = content.trim().length > 0 && !busy;
+  const canSend = Boolean(content.trim() || attachment) && !busy && !readingFile;
   const conversationLabel = useMemo(() => phone.trim() || "sin telefono", [phone]);
 
   useEffect(() => {
@@ -135,7 +139,6 @@ export function MessageSimulator() {
     }
 
     const message = content.trim();
-    setContent("");
     setBusy(true);
     setNotice(null);
 
@@ -146,6 +149,7 @@ export function MessageSimulator() {
           name,
           phone,
           sessionKey,
+          attachment: attachment ? { type: attachment.type, dataUrl: attachment.dataUrl } : undefined,
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -165,6 +169,8 @@ export function MessageSimulator() {
         setWaitingForN8n(false);
         setNotice(payload.automationError);
       } else if (payload.automationTriggered) {
+        setContent("");
+        setAttachment(null);
         setWaitingForN8n(true);
         setNotice("Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
       }
@@ -176,6 +182,9 @@ export function MessageSimulator() {
   }
 
   function handleNewSession() {
+    fileVersion.current += 1;
+    setAttachment(null);
+    setReadingFile(false);
     setSessionKey(createSessionKey());
     setConversationId(null);
     setPendingCustomerMessageId(null);
@@ -209,7 +218,7 @@ export function MessageSimulator() {
           <input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
         </label>
 
-        <button className="btn btn-outline" onClick={handleNewSession} type="button">
+        <button className="btn btn-outline" disabled={busy} onClick={handleNewSession} type="button">
           <RefreshCw size={14} />
           Nueva sesion
         </button>
@@ -262,6 +271,8 @@ export function MessageSimulator() {
                       <FileDown size={22} />
                       <span><strong>{message.content || "Documento generado"}</strong><small>Abrir documento de prueba</small></span>
                     </a>
+                  ) : message.messageType === "AUDIO" && message.mediaUrl ? (
+                    <div><audio controls preload="none" src={message.mediaUrl} />{message.content ? <p>{message.content}</p> : null}</div>
                   ) : (
                     <p>{message.content}</p>
                   )}
@@ -275,8 +286,42 @@ export function MessageSimulator() {
 
         {notice ? <div className="message-simulator-notice">{notice}</div> : null}
 
+        <label className="simulator-field">
+          <span>Adjuntar foto, captura de redes o audio (hasta 4 MB)</span>
+          <input type="file" accept={SIMULATOR_MEDIA_ACCEPT} disabled={busy || readingFile} onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+            if (!SIMULATOR_MEDIA_ACCEPT.split(",").includes(file.type) || file.size === 0 || file.size > SIMULATOR_MEDIA_MAX_BYTES) {
+              setNotice("Selecciona una imagen JPG, PNG, WebP o un audio compatible de hasta 4 MB.");
+              return;
+            }
+            const version = ++fileVersion.current;
+            setReadingFile(true);
+            try {
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+                reader.readAsDataURL(file);
+              });
+              if (version === fileVersion.current) setAttachment({ type: file.type.startsWith("image/") ? "IMAGE" : "AUDIO", dataUrl, name: file.name });
+            } catch {
+              if (version === fileVersion.current) setNotice("No se pudo leer el archivo.");
+            } finally {
+              if (version === fileVersion.current) setReadingFile(false);
+            }
+          }} />
+        </label>
+        {attachment ? <div className="message-simulator-notice">
+          {attachment.name}
+          <button type="button" className="btn btn-outline" disabled={busy} onClick={() => setAttachment(null)}>Quitar adjunto</button>
+        </div> : null}
+
         <form className="message-simulator-input" onSubmit={handleSubmit}>
           <textarea
+            disabled={busy}
+            maxLength={1200}
             onChange={(event) => setContent(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {

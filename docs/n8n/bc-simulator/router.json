@@ -639,7 +639,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $('Prepare Media Context').first().json;\nlet content = context.content || '';\nlet visualHints = null;\nif (context.needsAudio) {\n  try {\n    const transcription = $('Transcribe Audio').first().json.transcription;\n    if (transcription?.status === 'READY' && typeof transcription.text === 'string') content = transcription.text;\n  } catch {}\n}\nif (context.needsVision) {\n  try {\n    const vision = $('Analyze Product Image').first().json;\n    if (vision?.analysis?.status === 'READY') visualHints = vision.visualHints ?? vision.analysis.hints ?? null;\n  } catch {}\n}\nconst latestMedia = context.latestMedia;\nlet messageType = context.messageType || 'TEXT';\nif (context.needsAudio) messageType = 'AUDIO';\nelse if (latestMedia?.messageType) messageType = String(latestMedia.messageType).toUpperCase();\nreturn [{\n  json: {\n    conversationId: context.conversationId,\n    triggerMessageId: context.triggerMessageId,\n    content,\n    messageType,\n    mediaUrl: latestMedia?.mediaUrl ?? context.mediaUrl ?? null,\n    visualHints\n  }\n}];"
+        "jsCode": "const context = $('Prepare Media Context').first().json;\nlet content = context.content || '';\nlet visualHints = null;\nif (context.needsAudio) {\n  try {\n    const transcription = $('Transcribe Audio').first().json.transcription;\n    if (transcription?.status === 'READY' && typeof transcription.text === 'string') {\n      const fragments = context.batch?.fragments;\n      if (Array.isArray(fragments)) {\n        content = fragments.map(fragment => [fragment.content, fragment.messageId === context.audioMedia?.messageId ? transcription.text : ''].filter(Boolean).join('\\n')).filter(Boolean).join('\\n');\n      } else {\n        content = [content, transcription.text].filter(Boolean).join('\\n');\n      }\n    }\n  } catch {}\n}\nif (context.needsVision) {\n  try {\n    const vision = $('Analyze Product Image').first().json;\n    if (vision?.analysis?.status === 'READY') visualHints = vision.visualHints ?? vision.analysis.hints ?? null;\n  } catch {}\n}\nconst latestMedia = context.paymentEvidenceStage ? [...context.media].reverse().find(entry => ['IMAGE', 'DOCUMENT'].includes(String(entry.messageType).toUpperCase())) ?? context.latestMedia : context.imageMedia ?? context.audioMedia ?? context.latestMedia;\nlet messageType = context.messageType || 'TEXT';\nif (latestMedia?.messageType) messageType = String(latestMedia.messageType).toUpperCase();\nreturn [{\n  json: {\n    conversationId: context.conversationId,\n    triggerMessageId: context.triggerMessageId,\n    content,\n    messageType,\n    mediaUrl: latestMedia?.mediaUrl ?? context.mediaUrl ?? null,\n    visualHints\n  }\n}];"
       },
       "id": "build-router-payload",
       "name": "Build Router Payload",
@@ -1044,6 +1044,68 @@
           "name": "Router V2 Internal API"
         }
       }
+    },
+    {
+      "id": "supported-media-batch",
+      "name": "Supported Media Batch",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        -200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "single-media-per-type",
+              "leftValue": "={{ $json.media.filter(m => String(m.messageType).toUpperCase() === 'AUDIO').length <= 1 && ($json.paymentEvidenceStage || $json.media.filter(m => String(m.messageType).toUpperCase() === 'IMAGE').length <= 1) && $json.media.every(m => ['IMAGE', 'AUDIO'].includes(String(m.messageType).toUpperCase()) || ($json.paymentEvidenceStage && String(m.messageType).toUpperCase() === 'DOCUMENT')) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "clarify-media-batch",
+      "name": "Clarify Media Batch",
+      "position": [
+        1560,
+        0
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "parameters": {
+        "method": "POST",
+        "url": "https://tiendavirtualsuper.com/api/internal/chat/simulator-batch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { conversationId: $json.conversationId, triggerMessageId: $json.triggerMessageId, requestId: 'bc:' + $json.triggerMessageId, messages: [{ type: 'TEXT', content: 'Para relacionar bien los archivos con el producto, envíame una foto o captura y un audio por consulta. Si es un video de redes, envíame una captura donde se vea el producto y dime qué necesitas saber.' }] } }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "router-v2-internal-api",
+          "name": "Router V2 Internal API"
+        }
+      }
     }
   ],
   "connections": {
@@ -1131,7 +1193,7 @@
       "main": [
         [
           {
-            "node": "Has Audio",
+            "node": "Supported Media Batch",
             "type": "main",
             "index": 0
           }
@@ -1584,6 +1646,24 @@
         [
           {
             "node": "Router V2 Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supported Media Batch": {
+      "main": [
+        [
+          {
+            "node": "Has Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clarify Media Batch",
             "type": "main",
             "index": 0
           }

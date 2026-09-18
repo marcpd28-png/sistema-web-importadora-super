@@ -1,4 +1,5 @@
 import type { MessageType } from "@prisma/client";
+import { safeInlineMediaUrl } from "./simulator-message";
 
 type MediaMessage = {
   messageType: string;
@@ -19,6 +20,7 @@ function text(value: unknown) {
 export function safeMessageMediaUrl(value: unknown) {
   const url = text(value);
   if (!url) return null;
+  if (url.startsWith("data:")) return safeInlineMediaUrl(url);
   // Local uploads are also used by the message composer.
   if (url.startsWith("/") && !url.startsWith("//") && !url.includes("\\")) return url;
   try {

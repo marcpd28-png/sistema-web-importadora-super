@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { greetChatResponse } from "@/lib/chat-greeting";
 import { lockSimulatorConversation, readSimulatorInputBatch } from "@/lib/simulator-input-batch";
-import { agendaSchema } from "@/lib/bc-request-agenda";
+import { agendaSchema, emptyAgenda } from "@/lib/bc-request-agenda";
+import { customerMemoryEnabled, lockCustomerMemory, persistCustomerLearning } from "@/lib/bc-customer-memory-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ const schema = z.object({
   conversationId: z.string().min(1).max(191),
   requestId: z.string().min(1).max(191),
   triggerMessageId: z.string().min(1).max(191).optional(),
+  customerMemoryRevision: z.number().int().nonnegative().optional(),
   agenda: z.object({ expectedRevision: z.number().int().nonnegative(), state: agendaSchema }).optional(),
   inventory: z.array(z.object({ id: z.string(), updatedAt: z.string().datetime().optional(), stockUnits: z.number(), unitPrice: z.string(), wholesalePrice: z.string().nullable(), wholesaleMinQty: z.number() })).max(10000).optional(),
   selection: z.object({ code: z.string().max(64).nullable(), quantity: z.number().int().positive().nullable() }).optional(),
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async tx => {
       await lockSimulatorConversation(tx, input.conversationId);
       const conversation = await tx.conversation.findUnique({ where: { id: input.conversationId }, select: {
-        botEnabled: true, assignedUserId: true, status: true, contact: { select: { externalId: true } },
+        botEnabled: true, assignedUserId: true, status: true, contactId: true, contact: { select: { externalId: true } },
       } });
       if (!conversation?.contact.externalId?.startsWith("SIMULATOR:")) return { denied: true, messages: [] };
       if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return { skipped: true, messages: [] };
@@ -45,10 +47,12 @@ export async function POST(request: Request) {
       if (inputBatch && inputBatch.status !== "READY" && inputBatch.status !== "TOO_LARGE") {
         return { skipped: true, reason: inputBatch.status, messages: [] };
       }
+      let previousAgenda = emptyAgenda();
       if (input.agenda) {
         if (!input.triggerMessageId || inputBatch?.status !== "READY") return { skipped: true, reason: "AGENDA_REQUIRES_READY_BATCH", messages: [] };
         const previous = await tx.conversationRequestAgenda.findUnique({ where: { conversationId: input.conversationId } });
         if ((previous?.revision ?? 0) !== input.agenda.expectedRevision) return { skipped: true, reason: "AGENDA_CHANGED", messages: [] };
+        previousAgenda = previous ? agendaSchema.parse(previous.state) : emptyAgenda();
       }
       if (input.inventory?.length) {
         const live = await tx.product.findMany({ where: { id: { in: input.inventory.map(product => product.id) }, isVisible: true },
@@ -58,6 +62,11 @@ export async function POST(request: Request) {
         }
       }
       const started = Date.now();
+      if (customerMemoryEnabled() && input.customerMemoryRevision !== undefined) {
+        await lockCustomerMemory(tx, conversation.contactId);
+        const memory = await tx.customerConversationMemory.findUnique({ where: { contactId: conversation.contactId } });
+        if ((memory?.revision ?? 0) !== input.customerMemoryRevision) return { skipped: true, reason: "CUSTOMER_MEMORY_CHANGED", messages: [] };
+      }
       const replies = greetChatResponse(input.messages, new Date(started));
       const data = replies.map((message,index) => ({
         conversationId: input.conversationId, senderType: "BOT" as const, direction: "OUTBOUND" as const,
@@ -70,6 +79,10 @@ export async function POST(request: Request) {
       const inserted = await tx.chatMessage.createMany({ data, skipDuplicates: true });
       if (!inserted.count) return { duplicate: true, messages: [] };
       if (input.agenda) {
+        if (customerMemoryEnabled() && inputBatch?.status === "READY") {
+          await persistCustomerLearning(tx, { contactId: conversation.contactId, conversationId: input.conversationId,
+            previous: previousAgenda, next: input.agenda.state, messages: inputBatch.fragments });
+        }
         await tx.conversationRequestAgenda.upsert({
           where: { conversationId: input.conversationId },
           create: { conversationId: input.conversationId, revision: 1, state: input.agenda.state },
