@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { analyzeRouterV2ProductImage } from "@/lib/router-v2-vision-analyzer";
 import { matchCatalogSourceImage } from "@/lib/router-v2-catalog-image-match";
+import { matchCatalogImageText } from "@/lib/router-v2-local-ocr";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -30,7 +31,10 @@ export async function POST(request: Request) {
     const catalogMatch = await matchCatalogSourceImage(input.imageUrl, hash => prisma.product.findMany({
       where: { sourceImageContentHash: hash, isVisible: true }, select: { code: true }, take: 2,
     }));
-    const analysis = catalogMatch ?? await analyzeRouterV2ProductImage(input);
+    const textMatch = catalogMatch ? null : await matchCatalogImageText(input.imageUrl, code => prisma.product.findMany({
+      where: { code, isVisible: true }, select: { code: true }, take: 2,
+    }));
+    const analysis = catalogMatch ?? textMatch ?? await analyzeRouterV2ProductImage(input);
 
     return NextResponse.json({
       ok: true,
