@@ -13,6 +13,7 @@ import { POST as persistBatch } from "../simulator-batch/route";
 import { customerMemoryEnabled } from "@/lib/bc-customer-memory-store";
 import { checkoutOwnsReply } from "@/lib/bc-checkout-routing";
 import { matchCatalogSourceImage } from "@/lib/router-v2-catalog-image-match";
+import { matchCatalogImageText } from "@/lib/router-v2-local-ocr";
 import type { CommercialMessage } from "@/lib/commercial-language";
 import { frequentCustomerFields, readCustomerMemory, recallCustomerProduct } from "@/lib/bc-customer-memory";
 
@@ -46,12 +47,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, handled: false });
     }
     const inbound: CommercialMessage[] = await prisma.chatMessage.findMany({ where: { conversationId: input.conversationId, id: { in: batch.messageIds } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true } });
+    let ocrAttempts = 0;
     for (const [index, media] of batch.media.entries()) {
       const message = inbound.find(item => item.id === media.messageId);
       if (!message) continue;
-      const match = await matchCatalogSourceImage(media.mediaUrl, hash => prisma.product.findMany({
+      let match = await matchCatalogSourceImage(media.mediaUrl, hash => prisma.product.findMany({
         where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2,
       }));
+      // Keep long bursts bounded; additional unresolved photos remain explicit pending topics.
+      if (!match && ocrAttempts < 2) {
+        ocrAttempts++;
+        match = await matchCatalogImageText(media.mediaUrl, code => prisma.product.findMany({
+          where: { isVisible: true, code }, select: { code: true }, take: 2,
+        }));
+      }
       message.imageReference = { code: match?.hints.code ?? null, label: `la foto ${index + 1} de este grupo` };
     }
     const previous = conversation.requestAgenda ? agendaSchema.parse(conversation.requestAgenda.state) : emptyAgenda();

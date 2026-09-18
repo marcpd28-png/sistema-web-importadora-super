@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { catalogImageContentHash } from "../../src/lib/router-v2-catalog-image-match";
 
 async function main() {
@@ -41,7 +42,7 @@ async function main() {
     return replies.map(row => row.content).join("\n");
   }
   try {
-    const product = await prisma.product.create({ data: { code: `QA${Date.now()}`, slug: `memory-${run}`, name: "VENTILADOR DE PRUEBA", imageUrl: "https://example.com/ventilador.jpg", unitPrice: 37, stockUnits: 10, isVisible: true } });
+    const product = await prisma.product.create({ data: { code: "N1321", slug: `memory-${run}`, name: "VENTILADOR DE PRUEBA", imageUrl: "https://example.com/ventilador.jpg", unitPrice: 37, stockUnits: 10, isVisible: true } });
     products.push(product.id);
     const photo = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jT5sAAAAASUVORK5CYII=';
     await prisma.product.update({ where: { id: product.id }, data: { sourceImageContentHash: catalogImageContentHash(photo) } });
@@ -50,6 +51,23 @@ async function main() {
     assert.match(imageReplies, /6 unidad\(es\): S\/ 37\.00/);
     assert(imageReplies.indexOf("Métodos de pago:") < imageReplies.indexOf("Total:"));
     assert(imageReplies.indexOf("Total:") < imageReplies.indexOf("Modalidades de entrega:"));
+    const screenshotBytes = execFileSync("/usr/bin/python3", ["-c", `
+from PIL import Image,ImageDraw,ImageFont
+import sys
+image=Image.new('RGB',(900,500),'white');draw=ImageDraw.Draw(image)
+font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',42)
+draw.text((40,40),'Referencia de prueba',font=font,fill='black')
+draw.text((40,140),'CODIGO: '+sys.argv[1],font=font,fill='black')
+image.save(sys.stdout.buffer,format='JPEG')
+`, product.code]);
+    const screenshot = `data:image/jpeg;base64,${screenshotBytes.toString("base64")}`;
+    const ocrConversation = await conversation(await customer());
+    const ocrReplies = await send(ocrConversation.id, ["aceptan yape", { content: "", mediaUrl: screenshot }, "precio de este", "seis unidades", "envíos a Arequipa"]);
+    assert.match(ocrReplies, /6 unidad\(es\): S\/ 37\.00/);
+    assert(ocrReplies.indexOf("Métodos de pago:") < ocrReplies.indexOf("Total:"));
+    assert(ocrReplies.indexOf("Total:") < ocrReplies.indexOf("Modalidades de entrega:"));
+    const ocrAgenda = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: ocrConversation.id } });
+    assert.deepEqual((ocrAgenda.state as { requests: { kind: string }[] }).requests.map(job => job.kind), ["PAYMENT", "PRICE", "SHIPPING"]);
     const unknown = await conversation(await customer());
     const unknownReplies = await send(unknown.id, ["aceptan yape", { content: "", mediaUrl: "https://example.invalid/unknown.jpg" }, "precio de este", "seis unidades", "envíos a Arequipa"]);
     assert(unknownReplies.indexOf("Métodos de pago:") < unknownReplies.indexOf("la foto 1"));
