@@ -316,41 +316,48 @@ type ScopedCatalogItem = CatalogProductImage & { brand: string | null; category:
 
 export function renderScopedCatalogPdf(items: { image: Buffer | null; name: string; code: string; brand: string }[], title: string) {
   return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ autoFirstPage: false, compress: true, size: "A4", margin: 0,
+    const doc = new PDFDocument({ autoFirstPage: false, compress: true, size: "A4", layout: "landscape", margin: 0,
       info: { Title: title, Author: "Importaciones Super", Subject: title } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
     doc.on("error", reject);
     doc.on("end", () => resolve(Buffer.concat(chunks)));
-    const pages = Math.ceil(items.length / 4);
+    const productsPerPage = 2;
+    const pageWidth = 841.89;
+    const margin = 24;
+    const gap = 16;
+    const contentWidth = pageWidth - margin * 2;
+    const cardWidth = (contentWidth - gap) / productsPerPage;
+    const innerWidth = cardWidth - 24;
+    const pages = Math.ceil(items.length / productsPerPage);
     for (let page = 0; page < pages; page++) {
       doc.addPage();
       doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(19);
       let titleSize = 19;
-      while (doc.heightOfString(title, { width: 523 }) > 48 && titleSize > 10) doc.fontSize(--titleSize);
-      doc.text(title, 36, 26, { width: 523, height: 48, align: "center" });
+      while (doc.heightOfString(title, { width: contentWidth }) > 44 && titleSize > 10) doc.fontSize(--titleSize);
+      doc.text(title, margin, 16, { width: contentWidth, height: 44, align: "center" });
       doc.fillColor("#666666").font("Helvetica").fontSize(9)
-        .text(`Importaciones Super | ${items.length} productos | Agrupados por marca`, 36, 78, { width: 523, align: "center" });
-      for (let slot = 0; slot < 4; slot++) {
-        const item = items[page * 4 + slot];
+        .text(`Importaciones Super | ${items.length} productos | Agrupados por marca`, margin, 66, { width: contentWidth, align: "center" });
+      for (let slot = 0; slot < productsPerPage; slot++) {
+        const item = items[page * productsPerPage + slot];
         if (!item) break;
-        const x = 28 + (slot % 2) * 274;
-        const y = 108 + Math.floor(slot / 2) * 342;
-        doc.roundedRect(x, y, 265, 330, 8).lineWidth(0.6).strokeColor("#DEDEEE").stroke();
+        const x = margin + slot * (cardWidth + gap);
+        const y = 90;
+        doc.roundedRect(x, y, cardWidth, 464, 8).lineWidth(0.6).strokeColor("#DEDEEE").stroke();
         doc.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(10)
-          .text(item.brand, x + 12, y + 12, { width: 241, align: "center", height: 26 });
-        if (item.image) doc.image(item.image, x + 12, y + 40, { fit: [241, 195], align: "center", valign: "center" });
+          .text(item.brand, x + 12, y + 10, { width: innerWidth, align: "center", height: 24 });
+        if (item.image) doc.image(item.image, x + 12, y + 36, { fit: [innerWidth, 350], align: "center", valign: "center" });
         else doc.fillColor("#777777").font("Helvetica").fontSize(12)
-          .text("Imagen no disponible", x + 12, y + 115, { width: 241, align: "center" });
+          .text("Imagen no disponible", x + 12, y + 200, { width: innerWidth, align: "center" });
         doc.fillColor("#17172B").font("Helvetica-Bold").fontSize(11);
         let size = 11;
-        while (doc.heightOfString(item.name, { width: 241 }) > 50 && size > 8) doc.fontSize(--size);
-        doc.text(item.name, x + 12, y + 249, { width: 241, height: 50, ellipsis: true, align: "center" });
+        while (doc.heightOfString(item.name, { width: innerWidth }) > 38 && size > 8) doc.fontSize(--size);
+        doc.text(item.name, x + 12, y + 396, { width: innerWidth, height: 38, ellipsis: true, align: "center" });
         doc.fillColor(BRAND_PRIMARY).font("Helvetica").fontSize(10)
-          .text(`Código: ${item.code}`, x + 12, y + 310, { width: 241, align: "center" });
+          .text(`Código: ${item.code}`, x + 12, y + 442, { width: innerWidth, height: 16, ellipsis: true, align: "center" });
       }
       doc.fillColor("#666666").font("Helvetica").fontSize(9)
-        .text(`${page + 1} / ${pages}`, 36, 810, { width: 523, align: "center" });
+        .text(`${page + 1} / ${pages}`, margin, 572, { width: contentWidth, align: "center" });
     }
     doc.end();
   });
@@ -367,7 +374,7 @@ async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: stri
       const index = next++;
       const product = products[index];
       try {
-        const image = await sharp(await loadFirstAvailableImage(product)).resize({ width: largeImages ? 1600 : 800, height: largeImages ? 1600 : 800, fit: "inside", withoutEnlargement: true }).jpeg({ quality: largeImages ? 90 : 78 }).toBuffer();
+        const image = await sharp(await loadFirstAvailableImage(product)).resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 90 }).toBuffer();
         loaded[index] = { image, name: product.name, code: product.code, brand: resolveProductBrand(product) || "Otras marcas" };
       } catch { /* A product without a readable photo must never become a catalog card. */ }
     }
@@ -402,7 +409,7 @@ export async function generateRequestedCatalogPdf(content: string, largeImages =
   const products = selection.products;
   if (!selection.scoped) return { ...selection, products: [], catalog: null };
   if (!products.length) return { ...selection, catalog: null };
-  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v3-canonical" : "scoped-grid-v5-canonical"}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v3-canonical" : "scoped-two-products-v6-canonical"}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
   let generation = inFlightScopedCatalogs.get(fingerprint);
   if (!generation) {
     generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightScopedCatalogs.delete(fingerprint));
