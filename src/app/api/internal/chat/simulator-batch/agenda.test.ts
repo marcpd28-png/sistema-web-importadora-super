@@ -21,6 +21,7 @@ test("agenda and answers commit together only for the current batch, stock and r
   const originalUpdatedAt = new Date("2026-09-18T00:00:00Z");
   let updatedAt = originalUpdatedAt;
   let salesUpdate: { selectedProductCode: string | null; stage: string } | null = null;
+  let salesState: { stage: string; selectedProductCode: string | null } = { stage: "AWAITING_PURCHASE_CONFIRMATION", selectedProductCode: null };
   const inbound = { id: "m1", content: "precio A1", direction: "INBOUND", senderType: "CUSTOMER", messageType: "TEXT", mediaUrl: null, createdAt: new Date(Date.now() - 15000) };
   const tx = {
     $executeRaw: async () => 1,
@@ -32,7 +33,7 @@ test("agenda and answers commit together only for the current batch, stock and r
     },
     product: { findMany: async () => [{ id: "p1", updatedAt, stockUnits: stock, unitPrice: 20, wholesalePrice: null, wholesaleMinQty: 6 }] },
     conversationSalesState: {
-      findUnique: async () => ({ stage: "AWAITING_PURCHASE_CONFIRMATION" }),
+      findUnique: async () => salesState,
       upsert: async ({ update }: { update: NonNullable<typeof salesUpdate> }) => { salesUpdate = update; return update; },
     },
     chatMessage: {
@@ -79,4 +80,12 @@ test("agenda and answers commit together only for the current batch, stock and r
   assert.equal((await send(1, { agenda: { expectedRevision: 1, state: unavailable }, selection: { code: null, quantity: null } })).ok, true);
   assert.equal((salesUpdate as { selectedProductCode: string | null } | null)?.selectedProductCode, null);
   assert.equal((salesUpdate as { stage: string } | null)?.stage, "AWAITING_PRODUCT_QUERY");
+  const selected = planRequests(emptyAgenda(), [{ id: "m1", content: "precio A1" }]).agenda;
+  selected.topics[0].selectedCode = "A1";
+  for (const stage of ["AWAITING_QUANTITY", "AWAITING_PRICE_CONFIRMATION"]) {
+    salesState = { stage, selectedProductCode: "A1" }; salesUpdate = null;
+    const revision: number = (row as { revision: number } | null)!.revision;
+    assert.equal((await send(revision, { agenda: { expectedRevision: revision, state: selected }, selection: { code: "A1", quantity: null } })).ok, true);
+    assert.equal(salesUpdate, null, "an answer about the current product must not reset checkout");
+  }
 });

@@ -93,9 +93,10 @@ export async function POST(request: Request) {
       if (input.selection && input.agenda) {
         const selected = input.agenda.state.topics.find(topic => topic.id === input.agenda!.state.lastTopicId)?.selectedCode;
         if (selected === input.selection.code) {
-          const state = await tx.conversationSalesState.findUnique({ where: { conversationId: input.conversationId }, select: { stage: true } });
+          const state = await tx.conversationSalesState.findUnique({ where: { conversationId: input.conversationId }, select: { stage: true, selectedProductCode: true } });
           // Keep checkout/customer/payment state intact while sharing an explicitly resolved SKU.
-          if (!state || !/CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(state.stage)) {
+          const sameSelection = Boolean(selected) && state?.selectedProductCode === selected;
+          if (!sameSelection && (!state || !/CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(state.stage))) {
             const data = { selectedProductCode: selected, quantity: selected ? input.selection.quantity : null, unitPrice: null, total: null, priceTier: null, stage: selected ? "AWAITING_PURCHASE_CONFIRMATION" as const : "AWAITING_PRODUCT_QUERY" as const };
             await tx.conversationSalesState.upsert({ where: { conversationId: input.conversationId }, create: { conversationId: input.conversationId, ...data }, update: data });
           }

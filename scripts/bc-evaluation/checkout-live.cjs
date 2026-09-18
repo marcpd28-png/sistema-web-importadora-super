@@ -44,7 +44,10 @@ async function send(content, stage, attachment) {
   const product = await db.product.findFirstOrThrow({ where: { code: 'N1321', isVisible: true, stockUnits: { gte: 3 } }, select: { code: true } });
   await send(product.code, 'AWAITING_PURCHASE_CONFIRMATION');
   await send('si', 'AWAITING_QUANTITY');
+  await send('¿Hacen envíos a Arequipa?', 'AWAITING_QUANTITY');
   await send('2', 'AWAITING_PRICE_CONFIRMATION');
+  const afterPaymentQuestion = await send('¿Aceptan Yape?', 'AWAITING_PRICE_CONFIRMATION');
+  assert.equal(afterPaymentQuestion.quantity, 2);
   await send('si', 'AWAITING_CUSTOMER_DATA');
   await send('Me llamo Cliente Prueba', 'AWAITING_DOCUMENT_TYPE');
   await send('boleta DNI 12345678', 'AWAITING_DELIVERY_METHOD');
