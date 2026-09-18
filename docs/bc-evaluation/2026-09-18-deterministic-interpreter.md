@@ -34,4 +34,20 @@ node --import tsx --test src/lib/bc-deterministic.test.ts src/lib/catalog-select
 node --import tsx scripts/bc-evaluation/prevention-audit.cjs --read-only-inventory --enforce --output .cache/bc-prevention-current.json
 ```
 
-`--enforce` impide aprobar la auditoría si falla una reformulación o un control independiente. Los resultados integrales del simulador y la revisión instalada se registran después del despliegue.
+`--enforce` impide aprobar la auditoría si falla una reformulación o un control independiente.
+
+## Despliegue verificado
+
+Código `6685f1578699445148e12cf1d5baf9d0f257a57a`, publicado en `codex/desarrollo-actualizado` e instalado en el VPS. Compilación de producción y las 72 pruebas correctas; web HTTP 200, proceso principal y motor online, agenda habilitada y redacción con IA desactivada. Se conservó una copia de la versión y compilación anteriores para reversión.
+
+El 18/09/2026 a las 08:10 UTC finalizaron diez conversaciones de prueba a través del simulador y n8n: diez respuestas verificadas, seis PDF descargables y ninguna respuesta adicional o tardía. Se eliminaron los diez contactos temporales propios; no se enviaron mensajes a clientes.
+
+- El ejemplo de proyectores y su variante en tres mensajes generan el mismo catálogo de 18 productos con stock y foto legible.
+- La consulta mayorista entrega 87 cargadores y conserva pendiente «fuentes de poder»: no hay coincidencias con ese nombre en la fotografía publicada consultada. No se elimina el resultado de cargadores ni se inventa la otra familia.
+- El presupuesto compartido limita el catálogo encontrado a 75 productos de hasta S/ 100.
+- Audífonos JBL Bluetooth devuelve 38 productos y excluye adaptadores. La variante «xiami» devuelve los celulares Xiaomi/Redmi identificados.
+- Producto, envío y Yape se contestan como solicitudes separadas. «Dos unidades» ajusta una sola cotización y «shaver» pide identificación sin devolver un reloj SILVER.
+
+Las consultas de texto respondieron entre 12,5 y 12,7 segundos desde la última entrada; los PDF tardaron entre 29,5 y 68 segundos, incluyendo carga de fotos y generación. Los 12 segundos son el tiempo de agrupación de mensajes, no una garantía de entrega del PDF en ese plazo.
+
+Resumen reproducible de evidencias: [deterministic-2026-09-18.json](deterministic-2026-09-18.json). Estas pruebas acreditan los escenarios descritos, no comprensión universal del lenguaje ni una calificación de 10/10.

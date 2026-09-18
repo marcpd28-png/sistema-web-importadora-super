@@ -1,0 +1,184 @@
+{
+  "verifiedAt": "2026-09-18T08:10:19.567Z",
+  "codeRevision": "6685f1578699445148e12cf1d5baf9d0f257a57a",
+  "unitTests": {
+    "passed": 72,
+    "total": 72
+  },
+  "inventoryPhrasing": {
+    "passed": 910,
+    "total": 910,
+    "kind": "synthetic invariance, not real-customer accuracy"
+  },
+  "independentGuards": {
+    "passed": 16,
+    "total": 16
+  },
+  "retrievalComparison": {
+    "snapshotAt": "2026-09-18T07:22:14.020Z",
+    "baselineRevision": "6ce69c2",
+    "method": "Read-only before/after on same inventory; historical labels intersected with currently available codes, not new blind ground truth; product retrieval only, not end-to-end accuracy.",
+    "before": {
+      "cases": 150,
+      "graded": 89,
+      "withRelevant": 44,
+      "fullCoverage": 20,
+      "matched": 1101,
+      "expected": 1662,
+      "extra": 155
+    },
+    "after": {
+      "cases": 150,
+      "graded": 89,
+      "withRelevant": 47,
+      "fullCoverage": 28,
+      "matched": 1115,
+      "expected": 1662,
+      "extra": 79
+    }
+  },
+  "simulator": {
+    "cases": 10,
+    "passed": 10,
+    "pdfChecks": 6,
+    "lateOrExtraReplies": 0,
+    "cleanup": {
+      "temporaryContactsDeleted": 10,
+      "remaining": 0
+    },
+    "results": [
+      {
+        "id": "DET01",
+        "scenario": "projectors",
+        "latencyMs": 29503,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 18,
+        "pdfChecks": [
+          {
+            "ok": true,
+            "httpStatus": 200
+          }
+        ]
+      },
+      {
+        "id": "DET03",
+        "scenario": "fragments",
+        "latencyMs": 31059,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 18,
+        "pdfChecks": [
+          {
+            "ok": true,
+            "httpStatus": 200
+          }
+        ]
+      },
+      {
+        "id": "DET02",
+        "scenario": "wholesale",
+        "latencyMs": 67960,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 87,
+        "pdfChecks": [
+          {
+            "ok": true,
+            "httpStatus": 200
+          }
+        ]
+      },
+      {
+        "id": "DET04",
+        "scenario": "mixed",
+        "latencyMs": 12678,
+        "requestKinds": [
+          "SEARCH",
+          "SHIPPING",
+          "PAYMENT"
+        ],
+        "productCount": 8,
+        "pdfChecks": []
+      },
+      {
+        "id": "DET06",
+        "scenario": "device_identity",
+        "latencyMs": 47753,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 38,
+        "pdfChecks": [
+          {
+            "ok": true,
+            "httpStatus": 200
+          }
+        ]
+      },
+      {
+        "id": "DET05",
+        "scenario": "shared_budget",
+        "latencyMs": 63634,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 75,
+        "pdfChecks": [
+          {
+            "ok": true,
+            "httpStatus": 200
+          }
+        ]
+      },
+      {
+        "id": "DET07",
+        "scenario": "quantity",
+        "latencyMs": 12588,
+        "requestKinds": [
+          "PRICE"
+        ],
+        "productCount": 1,
+        "pdfChecks": []
+      },
+      {
+        "id": "DET08",
+        "scenario": "unclear",
+        "latencyMs": 12525,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 0,
+        "pdfChecks": []
+      },
+      {
+        "id": "DET09",
+        "scenario": "brand_typo",
+        "latencyMs": 12497,
+        "requestKinds": [
+          "SEARCH"
+        ],
+        "productCount": 2,
+        "pdfChecks": []
+      },
+      {
+        "id": "DET10",
+        "scenario": "wording",
+        "latencyMs": 30185,
+        "requestKinds": [
+          "CATALOG"
+        ],
+        "productCount": 26,
+        "pdfChecks": [
+          {
+            "ok": true,
+            "httpStatus": 200
+          }
+        ]
+      }
+    ]
+  }
+}
