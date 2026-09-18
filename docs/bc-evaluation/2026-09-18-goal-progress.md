@@ -128,3 +128,12 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Pasaron 67 pruebas, TypeScript, ESLint, compilación e integración del endpoint con PostgreSQL temporal: coincidencia única, duplicados y cambios de visibilidad. Base temporal eliminada.
 - Prueba real: foto de origen de N1321 obtenida del host ERP ya utilizado (`original.negocioserp.com`), descarga limitada a 4 MB y validada contra la huella almacenada. El endpoint devolvió `catalog-source-image-sha256`, y la misma foto enviada por el simulador atravesó n8n y seleccionó N1321, mostró precio vigente y avanzó a pedir cantidad. Contacto temporal eliminado; cero llamadas a proveedor de IA.
 - Límite explícito: identifica archivos de origen idénticos. Una captura de TikTok/Instagram, foto desde otro ángulo, recorte o recompresión puede tener otra huella y aún necesita visión/OCR u otro análisis. Esto no sustituye la comprensión visual general ni acredita el objetivo completo.
+
+## Corrección del comprobante antes de confirmar
+
+- Motor `e607fa0`, publicado en Git y activo en VPS con compilación aislada y respaldo. Permite cambiar boleta/factura mientras se recogen documentos, y corregir documento en el resumen mediante frases explícitas como «mejor factura» o «mi DNI es 87654321».
+- Un cambio sin número solicita el documento nuevo; al recibirlo, recupera la entrega completa y configurada que ya estaba elegida. Conserva producto, cantidad y cliente; exige confirmar el resumen nuevamente. No modifica el documento de un pedido ya creado.
+- Pasaron 69 pruebas, TypeScript, ESLint y compilación. Integración del handler real con PostgreSQL temporal: compra, cambio de cantidad, boleta→factura/RUC→boleta/DNI, cambio de tarifa, pedido SIM y evidencia pendiente de validación. Base temporal eliminada.
+- Se amplió la prueba `scripts/bc-evaluation/checkout-live.cjs` con las correcciones de documento para comprobar también el paso por el simulador y n8n.
+- Continúan pendientes otras correcciones de datos, varios artículos y comprensión visual general; el objetivo completo sigue abierto.
+- Recorrido real completado en VPS por simulador → n8n → motor: boleta→factura/RUC→boleta/DNI, cantidad tres, total 345 y recojo conservados, pedido SIM solo tras confirmar y voucher pendiente de validación. Sin pedidos reales; contacto temporal eliminado. Evidencia: `2026-09-18-checkout-documents.json`.

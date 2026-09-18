@@ -54,6 +54,16 @@ async function send(content, stage, attachment) {
   await send('recojo', 'AWAITING_ORDER_CONFIRMATION');
   const corrected = await send('mejor 3', 'AWAITING_ORDER_CONFIRMATION');
   assert.equal(corrected.quantity, 3); assert.equal(corrected.customerData.name, 'Cliente Prueba');
+  await send('mejor factura', 'AWAITING_DOCUMENT_DATA');
+  const invoice = await send('20123456789', 'AWAITING_ORDER_CONFIRMATION');
+  assert.equal(invoice.documentData.type, 'FACTURA');
+  assert.equal(invoice.documentData.number, '20123456789');
+  const document = await send('mi DNI es 87654321', 'AWAITING_ORDER_CONFIRMATION');
+  assert.equal(document.documentData.type, 'BOLETA');
+  assert.equal(document.documentData.number, '87654321');
+  assert.equal(document.quantity, 3);
+  assert.equal(document.deliveryData.method, 'RECOJO');
+  assert.equal(document.orderNumber, null);
   const ordered = await send('confirmo', 'AWAITING_PAYMENT_METHOD');
   assert.match(ordered.orderNumber, /^SIM-/);
   await send('yape', 'AWAITING_PAYMENT_CONFIRMATION');
