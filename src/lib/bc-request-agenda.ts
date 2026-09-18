@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { normalizeCommercialText, parseCommercialQuery } from "./commercial-query";
+import { describeCommercialConstraints, normalizeCommercialText, parseCommercialQuery } from "./commercial-query";
+import { commercialClauses, groupCommercialFragments, type CommercialLexicon } from "./commercial-language";
 
 export const agendaRequestSchema = z.object({
   id: z.string(), kind: z.enum(["CATALOG", "SEARCH", "INFORMATION", "PRICE", "STOCK", "SHIPPING", "PAYMENT", "STORE"]),
@@ -9,7 +10,8 @@ export const agendaRequestSchema = z.object({
 });
 export const agendaSchema = z.object({
   version: z.literal(1), lastTopicId: z.string().nullable(),
-  topics: z.array(z.object({ id: z.string(), query: z.string(), selectedCode: z.string().nullable(), shownCodes: z.array(z.string()) })).max(100),
+  topics: z.array(z.object({ id: z.string(), query: z.string(), selectedCode: z.string().nullable(), shownCodes: z.array(z.string()),
+    shownGroups: z.array(z.object({ query: z.string(), codes: z.array(z.string()) })).optional() })).max(100),
   requests: z.array(agendaRequestSchema).max(200),
 });
 export type RequestAgenda = z.infer<typeof agendaSchema>;
@@ -42,25 +44,28 @@ const NUMBERS: Record<string, number> = { dos: 2, tres: 3, cuatro: 4, cinco: 5, 
 export function requestedQuantity(content: string) {
   const text = normalizeCommercialText(content);
   const match = text.match(/\b(?:por|para|quiero|necesito|salen|cuestan|cotiza|cotizar|mejor)\s+(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/) || text.match(/\b(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s+(?:unidades|unds|piezas)\b/);
+  if (match && /^(?:w|watts?|v|voltios?|gb|tb|mb|mah|cm|mm|kg|rpm|pulgadas?|soles?)\b/.test(text.slice(match.index! + match[0].length).trim())) return null;
   const value = match ? NUMBERS[match[1]] ?? Number(match[1]) : null;
   return value && value <= 100000 ? value : null;
 }
 
 /** Keep model punctuation intact; remove question wording before querying the catalog. */
-export function productSubject(content: string) {
+export function productSubject(content: string, preserveAttributes = false) {
   // Browsing vocabulary belongs to the catalog index. Removing attribute words here
   // destroys categories such as ACCESORIOS DE CUIDADO PERSONAL or CARGA PORTATIL.
   const browsing = /\b(?:busco|buscando|catalogos?|categorias?|marcas?|modelos|productos|articulos|tienes|tienen|venden|manejan|accesorios (?:de|para))\b/.test(normalizeCommercialText(content));
   if (browsing && !/\b(?:cuanto dura|que incluye|que trae|que garantia|que potencia)\b/.test(normalizeCommercialText(content))) {
     return content.replace(/[¿?!,;]+/g, " ").replace(/\s+/g, " ").trim();
   }
-  return content
+  let subject = content
     .replace(/\b(?:fotos?|im[aá]genes?|fotograf[ií]as?)\b/gi, " ")
     .replace(/\b(?:salen|cuestan|quiero|necesito|cotiza|cotizar)\s+\d+\s*(?:unidades?|unds?|piezas?)?\b/gi, " ")
     .replace(/\b(?:cu[aá]nto\s+(?:dura|cuesta|cuestan|sale|salen)|qu[eé]\s+(?:incluye|trae)|funciona\s+con|sistema\s+operativo)\b/gi, " ")
     .replace(/\b(?:para|por)\s+(?:\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s*(?:unidades?|unds?|piezas?)?\b/gi, " ")
     .replace(/\b(?:dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/gi, " ")
-    .replace(/\b(?:tambi[eé]n|adem[aá]s|informaci[oó]n|informes|info|detalles|caracter[ií]sticas|especificaciones|sobre|acerca|precio|precios|cu[aá]nto|cu[aá]ntos|cuesta|cuestan|sale|salen|stock|disponibilidad|disponible|disponibles|bater[ií]a|autonom[ií]a|duraci[oó]n|dura|horas|potencia|garant[ií]a|incluye|incluido|accesorios|android|resoluci[oó]n|compatible|compatibilidad|conectividad|bluetooth|wifi|carga|puertos|medidas|dimensiones|peso|trae|tiene|ese|esa|este|esta|eso|del|el|la|los|las|de|que|cu[aá]l|cu[aá]les|es|son|dime|saber|quisiera|quiero|necesito|busco|tienes|tienen|hay|por|favor|me|puedes|dar|pasame|p[aá]same|pasa|manda|mandame|env[ií]ame|ver|cat[aá]logos?|pdf)\b/gi, " ")
+    .replace(/\b(?:tambi[eé]n|adem[aá]s|informaci[oó]n|informes|info|detalles|caracter[ií]sticas|especificaciones|sobre|acerca|precio|precios|cu[aá]nto|cu[aá]ntos|cuesta|cuestan|sale|salen|stock|disponibilidad|disponible|disponibles|trae|tiene|ese|esa|este|esta|eso|del|el|la|los|las|de|que|cu[aá]l|cu[aá]les|es|son|dime|saber|quisiera|quiero|necesito|busco|tienes|tienen|hay|por|favor|me|puedes|dar|pasame|p[aá]same|pasa|manda|mandame|env[ií]ame|ver|cat[aá]logos?|pdf)\b/gi, " ");
+  if (!preserveAttributes) subject = subject.replace(/\b(?:bater[ií]a|autonom[ií]a|duraci[oó]n|dura|horas|potencia|garant[ií]a|incluye|incluido|accesorios|android|resoluci[oó]n|compatible|compatibilidad|conectividad|bluetooth|wifi|carga|puertos|medidas|dimensiones|peso)\b/gi, " ");
+  return subject
     .replace(/[¿?!,;]+/g, " ").replace(/\s+/g, " ").trim().replace(/^(?:y|e|o|u)\s+|\s+(?:y|e|o|u)$/gi, "").replace(/^(?:y|e|o|u)$/i, "");
 }
 
@@ -70,13 +75,14 @@ function commonTopic(query: string, topic: AgendaTopic) {
   return tokens.length > 0 && tokens.every(token => words.includes(token) || words.includes(token.replace(/s$/, "")));
 }
 
-export function planRequests(previous: RequestAgenda, messages: { id: string; content: string }[]) {
+export function planRequests(previous: RequestAgenda, messages: { id: string; content: string }[], lexicon?: CommercialLexicon) {
   const agenda = structuredClone(previous);
   const touched = new Set<string>();
   let recognized = false;
   let unsupported = false;
-  for (const message of messages) {
-    const clauses = message.content.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|cu[aá]nto|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio))/i).filter(value => value.trim());
+  for (const message of groupCommercialFragments(messages, lexicon)) {
+    const sourceIds = message.sourceMessageIds!;
+    const clauses = commercialClauses(message.content);
     for (const clause of clauses) {
       const text = normalizeCommercialText(clause);
       if (/^(?:hola|gracias|ok|buenos dias|buenas tardes|buenas noches)$/.test(text)) continue;
@@ -103,20 +109,22 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       const business = kinds.some(kind => ["SHIPPING", "PAYMENT", "STORE"].includes(kind));
       if (!business && /\b(?:precio|precios|cuesta|cuestan|salen|cotiza|cotizar|cuanto sale|cuanto por)\b/.test(text)) kinds.push("PRICE");
       if (!business && /\b(?:stock|disponibilidad|cuantas unidades|hay disponibles)\b/.test(text)) kinds.push("STOCK");
-      if (!business && !catalog && (fields.length || /\b(?:informacion|info|detalles|caracteristicas|especificaciones)\b/.test(text))) kinds.push("INFORMATION");
-      const query = business || quantityOnly ? "" : productSubject(clause);
+      const information = /\b(?:informacion|info|detalles|caracteristicas|especificaciones)\b/.test(text) || fields.length > 0 && /\b(?:cuanto dura|que|cual|tiene|trae|incluye|garantia|potencia|autonomia|medidas|dimensiones)\b/.test(text);
+      if (!business && !catalog && information) kinds.push("INFORMATION");
+      const query = business || quantityOnly ? "" : productSubject(clause, !information);
       const filter = parseCommercialQuery(query);
       const isCorrection = !kinds.length && (/^(?:mejor|solo|solamente|cambia)\b/.test(text) || (filter.constraints.colors.length > 0 && !filter.text.trim()));
       let topic: AgendaTopic | undefined;
       const referenced = clause.match(/\b(?:el|la)\s+(primero|primera|segundo|segunda|tercero|tercera|cuarto|cuarta|quinto|quinta|\d+)\b/i);
       if (referenced) {
         const scope = productSubject(clause.replace(referenced[0], ""));
-        const candidates = agenda.topics.filter(value => value.shownCodes.length && (!scope || commonTopic(scope, value)));
+        const candidates = agenda.topics.flatMap(value => (value.shownGroups?.length ? value.shownGroups : [{ query: value.query, codes: value.shownCodes }])
+          .filter(group => group.codes.length && (!scope || commonTopic(scope, { ...value, query: group.query }))).map(group => ({ topic: value, codes: group.codes })));
         if (candidates.length === 1) {
-          topic = candidates[0];
+          topic = candidates[0].topic;
           const position = ["primero", "primera", "segundo", "segunda", "tercero", "tercera", "cuarto", "cuarta", "quinto", "quinta"].indexOf(referenced[1].toLowerCase());
           const index = position >= 0 ? Math.floor(position / 2) : Number(referenced[1]) - 1;
-          topic.selectedCode = topic.shownCodes[index] ?? null;
+          topic.selectedCode = candidates[0].codes[index] ?? null;
           if (topic.selectedCode) topic.query = topic.selectedCode;
         }
         if (!topic && !kinds.length) kinds.push("SEARCH");
@@ -134,11 +142,11 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       if (isCorrection && topic) {
         const cleaned = query.replace(/\b(?:mejor|cambia|cambialo|prefiero)\b/gi, "").trim();
         const old = parseCommercialQuery(topic.query);
-        const preserved = [old.constraints.minPrice === null ? "" : `desde ${old.constraints.minPrice} soles`, old.constraints.maxPrice === null ? "" : `hasta ${old.constraints.maxPrice} soles`, ...old.constraints.excluded.map(term => `sin ${term}`)].filter(Boolean).join(" ");
+        const preserved = describeCommercialConstraints({ ...old.constraints, colors: filter.constraints.colors.length ? [] : old.constraints.colors });
         topic.query = filter.constraints.colors.length ? `${old.text} ${cleaned} ${preserved}`.trim() : `${topic.query} ${cleaned}`.trim();
         topic.selectedCode = null;
         for (const request of agenda.requests.filter(value => value.topicId === topic!.id && value.status !== "CANCELLED")) {
-          request.status = "PENDING"; request.sourceMessageIds.push(message.id); touched.add(request.id);
+          request.status = "PENDING"; request.sourceMessageIds = [...new Set([...request.sourceMessageIds, ...sourceIds])]; touched.add(request.id);
         }
         recognized = true;
         continue;
@@ -146,14 +154,23 @@ export function planRequests(previous: RequestAgenda, messages: { id: string; co
       if (topic) agenda.lastTopicId = topic.id;
       if (!kinds.length && topic && (query || referenced)) {
         const pending = agenda.requests.filter(value => value.topicId === topic!.id && value.status === "NEEDS_CLARIFICATION");
-        if (pending.length) for (const request of pending) { request.status = "PENDING"; request.sourceMessageIds.push(message.id); touched.add(request.id); }
+        if (pending.length) for (const request of pending) { request.status = "PENDING"; request.sourceMessageIds = [...new Set([...request.sourceMessageIds, ...sourceIds])]; touched.add(request.id); }
         else kinds.push("SEARCH");
       }
       if (!kinds.length && !touched.size && !/^(?:hola|gracias|ok|buenos dias|buenas tardes|buenas noches)$/.test(text)) unsupported = true;
       for (const kind of kinds) {
+        // A quantity fragment in the same burst refines the quote; it must not produce
+        // an initial one-unit quote followed by a contradictory second quote.
+        const refining = quantityOnly && topic ? agenda.requests.findLast(job => touched.has(job.id) && job.topicId === topic.id && job.kind === "PRICE") : undefined;
+        if (refining) {
+          refining.quantity = requestedQuantity(clause);
+          refining.sourceMessageIds = [...new Set([...refining.sourceMessageIds, ...sourceIds])];
+          refining.question += `; ${clause.trim()}`;
+          continue;
+        }
         const id = `${message.id}:${agenda.requests.length}:${kind}`;
         agenda.requests.push({ id, kind, topicId: business ? null : topic?.id ?? null, question: clause.trim(), fields: kind === "INFORMATION" ? fields : [],
-          quantity: requestedQuantity(clause), sourceMessageIds: [message.id], status: "PENDING", answeredBy: null, evidence: [] });
+          quantity: requestedQuantity(clause), sourceMessageIds: [...sourceIds], status: "PENDING", answeredBy: null, evidence: [] });
         touched.add(id); recognized = true;
       }
     }

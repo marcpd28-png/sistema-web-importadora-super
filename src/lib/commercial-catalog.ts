@@ -6,11 +6,16 @@ import { isBotProductAvailable, type BotProductAvailability } from "./bot-produc
 export function createCommercialCatalog<T extends CatalogCandidate & BotProductAvailability>(inventory: T[], brands: string[] = []) {
   const products = inventory.filter(product => product.isVisible);
   const index = createCatalogIndex(products, brands);
-  const availableIndex = createCatalogIndex(products.filter(isBotProductAvailable), brands);
+  const selections = new Map<string, ReturnType<typeof index.select>>();
   return {
     products, index,
     search(query: string, availableOnly = true) {
-      return (availableOnly ? availableIndex : index).select(query);
+      // Interpret identity once against all published products. Stock/photo availability
+      // must never change the vocabulary or the meaning of the customer's request.
+      if (!selections.has(query)) selections.set(query, index.select(query));
+      const selection = selections.get(query)!;
+      return availableOnly ? { ...selection, products: selection.products.filter(isBotProductAvailable),
+        scopes: selection.scopes.map(scope => ({ ...scope, products: scope.products.filter(isBotProductAvailable) })) } : selection;
     },
   };
 }

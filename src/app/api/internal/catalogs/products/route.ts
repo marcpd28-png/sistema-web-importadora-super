@@ -4,6 +4,7 @@ import { generateRequestedCatalogPdf, generateRequestedProductImages } from "@/l
 import { isCatalogRequest, isScreenExtenderQuery, normalizeCatalogText } from "@/lib/catalog-selection";
 import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
+import { answerCatalogSelection, describeUnavailableScope } from "@/lib/bc-request-answers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,20 +33,17 @@ export async function POST(request: Request) {
       const result = await generateRequestedProductImages(input.content);
       return NextResponse.json({
         ok: true, matched: true, simulation: true, conversationId: conversation.id, requestId,
-        outboundMessages: result.outboundMessages.length ? result.outboundMessages : [{ type: "TEXT", content: `No encontré productos publicados con stock y foto disponible para ${result.label}.`, mediaUrl: null }],
+        outboundMessages: result.outboundMessages.length ? result.outboundMessages : [{ type: "TEXT", content: result.scopes.map(describeUnavailableScope).join("\n\n"), mediaUrl: null }],
         filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },
       });
     }
     const result = await generateRequestedCatalogPdf(input.content, extenders);
-    const missingScopeNote = result.catalog && result.unmatchedScopes.length
-      ? `\n\nSobre ${result.unmatchedScopes.join(" y ")}, no encontré coincidencias publicadas con ese nombre. ¿Puedes indicarme un modelo o enviarme una foto para ayudarte a identificar el producto?`
-      : "";
+    const answer = answerCatalogSelection(result, result.products);
     return NextResponse.json({
       ok: true, matched: true, simulation: true, conversationId: conversation.id,
       requestId,
-      content: result.catalog ? `Te comparto el catálogo de ${result.label}: ${result.catalog.productCount} productos.${missingScopeNote}`
-        : !result.scoped ? `Te comparto nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`
-        : `No encontré productos publicados con stock y foto disponible para el catálogo de ${result.label}. Puedes indicarme otra marca, categoría o tipo de producto.`,
+      content: result.scoped ? answer.content
+        : `📚 Te comparto nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`,
       type: result.catalog ? "document" : "text", mediaUrl: result.catalog?.absoluteUrl ?? null,
       catalog: result.catalog ? { filename: result.catalog.filename, productCount: result.catalog.productCount, url: result.catalog.absoluteUrl } : null,
       filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { readSimulatorInputBatch } from "@/lib/simulator-input-batch";
 import { agendaSchema, emptyAgenda, planRequests } from "@/lib/bc-request-agenda";
-import { answerBusinessRequest, answerProductRequest, splitAnswerText } from "@/lib/bc-request-answers";
+import { answerBusinessRequest, answerCatalogSelection, answerProductRequest, splitAnswerText } from "@/lib/bc-request-answers";
 import { loadCommercialCatalog } from "@/lib/commercial-catalog";
 import { generateRequestedCatalogPdf, generateRequestedProductImages } from "@/lib/catalog-pdf";
 import { isScreenExtenderQuery } from "@/lib/catalog-selection";
@@ -40,7 +40,8 @@ export async function POST(request: Request) {
     }
     const inbound = await prisma.chatMessage.findMany({ where: { conversationId: input.conversationId, id: { in: batch.messageIds } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true } });
     const previous = conversation.requestAgenda ? agendaSchema.parse(conversation.requestAgenda.state) : emptyAgenda();
-    const plan = planRequests(previous, inbound);
+    const initialCatalog = await loadCommercialCatalog();
+    const plan = planRequests(previous, inbound, initialCatalog.index);
     if (!plan.recognized) return NextResponse.json({ ok: true, handled: false });
     if (plan.agenda.requests.length > 200 || plan.agenda.topics.length > 100) return NextResponse.json({ ok: true, handled: false });
     const settings = await prisma.storeSettings.findUnique({ where: { id: 1 }, select: { supportHours: true, storeAddress: true, botMasterSwitch: true } });
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
       deliveryMethods: list(process.env.ROUTER_V2_DELIVERY_METHODS ?? "DELIVERY, SHALOM, RECOJO") };
     for (let attempt = 0; attempt < 2; attempt++) {
       const agenda = structuredClone(plan.agenda);
-      const catalog = await loadCommercialCatalog();
+      const catalog = attempt === 0 ? initialCatalog : await loadCommercialCatalog();
       const touched = new Set(plan.touched);
       // A code chosen from an earlier list resolves only that topic's pending questions.
       for (const topic of agenda.topics.filter(item => !previous.topics.some(old => old.id === item.id))) {
@@ -77,14 +78,16 @@ export async function POST(request: Request) {
         try {
           if (job.kind === "CATALOG") {
             const query = topic?.query || "catálogo";
-            const result = await generateRequestedCatalogPdf(`catálogo ${query}`, false, catalog);
-            result.products.forEach(product => checked.add(product.id));
-            if (topic) topic.shownCodes = result.products.map(product => product.code);
-            const missing = result.unmatchedScopes.length ? `\nSin coincidencias para: ${result.unmatchedScopes.join(", ")}. Indícame el modelo o código de esos productos.` : "";
-            replies.push(result.catalog ? { type: "DOCUMENT", mediaUrl: result.catalog.absoluteUrl, content: `Catálogo de ${query}: ${result.catalog.productCount} productos con stock y foto. Disponibilidad consultada al generar este catálogo.${missing}` }
-              : { type: "TEXT", content: result.scoped ? `No encontré productos publicados con stock y foto disponible para el catálogo de ${query}. Indícame otra opción o el código exacto.` : `Catálogo completo: ${buildPublicUrl("/")}\nPuedes pedirme un PDF por marca, tipo o modelo.` });
-            job.status = result.catalog && !result.unmatchedScopes.length || !result.scoped ? "ANSWERED" : "NEEDS_CLARIFICATION";
-            job.evidence = result.products.map(product => `Product:${product.id}`);
+            const selection = catalog.search(query, false);
+            const result = await generateRequestedCatalogPdf(query, false, catalog, selection);
+            if (selection.scoped) selection.products.forEach(product => checked.add(product.id));
+            if (topic) { topic.shownCodes = result.products.map(product => product.code); topic.shownGroups = []; }
+            const answer = answerCatalogSelection(selection, result.products);
+            if (!result.catalog || !answered.has(result.catalog.absoluteUrl)) replies.push(result.catalog ? { type: "DOCUMENT", mediaUrl: result.catalog.absoluteUrl, content: answer.content }
+              : { type: "TEXT", content: result.scoped ? answer.content : `📚 Catálogo completo: ${buildPublicUrl("/")}\nPuedes pedirme un PDF por marca, tipo o modelo.` });
+            if (result.catalog) answered.add(result.catalog.absoluteUrl);
+            job.status = result.scoped ? answer.status : "ANSWERED";
+            job.evidence = answer.evidence;
           } else if (topic && (isScreenExtenderQuery(topic.query) || /\b(?:fotos?|imagenes?)\b/.test(normalizeCommercialText(job.question)))) {
             const result = await generateRequestedProductImages(topic.selectedCode || topic.query, catalog);
             result.products.forEach(product => checked.add(product.id));
@@ -103,7 +106,7 @@ export async function POST(request: Request) {
             const selection = topic ? catalog.search(topic.selectedCode || topic.query, false) : null;
             const products = selection?.products ?? [];
             products.forEach(product => checked.add(product.id));
-            const answer = answerBusinessRequest(job, business) ?? answerProductRequest(job, topic, products);
+            const answer = answerBusinessRequest(job, business) ?? answerProductRequest(job, topic, products, { scopes: selection?.scopes });
             if (!answered.has(answer.content)) {
               replies.push(...splitAnswerText(answer.content).map(content => ({ type: "TEXT" as const, content })));
               answered.add(answer.content);

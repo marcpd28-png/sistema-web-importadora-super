@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Standalone audit tests. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { auditPhrasings, sameSet } = require('./prevention-audit.cjs');
+const { auditPhrasings, auditGuards, sameSet } = require('./prevention-audit.cjs');
 
 test('invariance audit detects lost and additional products, independent of ordering', () => {
   const index = { select(query) {
@@ -19,4 +19,8 @@ test('invariance audit detects lost and additional products, independent of orde
 
 test('empty baseline does not masquerade as a successful inventory search', () => {
   assert.deepEqual(auditPhrasings({ select: () => ({ products: [] }) }, ['catálogo desconocido']), []);
+});
+
+test('all independent interpretation guards pass without AI', () => {
+  assert.deepEqual(auditGuards().filter(result => !result.pass), []);
 });

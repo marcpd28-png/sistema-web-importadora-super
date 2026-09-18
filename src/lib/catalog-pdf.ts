@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
 import { loadCommercialCatalog, type CommercialCatalog } from "@/lib/commercial-catalog";
 import { resolveProductBrand } from "@/lib/product-discovery";
-import { getBotProductImageUrls } from "@/lib/bot-product-availability";
+import { getBotProductImageUrls, isBotProductAvailable } from "@/lib/bot-product-availability";
 
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -389,19 +389,20 @@ async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: stri
   return { ...result, generated: true };
 }
 
-async function selectRequestedCatalog(content: string, snapshot?: CommercialCatalog) {
+async function selectRequestedCatalog(content: string, snapshot?: CommercialCatalog, planned?: ReturnType<CommercialCatalog["search"]>) {
   const catalog = snapshot ?? await loadCommercialCatalog();
   const index = catalog.index;
-  const selection = catalog.search(content);
-  const products = selection.products.map(p => ({ ...p, brand: index.productBrand(p), imageUrls: getBotProductImageUrls(p) }));
+  const selection = planned ?? catalog.search(content, false);
+  const products = selection.products.filter(isBotProductAvailable).map(p => ({ ...p, brand: index.productBrand(p), imageUrls: getBotProductImageUrls(p) }));
   return { ...selection, products };
 }
 
-export async function generateRequestedCatalogPdf(content: string, largeImages = false, snapshot?: CommercialCatalog) {
-  const selection = await selectRequestedCatalog(content, snapshot);
+export async function generateRequestedCatalogPdf(content: string, largeImages = false, snapshot?: CommercialCatalog, planned?: ReturnType<CommercialCatalog["search"]>) {
+  const selection = await selectRequestedCatalog(content, snapshot, planned);
   const products = selection.products;
-  if (!selection.scoped || !products.length) return { ...selection, catalog: null };
-  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v2-photos" : "scoped-grid-v4-photos"}:${content}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  if (!selection.scoped) return { ...selection, products: [], catalog: null };
+  if (!products.length) return { ...selection, catalog: null };
+  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v3-canonical" : "scoped-grid-v5-canonical"}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
   let generation = inFlightScopedCatalogs.get(fingerprint);
   if (!generation) {
     generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightScopedCatalogs.delete(fingerprint));

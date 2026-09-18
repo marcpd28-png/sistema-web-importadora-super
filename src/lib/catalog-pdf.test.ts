@@ -58,6 +58,9 @@ test("PDF, manifest, cached count and image messages contain only products with 
     const cached = await generateRequestedCatalogPdf("catálogo parlantes JBL", large, snapshot);
     assert.equal(cached.catalog?.generated, false);
     assert.equal(cached.catalog?.productCount, 1);
+    const paraphrase = await generateRequestedCatalogPdf("Necesitaría revisar catálogo de parlantes JBL cuando puedan", large, snapshot);
+    assert.equal(paraphrase.catalog?.filename, result.catalog.filename);
+    assert.equal(paraphrase.catalog?.generated, false);
   }
   const images = await generateRequestedProductImages("parlantes JBL", snapshot);
   assert.equal(images.outboundMessages.length, 1);

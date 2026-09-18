@@ -1,13 +1,14 @@
 import { resolveProductBrand } from "./product-discovery";
 import { inferStoreCategoryName } from "./product-category-classifier";
-import { literalProductCodes, matchesCommercialConstraints, matchesExplicitModelVersion, parseCommercialQuery } from "./commercial-query";
+import { describeCommercialConstraints, literalProductCodes, matchesCommercialConstraints, matchesExplicitModelVersion, parseCommercialQuery } from "./commercial-query";
+import { extractCommercialSubject } from "./commercial-language";
 
-export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null; unitPrice?: unknown; specifications?: { name: string; value: string }[] };
+export type CatalogCandidate = { code: string; name: string; brand: string | null; category: string | null; categoryRef?: { name: string } | null; unitPrice?: unknown; specifications?: { name: string; value: string }[]; digitalProfile?: { status: string } | null };
 export function normalizeCatalogText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/\bpro\s*\+/g, "pro plus ").replace(/(\d)\s+(gb|tb|mb|w|mah)\b/g, "$1$2")
     .replace(/\b(?:readmi|redmy)\b/g, "redmi").replace(/\b(?:samsumg|sansung)\b/g, "samsung")
-    .replace(/\b(?:xiomi|xiaomy)\b/g, "xiaomi").replace(/[^a-z0-9]+/g, " ").trim();
+    .replace(/\b(?:xiomi|xiami|xiaomy|xioami)\b/g, "xiaomi").replace(/[^a-z0-9]+/g, " ").trim();
 }
 export function isCatalogRequest(content: string) {
   return /\bcatalogos?\b/.test(normalizeCatalogText(content));
@@ -26,6 +27,8 @@ const categories = [
   { label: "baterías", stored: "BATERIAS", aliases: ["bateria", "baterias"] },
   { label: "relojes inteligentes", stored: "SMART WATCH", aliases: ["smartwatch", "smartwatches"] },
   { label: "relojes", stored: "RELOJ", aliases: ["reloj", "relojes"] },
+  { label: "televisores", stored: "TELEVISORES", aliases: ["tv", "televisor", "televisores", "television", "televisiones"] },
+  { label: "celulares", stored: "CELULARES", aliases: ["celular", "celulares", "smartphone", "smartphones"] },
 ];
 const ignored = new Set(normalizeCatalogText("hola buenas buenos dias tardes noches por favor porfa gracias me nos dan das da dar dame pasa pasan pasas pasame pasar manda mandan mandas mandame envia envian envias enviame enviarme darme pasarme mandarme enviar mostrar muestra muestrame mostrarme quisiera quiero necesito deseo puedes pueden podria podrias tienen tendran catalogo catalogos de del el la los las un una unos unas tus sus su tu ustedes sus todos todas todo productos producto articulos articulo ver y o para con en pdf por mayor al menor unidades unidad mayorista minorista compra comprar completo completa completos completas general disponible disponibles stock precio precios lista listado este esta esos esas" ).split(" "));
 function hasPhrase(text: string, phrase: string) { return (` ${text} `).includes(` ${phrase} `); }
@@ -54,13 +57,15 @@ function nearWord(a: string, b: string) {
 function matchesCategory(product: CatalogCandidate, category: typeof categories[number]) {
   const name=normalizeCatalogText(product.name.replace(/^\([^)]*\)\s*/, ""));
   // A case/cable for headphones or a microphone for a speaker is not the device itself.
-  const primaryType = name.match(/\b(?:audifonos?|auriculares?|headphones?|parlantes?|speakers?|proyectores?|fundas?|estuches?|soportes?|cables?|adaptadores?|microfonos?|baterias?|cargador(?:es)?|chargers?|pilas?|ecran(?:es)?|pantallas?)\b/)?.[0] || "";
+  const primaryType = name.match(/\b(?:audifonos?|auricular(?:es)?|headphones?|parlantes?|speakers?|proyector(?:es)?|fundas?|estuches?|soportes?|cables?|adaptador(?:es)?|microfonos?|baterias?|cargador(?:es)?|chargers?|pilas?|ecran(?:es)?|pantallas?|televisor(?:es)?|tv|celulares?)\b/)?.[0] || "";
   if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria|cargador|charger|ecran|pantalla)/.test(primaryType)) return false;
   if (category.stored === "AURICULARES" && /^(parlante|speaker|proyector)/.test(primaryType)) return false;
   if (category.stored === "PARLANTES" && /^(audifono|auricular|headphone|proyector)/.test(primaryType)) return false;
   if (category.stored === "BATERIAS" && /^(?:funda|estuche|soporte|cable|adaptador|microfono|cargador|charger)/.test(primaryType)
     && !/\b(?:cargador portatil|power ?bank)\b/.test(name)) return false;
   const stored=normalizeCatalogText(product.category || "");
+  if (category.stored === "TELEVISORES") return !/\btv box\b/.test(name) && !/^(?:funda|soporte|cable|adaptador|pantalla)/.test(primaryType) && (/^(?:tv|televisor)/.test(primaryType) || stored === "televisores");
+  if (category.stored === "CELULARES") return !/^(?:funda|estuche|soporte|cable|adaptador|bateria|cargador|pantalla)/.test(primaryType) && (/^celular/.test(primaryType) || stored === "celulares");
   if(category.stored === "CARGADORES") {
     // A charger can follow an ERP prefix or a brand, but an item WITH/FOR a charger is not a charger.
     const subject = name.split(/\b(?:con|para)\b/)[0];
@@ -75,6 +80,9 @@ function matchesCategory(product: CatalogCandidate, category: typeof categories[
 
 function wordMatches(a: string, b: string) {
   if (a === b || singular(a) === singular(b)) return true;
+  // Grammatical gender in adjectives is not a spelling correction or a model change.
+  const adjective = (word: string) => word.replace(/(iv|ic|ad|os)[oa]s?$/, "$1o");
+  if (a.length >= 7 && b.length >= 7 && adjective(a) === adjective(b)) return true;
   if (/^\d+$/.test(a) && b.match(/^(\d+)(?:gb|tb|mb|w|mah)$/)?.[1] === a) return true;
   // Spanish plurals: cargador/cargadores, control/controles, lápiz/lápices.
   const forms = (w: string) => [w, ...(w.endsWith("es") ? [w.slice(0,-2)] : []), ...(w.endsWith("ces") ? [w.slice(0,-3)+"z"] : [])];
@@ -119,22 +127,33 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     const type = typeText.split(/\s+/).find(w => w && !typePrefixes.has(w) && !ignored.has(w) && !/\d/.test(w)) || "";
     // SUPER in another brand's model name (e.g. BASEUS SUPER SI) is not our own brand.
     const searchableBrands = brandKeys.filter(key => key !== "super" || Boolean(explicitBrand) || displayKey === "super");
-    return { product, name, brandKeys: searchableBrands, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""}`).split(" ") };
+    const attributes = product.digitalProfile && product.digitalProfile.status !== "PUBLICADA" ? "" : (product.specifications || [])
+      .filter(spec => /bluetooth|conectividad|wifi|color|sistema operativo/i.test(spec.name) && !/^(?:no|sin)\b/i.test(spec.value))
+      .map(spec => normalizeCatalogText(`${spec.name} ${spec.value}`).split(" ").filter(word => !/\d/.test(word)).join(" ")).join(" ");
+    return { product, name, brandKeys: searchableBrands, displayBrand, type, code: normalizeCatalogText(product.code), words: normalizeCatalogText(`${product.code} ${product.name} ${product.category || ""} ${product.categoryRef?.name || ""} ${attributes}`).split(" ") };
   });
   const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
+  const inventoryCodes = rows.map(row => row.product.code);
   const vocabulary = new Set(rows.flatMap(row => row.words));
+  const entityPhrases = [...categoryNames.keys(), ...knownBrands.keys()];
+  const entityCache = new Map<string, boolean>();
+  const isEntity = (word: string) => {
+    if (!entityCache.has(word)) entityCache.set(word, (word.length > 2 && types.some(type => wordMatches(type, word))) || knownBrands.has(word) ||
+      categories.some(category => category.aliases.some(alias => wordMatches(alias, word) || !vocabulary.has(word) && nearWord(word, alias))));
+    return entityCache.get(word)!;
+  };
+  const subject = (content: string) => extractCommercialSubject(normalizeCatalogText(content), isEntity, entityPhrases);
 
   function selectSingle(content: string) {
     const parsed = parseCommercialQuery(content);
     const original = content;
     content = parsed.text;
-    const text = normalizeCatalogText(content);
+    const text = subject(content);
     const queryTerms = text.split(" ").filter(t => !ignored.has(t)).join(" ");
     const exactCodes = rows.filter(r => hasPhrase(text,r.code) && (/\bcodigos?\b/.test(text) || (queryTerms === r.code && !knownBrands.has(r.code) && !/\b(?:marca|categoria)s?\b/.test(text)) || content.includes(`(${r.product.code})`)));
     // An explicit SKU remains searchable even if it is numeric, unbranded or uncategorized.
     const maxCodeLength = Math.max(0,...exactCodes.map(r => r.code.length));
     const normalizedCodeRows = exactCodes.filter(r => r.code.length === maxCodeLength);
-    const inventoryCodes = rows.map(r => r.product.code);
     const exactLiteralCodes = literalProductCodes(original, inventoryCodes);
     // A sentence-ending period is punctuation unless it identifies a real dotted SKU.
     // Prefer the literal match so BT454 and BT454. remain different products.
@@ -164,34 +183,49 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     }
     const tokens = remainder.trim().split(/\s+/).filter(t => t && !ignored.has(t));
     // A real inventory type takes precedence over fuzzy spelling corrections (casacas ≠ cámaras).
-    const aliasMatches = (t: string, c: typeof categories[number]) => c.aliases.includes(t) ||
-      (!types.some(kind => wordMatches(kind,t)) && c.aliases.some(a => nearWord(t,a)));
+    const aliasMatches = (t: string, c: typeof categories[number]) => !(c.stored === "TELEVISORES" && hasPhrase(text, "tv box")) && (c.aliases.includes(t) ||
+      (!types.some(kind => wordMatches(kind,t)) && c.aliases.some(a => nearWord(t,a))));
     // Lists are already separated by splitScopes. Within one scope the first type
     // is the item: "cargador de batería" must not mean chargers OR batteries.
-    const firstAlias = requestedCategories.length ? undefined : tokens.flatMap(t => categories.filter(c => aliasMatches(t,c)))[0];
+    const firstTypeAt = tokens.findIndex(token => types.some(type => wordMatches(token, type)));
+    const firstAliasAt = tokens.findIndex(token => categories.some(category => aliasMatches(token, category)));
+    const firstAlias = requestedCategories.length || firstTypeAt >= 0 && firstTypeAt < firstAliasAt ? undefined : tokens.flatMap(t => categories.filter(c => aliasMatches(t,c)))[0];
     const aliases = firstAlias ? [firstAlias] : [];
     const remaining = tokens.filter(t => !aliases.some(c => aliasMatches(t,c)));
     const requestedTypes = !screenExtenders && !aliases.length && !remaining.some(t => /\d/.test(t))
       ? remaining.slice(0,1).filter(t => types.some(kind => wordMatches(kind,t))) : [];
     const terms = remaining.filter(t => !requestedTypes.includes(t));
     const scoped = Boolean(screenExtenders || requestedCategories.length || requestedBrands.length || aliases.length || requestedTypes.length || terms.length);
-    const selected = rows.filter(r => {
+    const candidates = rows.filter(r => {
       if (!matchesCommercialConstraints(r.product, parsed.constraints)) return false;
       if (!matchesExplicitModelVersion(content, r.product.name)) return false;
       if (screenExtenders && !isScreenExtenderQuery(r.name)) return false;
       if (requestedCategories.length && !requestedCategories.some(([key]) => [r.product.category,r.product.categoryRef?.name].some(v => normalizeCatalogText(v || "") === key))) return false;
       if (requestedBrands.length && !requestedBrands.some(([key]) => r.brandKeys.includes(key))) return false;
-      if (aliases.length && !aliases.some(c => c.aliases.some(a => wordMatches(r.type,a)) || matchesCategory(r.product,c))) return false;
+      if (aliases.length && !aliases.some(c => (c.stored !== "TELEVISORES" && c.aliases.some(a => wordMatches(r.type,a))) || matchesCategory(r.product,c))) return false;
       if (requestedTypes.length && !requestedTypes.some(t => wordMatches(r.type,t))) return false;
-      return terms.every(t => r.words.some(w => wordMatches(t,w) || (!vocabulary.has(t) && /^[a-z]{5,}$/.test(t) && /^[a-z]{5,}$/.test(w) && nearWord(t,w))));
-    }).sort((a,b) => a.displayBrand.localeCompare(b.displayBrand,"es") || a.product.name.localeCompare(b.product.name,"es"));
+      return true;
+    });
+    // Typo recovery is allowed inside an identified family, or a distinctive model
+    // already constrained by another exact term. Never match an unknown noun alone.
+    // There must be one possible spelling; arbitrary similarity never establishes identity.
+    const corrections = new Map<string, string>();
+    if ((!/\bmarcas?\b/.test(text) || requestedBrands.length) && (aliases.length || requestedTypes.length || requestedCategories.length || terms.some(term => /\d/.test(term) || term.length >= 6 && vocabulary.has(term)))) {
+      for (const term of terms.filter(t => !vocabulary.has(t) && /^[a-z]{6,}$/.test(t))) {
+        const compatible = candidates.filter(row => terms.filter(other => other !== term).every(other => row.words.some(word => wordMatches(other, word))));
+        const alternatives = [...new Set(compatible.flatMap(row => row.words).filter(word => nearWord(term, word)))];
+        if (alternatives.length === 1) corrections.set(term, alternatives[0]);
+      }
+    }
+    const selected = candidates.filter(r => terms.every(t => r.words.some(w => wordMatches(corrections.get(t) || t, w))))
+      .sort((a,b) => a.displayBrand.localeCompare(b.displayBrand,"es") || a.product.name.localeCompare(b.product.name,"es"));
     const labels = [...(screenExtenders ? ["extensores de pantalla"] : []),...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label),...requestedTypes];
     const label = [...labels,...requestedBrands.map(([,v]) => v),...terms].join(" ") || "productos";
     return { products: selected.map(r => r.product), scoped, label, brands: requestedBrands.map(([,v]) => v), categories: [...requestedCategories.map(([,v]) => v),...aliases.map(c => c.label)], types: screenExtenders ? ["extensores de pantalla"] : requestedTypes, terms };
   }
 
   function startsWithScope(content: string) {
-    let scope = ` ${normalizeCatalogText(content)} `;
+    let scope = ` ${subject(parseCommercialQuery(content).text)} `;
     for (const [brand] of brandEntries) scope = scope.replaceAll(` ${brand} `, " ");
     const words = scope.trim().split(" ").filter(t => t && !ignored.has(t));
     const first = words[0];
@@ -231,8 +265,19 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
 
   function select(content: string) {
     content = normalizeBrandAliases(content);
-    const parts = splitScopes(content);
-    if (parts.length < 2) return { ...selectSingle(content), unmatchedScopes: [] as string[] };
+    // Explicit list-wide constraints apply to every family, not just the last clause.
+    const globalAt = content.search(/\b(?:todos|todas|ambos|ambas)\b/i);
+    const globalParsed = globalAt < 0 ? null : parseCommercialQuery(content.slice(globalAt));
+    const global = globalParsed && /^(?:todos|todas|ambos|ambas)(?:\s+(?:ellos|ellas|con|de))*$/.test(normalizeCatalogText(globalParsed.text)) ? describeCommercialConstraints(globalParsed.constraints) : "";
+    const base = global ? content.slice(0, globalAt).replace(/[,;\s]+$/, "") : content;
+    const parts = splitScopes(base).map(part => `${part} ${global}`.trim());
+    const withPlan = (selection: ReturnType<typeof selectSingle>, query: string) => ({ ...selection, query,
+      constraints: parseCommercialQuery(query).constraints,
+      status: !selection.scoped ? "GENERAL" as const : selection.products.length ? "MATCHED" as const : "NOT_FOUND" as const });
+    if (parts.length < 2) {
+      const selection = withPlan(selectSingle(parts[0]), parts[0]);
+      return { ...selection, scopes: [selection], unmatchedScopes: [] as string[] };
+    }
 
     let selections = parts.map(selectSingle);
     // A single brand qualifies the list; separately branded clauses keep their own filters.
@@ -243,6 +288,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     if (sharedBrand) selections = selections.map((selection, i) => selection.brands.length
       ? selection : selectSingle(`${parts[i]} marca ${sharedBrand}`));
 
+    const scopes = selections.map((selection, i) => withPlan(selection, `${parts[i]}${sharedBrand && !parts[i].includes(sharedBrand) ? ` marca ${sharedBrand}` : ""}`));
     const unique = (values: string[]) => [...new Set(values)];
     const matched = selections.filter(selection => selection.products.length);
     const chosenCodes = new Set(matched.flatMap(selection => selection.products.map(p => p.code)));
@@ -257,9 +303,18 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
       types: unique(selections.flatMap(selection => selection.types)),
       terms: unique(selections.flatMap(selection => selection.terms)),
       unmatchedScopes: selections.filter(selection => !selection.products.length).map(selection => humanLabel(selection.label)),
+      scopes, query: content, constraints: parseCommercialQuery(global).constraints,
+      status: matched.length ? "MATCHED" as const : "NOT_FOUND" as const,
     };
   }
   return { select, brands: [...knownBrands.values()], categories: [...categoryNames.values()], types,
+    fragmentKind: (content: string): "subject" | "qualifier" | null => {
+      const text = normalizeCatalogText(content);
+      if (!text || /\b(?:quiero|necesito|busco|informacion|precio|catalogos?)\b/.test(text)) return null;
+      if (knownBrands.has(text) || rows.some(row => row.code === text) || /^\d+\s*(?:w|v|gb|tb|mah)$/.test(text)) return "qualifier";
+      if (startsWithScope(content)) return "subject";
+      return null;
+    },
     productType: (product: T) => rows.find(r => r.product === product)?.type || "",
     productBrand: (product: T) => rows.find(r => r.product === product)?.displayBrand || "Otras marcas" };
 }

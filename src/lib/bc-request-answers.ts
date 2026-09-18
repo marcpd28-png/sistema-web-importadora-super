@@ -7,6 +7,27 @@ import { getBotProductImageUrls, isBotProductAvailable } from "./bot-product-ava
 export type BusinessAnswers = { supportHours: string; storeAddress: string; paymentMethods: string[]; deliveryMethods: string[] };
 export type RequestAnswer = { content: string; status: AgendaRequest["status"]; evidence: string[] };
 
+export type ProductScope = { label: string; products: CommercialProduct[] };
+
+/** Identity and availability are separate outcomes. Never conclude that a category
+ * does not exist merely because its query or photos could not be resolved. */
+export function describeUnavailableScope(scope: ProductScope) {
+  if (!scope.products.length) return `🔎 No pude identificar con certeza «${scope.label}». ¿Me indicas la marca, el modelo o el código para afinar la búsqueda?`;
+  if (scope.products.every(product => product.stockUnits <= 0)) return `📦 Los productos identificados de ${scope.label} están sin stock en este momento.`;
+  if (!scope.products.some(isBotProductAvailable)) return `📷 Encontré productos de ${scope.label} con stock, pero no tienen una foto disponible para el catálogo.`;
+  return `📷 Encontré productos de ${scope.label}, pero no pude cargar sus fotos para generar el catálogo. Puedes pedirme que lo reintente.`;
+}
+
+export function answerCatalogSelection(selection: { label: string; scopes: ProductScope[] }, included: CommercialProduct[]): RequestAnswer {
+  const codes = new Set(included.map(product => product.code));
+  const pending = selection.scopes.filter(scope => !scope.products.some(product => codes.has(product.code)));
+  return {
+    content: [included.length ? `📚 Te comparto el catálogo de ${selection.label}: ${included.length} productos con stock y foto. Disponibilidad consultada ahora.` : "", ...pending.map(describeUnavailableScope)].filter(Boolean).join("\n\n"),
+    status: pending.length ? "NEEDS_CLARIFICATION" : "ANSWERED",
+    evidence: included.map(product => `Product:${product.id}`),
+  };
+}
+
 export function answerBusinessRequest(request: AgendaRequest, business: BusinessAnswers): RequestAnswer | null {
   const question = normalizeCommercialText(request.question);
   if (request.kind === "SHIPPING") {
@@ -24,10 +45,21 @@ export function answerBusinessRequest(request: AgendaRequest, business: Business
   return null;
 }
 
-export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean } = {}): RequestAnswer {
+export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean; scopes?: ProductScope[] } = {}): RequestAnswer {
   products = products.filter(product => product.isVisible);
-  if (topic) { topic.selectedCode = null; topic.shownCodes = []; }
-  if (!topic || !products.length) return { content: `Sobre «${topic?.query || request.question}»: no pude identificar un producto publicado con esos datos. ¿Puedes indicar el código o modelo exacto?`, status: "NEEDS_CLARIFICATION", evidence: [] };
+  if (topic) { topic.selectedCode = null; topic.shownCodes = []; topic.shownGroups = []; }
+  if (topic && options.scopes && options.scopes.length > 1) {
+    const answers = options.scopes.map(scope => {
+      const scopedTopic = { ...topic, query: scope.label, shownCodes: [] as string[] };
+      const answer = answerProductRequest(request, scopedTopic, scope.products, { photoUnavailable: options.photoUnavailable });
+      topic.shownCodes.push(...scopedTopic.shownCodes);
+      topic.shownGroups!.push({ query: scope.label, codes: scopedTopic.shownCodes });
+      return answer;
+    });
+    topic.shownCodes = [...new Set(topic.shownCodes)];
+    return { content: answers.map(answer => answer.content).join("\n\n"), status: answers.every(answer => answer.status === "ANSWERED") ? "ANSWERED" : "NEEDS_CLARIFICATION", evidence: [...new Set(answers.flatMap(answer => answer.evidence))] };
+  }
+  if (!topic || !products.length) return { content: describeUnavailableScope({ label: topic?.query || request.question, products: [] }), status: "NEEDS_CLARIFICATION", evidence: [] };
   const available = options.photoUnavailable ? [] : products.filter(isBotProductAvailable);
   if (!available.length) {
     const inStock = products.filter(product => product.stockUnits > 0);
