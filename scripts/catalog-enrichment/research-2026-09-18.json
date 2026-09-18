@@ -1,0 +1,1045 @@
+{
+  "version": 1,
+  "researchedAt": "2026-09-18",
+  "method": "Investigación en Codex. Las fuentes de fabricante y las imágenes comerciales de la tienda se distinguen explícitamente.",
+  "models": [
+    {
+      "id": "jbl-go-4",
+      "brand": "JBL",
+      "model": "Go 4",
+      "codes": [
+        "O141-BLANCO",
+        "O141-ROJO"
+      ],
+      "sources": [
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw9308649c/pdfs/JBL%20Go%204_%20Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia de salida RMS": "4,2 W",
+        "Conectividad Bluetooth": "5.3",
+        "Autonomía de reproducción": "Hasta 7 horas; hasta 2 horas adicionales con Playtime Boost. Depende del volumen y del contenido.",
+        "Batería": "Polímero de litio, 3,23 Wh (850 mAh a 3,8 V)",
+        "Tiempo de carga": "Aproximadamente 3 horas con alimentación de 5 V / 1 A",
+        "Resistencia al agua y polvo": "IP67",
+        "Dimensiones": "94,3 × 75,7 × 42,2 mm (ancho × alto × fondo)",
+        "Peso": "0,19 kg",
+        "Conexión entre parlantes": "Auracast; dos Go 4 pueden emparejarse en estéreo"
+      }
+    },
+    {
+      "id": "redmi-buds-6-play",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Buds 6 Play (M2420E1)",
+      "codes": [
+        "O280-AZUL",
+        "O280-NEGRO",
+        "O280-ROSADO"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-buds-6-play/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos TWS",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de los audífonos": "Hasta 7,5 horas por carga; depende de las condiciones de uso.",
+        "Autonomía con estuche": "Hasta 36 horas en total; depende de las condiciones de uso.",
+        "Batería": "57 mAh por audífono; estuche de 600 mAh",
+        "Conector de carga": "USB-C",
+        "Respuesta de frecuencia": "20 Hz–20 kHz",
+        "Alcance Bluetooth": "Hasta 10 metros en espacio abierto sin obstáculos",
+        "Peso": "3,6 g por audífono; 40 g en total con estuche"
+      }
+    },
+    {
+      "id": "sony-wh-ch520",
+      "brand": "Sony",
+      "model": "WH-CH520",
+      "codes": [
+        "O58-AMARILLO",
+        "O58-BEIGE",
+        "O58-NEGRO",
+        "O58-ROSA"
+      ],
+      "sources": [
+        "https://www.sony.com/electronics/support/wireless-headphones-bluetooth-headphones/wh-ch520/specifications",
+        "https://electronics.sony.com/audio/headphones/headband/p/whch520-b"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos de diadema",
+        "Conectividad Bluetooth": "5.2",
+        "Autonomía de reproducción": "Hasta 50 horas; depende de los ajustes y del uso.",
+        "Tiempo de carga": "Aproximadamente 3 horas",
+        "Conector de carga": "USB-C",
+        "Carga rápida": "3 minutos de carga proporcionan hasta 90 minutos de reproducción, según las condiciones de uso.",
+        "Códecs de audio": "SBC y AAC",
+        "Conectividad multipunto": "Conexión simultánea a dos dispositivos Bluetooth",
+        "Procesamiento de audio": "DSEE"
+      }
+    },
+    {
+      "id": "jbl-clip-5",
+      "brand": "JBL",
+      "model": "Clip 5",
+      "codes": [
+        "O278-NEGRO",
+        "O278-PINK",
+        "O278-PURPURA"
+      ],
+      "sources": [
+        "https://www.jbl.com/CLIP-5.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil con mosquetón integrado",
+        "Potencia de salida": "7 W",
+        "Conectividad Bluetooth": "5.3",
+        "Autonomía de reproducción": "Hasta 12 horas; hasta 15 horas con Playtime Boost. Depende del uso.",
+        "Tiempo de carga": "Aproximadamente 3 horas",
+        "Resistencia al agua y polvo": "IP67",
+        "Dimensiones": "8,6 × 13,5 × 4,6 cm (ancho × alto × fondo)",
+        "Peso": "285 g",
+        "Conexión entre parlantes": "Auracast; dos Clip 5 pueden emparejarse en estéreo"
+      }
+    },
+    {
+      "id": "jbl-charge-6",
+      "brand": "JBL",
+      "model": "Charge 6",
+      "codes": [
+        "O398-ROJO.",
+        "O398-ROSADO"
+      ],
+      "sources": [
+        "https://www.jbl.com/CHARGE-6.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil con función de batería externa",
+        "Potencia de salida RMS": "30 W para el woofer + 15 W para el tweeter",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de reproducción": "Hasta 24 horas; hasta 28 horas con Playtime Boost. Depende del uso.",
+        "Tiempo de carga": "Aproximadamente 3 horas",
+        "Resistencia al agua y polvo": "IP68; ensayo del fabricante en agua dulce a 1,5 m durante 30 minutos",
+        "Dimensiones": "22,9 × 9,9 × 9,4 cm (ancho × alto × fondo)",
+        "Peso": "1,37 kg",
+        "Conexión entre parlantes": "Auracast",
+        "Función de carga externa": "Permite cargar dispositivos móviles; no admite carga de laptops"
+      }
+    },
+    {
+      "id": "jbl-flip-7",
+      "brand": "JBL",
+      "model": "Flip 7",
+      "codes": [
+        "O399-CAMUFLADO",
+        "O399-ROSADO"
+      ],
+      "sources": [
+        "https://www.jbl.com/FLIP-7.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia de salida RMS": "25 W para el woofer + 10 W para el tweeter",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de reproducción": "Hasta 14 horas, según condiciones de uso",
+        "Batería": "Polímero de litio de 17,28 Wh",
+        "Tiempo de carga": "Aproximadamente 2,5 horas",
+        "Resistencia al agua y polvo": "IP68",
+        "Dimensiones": "18,3 × 7,0 × 7,2 cm (ancho × alto × fondo)",
+        "Peso": "826 g",
+        "Conexión entre parlantes": "Auracast"
+      }
+    },
+    {
+      "id": "jbl-xtreme-4",
+      "brand": "JBL",
+      "model": "Xtreme 4",
+      "codes": [
+        "O237-AZUL.",
+        "O237-NEGRO"
+      ],
+      "sources": [
+        "https://www.jbl.com/XTREME-4.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia RMS con corriente externa": "2 × 30 W en woofers + 2 × 20 W en tweeters (100 W total)",
+        "Potencia RMS con batería": "2 × 20 W en woofers + 2 × 15 W en tweeters (70 W total)",
+        "Conectividad Bluetooth": "5.3",
+        "Autonomía de reproducción": "Hasta 24 horas, según condiciones de uso",
+        "Tiempo de carga": "Aproximadamente 3,5 horas",
+        "Resistencia al agua y polvo": "IP67",
+        "Dimensiones": "29,7 × 14,9 × 14,1 cm (ancho × alto × fondo)",
+        "Peso": "2,1 kg",
+        "Conexión entre parlantes": "Auracast"
+      }
+    },
+    {
+      "id": "redmi-watch-5-active",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Watch 5 Active",
+      "codes": [
+        "O292-NEGRO",
+        "O292-SILVER"
+      ],
+      "sources": [
+        "https://www.mi.com/au/product/redmi-watch-5-active/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reloj inteligente",
+        "Pantalla": "LCD de 2 pulgadas",
+        "Resolución de pantalla": "320 × 385 píxeles",
+        "Batería": "470 mAh",
+        "Autonomía": "Hasta 18 días de uso típico; varía según configuración y uso.",
+        "Conectividad Bluetooth": "5.3; admite llamadas mediante el teléfono vinculado",
+        "Sistema operativo": "Xiaomi HyperOS",
+        "Compatibilidad": "Smartphones con Android 8.0 o posterior, o iOS 12.0 o posterior",
+        "Resistencia al agua": "5 ATM",
+        "Dimensiones": "49,1 × 40,4 × 11,4 mm, sin correa ni salientes",
+        "Peso": "30,6 g sin correa"
+      }
+    },
+    {
+      "id": "redmi-watch-5-lite",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Watch 5 Lite",
+      "codes": [
+        "O429-LIGHT GOLD",
+        "O429-NEGRO"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-watch-5-lite/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reloj inteligente",
+        "Pantalla": "AMOLED de 1,96 pulgadas",
+        "Resolución de pantalla": "410 × 502 píxeles",
+        "Batería": "470 mAh",
+        "Autonomía": "Hasta 18 días de uso típico; varía según configuración y uso.",
+        "Conectividad Bluetooth": "5.3; admite llamadas mediante el teléfono vinculado",
+        "Sistema operativo": "Xiaomi HyperOS",
+        "Compatibilidad": "Smartphones con Android 8.0 o posterior, o iOS 12.0 o posterior",
+        "Posicionamiento": "GNSS integrado: GPS, Galileo, GLONASS, BeiDou y QZSS",
+        "Dimensiones": "48,1 × 39,2 × 10,6 mm, sin correa ni salientes",
+        "Peso": "29,2 g sin correa"
+      }
+    },
+    {
+      "id": "xiaomi-sound-outdoor",
+      "brand": "Xiaomi",
+      "model": "Sound Outdoor (MDZ-38-DB)",
+      "codes": [
+        "O272-GREEN",
+        "O272-NEGRO",
+        "O707"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-sound-outdoor/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia nominal de salida": "30 W (20 W + 10 W)",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de reproducción": "Aproximadamente 12 horas al 50 % de volumen",
+        "Batería": "Iones de litio, 7,2 V / 2600 mAh",
+        "Carga": "5 V / 3 A; aproximadamente 2,5 horas",
+        "Resistencia al agua y polvo": "IP67",
+        "Dimensiones": "196,6 × 68 × 66 mm",
+        "Peso": "Aproximadamente 597 g",
+        "Micrófono": "Integrado",
+        "Conexión entre parlantes": "Emparejamiento estéreo TWS; conexión múltiple de hasta 100 unidades compatibles"
+      }
+    },
+    {
+      "id": "xiaomi-tv-box-s-3",
+      "brand": "Xiaomi",
+      "model": "TV Box S (3.ª generación)",
+      "codes": [
+        "O437"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-tv-box-s-3rd-gen/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reproductor multimedia TV Box",
+        "Resolución de salida": "Hasta 4K (3840 × 2160) a 60 fps",
+        "Sistema operativo": "Google TV",
+        "Memoria RAM": "2 GB",
+        "Almacenamiento": "32 GB",
+        "Procesador": "Cuatro núcleos, hasta 2,5 GHz; GPU ARM G310 V2",
+        "Conectividad Wi-Fi": "2,4 y 5 GHz",
+        "Conectividad Bluetooth": "5.2",
+        "Puertos": "1 HDMI 2.1, 1 USB 2.0 y entrada de alimentación",
+        "Formatos audiovisuales": "Dolby Vision, HDR10+, Dolby Audio y DTS:X; requieren contenido y equipos compatibles",
+        "Dimensiones": "97 × 97 × 17 mm",
+        "Peso": "Aproximadamente 91,2 g"
+      }
+    },
+    {
+      "id": "redmi-buds-6-active",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Buds 6 Active (M2344E1)",
+      "codes": [
+        "O668-AZUL"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-buds-6-active/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos TWS",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de los audífonos": "Hasta 6 horas por carga, según condiciones de uso",
+        "Autonomía con estuche": "Hasta 30 horas en total, según condiciones de uso",
+        "Batería": "37 mAh por audífono; estuche de 475 mAh",
+        "Conector de carga": "USB-C",
+        "Tiempo de carga": "Audífonos: aproximadamente 90 minutos; estuche: aproximadamente 120 minutos",
+        "Peso": "4 g por audífono; 36 g en total con estuche"
+      }
+    },
+    {
+      "id": "redmi-buds-5-pro",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Buds 5 Pro (M2317E1)",
+      "codes": [
+        "O188",
+        "O667"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-buds-5-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos TWS",
+        "Conectividad Bluetooth": "5.3",
+        "Batería": "54 mAh por audífono; estuche de 480 mAh",
+        "Conector de carga": "USB-C",
+        "Impedancia": "16 ohmios",
+        "Peso": "Aproximadamente 5,1 g por audífono; 42,8 g en total con estuche",
+        "Dimensiones del estuche": "61 × 46,8 × 25 mm"
+      }
+    },
+    {
+      "id": "redmi-buds-6-pro",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Buds 6 Pro (M2430E1)",
+      "codes": [
+        "O383-NEGRO",
+        "O383-PURPURA"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-buds-6-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos TWS",
+        "Conectividad Bluetooth": "5.3",
+        "Batería": "54 mAh por audífono; estuche de 480 mAh",
+        "Conector de carga": "USB-C",
+        "Peso": "Aproximadamente 5,2 g por audífono; 46,5 g en total con estuche",
+        "Dimensiones del estuche": "61,05 × 48,28 × 25,17 mm",
+        "Alcance Bluetooth": "Hasta 10 metros en espacio abierto sin obstáculos"
+      }
+    },
+    {
+      "id": "xiaomi-smart-band-10",
+      "brand": "Xiaomi",
+      "model": "Smart Band 10",
+      "codes": [
+        "O658",
+        "O659",
+        "O663"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-band-10/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Pulsera inteligente",
+        "Pantalla": "AMOLED táctil de 1,72 pulgadas",
+        "Resolución de pantalla": "212 × 520 píxeles",
+        "Batería": "Polímero de litio de 233 mAh",
+        "Conectividad Bluetooth": "5.4",
+        "Carga": "Magnética; aproximadamente 1 hora",
+        "Compatibilidad": "Android 8.0 o posterior, o iOS 14.0 o posterior; aplicación Mi Fitness",
+        "Resistencia al agua": "5 ATM; no adecuada para duchas calientes, sauna ni buceo",
+        "Peso": "15,95 g sin correa, versión estándar",
+        "Dimensiones": "46,57 × 22,54 × 10,95 mm, sin el sensor de frecuencia cardíaca"
+      }
+    },
+    {
+      "id": "xiaomi-sound-pocket",
+      "brand": "Xiaomi",
+      "model": "Sound Pocket",
+      "codes": [
+        "O835-PINK"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-sound-pocket/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia nominal de salida": "5 W",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de reproducción": "Aproximadamente 10 horas al 40 % de volumen",
+        "Batería": "Iones de litio, 3,7 V / 1000 mAh",
+        "Carga": "5 V / 1 A; aproximadamente 3 horas",
+        "Resistencia al agua y polvo": "IP67",
+        "Dimensiones": "90,8 × 74,4 × 42,6 mm",
+        "Peso": "Aproximadamente 200 g",
+        "Micrófono": "Integrado",
+        "Conexión entre parlantes": "Emparejamiento estéreo TWS"
+      }
+    },
+    {
+      "id": "redmi-watch-4",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Watch 4",
+      "codes": [
+        "O189"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-watch-4/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reloj inteligente",
+        "Pantalla": "AMOLED de 1,97 pulgadas; frecuencia de actualización de 60 Hz",
+        "Batería": "470 mAh",
+        "Autonomía": "Hasta 20 días de uso típico; varía según configuración y uso.",
+        "Conectividad": "Llamadas por Bluetooth mediante el teléfono vinculado",
+        "Resistencia al agua": "5 ATM",
+        "Posicionamiento": "GNSS integrado: GPS, Galileo, GLONASS, BeiDou y QZSS",
+        "Dimensiones": "47,5 × 41,1 × 10,5 mm, sin correa ni salientes",
+        "Peso": "31,5 g sin correa",
+        "Material de la estructura": "Aleación de aluminio"
+      }
+    },
+    {
+      "id": "xiaomi-c500-pro",
+      "brand": "Xiaomi",
+      "model": "Smart Camera C500 Pro (MJSXJ16CM)",
+      "codes": [
+        "O182"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-camera-c500-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Cámara de seguridad",
+        "Resolución de video": "2960 × 1666 píxeles",
+        "Codificación de video": "H.265",
+        "Conectividad Wi-Fi": "2,4 y 5 GHz; IEEE 802.11 a/b/g/n",
+        "Conectividad Bluetooth": "5.2",
+        "Almacenamiento compatible": "Tarjeta microSD de 8 a 256 GB; tarjeta no confirmada como incluida",
+        "Alimentación": "5 V / 2 A",
+        "Dimensiones": "78 × 78 × 124 mm",
+        "Peso": "301 g"
+      }
+    },
+    {
+      "id": "xiaomi-air-fryer-65",
+      "brand": "Xiaomi",
+      "model": "Smart Air Fryer 6.5L (MAF10)",
+      "codes": [
+        "O349"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-air-fryer-6-5-liter/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Freidora de aire",
+        "Capacidad de la cesta": "6,5 litros",
+        "Potencia nominal": "1800 W, según ficha global del modelo MAF10",
+        "Alimentación": "La ficha global MAF10 indica 220–240 V, 50–60 Hz; confirmar la etiqueta de la unidad antes de conectar.",
+        "Conectividad Wi-Fi": "IEEE 802.11 b/g/n de 2,4 GHz",
+        "Dimensiones": "389 × 287 × 317 mm",
+        "Peso neto": "5,4 kg"
+      }
+    },
+    {
+      "id": "xiaomi-air-purifier-4-lite",
+      "brand": "Xiaomi",
+      "model": "Smart Air Purifier 4 Lite (AC-M17-SC)",
+      "codes": [
+        "O715"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-air-purifier-4-lite/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Purificador de aire",
+        "Cobertura efectiva": "25–43 m², según condiciones del fabricante",
+        "Caudal de aire limpio de partículas (CADR)": "360 m³/h",
+        "Nivel de ruido": "Hasta 61 dB(A)",
+        "Dimensiones": "240 × 240 × 533,5 mm",
+        "Peso": "Aproximadamente 4,8 kg"
+      }
+    },
+    {
+      "id": "xiaomi-humidifier-2-lite",
+      "brand": "Xiaomi",
+      "model": "Humidifier 2 Lite (MJJSQ06DY)",
+      "codes": [
+        "O573"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-humidifier-2-lite/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Humidificador",
+        "Capacidad del depósito": "4 litros",
+        "Tasa de humidificación": "300 ml/h",
+        "Potencia nominal": "23 W, según ficha del fabricante",
+        "Alimentación": "La ficha global indica 220 V / 50 Hz; confirmar la etiqueta de la unidad antes de conectar.",
+        "Nivel de ruido": "Hasta 38 dB(A)",
+        "Dimensiones": "190 × 202 × 315 mm",
+        "Peso neto": "1,4 kg"
+      }
+    },
+    {
+      "id": "jbl-wave-beam-2",
+      "brand": "JBL",
+      "model": "Wave Beam 2",
+      "codes": [
+        "O438-AZUL",
+        "O438-BLANCO",
+        "O438-ROSADO"
+      ],
+      "sources": [
+        "https://www.jbl.com/WAVE-BEAM-2.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos TWS",
+        "Conectividad Bluetooth": "5.3; conexión multipunto a dos dispositivos",
+        "Cancelación de ruido": "Activa (ANC), con Smart Ambient",
+        "Autonomía de los audífonos": "Hasta 10 horas con ANC desactivado; hasta 8 horas con ANC activado. Depende del uso.",
+        "Autonomía con estuche": "Hasta 40 horas en total con ANC desactivado",
+        "Conector de carga": "USB-C",
+        "Tiempo de carga": "Aproximadamente 2 horas desde batería vacía",
+        "Transductores": "Dinámicos de 8 mm",
+        "Resistencia al agua y polvo": "Audífonos IP54; estuche IPX2",
+        "Micrófonos": "4"
+      }
+    },
+    {
+      "id": "jbl-tuner-3",
+      "brand": "JBL",
+      "model": "Tuner 3",
+      "codes": [
+        "O1030"
+      ],
+      "sources": [
+        "https://www.jbl.com/TUNER-3.html",
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw80a22ab5/pdfs/PA_JBL_Tuner%203_QSG_Global_SOP_V9_online.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Radio portátil con parlante Bluetooth",
+        "Potencia de salida RMS": "7 W",
+        "Conectividad Bluetooth": "5.3",
+        "Radio": "FM, DAB y DAB+; la recepción depende de la cobertura local",
+        "Autonomía de reproducción": "Hasta 12 horas; hasta 15 horas con Playtime Boost. Depende del volumen y del contenido.",
+        "Batería": "Iones de litio de 9 Wh",
+        "Conector de carga": "USB-C, entrada de hasta 5 V / 1,35 A",
+        "Tiempo de carga": "Aproximadamente 3,5 horas",
+        "Resistencia al agua y polvo": "IP68",
+        "Dimensiones": "174,7 × 73,1 × 71,3 mm, sin correa ni antena",
+        "Peso": "0,5 kg"
+      }
+    },
+    {
+      "id": "jbl-grip",
+      "brand": "JBL",
+      "model": "Grip",
+      "codes": [
+        "O618-AZUL.",
+        "O618-BLANCO",
+        "O618-CAMUFLADO",
+        "O618-NEGRO.",
+        "O618-ORANGE",
+        "O618-PINK",
+        "O618-PURPURA.",
+        "O618-ROJO"
+      ],
+      "sources": [
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwba4462c2/pdfs/JBL_Grip_Specsheet_EN.pdf",
+        "https://uk.jbl.com/JBLGRIPBLK.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil con iluminación ambiental",
+        "Potencia de salida RMS": "16 W",
+        "Conectividad Bluetooth": "5.4",
+        "Batería": "Iones de litio de 10,01 Wh (2600 mAh a 3,85 V)",
+        "Tiempo de carga": "Aproximadamente 3 horas con 5 V / 3 A",
+        "Resistencia al agua y polvo": "IP68",
+        "Dimensiones": "64 × 152,5 × 65,2 mm",
+        "Peso": "385 g",
+        "Conexión entre parlantes": "Auracast"
+      }
+    },
+    {
+      "id": "xiaomi-router-ax1500",
+      "brand": "Xiaomi",
+      "model": "Router AX1500",
+      "codes": [
+        "O451"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-router-ax1500/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Router inalámbrico",
+        "Conectividad Wi-Fi": "Doble banda: 2,4 y 5 GHz; Wi-Fi 6 (802.11ax) en 5 GHz",
+        "Velocidad Wi-Fi teórica": "Hasta 300 Mbps en 2,4 GHz y 1201 Mbps en 5 GHz; no equivale a la velocidad contratada de internet",
+        "Puertos de red": "4 puertos WAN/LAN adaptativos de 10/100/1000 Mbps",
+        "Antenas": "4 antenas de alta ganancia",
+        "Seguridad inalámbrica": "WPA-PSK, WPA2-PSK y WPA3-SAE",
+        "Dimensiones": "247 × 143,5 × 178,7 mm"
+      }
+    },
+    {
+      "id": "xiaomi-sound-party",
+      "brand": "Xiaomi",
+      "model": "Sound Party",
+      "codes": [
+        "O850"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-sound-party/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia nominal de salida": "50 W: woofer de 35 W + tweeter de 15 W",
+        "Conectividad Bluetooth": "5.4",
+        "Autonomía de reproducción": "Aproximadamente 26 horas al 50 % de volumen, con iluminación 3D y Bass Boost apagados",
+        "Batería": "Iones de litio, 7,3 V / 5200 mAh",
+        "Tiempo de carga": "Aproximadamente 4 horas con alimentación de 12 V / 2 A",
+        "Salida de carga externa": "Hasta 5 V / 3 A",
+        "Resistencia al agua y polvo": "IP67",
+        "Dimensiones": "255 × 92 × 92 mm",
+        "Peso": "Aproximadamente 1,2 kg",
+        "Micrófono": "Integrado"
+      }
+    },
+    {
+      "id": "sony-wh-ch720n",
+      "brand": "Sony",
+      "model": "WH-CH720N",
+      "codes": [
+        "O567-NEGRO"
+      ],
+      "sources": [
+        "https://www.sony.com/electronics/support/wireless-headphones-bluetooth-headphones/wh-ch720n/specifications"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos circumaurales de diadema",
+        "Conectividad Bluetooth": "5.2",
+        "Conexión por cable": "Entrada minijack estéreo; cable desmontable",
+        "Autonomía de reproducción": "Hasta 35 horas con cancelación de ruido activada y hasta 50 horas desactivada; depende de los ajustes y del uso",
+        "Tiempo de carga": "Aproximadamente 3,5 horas",
+        "Códecs de audio": "SBC y AAC",
+        "Procesamiento de audio": "DSEE",
+        "Modo de sonido ambiente": "Disponible"
+      }
+    },
+    {
+      "id": "sony-wi-c100",
+      "brand": "Sony",
+      "model": "WI-C100",
+      "codes": [
+        "O1023-BLANCO",
+        "O1023-NEGRO"
+      ],
+      "sources": [
+        "https://www.sony.com/en-kw/electronics/in-ear-headphones/wi-c100/specifications"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos intraurales inalámbricos con cable de cuello",
+        "Conectividad Bluetooth": "5.0",
+        "Autonomía de reproducción": "Hasta 25 horas; depende de los ajustes y del uso",
+        "Autonomía de llamadas": "Hasta 15 horas; depende del uso",
+        "Tiempo de carga": "Aproximadamente 3 horas",
+        "Transductores": "9 mm",
+        "Resistencia al agua": "IPX4: resistencia a salpicaduras",
+        "Códecs de audio": "SBC y AAC",
+        "Peso": "Aproximadamente 20 g"
+      }
+    },
+    {
+      "id": "sony-mdr-ex15ap",
+      "brand": "Sony",
+      "model": "MDR-EX15AP",
+      "codes": [
+        "O102"
+      ],
+      "sources": [
+        "https://www.sony.com/electronics/support/wired-headphones-in-ear/mdr-ex15ap/specifications"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos intraurales con cable",
+        "Conector de audio": "Minijack estéreo de cuatro contactos, con conector en L",
+        "Longitud del cable": "Aproximadamente 1,2 m (3,94 pies)",
+        "Respuesta de frecuencia": "8 Hz–22 kHz",
+        "Impedancia": "16 ohmios a 1 kHz",
+        "Sensibilidad": "100 dB/mW",
+        "Tipo de cable": "En Y"
+      }
+    },
+    {
+      "id": "jbl-wave-buds-2",
+      "brand": "JBL",
+      "model": "Wave Buds 2",
+      "codes": [
+        "O702-BLANCO"
+      ],
+      "sources": [
+        "https://support.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw063db92f/pdfs/JBL_Wave_Buds_2_Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos TWS",
+        "Conectividad Bluetooth": "5.3; conexión multipunto a dos dispositivos",
+        "Cancelación de ruido": "Activa (ANC), con Smart Ambient",
+        "Autonomía de los audífonos": "Hasta 10 horas con ANC desactivado; hasta 8 horas activado. Depende del uso.",
+        "Autonomía con estuche": "Hasta 40 horas en total con ANC desactivado",
+        "Conector de carga": "USB-C",
+        "Tiempo de carga": "Aproximadamente 2 horas desde batería vacía",
+        "Transductores": "Dinámicos de 8 mm",
+        "Resistencia al agua y polvo": "Audífonos IP54; estuche IPX2",
+        "Micrófonos": "4"
+      }
+    },
+    {
+      "id": "jbl-go-5",
+      "brand": "JBL",
+      "model": "Go 5",
+      "codes": [
+        "O894-AMARILLO",
+        "O894-CELESTE",
+        "O894-PURPURA",
+        "O894-ROJO",
+        "O894-ROSADO"
+      ],
+      "sources": [
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwf293402f/pdfs/JBL_GO_5_Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia de salida RMS": "4,8 W",
+        "Conectividad Bluetooth": "6.0",
+        "Autonomía de reproducción": "Hasta 8 horas con efectos de luz apagados; depende del volumen y del contenido",
+        "Batería": "Iones de litio de 3,85 Wh (1000 mAh a 3,85 V)",
+        "Conector de carga": "USB-C",
+        "Tiempo de carga": "Aproximadamente 3 horas con 5 V / 1 A",
+        "Dimensiones": "101 × 77,4 × 43 mm",
+        "Peso": "230 g"
+      }
+    },
+    {
+      "id": "jbl-xtreme-5",
+      "brand": "JBL",
+      "model": "Xtreme 5",
+      "codes": [
+        "O958-AZUL",
+        "O958-CAMUFLADO",
+        "O958-NEGRO"
+      ],
+      "sources": [
+        "https://www.jbl.com/XTREME-5.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia RMS con corriente externa": "90 W en woofer + 2 × 20 W en tweeters (130 W total)",
+        "Potencia RMS con batería": "60 W en woofer + 2 × 15 W en tweeters (90 W total)",
+        "Conectividad Bluetooth": "6.0",
+        "Autonomía de reproducción": "Hasta 24 horas; hasta 28 horas con Playtime Boost. Depende de volumen, contenido e iluminación.",
+        "Batería": "Iones de litio de 68 Wh",
+        "Tiempo de carga": "Aproximadamente 3,5 horas",
+        "Conector de carga": "USB-C",
+        "Resistencia al agua y polvo": "IP68",
+        "Peso": "2,9 kg",
+        "Conexión entre parlantes": "Auracast"
+      }
+    },
+    {
+      "id": "jbl-tune-780nc",
+      "brand": "JBL",
+      "model": "Tune 780NC",
+      "codes": [
+        "O950-BEIGE",
+        "O950-BLANCO",
+        "O950-BLUE",
+        "O950-NEGRO"
+      ],
+      "sources": [
+        "https://support.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw1ef1765f/pdfs/JBL_Tune_780NC_Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos circumaurales inalámbricos",
+        "Conectividad Bluetooth": "6.0; conexión multipunto a dos dispositivos",
+        "Cancelación de ruido": "Adaptativa, con Smart Ambient",
+        "Autonomía con ANC": "Hasta 50 horas con Bluetooth y ANC activados; depende del uso",
+        "Transductores": "Dinámicos de 40 mm",
+        "Batería": "Iones de litio, 690 mAh / 3,7 V",
+        "Tiempo de carga": "Aproximadamente 2 horas desde batería vacía",
+        "Impedancia": "32 ohmios",
+        "Peso": "225,2 g"
+      },
+      "warnings": [
+        "La fuente presenta indicaciones contradictorias sobre Bluetooth en la cifra de 76 h; se publica únicamente la condición inequívoca de 50 h con ANC y Bluetooth activados."
+      ]
+    },
+    {
+      "id": "jbl-live-780nc",
+      "brand": "JBL",
+      "model": "Live 780NC",
+      "codes": [
+        "O953-BLACK"
+      ],
+      "sources": [
+        "https://www.jbl.com/LIVE780NC.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos circumaurales inalámbricos",
+        "Conectividad Bluetooth": "6.0",
+        "Cancelación de ruido": "True Adaptive Noise Cancelling 2.0",
+        "Autonomía de reproducción": "Hasta 80 horas con ANC desactivado; hasta 50 horas con ANC activado. Depende del uso.",
+        "Tiempo de carga": "Aproximadamente 2 horas desde batería vacía",
+        "Transductores": "40 mm",
+        "Impedancia": "32 ohmios",
+        "Micrófonos": "4",
+        "Peso": "260 g"
+      }
+    },
+    {
+      "id": "jbl-tune-520c",
+      "brand": "JBL",
+      "model": "Tune 520C USB-C",
+      "codes": [
+        "O526- BLACK",
+        "O526- BLUE",
+        "O526- WHITE"
+      ],
+      "sources": [
+        "https://global.jbl.com/on-ear-headphones/JBLT520CBLK.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos supraurales con cable",
+        "Conector de audio": "USB-C; requiere un dispositivo compatible con audio USB-C",
+        "Transductores": "Dinámicos de 32 mm",
+        "Diseño": "Plegable, con cable plano",
+        "Audio": "Compatibilidad con audio de alta resolución (Hi-Res), según el fabricante"
+      }
+    },
+    {
+      "id": "super-hy400-pro",
+      "brand": "SUPER / Importaciones Super",
+      "model": "HY400 Pro",
+      "codes": [
+        "N2220"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-n2220-15573e52ed6d.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Proyector",
+        "Resolución nativa anunciada": "1280 × 720 píxeles, según imagen de la tienda",
+        "Compatibilidad de video anunciada": "Contenido 4K; no equivale a resolución nativa 4K",
+        "Brillo anunciado": "200 lúmenes ANSI, según imagen comercial; sin medición independiente",
+        "Tamaño de proyección anunciado": "Hasta 140 pulgadas",
+        "Sistema operativo anunciado": "Android; la imagen muestra versiones 11 y 14, por lo que la versión exacta queda pendiente",
+        "Conectividad Wi-Fi anunciada": "2,4 y 5 GHz",
+        "Conectividad Bluetooth anunciada": "5.0",
+        "Corrección de imagen anunciada": "Corrección trapezoidal automática",
+        "Audio": "Altavoz incorporado, según imagen comercial"
+      },
+      "warnings": [
+        "La imagen contiene Android 14 en la caja y Android 11 en el pie; no se confirma la versión.",
+        "No se trasladaron precios, promesas sobre suscripciones ni garantía desde la imagen."
+      ]
+    },
+    {
+      "id": "super-hy600-pro",
+      "brand": "SUPER / Importaciones Super",
+      "model": "HY600 Pro",
+      "codes": [
+        "N2222"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-n2222-329dd4c9dc13.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Proyector",
+        "Resolución nativa anunciada": "1280 × 720 píxeles, según imagen de la tienda",
+        "Compatibilidad de video anunciada": "Contenido 4K; no equivale a resolución nativa 4K",
+        "Brillo anunciado": "400 lúmenes ANSI, según imagen comercial; sin medición independiente",
+        "Tamaño de proyección anunciado": "Hasta 180 pulgadas",
+        "Sistema operativo anunciado": "Android 14, según imagen comercial",
+        "Conectividad Wi-Fi anunciada": "2,4 y 5 GHz",
+        "Conectividad Bluetooth anunciada": "5.0",
+        "Corrección de imagen anunciada": "Corrección trapezoidal automática",
+        "Audio": "Altavoz incorporado, según imagen comercial"
+      },
+      "warnings": []
+    },
+    {
+      "id": "super-hy700-pro",
+      "brand": "SUPER / Importaciones Super",
+      "model": "HY700 Pro",
+      "codes": [
+        "N2223"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-n2223-7f6aca285c2d.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Proyector",
+        "Resolución nativa anunciada": "1920 × 1080 píxeles, según imagen de la tienda",
+        "Compatibilidad de video anunciada": "La lista de características indica contenido 4K; no equivale a resolución nativa 4K",
+        "Brillo anunciado": "1000 lúmenes ANSI, según imagen comercial; sin medición independiente",
+        "Tamaño de proyección anunciado": "Hasta 250 pulgadas",
+        "Sistema operativo anunciado": "Android 12, según imagen comercial",
+        "Conectividad Wi-Fi anunciada": "2,4 y 5 GHz",
+        "Conectividad Bluetooth anunciada": "5.4",
+        "Enfoque anunciado": "Automático",
+        "Corrección de imagen anunciada": "Corrección trapezoidal automática"
+      },
+      "warnings": [
+        "La imagen contiene un distintivo 8K y una lista que indica compatibilidad 4K. No se confirma compatibilidad 8K."
+      ]
+    },
+    {
+      "id": "super-hy800-pro",
+      "brand": "SUPER / Importaciones Super",
+      "model": "HY800 Pro",
+      "codes": [
+        "N2224"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-n2224-ab98b05d4e68.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Proyector",
+        "Resolución nativa anunciada": "1920 × 1080 píxeles, según imagen de la tienda",
+        "Compatibilidad de video anunciada": "La lista de características indica contenido 4K; no equivale a resolución nativa 4K",
+        "Brillo anunciado": "1200 lúmenes ANSI, según imagen comercial; sin medición independiente",
+        "Tamaño de proyección anunciado": "Hasta 250 pulgadas",
+        "Sistema operativo anunciado": "Android 14, según imagen comercial",
+        "Conectividad Wi-Fi anunciada": "2,4 y 5 GHz",
+        "Conectividad Bluetooth anunciada": "5.4",
+        "Enfoque anunciado": "Automático",
+        "Corrección de imagen anunciada": "Corrección trapezoidal automática"
+      },
+      "warnings": [
+        "La imagen contiene un distintivo 8K y una lista que indica compatibilidad 4K. No se confirma compatibilidad 8K."
+      ]
+    },
+    {
+      "id": "super-king-kong-k1",
+      "brand": "SUPER / Importaciones Super",
+      "model": "KING KONG K1",
+      "codes": [
+        "CP42"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-cp42-55f907d564b8.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Batería externa portátil (power bank)",
+        "Capacidad de batería anunciada": "50000 mAh, según imagen comercial; no se verificó capacidad útil de salida",
+        "Potencia de carga anunciada": "50 W, según imagen comercial; protocolos y reparto de potencia pendientes de confirmar",
+        "Conectores anunciados": "2 USB y USB-C; la imagen también anuncia carga inalámbrica Qi, sin certificación comprobada",
+        "Indicador": "Pantalla digital, según imagen de la tienda"
+      },
+      "warnings": [
+        "El nombre del inventario dice «50000 amperios»; se transcribió mAh de la imagen, sin modificar el nombre.",
+        "No se confirmó certificación Qi, capacidad real, protocolos ni garantía vigente."
+      ]
+    },
+    {
+      "id": "super-king-c21",
+      "brand": "SUPER / Importaciones Super",
+      "model": "KING C21",
+      "codes": [
+        "CR21"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-cr21-f99adf6828ff.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Cargador de pared",
+        "Conectores mostrados": "Un puerto USB-A y un puerto USB-C",
+        "Cable anunciado": "USB-C a USB-C",
+        "Potencia de carga anunciada": "200 W en la imagen comercial; potencia real y perfiles de salida pendientes de verificación",
+        "Corriente anunciada": "10 A en la imagen comercial; no se verificó su correspondencia con cada perfil de salida"
+      },
+      "warnings": [
+        "No se confirmó potencia real, certificación PD ni carga máxima para un teléfono concreto."
+      ]
+    },
+    {
+      "id": "super-nivora",
+      "brand": "SUPER / Importaciones Super",
+      "model": "NIVORA BT29",
+      "codes": [
+        "BT29"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-bt29-7bfb394007e1.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Audífonos de diadema inalámbricos",
+        "Conectividad Bluetooth anunciada": "5.4, según imagen comercial",
+        "Autonomía anunciada": "Hasta 45 horas de música; la imagen no especifica volumen ni estado de ANC durante la prueba",
+        "Cancelación de ruido anunciada": "ANC para escucha y ENC para llamadas, según imagen comercial; atenuación no especificada",
+        "Contenido anunciado": "Audífonos y estuche/bolsa de transporte, según imagen de la tienda"
+      },
+      "warnings": []
+    },
+    {
+      "id": "super-cb52",
+      "brand": "SUPER / Importaciones Super",
+      "model": "CB52",
+      "codes": [
+        "CA626"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-ca626-f0746bf69eb4.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Cable de carga y transferencia de datos",
+        "Conectores": "USB-C a USB-C, según imagen comercial",
+        "Longitud": "1 metro, según imagen comercial",
+        "Material anunciado": "Silicona",
+        "Potencia de carga anunciada": "Hasta 100 W, según imagen comercial; requiere cargador y dispositivo compatibles",
+        "Transferencia de datos": "Anunciada en la imagen; velocidad no especificada"
+      },
+      "warnings": [
+        "No se confirma certificación USB ni se extrapola el anuncio de 7,5 A a un perfil estándar USB-C."
+      ]
+    },
+    {
+      "id": "super-pc03",
+      "brand": "SUPER / Importaciones Super",
+      "model": "PC03",
+      "codes": [
+        "PC03"
+      ],
+      "sources": [
+        "https://tiendavirtualsuper.com/uploads/products/erp-pc03-d4271192c98b.webp"
+      ],
+      "sourceKind": "STORE_IMAGE",
+      "specs": {
+        "Tipo de producto": "Teclado mecánico compacto",
+        "Conectividad": "Alámbrica, con conector USB-C, según imagen comercial",
+        "Interruptores anunciados": "Switches azules",
+        "Iluminación anunciada": "RGB con múltiples modos",
+        "Registro de teclas anunciado": "N-Key Rollover (anti-ghosting), según imagen comercial",
+        "Compatibilidad anunciada": "Windows y Mac, según imagen comercial",
+        "Material anunciado": "Estructura metálica y teclas de doble inyección"
+      },
+      "warnings": []
+    }
+  ]
+}
