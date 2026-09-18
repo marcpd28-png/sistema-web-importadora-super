@@ -1,0 +1,71 @@
+{
+  "results": [
+    {
+      "answers": [
+        "¡Buenas tardes! 😊 Métodos de pago: Yape, Plin, transferencia bancaria.",
+        "Recibí tu referencia de Instagram. Aún no he podido ver el contenido del enlace para identificar el producto. Envíame una captura donde se vea, o su marca, modelo o código, y continúo con esta consulta.",
+        "Modalidades de entrega: DELIVERY, SHALOM, RECOJO. Para confirmar cobertura, costo y plazo necesitamos el destino y la agencia o dirección; no tengo una cotización de transporte registrada."
+      ],
+      "requests": [
+        {
+          "kind": "PAYMENT",
+          "status": "ANSWERED",
+          "evidence": [
+            "business:paymentMethods"
+          ]
+        },
+        {
+          "kind": "CATALOG",
+          "status": "NEEDS_CLARIFICATION",
+          "evidence": []
+        },
+        {
+          "kind": "SHIPPING",
+          "status": "NEEDS_CLARIFICATION",
+          "evidence": [
+            "business:deliveryMethods"
+          ]
+        }
+      ],
+      "transport": "ANSWERED",
+      "lateOrExtraReplies": 0,
+      "id": "instagram-catalog"
+    },
+    {
+      "answers": [
+        "¡Buenas tardes! 😊 Métodos de pago: Yape, Plin, transferencia bancaria.",
+        "Recibí tu referencia de Facebook. Aún no he podido ver el contenido del enlace para identificar el producto. Envíame una captura donde se vea, o su marca, modelo o código, y continúo con esta consulta.",
+        "Modalidades de entrega: DELIVERY, SHALOM, RECOJO. Para confirmar cobertura, costo y plazo necesitamos el destino y la agencia o dirección; no tengo una cotización de transporte registrada."
+      ],
+      "requests": [
+        {
+          "kind": "PAYMENT",
+          "status": "ANSWERED",
+          "evidence": [
+            "business:paymentMethods"
+          ]
+        },
+        {
+          "kind": "SEARCH",
+          "status": "NEEDS_CLARIFICATION",
+          "evidence": []
+        },
+        {
+          "kind": "SHIPPING",
+          "status": "NEEDS_CLARIFICATION",
+          "evidence": [
+            "business:deliveryMethods"
+          ]
+        }
+      ],
+      "transport": "ANSWERED",
+      "lateOrExtraReplies": 0,
+      "id": "facebook-photos"
+    }
+  ],
+  "cleanup": {
+    "temporaryContactsDeleted": 2,
+    "remaining": 0
+  },
+  "passed": true
+}

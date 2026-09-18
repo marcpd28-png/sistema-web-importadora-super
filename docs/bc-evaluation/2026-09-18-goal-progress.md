@@ -146,3 +146,11 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Pasaron 86 pruebas de regresión, TypeScript, ESLint, build e integración del handler con base PostgreSQL temporal. Prueba adicional de dos fotos en cinco mensajes pasó y verifica que cada precio conserva su producto y sus mensajes de origen.
 - Verificación administrativa → n8n → agenda en VPS: cinco mensajes con foto real N1321 produjeron pago → precio de dos unidades (258) → envío. Con foto desconocida: pago → aclaración de foto → envío, cantidad dos pendiente, ningún precio inventado. Ambos sin respuestas tardías duplicadas; contactos temporales eliminados. Evidencia: `2026-09-18-mixedimage-live.json`.
 - El objetivo sigue abierto: comprensión visual/social general, más variantes de compra y correcciones de datos, y evaluación más amplia de conversaciones reales.
+
+## Referencias sociales al pedir catálogos y fotos
+
+- Web `c36a5f0`, publicada y activa en VPS con respaldo. La identificación pendiente de una referencia ahora se comprueba antes de las ramas de PDF y fotos, además de precio/información.
+- Si el producto de un enlace de Instagram, Facebook u otra plataforma reconocida no está identificado, la solicitud permanece NEEDS_CLARIFICATION sin evidencia de catálogo ni adjuntos que puedan confundirse con el producto referido. Pago y envío se responden por separado en su orden. Un tema cuyo código ya fue aclarado puede continuar.
+- Pasaron 88 pruebas de regresión, TypeScript, ESLint, compilación e integración en base PostgreSQL temporal: Instagram/catálogo y Facebook/fotos conservan pago→referencia→envío y no generan adjuntos. Base temporal eliminada.
+- La extracción e interpretación del contenido de los enlaces sigue pendiente; esta corrección evita considerar resuelta una referencia que aún no se ha identificado.
+- Prueba publicada completada por simulador y n8n en ambos casos: pago → referencia pendiente → envío, ningún adjunto y cero respuestas tardías/duplicadas. Dos contactos temporales eliminados. Evidencia: `2026-09-18-socialmedia-live.json`.
