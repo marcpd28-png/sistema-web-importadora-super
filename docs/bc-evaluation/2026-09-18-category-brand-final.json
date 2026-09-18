@@ -1,0 +1,181 @@
+{
+  "commit": "6ce69c23f68944ccb8ec9ce1c3def622d732ea29",
+  "completed": 8,
+  "cleanup": {
+    "temporaryContactsDeleted": 8,
+    "remaining": 0
+  },
+  "transportsOk": true,
+  "batteryCodes": [
+    "CP55",
+    "N551",
+    "CP605",
+    "CP592",
+    "CP595",
+    "CP601",
+    "N1391",
+    "N2323"
+  ],
+  "chargerCodes": [
+    "N2320",
+    "CP151",
+    "O318"
+  ],
+  "pdfs": [
+    {
+      "id": "FINAL-PDF-KZ",
+      "codes": [
+        "AU243",
+        "BT463",
+        "O1035"
+      ],
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ]
+    },
+    {
+      "id": "FINAL-PDF-BARETONE",
+      "codes": [
+        "P491",
+        "P652",
+        "P717",
+        "P753"
+      ],
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ]
+    },
+    {
+      "id": "FINAL-PDF-BOMA",
+      "codes": [
+        "L186"
+      ],
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ]
+    }
+  ],
+  "independentlyReviewed": [
+    {
+      "code": "O336",
+      "name": "(O336) PROYECTOR HAVIT PRIME HEMATITE PJ211 PRO",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 1
+    },
+    {
+      "code": "O896-WHITE",
+      "name": "(O896-WHITE) AUDIFONO TWS REDMI BUDS 8 ACTIVE 003418",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 6
+    },
+    {
+      "code": "O38",
+      "name": "(O38) BLUETOOTH REDMI BUDS 4 PRO NEGRO (ORIGINAL)",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 1
+    },
+    {
+      "code": "O337",
+      "name": "(O337) PROYECTOR HAVIT PRIME SAPPHIRE PJ209A PRO",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 2
+    },
+    {
+      "code": "O366",
+      "name": "(O366) PROYECTOR HAVIT PJ216A PRO 300ANSI - 150\"",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 9
+    },
+    {
+      "code": "N1121",
+      "name": "(N1121) PROYECTOR PELOTA COD (Q8)",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 35
+    },
+    {
+      "code": "O363",
+      "name": "(O363) PROYECTOR HAVIT PJ215 PRO 250ANSI LUMENS - 150\"",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 2
+    },
+    {
+      "code": "O364",
+      "name": "(O364) PROYECTOR HAVIT PJ300 PRO 550ANSI",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 13
+    },
+    {
+      "code": "O589",
+      "name": "(O589) HAVIT PROYECTOR PJ209A PLUS",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 3
+    },
+    {
+      "code": "O896-BLACK",
+      "name": "(O896-BLACK) AUDIFONO TWS REDMI BUDS 8 ACTIVE 003419",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 5
+    },
+    {
+      "code": "O896-BLUE",
+      "name": "(O896-BLUE) AUDIFONO TWS REDMI BUDS 8 ACTIVE 003417",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 20
+    },
+    {
+      "code": "O923-BLACK",
+      "name": "(O923-BLACK) REDMI BUDS 7S Midnight Black",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 1
+    },
+    {
+      "code": "O976",
+      "name": "(O976) AUDIFONO TWS REDMI BUDS 8 PRO NEGRO",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 4
+    },
+    {
+      "code": "O976-BLUE",
+      "name": "(O976-BLUE) AUDIFONO TWS REDMI BUDS 8 PRO",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 1
+    },
+    {
+      "code": "O976-WHITE",
+      "name": "(O976-WHITE) AUDIFONO TWS REDMI BUDS 8 PRO",
+      "category": "AURICULARES",
+      "isVisible": true,
+      "stockUnits": 6
+    },
+    {
+      "code": "n1163",
+      "name": "(N1163) PROYECTOR cod. (Budplus A1)",
+      "category": "ENTRETENIMIENTO Y MULTIMEDIA",
+      "isVisible": true,
+      "stockUnits": 29
+    }
+  ]
+}
