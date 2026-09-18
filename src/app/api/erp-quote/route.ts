@@ -100,6 +100,7 @@ export async function POST(request: Request) {
 
     const catalogProducts = await prisma.product.findMany({
       where: {
+        AND: [buildSellableProductWhere()],
         code: {
           in: requestedItems.map((item) => item.code),
         },
@@ -443,3 +444,4 @@ type PreparedCustomerWhatsappItem = QuoteRequestItem & {
   name: string;
   unitPrice: number;
 };
+import { buildSellableProductWhere } from "@/lib/store-shared";

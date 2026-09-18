@@ -1,4 +1,4 @@
-const GENERIC_PRODUCT_PHOTO_MARKERS = [
+export const GENERIC_PRODUCT_PHOTO_MARKERS = [
   "imagen-no-disponible",
   "no-image",
   "placeholder",
@@ -15,32 +15,41 @@ export function isGenericProductMediaUrl(value: string | null | undefined) {
   return GENERIC_PRODUCT_PHOTO_MARKERS.some((marker) => normalized.includes(marker));
 }
 
-type ProductMediaSource = {
+export type ProductMediaSource = {
   localImageUrl?: string | null;
   imageUrl?: string | null;
-  media?: Array<{ url: string }>;
+  media?: Array<{ url: string; type?: string }>;
 };
 
-export function getPreferredProductImageUrl(product: ProductMediaSource) {
-  const localImageUrl = product.localImageUrl?.trim() ?? "";
+export function isRealProductPhotoUrl(value: string | null | undefined) {
+  // Accept the same URL prefixes as the database filters. Blank values, generic
+  // ERP artwork and video-only galleries must never unlock public visibility.
+  return Boolean(value && /^(https?:\/\/|\/)/i.test(value) && !isGenericProductMediaUrl(value));
+}
 
-  if (localImageUrl) {
-    return localImageUrl;
+export function hasRealProductPhoto(product: ProductMediaSource) {
+  return Boolean(getPreferredProductImageUrl(product));
+}
+
+export function getPreferredProductImageUrl(product: ProductMediaSource) {
+  const localImageUrl = product.localImageUrl ?? "";
+
+  if (isRealProductPhotoUrl(localImageUrl)) {
+    return localImageUrl.trim();
   }
 
   const mediaUrl = product.media?.find((item) => {
-    const value = item.url.trim();
-    return value.length > 0 && !isGenericProductMediaUrl(value);
+    return item.type !== "VIDEO" && isRealProductPhotoUrl(item.url);
   })?.url;
 
   if (mediaUrl) {
     return mediaUrl.trim();
   }
 
-  const imageUrl = product.imageUrl?.trim() ?? "";
+  const imageUrl = product.imageUrl ?? "";
 
-  if (imageUrl && !isGenericProductMediaUrl(imageUrl)) {
-    return imageUrl;
+  if (isRealProductPhotoUrl(imageUrl)) {
+    return imageUrl.trim();
   }
 
   return null;

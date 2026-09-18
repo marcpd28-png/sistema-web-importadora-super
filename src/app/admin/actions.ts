@@ -4,8 +4,13 @@ import bcrypt from "bcryptjs";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
+import { preserveProductCoverInGallery } from "@/lib/product-editor-media";
 
 function invalidateAdminCaches() {
+  revalidatePath("/admin", "layout");
+  revalidatePath("/producto/[slug]", "page");
+  revalidatePath("/p/[slug]", "page");
+  revalidatePath("/sitemap.xml");
   try {
     revalidateTag("admin-dashboard", "max");
     revalidateTag("admin-product-stats", "max");
@@ -231,7 +236,7 @@ export async function createProductFormAction(
   try {
     const data = productSchema.parse(values);
     const category = await resolveCategory(data.categoryId);
-    const media = parseProductMedia(values.media);
+    const media = preserveProductCoverInGallery(data.imageUrl, parseProductMedia(values.media));
 
     await prisma.product.create({
       data: {
@@ -266,7 +271,7 @@ export async function updateProductFormAction(
   try {
     const data = productSchema.parse(values);
     const category = await resolveCategory(data.categoryId);
-    const media = parseProductMedia(values.media);
+    const media = preserveProductCoverInGallery(data.imageUrl, parseProductMedia(values.media));
 
     await prisma.product.update({
       where: { id: productId },

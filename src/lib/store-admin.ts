@@ -3,16 +3,17 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   ADMIN_PAGE_SIZE,
-  GENERIC_PRODUCT_PHOTO_URLS,
   buildWhere,
   buildMissingProductPhotoWhere,
   buildRealProductPhotoWhere,
+  buildSellableProductWhere,
   calculateDeltaPercent,
   mapCatalogMovementProduct,
   mapErpSyncLog,
   mapProduct,
   hasRealProductPhoto,
 } from "@/lib/store-shared";
+import { buildRealProductPhotoSql } from "@/lib/product-photo-policy";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
 import { BLOCKED_PUBLIC_PRODUCT_CODES } from "@/lib/public-product-blocklist";
 import type {
@@ -35,7 +36,6 @@ import type {
 
 const ADMIN_QUOTES_PAGE_SIZE = 10;
 const ADMIN_COMPLAINTS_PAGE_SIZE = 10;
-const ADMIN_GENERIC_PRODUCT_PHOTO_URLS = [...GENERIC_PRODUCT_PHOTO_URLS, ""];
 
 type AdminInventoryStats = {
   totalProducts: number;
@@ -111,52 +111,14 @@ async function getAdminInventoryStats(staleDate: Date): Promise<AdminInventorySt
         p."syncEnabled",
         p."lastSyncedAt",
         p."isFeatured",
-        (
-          (
-            p."localImageUrl" IS NOT NULL
-            AND p."localImageUrl" NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
-          )
-          OR (
-            p."imageUrl" IS NOT NULL
-            AND p."imageUrl" NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
-          )
-          OR EXISTS (
-            SELECT 1
-            FROM "ProductMedia" pm
-            WHERE pm."productId" = p.id
-              AND pm.url NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
-          )
-        ) AS "hasRealPhoto",
-        (
-          (
-            p."localImageUrl" IS NULL
-            OR p."localImageUrl" = ''
-            OR p."localImageUrl" IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
-            OR lower(p."localImageUrl") LIKE '%imagen-no-disponible%'
-            OR lower(p."localImageUrl") LIKE '%no-image%'
-          )
-          OR (
-            p."imageUrl" IS NULL
-            OR p."imageUrl" = ''
-            OR p."imageUrl" IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
-            OR lower(p."imageUrl") LIKE '%imagen-no-disponible%'
-            OR lower(p."imageUrl") LIKE '%no-image%'
-            OR lower(p."imageUrl") LIKE '%placeholder%'
-            OR lower(p."imageUrl") LIKE '%sin-foto%'
-          )
-        )
-        AND NOT EXISTS (
-          SELECT 1
-          FROM "ProductMedia" pm
-          WHERE pm."productId" = p.id
-            AND pm.url NOT IN (${Prisma.join(ADMIN_GENERIC_PRODUCT_PHOTO_URLS)})
-        ) AS "isMissingPhoto"
+        ${buildRealProductPhotoSql()} AS "hasRealPhoto",
+        NOT ${buildRealProductPhotoSql()} AS "isMissingPhoto"
       FROM "Product" p
     )
     SELECT
       (COUNT(*))::int AS "totalProducts",
       (COUNT(*) FILTER (WHERE pf."isVisible" = true AND ${buildBlockedAdminProductCodesSql()} AND pf."hasRealPhoto"))::int AS "visibleProductsCount",
-      (COUNT(*) FILTER (WHERE pf."isVisible" = false))::int AS "hiddenProductsCount",
+      (COUNT(*) FILTER (WHERE pf."isVisible" = false OR pf."isMissingPhoto"))::int AS "hiddenProductsCount",
       (COUNT(*) FILTER (WHERE pf."hasRealPhoto"))::int AS "withPhotoProductsCount",
       (COUNT(*) FILTER (WHERE pf."isMissingPhoto"))::int AS "withoutPhotoProductsCount",
       (COUNT(*) FILTER (WHERE pf."isVisible" = true AND (pf."stockUnits" <= 0 OR pf."isMissingPhoto")))::int AS "needsReviewProductsCount",
@@ -830,9 +792,9 @@ export async function getAdminProducts(input: {
         ]
       : []),
     ...(input.visibility === "visible"
-      ? [{ isVisible: true }]
+      ? [buildSellableProductWhere()]
       : input.visibility === "hidden"
-        ? [{ isVisible: false }]
+        ? [{ OR: [{ isVisible: false }, buildMissingProductPhotoWhere()] }]
         : []),
     ...(input.stock === "low" ? [{ stockUnits: { lte: 12 } }] : []),
     ...(input.stock === "out" ? [{ stockUnits: { lte: 0 } }] : []),
@@ -879,7 +841,7 @@ export async function getAdminProducts(input: {
           lastSyncedAt: true,
           updatedAt: true,
           media: {
-            take: 1,
+            where: { type: "IMAGE" },
             orderBy: { sortOrder: "asc" },
             select: {
               url: true,
@@ -928,33 +890,19 @@ export async function getAdminProducts(input: {
 
   const payload = {
     products: products.map((product) => {
-      const imageUrl = product.imageUrl?.trim() ?? "";
-      const localImageUrl = product.localImageUrl?.trim() ?? "";
+      const imageUrl = product.imageUrl ?? "";
+      const localImageUrl = product.localImageUrl ?? "";
       const sourceImageUrl = product.sourceImageUrl?.trim() ?? "";
-      const mediaUrl = product.media[0]?.url?.trim() ?? "";
-      const hasPhoto = hasRealProductPhoto({
-        imageUrl: sourceImageUrl || imageUrl || null,
-        localImageUrl: localImageUrl || null,
-        media: mediaUrl ? [{ url: mediaUrl }] : [],
-      });
-      const thumbnailUrl = hasPhoto
-        ? getPreferredProductImageUrl({
-            localImageUrl,
-            imageUrl: sourceImageUrl || imageUrl || null,
-            media: mediaUrl ? [{ url: mediaUrl }] : [],
-          })
-        : null;
+      const photoSource = { imageUrl, localImageUrl, media: product.media };
+      const hasPhoto = hasRealProductPhoto(photoSource);
+      const thumbnailUrl = getPreferredProductImageUrl(photoSource);
 
       return {
         id: product.id,
         code: product.code,
         name: product.name,
         brand: product.brand,
-        imageUrl: getPreferredProductImageUrl({
-          localImageUrl,
-          imageUrl: sourceImageUrl || imageUrl || null,
-          media: mediaUrl ? [{ url: mediaUrl }] : [],
-        }),
+        imageUrl: thumbnailUrl,
         sourceImageUrl: sourceImageUrl || null,
         localImageUrl: localImageUrl || null,
         thumbnailUrl,
@@ -1149,7 +1097,7 @@ export async function getShopperQuoteById(
       code: item.code,
       name: item.name,
       product:
-        item.product && item.product.isVisible && item.product.stockUnits > 0
+        item.product && item.product.isVisible && item.product.stockUnits > 0 && hasRealProductPhoto(item.product)
           ? mapProduct(item.product)
           : null,
       quantity: item.quantity,

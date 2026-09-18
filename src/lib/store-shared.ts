@@ -28,8 +28,14 @@ import {
 import {
   getPreferredProductImageUrl,
   isGenericProductMediaUrl,
+  isRealProductPhotoUrl,
+  hasRealProductPhoto,
 } from "@/lib/product-media";
 import { BLOCKED_PUBLIC_PRODUCT_CODES } from "@/lib/public-product-blocklist";
+
+import { buildRealProductPhotoWhere } from "@/lib/product-photo-policy";
+export { buildRealProductPhotoWhere, buildMissingProductPhotoWhere } from "@/lib/product-photo-policy";
+export { hasRealProductPhoto, hasRealProductPhoto as hasProductPhoto } from "@/lib/product-media";
 
 export const PUBLIC_PAGE_SIZE = 24;
 export const ADMIN_PAGE_SIZE = 10;
@@ -41,7 +47,6 @@ const LEGACY_BRAND_BLUE_2 = "#0b86d1";
 export const GENERIC_PRODUCT_PHOTO_URLS = [
   "https://original.negocioserp.com/logo/imagen-no-disponible.jpg",
 ];
-const GENERIC_PRODUCT_PHOTO_FILTER_URLS = [...GENERIC_PRODUCT_PHOTO_URLS, ""];
 
 const DEFAULT_STORE_SETTINGS: StoreSettingsView = {
   businessName: "Importaciones Super",
@@ -79,12 +84,6 @@ type SuggestionProduct = Pick<
   | "updatedAt"
 >;
 
-type ProductPhotoSource = {
-  imageUrl: string | null;
-  localImageUrl?: string | null;
-  media: Array<{ url: string }>;
-};
-
 export function isGenericProductPhotoUrl(value: string | null | undefined) {
   const normalized = value?.trim().toLowerCase() ?? "";
 
@@ -99,48 +98,9 @@ export function isGenericProductPhotoUrl(value: string | null | undefined) {
   return isGenericProductMediaUrl(normalized);
 }
 
-export function hasRealProductPhoto(product: ProductPhotoSource) {
-  const imageUrl = product.imageUrl?.trim() ?? "";
-  const localImageUrl = product.localImageUrl?.trim() ?? "";
-  const mediaUrls = product.media.map((item) => item.url.trim()).filter((value) => value.length > 0);
-
-  return [localImageUrl, imageUrl, ...mediaUrls].some(
-    (value) => value.length > 0 && !isGenericProductPhotoUrl(value),
-  );
-}
-
-export function hasProductPhoto(product: ProductPhotoSource) {
-  return hasRealProductPhoto(product);
-}
-
-export function buildRealProductPhotoWhere(): Prisma.ProductWhereInput {
-  return {
-    OR: [
-      {
-        AND: [
-          { localImageUrl: { not: null } },
-          { localImageUrl: { notIn: GENERIC_PRODUCT_PHOTO_FILTER_URLS } },
-        ],
-      },
-      {
-        AND: [
-          { imageUrl: { not: null } },
-          { imageUrl: { notIn: GENERIC_PRODUCT_PHOTO_FILTER_URLS } },
-        ],
-      },
-      {
-        media: {
-          some: {
-            url: { notIn: GENERIC_PRODUCT_PHOTO_FILTER_URLS },
-          },
-        },
-      },
-    ],
-  };
-}
-
 export function buildSellableProductWhere(): Prisma.ProductWhereInput {
-  // Productos públicos: marcados como visibles.
+  // Public visibility is derived on every read, so ERP stock syncs cannot
+  // publish products without a real photo. Keep the publishing flag separate.
   return {
     isVisible: true,
     NOT: {
@@ -281,62 +241,6 @@ export function buildProductSearchWhere(query?: string): Prisma.ProductWhereInpu
   return { OR: searchConditions };
 }
 
-export function buildMissingProductPhotoWhere(): Prisma.ProductWhereInput {
-  return {
-    OR: [
-      { localImageUrl: null },
-      { localImageUrl: "" },
-      { localImageUrl: { in: GENERIC_PRODUCT_PHOTO_URLS } },
-      {
-        localImageUrl: {
-          contains: "imagen-no-disponible",
-          mode: "insensitive",
-        },
-      },
-      {
-        localImageUrl: {
-          contains: "no-image",
-          mode: "insensitive",
-        },
-      },
-      { imageUrl: null },
-      { imageUrl: "" },
-      { imageUrl: { in: GENERIC_PRODUCT_PHOTO_URLS } },
-      {
-        imageUrl: {
-          contains: "imagen-no-disponible",
-          mode: "insensitive",
-        },
-      },
-      {
-        imageUrl: {
-          contains: "no-image",
-          mode: "insensitive",
-        },
-      },
-      {
-        imageUrl: {
-          contains: "placeholder",
-          mode: "insensitive",
-        },
-      },
-      {
-        imageUrl: {
-          contains: "sin-foto",
-          mode: "insensitive",
-        },
-      },
-    ],
-    media: {
-      none: {
-        url: {
-          notIn: GENERIC_PRODUCT_PHOTO_FILTER_URLS,
-        },
-      },
-    },
-  };
-}
-
 function toNumber(value: Prisma.Decimal | number | null | undefined) {
   if (value === null || value === undefined) {
     return null;
@@ -360,11 +264,12 @@ export function mapProduct(product: ProductWithMedia): CatalogProduct {
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(mapMedia);
-  const localImageUrl = product.localImageUrl?.trim() ?? "";
+  const localImageUrl = product.localImageUrl ?? "";
   const sourceImageUrl = product.sourceImageUrl?.trim() ?? product.imageUrl?.trim() ?? "";
-  const realMedia = media.find((item) => !isGenericProductPhotoUrl(item.url));
+  const imageUrl = product.imageUrl ?? "";
+  const realMedia = media.find((item) => item.type === "IMAGE" && isRealProductPhotoUrl(item.url));
   const primaryMedia =
-    (localImageUrl
+    (isRealProductPhotoUrl(localImageUrl)
       ? {
           id: "local-image",
           type: "IMAGE" as const,
@@ -374,11 +279,11 @@ export function mapProduct(product: ProductWithMedia): CatalogProduct {
         }
       : null) ??
     realMedia ??
-    (sourceImageUrl && !isGenericProductPhotoUrl(sourceImageUrl)
+    (isRealProductPhotoUrl(imageUrl)
       ? {
           id: "legacy-image",
           type: "IMAGE" as const,
-          url: sourceImageUrl,
+          url: imageUrl,
           altText: product.name,
           sortOrder: 0,
         }
@@ -396,7 +301,7 @@ export function mapProduct(product: ProductWithMedia): CatalogProduct {
     categoryId: product.categoryId,
     imageUrl: getPreferredProductImageUrl({
       localImageUrl,
-      imageUrl: sourceImageUrl,
+      imageUrl,
       media,
     }),
     sourceImageUrl: sourceImageUrl || null,
@@ -414,7 +319,7 @@ export function mapProduct(product: ProductWithMedia): CatalogProduct {
     isFeatured: product.isFeatured,
     syncEnabled: product.syncEnabled,
     hasPhoto: hasRealProductPhoto({
-      imageUrl: sourceImageUrl || null,
+      imageUrl: imageUrl || null,
       localImageUrl: localImageUrl || null,
       media: product.media,
     }),

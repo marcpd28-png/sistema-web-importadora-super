@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { hasProductPhoto } from "@/lib/store-shared";
+import { buildMissingProductPhotoWhere } from "@/lib/product-photo-policy";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
@@ -24,20 +24,11 @@ function normalizeProductIds(value: unknown) {
 
 async function getProductsWithoutPhotoIds() {
   const products = await prisma.product.findMany({
-    select: {
-      id: true,
-      imageUrl: true,
-      media: {
-        select: {
-          url: true,
-        },
-      },
-    },
+    where: buildMissingProductPhotoWhere(),
+    select: { id: true },
   });
 
-  return products
-    .filter((product) => !hasProductPhoto({ imageUrl: product.imageUrl, media: product.media }))
-    .map((product) => product.id);
+  return products.map((product) => product.id);
 }
 
 export async function POST(request: Request) {
@@ -119,7 +110,7 @@ export async function POST(request: Request) {
   }
 
   revalidatePath("/");
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   revalidatePath("/admin/products");
 
   return NextResponse.json({

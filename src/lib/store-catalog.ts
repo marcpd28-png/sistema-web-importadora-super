@@ -1,9 +1,9 @@
 import { getErpBestSellerSnapshot } from "@/lib/erp-sales";
 import { Prisma } from "@prisma/client";
+import { buildRealProductPhotoSql } from "@/lib/product-photo-policy";
 import { prisma } from "@/lib/prisma";
 import { BLOCKED_PUBLIC_PRODUCT_CODES } from "@/lib/public-product-blocklist";
 import {
-  GENERIC_PRODUCT_PHOTO_URLS,
   PUBLIC_PAGE_SIZE,
   buildWhere,
   buildRealProductPhotoWhere,
@@ -198,10 +198,7 @@ export async function getExactCatalogProductSlug(query: string) {
 
   const candidates = await prisma.product.findMany({
     where: {
-      NOT: {
-        code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
-      },
-      isVisible: true,
+      ...buildSellableProductWhere(),
       OR: searchConditions,
     },
     select: {
@@ -795,24 +792,7 @@ function buildBlockedPublicProductCodesSql() {
 }
 
 function buildSuggestionPhotoSql() {
-  const genericPhotoUrls = [...GENERIC_PRODUCT_PHOTO_URLS, ""];
-
-  return Prisma.sql`(
-    (
-      p."localImageUrl" IS NOT NULL
-      AND p."localImageUrl" NOT IN (${Prisma.join(genericPhotoUrls)})
-    )
-    OR (
-      p."imageUrl" IS NOT NULL
-      AND p."imageUrl" NOT IN (${Prisma.join(genericPhotoUrls)})
-    )
-    OR EXISTS (
-      SELECT 1
-      FROM "ProductMedia" pm
-      WHERE pm."productId" = p.id
-        AND pm.url NOT IN (${Prisma.join(genericPhotoUrls)})
-    )
-  )`;
+  return buildRealProductPhotoSql();
 }
 
 const SUGGESTION_NAME_COLUMNS = [Prisma.sql`p.name`];
@@ -875,10 +855,8 @@ function compactCatalogSearchText(value: string) {
 export async function getCatalogProductBySlug(slug: string) {
   const product = await prisma.product.findFirst({
     where: {
+      ...buildSellableProductWhere(),
       slug,
-      NOT: {
-        code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
-      },
     },
     include: {
       media: {

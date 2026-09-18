@@ -1,4 +1,4 @@
-import { mapProduct } from "@/lib/store-shared";
+import { buildSellableProductWhere, mapProduct } from "@/lib/store-shared";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   );
   const products = codes.length
     ? await prisma.product.findMany({
-        where: { code: { in: codes } },
+        where: { AND: [buildSellableProductWhere(), { code: { in: codes } }] },
         include: {
           media: {
             orderBy: { sortOrder: "asc" },

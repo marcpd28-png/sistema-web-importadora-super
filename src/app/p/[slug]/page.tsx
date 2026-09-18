@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { getStoreSettings } from "@/lib/store-shared";
+import { buildSellableProductWhere, getStoreSettings } from "@/lib/store-shared";
 import { getQuoteDefaultsForSession } from "@/lib/quote-profile";
 import { PublicFichaWorkspace } from "@/components/catalog/public-ficha-workspace";
 import Link from "next/link";
@@ -22,9 +22,12 @@ export default async function PublicFichaPage({ params }: PublicFichaPageProps) 
     notFound();
   }
 
-  // Fetch product with digital profile and related records
+  const session = await getSession();
+  const isAdmin = session?.role === "ADMIN";
+
+  // Administrators can still preview products that need a photo.
   const product = await prisma.product.findFirst({
-    where: { slug },
+    where: { slug, ...(isAdmin ? {} : buildSellableProductWhere()) },
     include: {
       digitalProfile: true,
       specifications: { orderBy: { sortOrder: "asc" } },
@@ -38,8 +41,6 @@ export default async function PublicFichaPage({ params }: PublicFichaPageProps) 
     notFound();
   }
 
-  const session = await getSession();
-  const isAdmin = session?.role === "ADMIN";
   const hasProfile = Boolean(product.digitalProfile);
   const isPublished = product.digitalProfile?.status === "PUBLICADA";
 

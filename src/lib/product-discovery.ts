@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { buildRealProductPhotoWhere } from "@/lib/product-photo-policy";
 
 type BrandableProduct = {
   name: string;
@@ -94,6 +95,7 @@ export async function discoverSpeakerBrands() {
   const rows = await prisma.product.findMany({
     where: {
       isVisible: true,
+      AND: [buildRealProductPhotoWhere()],
       stockUnits: { gt: 0 },
       category: {
         contains: "PARLANT",

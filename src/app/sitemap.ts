@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 import { getActiveCategories } from "@/lib/store-catalog";
 import { prisma } from "@/lib/prisma";
-import { BLOCKED_PUBLIC_PRODUCT_CODES } from "@/lib/public-product-blocklist";
+import { buildSellableProductWhere } from "@/lib/store-shared";
 import { getPublicSiteUrl } from "@/lib/site-url";
+
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getPublicSiteUrl();
@@ -25,12 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const products = await prisma.product.findMany({
-    where: {
-      isVisible: true,
-      NOT: {
-        code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
-      },
-    },
+    where: buildSellableProductWhere(),
     select: { slug: true, updatedAt: true },
   });
 

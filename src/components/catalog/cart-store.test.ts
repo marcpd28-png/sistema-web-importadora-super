@@ -85,3 +85,8 @@ test("retira del carrito productos agotados o invisibles", () => {
     [],
   );
 });
+
+test("retira productos que pierden la foto aunque el ERP los marque visibles y con stock", () => {
+  assert.deepEqual(reconcileCartItems([staleItem], [buildProduct({ isVisible: true, stockUnits: 20, hasPhoto: false, imageUrl: null, primaryMedia: null })]), []);
+  assert.deepEqual(reconcileCartItems([staleItem], []), []);
+});

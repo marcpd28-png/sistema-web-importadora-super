@@ -60,7 +60,7 @@ export function reconcileCartItems(
   return items.flatMap((item) => {
     const product = productsByCode.get(item.code);
 
-    if (!product || !product.isVisible || product.stockUnits <= 0) {
+    if (!product || !product.isVisible || !product.hasPhoto || product.stockUnits <= 0) {
       return [];
     }
 
@@ -104,7 +104,7 @@ export const useCartStore = create<CartState>()(
           const maxQuantity = getMaxQuantity(product, mode);
           const safeQuantity = Math.max(1, Math.floor(quantity));
 
-          if (maxQuantity <= 0) {
+          if (maxQuantity <= 0 || !product.isVisible || !product.hasPhoto) {
             return state;
           }
 

@@ -550,7 +550,7 @@ export function AdminProductsWorkspace({
               {products.map((product) => {
                 const hasPhoto = product.hasPhoto;
                 const hasStock = product.stockUnits > 0;
-                const isEffectivelyVisible = product.isVisible;
+                const isEffectivelyVisible = product.isVisible && hasPhoto;
                 const needsReview = !hasPhoto || !hasStock;
 
                 return (
@@ -800,13 +800,13 @@ export function AdminProductsWorkspace({
                   </article>
                   <article>
                     <span>Estado</span>
-                    <strong>{previewProduct.isVisible ? "Visible" : "Oculto"}</strong>
+                    <strong>{previewProduct.isVisible && previewProduct.hasPhoto ? "Visible" : "Oculto"}</strong>
                   </article>
                 </div>
 
                 <div className="admin-preview-badges">
-                  <span className={`status-badge ${previewProduct.isVisible ? "is-visible" : "is-hidden"}`}>
-                    {previewProduct.isVisible ? "Publicado" : "Oculto"}
+                  <span className={`status-badge ${previewProduct.isVisible && previewProduct.hasPhoto ? "is-visible" : "is-hidden"}`}>
+                    {previewProduct.isVisible && previewProduct.hasPhoto ? "Publicado" : "Oculto"}
                   </span>
                   <span className={`status-badge ${previewProduct.hasPhoto ? "is-visible" : "is-warning"}`}>
                     {previewProduct.hasPhoto ? "Con foto" : "Sin foto"}

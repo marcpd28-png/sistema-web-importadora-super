@@ -16,6 +16,7 @@ import {
   QrCode,
   Settings,
   ShieldAlert,
+  TriangleAlert,
   ShoppingBag,
   Store,
   Tag,
@@ -53,6 +54,7 @@ const sections: AdminNavSection[] = [
     title: "Catálogo e Inventario",
     links: [
       { href: "/admin/products", label: "Productos", icon: PackageSearch, badgeKey: "lowStockProductsCount" },
+      { href: "/admin/atencion", label: "Requiere atención", icon: TriangleAlert, badgeKey: "productsNeedingPhotoCount" },
       { href: "/admin/products/new", label: "Nuevo producto", icon: PackagePlus },
       { href: "/admin/categories", label: "Categorías", icon: FolderTree },
       { href: "/admin/fichas", label: "Fichas digitales / QR", icon: QrCode },

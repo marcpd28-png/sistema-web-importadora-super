@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { CatalogProduct, CategoryOption } from "@/lib/store";
 import type { ProductActionState } from "@/components/admin/product-form-state";
@@ -62,6 +63,7 @@ export function ProductForm({
           <p className="eyebrow">Administración</p>
           <h1>{title}</h1>
         </div>
+        <Link href="/admin/atencion">Requiere atención</Link>
       </div>
 
       <form
@@ -289,6 +291,7 @@ export function ProductForm({
                   <span>Destacado</span>
                 </label>
               </div>
+              <p className="admin-form-save-hint">Solo se muestra en la web cuando tiene una foto real en la portada o galería, incluso después de sincronizar. Al guardar, la portada también se conserva en la galería.</p>
             </section>
           </div>
 
@@ -302,7 +305,7 @@ export function ProductForm({
 
             <article className="product-summary-card">
               <p className="eyebrow">Estado actual</p>
-              <span>{liveSummary.isVisible ? "Publicado" : "Borrador / oculto"}</span>
+              <span>{liveSummary.isVisible ? "Publicación habilitada · requiere foto" : "Borrador / oculto"}</span>
               <span>{liveSummary.isFeatured ? "Destacado" : "Normal"}</span>
               <span>{values.imageUrl.trim() ? "Portada cargada" : "Sin portada"}</span>
               <span>{values.technicalSpecs.trim() ? "Con especificaciones" : "Sin especificaciones"}</span>
