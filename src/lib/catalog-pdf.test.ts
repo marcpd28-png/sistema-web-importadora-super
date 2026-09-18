@@ -5,7 +5,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 
 import sharp from "sharp";
-import { generateRequestedCatalogPdf, generateRequestedProductImages, isProjectorCatalogRequest, prepareCatalogImage, renderScopedCatalogPdf } from "@/lib/catalog-pdf";
+import { generateRequestedCatalogPdf, generateRequestedProductImages, isProjectorCatalogRequest, prepareCatalogImage, renderScopedCatalogPdf, renderCatalogImagePdf } from "@/lib/catalog-pdf";
 import { createCommercialCatalog, type CommercialProduct } from "./commercial-catalog";
 
 test("el catálogo distribuye como máximo dos productos por hoja A4 horizontal", async () => {
@@ -16,11 +16,13 @@ test("el catálogo distribuye como máximo dos productos por hoja A4 horizontal"
       name: `PARLANTE JBL ${index} ${"DESCRIPCIÓN LARGA ".repeat(12)}`,
       code: `TEST-${index}`, brand: "JBL",
     }));
-    const pdf = (await renderScopedCatalogPdf(items, "Catálogo de parlantes JBL")).toString("latin1");
+    for (const render of [renderScopedCatalogPdf, renderCatalogImagePdf]) {
+    const pdf = (await render(items, "Catálogo de parlantes JBL")).toString("latin1");
     const expectedPages = Math.ceil(count / 2);
     assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, expectedPages);
     assert.equal((pdf.match(/\/MediaBox \[0 0 841\.89 595\.28\]/g) ?? []).length, expectedPages);
     assert.equal((pdf.match(/\/Subtype \/Image\b/g) ?? []).length, count - (count >= 3 ? 1 : 0));
+    }
   }
 });
 

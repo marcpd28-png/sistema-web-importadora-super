@@ -27,7 +27,7 @@ const categories = [
   { label: "baterías", stored: "BATERIAS", aliases: ["bateria", "baterias"] },
   { label: "relojes inteligentes", stored: "SMART WATCH", aliases: ["smartwatch", "smartwatches"] },
   { label: "relojes", stored: "RELOJ", aliases: ["reloj", "relojes"] },
-  { label: "televisores", stored: "TELEVISORES", aliases: ["tv", "televisor", "televisores", "television", "televisiones"] },
+  { label: "televisores", stored: "TELEVISORES", aliases: ["tv", "tele", "teles", "televisor", "televisores", "television", "televisiones"] },
   { label: "celulares", stored: "CELULARES", aliases: ["celular", "celulares", "smartphone", "smartphones"] },
 ];
 const ignored = new Set(normalizeCatalogText("hola buenas buenos dias tardes noches por favor porfa gracias me nos dan das da dar dame pasa pasan pasas pasame pasar manda mandan mandas mandame envia envian envias enviame enviarme darme pasarme mandarme enviar mostrar muestra muestrame mostrarme quisiera quiero necesito deseo puedes pueden podria podrias tienen tendran catalogo catalogos de del el la los las un una unos unas tus sus su tu ustedes sus todos todas todo productos producto articulos articulo ver y o para con en pdf por mayor al menor unidades unidad mayorista minorista compra comprar completo completa completos completas general disponible disponibles stock precio precios lista listado este esta esos esas" ).split(" "));

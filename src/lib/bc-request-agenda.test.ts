@@ -10,6 +10,26 @@ const product = (code: string, name: string, override = {}) => ({ id: code, code
 const products = [product("A1", "AUDIFONO JBL TUNE NEGRO"), product("A2", "AUDIFONO JBL TUNE BLANCO"), product("A3", "AUDIFONO JBL DIADEMA NEGRO"), product("A4", "AUDIFONO JBL NEGRO", { unitPrice: 130 }), product("P1", "PROYECTOR HY300", { brand: null, category: "PROYECTORES" }), product("P2", "PROYECTOR HY300 PRO", { brand: null, category: "PROYECTORES" })];
 const index = createCatalogIndex(products);
 
+test("el saludo y tres catálogos seguidos conservan cada familia y la marca JBL", () => {
+  const rows = [
+    product("J1", "PARLANTE JBL CHARGE", { category: "PARLANTES" }),
+    product("S1", "PARLANTE SONY", { brand: "SONY", category: "PARLANTES" }),
+    product("T1", "TELEVISOR SAMSUNG", { brand: "SAMSUNG", category: "TELEVISORES" }),
+    product("X1", "TV BOX ANDROID", { brand: null, category: "TELEVISORES" }),
+    product("X2", "SOPORTE PARA TV", { brand: null, category: "TELEVISORES" }),
+    product("D1", "DRONE DJI", { brand: "DJI", category: "DRONES" }),
+  ];
+  const catalog = createCatalogIndex(rows);
+  const messages = ["hola", "catalogo de parlantes jbl", "catalogo de teles", "catalogo de drones tambien"]
+    .map((content, i) => ({ id: `m${i}`, content }));
+  const { agenda } = planRequests(emptyAgenda(), messages, catalog);
+  assert.equal(agenda.requests.length, 3);
+  assert(agenda.requests.every(job => job.kind === "CATALOG"));
+  assert.deepEqual(agenda.requests.map(job => catalog.select(agenda.topics.find(topic => topic.id === job.topicId)!.query).products.map(row => row.code)), [["J1"], ["T1"], ["D1"]]);
+  assert.deepEqual(agenda.requests.map(job => job.sourceMessageIds), [["m1"], ["m2"], ["m3"]]);
+  assert.deepEqual(catalog.select("catálogo de tele Samsung").products.map(row => row.code), ["T1"]);
+});
+
 test("search intersects color, budget and exclusions; numeric model never becomes Pro", () => {
   assert.deepEqual(index.select("audífonos JBL negros hasta 100 soles que no sean de diadema").products.map(p => p.code), ["A1"]);
   assert.deepEqual(index.select("proyector HY300").products.map(p => p.code), ["P1"]);

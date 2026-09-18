@@ -15,6 +15,7 @@ const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalog
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
 const BRAND_PRIMARY = "#2320DA";
+const CATALOG_LAYOUT_VERSION = "all-catalogs-two-products-v7";
 
 type CatalogProductImage = {
   id: string;
@@ -83,7 +84,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {
   return createHash("sha256")
-    .update("large-product-page-v2")
+    .update(CATALOG_LAYOUT_VERSION)
     .update(
       JSON.stringify(
         products.map((product) => [
@@ -178,64 +179,7 @@ async function loadFirstAvailableImage(product: CatalogProductImage) {
 }
 
 export function renderCatalogImagePdf(images: { image: Buffer | null; name: string; code: string }[], title = "Catálogo de Proyectores") {
-  return new Promise<Buffer>((resolve, reject) => {
-    const document = new PDFDocument({
-      autoFirstPage: false,
-      bufferPages: true,
-      compress: true,
-      info: {
-        Author: "Importaciones Super",
-        Creator: "Tienda Virtual Importaciones Super",
-        Subject: title,
-        Title: title,
-      },
-      margin: 0,
-      size: "A4",
-    });
-    const chunks: Buffer[] = [];
-
-    document.on("data", (chunk: Buffer) => chunks.push(chunk));
-    document.on("error", reject);
-    document.on("end", () => resolve(Buffer.concat(chunks)));
-
-    const pageWidth = 595.28;
-    const pageHeight = 841.89;
-    const marginX = 36;
-    const headerHeight = 82;
-    const imageWidth = pageWidth - marginX * 2;
-
-    images.forEach((product, index) => {
-      document.addPage({ margin: 0, size: "A4" });
-      document
-        .fillColor(BRAND_PRIMARY)
-        .font("Helvetica-Bold")
-        .fontSize(23)
-        .text(title.toUpperCase(), marginX, 30, {
-          align: "center",
-          width: imageWidth,
-        });
-      document.moveTo(marginX, 66).lineTo(pageWidth - marginX, 66)
-        .lineWidth(2).strokeColor(BRAND_PRIMARY).stroke();
-      if (product.image) document.image(product.image, marginX, headerHeight, {
-        align: "center",
-        fit: [imageWidth, 605],
-        valign: "center",
-      });
-      else document.fillColor("#666666").font("Helvetica").fontSize(16).text("Imagen no disponible", marginX, 350, { width: imageWidth, align: "center" });
-      document.fillColor("#17172B").font("Helvetica-Bold").fontSize(17);
-      let nameSize = 17;
-      while (document.heightOfString(product.name, { width: imageWidth }) > 56 && nameSize > 11) {
-        document.fontSize(--nameSize);
-      }
-      document.text(product.name, marginX, 704, { width: imageWidth, align: "center" });
-      document.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(15)
-        .text(`Código: ${product.code}`, marginX, 768, { width: imageWidth, align: "center" });
-      document.fillColor("#666666").font("Helvetica").fontSize(9)
-        .text(`${index + 1} / ${images.length}`, marginX, pageHeight - 28, { width: imageWidth, align: "center" });
-    });
-
-    document.end();
-  });
+  return renderScopedCatalogPdf(images.map(product => ({ ...product, brand: "" })), title);
 }
 
 async function createProjectorCatalogPdf(products: CatalogProductImage[], fingerprint: string) {
@@ -363,7 +307,7 @@ export function renderScopedCatalogPdf(items: { image: Buffer | null; name: stri
   });
 }
 
-async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: string, fingerprint: string, largeImages = false) {
+async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: string, fingerprint: string) {
   const slug = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 70);
   await mkdir(CATALOG_DIRECTORY, { recursive: true });
   const loaded: ({ image: Buffer; name: string; code: string; brand: string } | null)[] = new Array(products.length).fill(null);
@@ -389,7 +333,7 @@ async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: stri
   const outputPath = path.join(CATALOG_DIRECTORY, filename);
   const result = { absoluteUrl: buildPublicUrl(relativeUrl), filename, productCount: images.length, relativeUrl, codes };
   try { await access(outputPath); return { ...result, generated: false }; } catch { /* Generate below. */ }
-  const pdf = largeImages ? await renderCatalogImagePdf(images, "Extensores de pantalla") : await renderScopedCatalogPdf(images, `Catálogo de ${label}`);
+  const pdf = await renderScopedCatalogPdf(images, `Catálogo de ${label}`);
   const temporary = `${outputPath}.${process.pid}.tmp`;
   try { await writeFile(temporary, pdf, { flag: "wx" }); await rename(temporary, outputPath); }
   catch (error) { await unlink(temporary).catch(() => undefined); throw error; }
@@ -404,15 +348,17 @@ async function selectRequestedCatalog(content: string, snapshot?: CommercialCata
   return { ...selection, products };
 }
 
-export async function generateRequestedCatalogPdf(content: string, largeImages = false, snapshot?: CommercialCatalog, planned?: ReturnType<CommercialCatalog["search"]>) {
+export async function generateRequestedCatalogPdf(content: string, _largeImages = false, snapshot?: CommercialCatalog, planned?: ReturnType<CommercialCatalog["search"]>) {
+  // Keep the legacy argument compatible; every PDF now uses the same two-card layout.
+  void _largeImages;
   const selection = await selectRequestedCatalog(content, snapshot, planned);
   const products = selection.products;
   if (!selection.scoped) return { ...selection, products: [], catalog: null };
   if (!products.length) return { ...selection, catalog: null };
-  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v3-canonical" : "scoped-two-products-v6-canonical"}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  const fingerprint = createHash("sha256").update(`${CATALOG_LAYOUT_VERSION}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
   let generation = inFlightScopedCatalogs.get(fingerprint);
   if (!generation) {
-    generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightScopedCatalogs.delete(fingerprint));
+    generation = createScopedCatalogPdf(products, selection.label, fingerprint).finally(() => inFlightScopedCatalogs.delete(fingerprint));
     inFlightScopedCatalogs.set(fingerprint, generation);
   }
   const generated = await generation;
