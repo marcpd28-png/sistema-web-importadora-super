@@ -104,3 +104,11 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Pasaron 64 pruebas del motor, TypeScript y ESLint. Integración en base temporal aislada del VPS: 3→4 unidades (120→160), cambio posterior de tarifa (180), nueva confirmación y recepción de comprobante pendiente de validación. Base de pruebas eliminada.
 - Verificación HTTP sobre el motor desplegado: N1321, 1→2 unidades, total 258, datos conservados y pedido aún sin crear. Primer intento con L516 se descartó porque el producto no tenía foto utilizable y activó correctamente la regla de disponibilidad; no se cambiaron sus datos. Todos los contactos temporales se eliminaron.
 - Sigue pendiente corregir otros datos durante el checkout, cambios sobre pedidos ya creados, cesta con varios productos y el resto del objetivo. Esto no prueba todavía una venta completa por n8n ni verificación bancaria.
+
+## Venta completa por simulador y n8n
+
+- Se añadió `scripts/bc-evaluation/checkout-live.cjs`, ejecutable con `--execute-simulator` en el servidor: usa la API administrativa y n8n, crea un contacto SIMULATOR propio y lo elimina al finalizar. Nunca confirma una transferencia bancaria ni crea un pedido real.
+- La primera ejecución reprodujo un fallo de integración: responder «2» en AWAITING_QUANTITY entraba en la agenda de búsquedas y borraba el producto. Corregido en web `d179fab`: las respuestas del checkout mantienen su propietario y las preguntas independientes siguen disponibles para la agenda. También se elimina el saludo repetido en cada lote.
+- Pasaron 85 pruebas, TypeScript, ESLint y compilación. Web publicada y activada con respaldo, motor `486c434`.
+- Segunda ejecución completada en VPS: SKU N1321 → sí → 2 → sí → nombre → boleta/DNI → recojo → mejor 3 → confirmo → Yape → imagen de comprobante de prueba. La cantidad corregida aplicó precio mayorista (3 × 115 = 345); se conservaron datos, se creó referencia SIM y la evidencia quedó recibida pero NO verificada. No existe pedido real asociado. Contacto temporal eliminado.
+- Evidencia: `2026-09-18-checkout-live.json`. Este recorrido sí atraviesa el simulador administrativo, los workflows n8n publicados y los dos servicios desplegados. No acredita toda variante de venta ni interpretación visual, y no se marca el objetivo completo.

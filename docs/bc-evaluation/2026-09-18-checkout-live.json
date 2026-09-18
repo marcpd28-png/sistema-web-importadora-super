@@ -1,0 +1,61 @@
+{
+  "sessionKey": "checkout-e5373ee7-379b-4b5b-be30-13f870991576",
+  "results": [
+    {
+      "content": "N1321",
+      "stage": "AWAITING_PURCHASE_CONFIRMATION",
+      "answer": "¡Buenas tardes! 😊 (N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E (N1321)\nDisponible: S/ 129.00 por unidad.\nPuedes consultar características, precio por cantidad o solicitar su catálogo."
+    },
+    {
+      "content": "si",
+      "stage": "AWAITING_QUANTITY",
+      "answer": "¡Sigamos con tu compra! 🙂\n\n¿Cuántas unidades deseas?"
+    },
+    {
+      "content": "2",
+      "stage": "AWAITING_PRICE_CONFIRMATION",
+      "answer": "2 unidades de (N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E: S/129.00 c/u (precio unitario). Total: S/258.00.\n\n¿Confirmas este pedido para continuar con tus datos?"
+    },
+    {
+      "content": "si",
+      "stage": "AWAITING_CUSTOMER_DATA",
+      "answer": "¡Vamos con tu pedido! 🙂 ¿Me indicas tu nombre completo?"
+    },
+    {
+      "content": "Me llamo Cliente Prueba",
+      "stage": "AWAITING_DOCUMENT_TYPE",
+      "answer": "¡Perfecto! 🙂 ¿Necesitas boleta o factura?"
+    },
+    {
+      "content": "boleta DNI 12345678",
+      "stage": "AWAITING_DELIVERY_METHOD",
+      "answer": "¿Cómo deseas recibir tu pedido? 📦 Puedes elegir: DELIVERY, SHALOM, RECOJO."
+    },
+    {
+      "content": "recojo",
+      "stage": "AWAITING_ORDER_CONFIRMATION",
+      "answer": "Revisemos tu pedido 🙂\nProducto: (N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E (N1321).\nCantidad: 2. Precio por unidad: S/129.00.\nCliente: Cliente Prueba.\nTeléfono: 51999888777.\nComprobante: BOLETA — 12345678.\nEntrega: RECOJO.\nTotal de productos: S/258.00.\n¿Confirmas que estos datos están correctos?"
+    },
+    {
+      "content": "mejor 3",
+      "stage": "AWAITING_ORDER_CONFIRMATION",
+      "answer": "Actualicé la cantidad de tu pedido. Revisa el total antes de confirmar.\n\nRevisemos tu pedido 🙂\nProducto: (N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E (N1321).\nCantidad: 3. Precio por unidad: S/115.00.\nCliente: Cliente Prueba.\nTeléfono: 51999888777.\nComprobante: BOLETA — 12345678.\nEntrega: RECOJO.\nTotal de productos: S/345.00.\n¿Confirmas que estos datos están correctos?"
+    },
+    {
+      "content": "confirmo",
+      "stage": "AWAITING_PAYMENT_METHOD",
+      "answer": "¡Listo! Registré tu pedido SIM-0002KWQK4A0TLQ2X. 🙂 ¿Cómo prefieres pagar? Tenemos: Yape, Plin, transferencia bancaria."
+    },
+    {
+      "content": "yape",
+      "stage": "AWAITING_PAYMENT_CONFIRMATION",
+      "answer": "¡Listo, registré tu método de pago! 🙂 Cuando pagues, envíame el voucher por aquí. Tu pago quedará pendiente de validación hasta que lo revisemos."
+    },
+    {
+      "content": "comprobante de prueba",
+      "stage": "AWAITING_PAYMENT_CONFIRMATION",
+      "answer": "¡Gracias! Recibí el voucher del pedido SIM-0002KWQK4A0TLQ2X. 🙂 Tu pago queda pendiente de validación; aún no está confirmado."
+    }
+  ],
+  "passed": true
+}
