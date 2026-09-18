@@ -46,8 +46,48 @@ node scripts/catalog-enrichment/apply.cjs --rollback --backup=/RUTA_PRIVADA/appl
 
 La restauración conserva los datos comerciales y medios actuales. Rechaza la operación si los atributos o el perfil han cambiado desde la importación.
 
-## Alcance
+## Alcance del lote inicial
 
-Este es un lote inicial investigado, no una ficha completa para cada uno de los 1688 productos de la instantánea. Los demás productos requieren investigación posterior. Los 15 registros con texto técnico previo y la ficha publicada existente se conservaron.
+`apply.cjs` es el importador del lote inicial investigado, no una ficha completa para cada producto. En ese lote se conservaron los 15 registros con texto técnico previo y la ficha publicada existente. La ampliación posterior se describe a continuación.
 
 Las pruebas de conversación confirman que el BC recupera las fichas nuevas, pero también reproducen un defecto previo de contexto en preguntas posteriores sin código. Consultar el informe del lote; no interpretar respuesta HTTP exitosa como conversación aprobada.
+
+## Ampliación a todo el catálogo visible con stock
+
+El lote de `apply-all.cjs` procesa la instantánea de 1688 SKU: conserva 85 perfiles previos y crea 1603 perfiles con 4910 atributos. De los nuevos, 1321 se publican y 282 quedan en borrador. El resultado es **1406 fichas publicadas, muchas parciales**, y **282 borradores**; no equivale a 1688 investigaciones completas.
+
+La procedencia de los nuevos atributos queda registrada por SKU:
+
+- `research-all-2026-09-18.json`: 73 SKU / 56 modelos con fuentes oficiales.
+- `images-all-2026-09-18.json`: 186 SKU con texto revisado de sus imágenes existentes. Se revisaron transcripciones OCR; no se afirma una inspección visual exhaustiva de todas las imágenes.
+- `catalog-facts.cjs`: datos explícitos del nombre; 1062 fichas parciales publicadas y 282 borradores. No investiga en Internet ni completa características por semejanza.
+- `catalog-image-candidates.cjs`: propone texto OCR para revisión; nunca publica automáticamente.
+
+Cada ficha parcial identifica la procedencia de sus datos. Las unidades ambiguas, características ausentes y contradicciones se conservan como pendientes. El texto técnico antiguo solo se sustituye si existe evidencia de fabricante o una transcripción revisada de la imagen del SKU; las descripciones comerciales no cambian.
+
+Preparar un plan privado a partir de una instantánea revisada:
+
+```sh
+node scripts/catalog-enrichment/prepare-all.cjs /RUTA_PRIVADA/before.json scripts/catalog-enrichment/research-all-2026-09-18.json scripts/catalog-enrichment/images-all-2026-09-18.json /RUTA_PRIVADA/plan.json
+node --test scripts/catalog-enrichment/apply.test.cjs scripts/catalog-enrichment/catalog-all.test.cjs
+node scripts/catalog-enrichment/apply-all.cjs --plan=/RUTA_PRIVADA/plan.json
+```
+
+Aplicar y volver a comprobar idempotencia:
+
+```sh
+node scripts/catalog-enrichment/apply-all.cjs --apply --plan=/RUTA_PRIVADA/plan.json --backup=/RUTA_PRIVADA/applied-backup.json
+node scripts/catalog-enrichment/apply-all.cjs --plan=/RUTA_PRIVADA/plan.json
+```
+
+El respaldo se crea antes de escribir y no puede sobrescribirse. La aplicación utiliza **transacciones de 40 productos** con bloqueos; el lote completo no es una única transacción. Ante un fallo, los grupos anteriores quedan aplicados y puede reanudarse con el mismo plan y un archivo de respaldo nuevo para los pendientes. Se necesitan todos esos respaldos si después se restaura un lote reanudado.
+
+Cada producto se comprueba antes y dentro de su transacción: código, nombre, imágenes y contenido técnico deben coincidir con la revisión. Los movimientos legítimos de precio y stock entre la instantánea y la ejecución no bloquean la actualización; el importador conserva todos los campos comerciales y medios durante cada transacción. El hash del plan incluye los atributos, su evidencia y el texto técnico que se escribirá.
+
+Restaurar exclusivamente el contenido creado por el lote, siempre que no haya ediciones técnicas posteriores:
+
+```sh
+node scripts/catalog-enrichment/apply-all.cjs --rollback --backup=/RUTA_PRIVADA/applied-backup.json
+```
+
+Informe de ejecución: [actualización del catálogo](../../docs/catalog-enrichment/2026-09-18-full-catalog.md). Cola de 282 borradores: [investigaciones pendientes](../../docs/catalog-enrichment/2026-09-18-pending-research.json). Las fichas parciales publicadas también pueden necesitar ampliar o confirmar datos; no figuran en esa cola de borradores.

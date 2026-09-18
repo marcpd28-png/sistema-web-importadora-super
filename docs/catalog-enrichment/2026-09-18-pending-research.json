@@ -1,0 +1,2052 @@
+{
+  "version": 1,
+  "asOf": "2026-09-18T02:31:54.367Z",
+  "scope": "Productos visibles con stock al tomar la instantánea. El listado contiene borradores, no todos los atributos aún pendientes en fichas parciales.",
+  "count": 282,
+  "products": [
+    {
+      "code": "05703",
+      "url": "https://tiendavirtualsuper.com/producto/n1123-microfono-para-casco-helmet-cod-q28-05703-5703",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "05737",
+      "url": "https://tiendavirtualsuper.com/producto/control-remoto-universal-de-tv-na1-05737-5737",
+      "status": "BORRADOR",
+      "reason": "La imagen asociada muestra datos de un taladro, pero el producto es un control remoto. Confirmar el producto; se conserva la imagen por instrucción del propietario.",
+      "warnings": [
+        "Universal es una denominación comercial; no confirma compatibilidad con todos los equipos."
+      ]
+    },
+    {
+      "code": "A16",
+      "url": "https://tiendavirtualsuper.com/producto/a16-correa-de-smartwatch-modelo-pulsera-a16-154",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "A18",
+      "url": "https://tiendavirtualsuper.com/producto/a18-correa-de-smartwatch-ajustable-a18-156",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "BT132",
+      "url": "https://tiendavirtualsuper.com/producto/bt132-bluetooh-vincha-disco-pulse-pg580-sz12145-bt132-1424",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "BT473",
+      "url": "https://tiendavirtualsuper.com/producto/bt473-audifono-modelo-gato-con-luces-e-161-akz-022-bt473-6931",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "CA34",
+      "url": "https://tiendavirtualsuper.com/producto/ca34-cable-m-super-spirit-b34-ca34-861",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "CC151",
+      "url": "https://tiendavirtualsuper.com/producto/cc151-cargador-de-auto-cigarrera-in-car-ox1144-cc151-1938",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "CP550",
+      "url": "https://tiendavirtualsuper.com/producto/cp550-m-super-power-bank-neo-1-cod-cp55-cp550-7317",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "CP591",
+      "url": "https://tiendavirtualsuper.com/producto/cp591-estacion-de-energia-eg008ph-cp591-8628",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "CP600",
+      "url": "https://tiendavirtualsuper.com/producto/cp600-estacion-de-energia-ecoflow-delta-3-max-geu-cbox-cp600-8707",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "G15E",
+      "url": "https://tiendavirtualsuper.com/producto/n1382-virtual-reality-helmet-cod-g15e-vr-box-g15e-6864",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "H131-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n07-h131-sq-7558",
+      "status": "BORRADOR",
+      "reason": "El nombre N07 no permite identificar un modelo técnico.",
+      "warnings": []
+    },
+    {
+      "code": "H28",
+      "url": "https://tiendavirtualsuper.com/producto/h28-holder-pegatodo-rojo-my-mobile-07961-tch048-h28-546",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "JUGT370",
+      "url": "https://tiendavirtualsuper.com/producto/jugt370-hw-autos-basicos-ast-c4982-jugt370-8950",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L211",
+      "url": "https://tiendavirtualsuper.com/producto/l211-onduladora-profesional-rozia-hr722-l211-2555",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L231",
+      "url": "https://tiendavirtualsuper.com/producto/l231-doble-rueda-para-abdominales-jfl-2-ab-wheel-la-270223-l231-2574",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "L241",
+      "url": "https://tiendavirtualsuper.com/producto/l241-termo-con-diseno-y-juego-de-dos-tazas-vacuum-430069-l241-964",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L264",
+      "url": "https://tiendavirtualsuper.com/producto/l264-mini-parrilla-portatil-420031-b1084-l264-2602",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L300",
+      "url": "https://tiendavirtualsuper.com/producto/l300-cortador-de-carne-as2008-8025-l300-2641",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L492",
+      "url": "https://tiendavirtualsuper.com/producto/l492-zapatero-5-niveles-blhy-01-bxg-05-l492-6961",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "L494",
+      "url": "https://tiendavirtualsuper.com/producto/l494-zapatero-de-tela-7-pisos-190249-l494-7002",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L500",
+      "url": "https://tiendavirtualsuper.com/producto/l500-raf-cepillo-alisador-de-cabello-r412-l500-7157",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L839",
+      "url": "https://tiendavirtualsuper.com/producto/l839-secadora-de-cabello-hc8346-rozia-l839-8528",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L840",
+      "url": "https://tiendavirtualsuper.com/producto/l840-secadora-de-cabello-hc8348-rozia-l840-8529",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L844",
+      "url": "https://tiendavirtualsuper.com/producto/l844-tomatodo-stanley-floreado-l844-8563",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L845",
+      "url": "https://tiendavirtualsuper.com/producto/l845-termo-tomatodo-cute-aestetik-l845-8564",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L846",
+      "url": "https://tiendavirtualsuper.com/producto/l846-secadora-de-ropa-portatil-inteligente-l846-8565",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L847",
+      "url": "https://tiendavirtualsuper.com/producto/l847-refrigerador-portatil-ecoflow-eu-cn9400622na1-cab900038na8-l847-8715",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "L92",
+      "url": "https://tiendavirtualsuper.com/producto/l92-termo-hervidor-modelo-jarra-boma-bm-1802-bm-1801-l92-2816",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "LANYARD",
+      "url": "https://tiendavirtualsuper.com/producto/lanyard-sq-colgador-para-cuello-color-azul-lanyard-8447",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N023",
+      "url": "https://tiendavirtualsuper.com/producto/n023-sq-m-super-inversor-de-corriente-cod-n23-n023-7133",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N03",
+      "url": "https://tiendavirtualsuper.com/producto/n03-tripode-palo-selfie-stick-modelo-r1-n03-945",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1014",
+      "url": "https://tiendavirtualsuper.com/producto/n1014-mochila-publicitaria-con-pantalla-led-08tb-2122-n1014-2857",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1016",
+      "url": "https://tiendavirtualsuper.com/producto/n1016-sq-enchufe-inteligente-ox1075-n1016-2859",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N1032",
+      "url": "https://tiendavirtualsuper.com/producto/n1032-mini-reloj-fashion-alarm-clock-sj12267-n1032-2876",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1039-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n1039-sq-camara-de-accion-pocket-3-pro-kalobee-n1039-sq-8087",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N1052",
+      "url": "https://tiendavirtualsuper.com/producto/n1052-inflador-arrancador-de-bateria-linkmax-para-auto-lk618-n1052-2896",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1055",
+      "url": "https://tiendavirtualsuper.com/producto/n1055-mini-masajeador-facial-a166-n1055-2899",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1059",
+      "url": "https://tiendavirtualsuper.com/producto/n1059-panel-de-luz-inteligente-con-control-32leds-x-64leds-33x20cm-us-3296-cod-n2005-n1059-2903",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "N1061",
+      "url": "https://tiendavirtualsuper.com/producto/n1061-luz-de-emergencia-reflector-con-panel-ty127670-n1061-1002",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1112",
+      "url": "https://tiendavirtualsuper.com/producto/n1112-luces-guirnaldas-decoracion-sd12023-f3579-n1112-5158",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1115",
+      "url": "https://tiendavirtualsuper.com/producto/n1115-smartwatch-t1000-ultra-3-n1115-5207",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1120",
+      "url": "https://tiendavirtualsuper.com/producto/n1120-regleta-multicontacto-1hora-mct002-n1120-5696",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1121",
+      "url": "https://tiendavirtualsuper.com/producto/n1121-proyector-pelota-cod-q8-n1121-5701",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "n1163",
+      "url": "https://tiendavirtualsuper.com/producto/n1163-proyector-cod-budplus-a1-n1163-6107",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1166",
+      "url": "https://tiendavirtualsuper.com/producto/n1166-proyector-home-theater-cod-sun-800-gtv-n1166-6110",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1167",
+      "url": "https://tiendavirtualsuper.com/producto/n1167-proyector-cod-budplus-c2-n1167-6111",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1172",
+      "url": "https://tiendavirtualsuper.com/producto/n1172-estabilizador-8-tomas-power-lite-pulsar-avr-pli1200-1200va-n1172-6147",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N12",
+      "url": "https://tiendavirtualsuper.com/producto/n12-otg-de-usb-a-v8-pequeno-clasico-754-n12-2920",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1230",
+      "url": "https://tiendavirtualsuper.com/producto/n1230-pileta-inflable-para-ninos-12132-n1230-6286",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1246",
+      "url": "https://tiendavirtualsuper.com/producto/n1246-candado-inteligente-fp11563-n1246-6306",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1259",
+      "url": "https://tiendavirtualsuper.com/producto/n1259-vaso-fiesta-de-vidrio-transparente-110195-n1259-6685",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1262",
+      "url": "https://tiendavirtualsuper.com/producto/n1262-sq-consola-de-videojuego-cod-r36-ultra-n1262-6692",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N1266",
+      "url": "https://tiendavirtualsuper.com/producto/n1266-sq-led-light-strip-m-super-cod-n02-n1266-6701",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N1295",
+      "url": "https://tiendavirtualsuper.com/producto/n1295-led-matrix-planel-flexible-ojos-para-carro-cod-n2008-n1295-6709",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1336",
+      "url": "https://tiendavirtualsuper.com/producto/n1336-smartwatch-hk-11-pro-max-n1336-6974",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1337",
+      "url": "https://tiendavirtualsuper.com/producto/n1337-smartwatch-hk-11-ultra3-n1337-6975",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1339",
+      "url": "https://tiendavirtualsuper.com/producto/n1339-smartwatch-hello-h26-ultra-n1339-6977",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N134",
+      "url": "https://tiendavirtualsuper.com/producto/n134-bolsa-de-agua-de-colores-sellado-con-tres-capas-bolsa-b-n134-2928",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1359",
+      "url": "https://tiendavirtualsuper.com/producto/n1359-cable-light-con-foco-modelo-guirnalda-1503-150387-n1359-7003",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1378",
+      "url": "https://tiendavirtualsuper.com/producto/n1378-reloj-con-camara-espia-cod-cam152536-n1378-7031",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1398",
+      "url": "https://tiendavirtualsuper.com/producto/n1398-pilas-alcalinas-lr03-aaa-gar131-pack-x4-n1398-7070",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1449",
+      "url": "https://tiendavirtualsuper.com/producto/n1449-maquina-de-hacer-hielo-cod-yh16-n1449-7328",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1450",
+      "url": "https://tiendavirtualsuper.com/producto/n1450-proyector-hd-hy300-ultra-n1450-7329",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1451",
+      "url": "https://tiendavirtualsuper.com/producto/n1451-mini-control-remoto-cod-m5-n1451-7331",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1454",
+      "url": "https://tiendavirtualsuper.com/producto/n1454-palo-selfie-inteligente-cod-p02-n1454-7339",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1473",
+      "url": "https://tiendavirtualsuper.com/producto/n1473-r36s-a-consola-n1473-7485",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1516",
+      "url": "https://tiendavirtualsuper.com/producto/n1516-set-mini-luz-para-moto-un-par-cd91050-n1516-7306",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1551",
+      "url": "https://tiendavirtualsuper.com/producto/n1551-vibrador-juguete-sex-sg4145-n1551-8177",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1553",
+      "url": "https://tiendavirtualsuper.com/producto/n1553-vibrador-juguete-sex-ly038-n1553-8179",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1556",
+      "url": "https://tiendavirtualsuper.com/producto/n1556-set-luz-para-moto-un-par-cd91053-n1556-8181",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N156",
+      "url": "https://tiendavirtualsuper.com/producto/n156-sq-consola-de-juegos-4k-ultra-hd-x2-3d-games-x2-sz12155-brand-turbo-n156-2943",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No inferir resolución nativa a partir de 4K/8K en el título.",
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N1569",
+      "url": "https://tiendavirtualsuper.com/producto/n1569-mp5-para-moto-m350b-n1569-8193",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N157",
+      "url": "https://tiendavirtualsuper.com/producto/n157-drone-e88-e88-n157-2944",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1574",
+      "url": "https://tiendavirtualsuper.com/producto/n1574-soplador-de-aire-3-boquillas-48v-20888-n1574-8197",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1576",
+      "url": "https://tiendavirtualsuper.com/producto/n1576-lampara-de-unas-hj1826-n1576-8199",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N1577",
+      "url": "https://tiendavirtualsuper.com/producto/n1577-lampara-de-unas-cd1831-n1577-8200",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N164",
+      "url": "https://tiendavirtualsuper.com/producto/n164-smart-watch-para-nino-nina-q19-clasico-n164-2951",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2000",
+      "url": "https://tiendavirtualsuper.com/producto/n1268-led-matrix-planel-flexible-16leds-x-32leds-17x0-7cm-cod-n2000-n2000-6703",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2002",
+      "url": "https://tiendavirtualsuper.com/producto/n1269-led-matrix-planel-flexible-20-leds-x-64leds-35x10cm-cod-n2002-n2002-6704",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2003",
+      "url": "https://tiendavirtualsuper.com/producto/n1270-led-matrix-planel-flexible-16leds-x-96leds-60x12cm-cod-n2003-n2003-6705",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2010",
+      "url": "https://tiendavirtualsuper.com/producto/n2010-smartwatch-t900-ultra-3-max-s-m-n2010-7543",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2016 - SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n08-n2016-sq-7559",
+      "status": "BORRADOR",
+      "reason": "El nombre N08 no permite identificar un modelo técnico.",
+      "warnings": []
+    },
+    {
+      "code": "N2022",
+      "url": "https://tiendavirtualsuper.com/producto/n2022-kit-de-limpieza-portatil-multifuncion-n2022-7586",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2023",
+      "url": "https://tiendavirtualsuper.com/producto/n2023-smart-watch-s11-pro-n2023-7588",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2025",
+      "url": "https://tiendavirtualsuper.com/producto/n2025-mini-aspiradora-manual-a-6672-yt-m2037-n2025-7639",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "N204",
+      "url": "https://tiendavirtualsuper.com/producto/n204-morral-pechera-unisex-m3204-n204-286",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2043",
+      "url": "https://tiendavirtualsuper.com/producto/n2043-casaca-cortaviento-260234-n2043-7742",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2078",
+      "url": "https://tiendavirtualsuper.com/producto/n2078-sq-tela-para-projector-120-pulgadas-hypro1726-n2078-7818",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N2098",
+      "url": "https://tiendavirtualsuper.com/producto/n2098-taladro-atornillador-420001-color-verde-doble-bateria-150247-n2098-7950",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2111",
+      "url": "https://tiendavirtualsuper.com/producto/n2111-set-de-smart-watch-i8-ultra-3-4-pcs-n2111-7988",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2113",
+      "url": "https://tiendavirtualsuper.com/producto/n2113-set-de-smart-watch-s300-4-pcs-n2113-7990",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2114",
+      "url": "https://tiendavirtualsuper.com/producto/n2114-set-smart-watch-s177-5-pcs-n2114-7991",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2122",
+      "url": "https://tiendavirtualsuper.com/producto/n2122-aro-de-luz-rectangular-para-celular-ym200-n2122-8015",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2133-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n2133-sq-camara-de-accion-pocket-3-pro-kalobee-n2133-sq-8085",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2152",
+      "url": "https://tiendavirtualsuper.com/producto/n2152-sq-tripode-hymax1871-0-dcolor-hymax1871-n2152-8118",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N2152-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n2152-sq-tripod-hymax1871-dcolor-n2152-sq-8118",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N2156",
+      "url": "https://tiendavirtualsuper.com/producto/n2156-sq-lentes-inteligentes-21029-m88s-n2156-8147",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N2159",
+      "url": "https://tiendavirtualsuper.com/producto/n2159-gata-hidraulica-con-cargador-de-bateria-wj12103-n2159-8150",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2166",
+      "url": "https://tiendavirtualsuper.com/producto/n2166-soplador-de-aire-portatil-20887-2-baterias-48v-n2166-8236",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2167",
+      "url": "https://tiendavirtualsuper.com/producto/n2167-set-de-smart-watch-8pcs-s80-ultra-3-n2167-8238",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2168",
+      "url": "https://tiendavirtualsuper.com/producto/n2168-espejo-retrovisor-para-auto-l101-1080p-n2168-8239",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2175",
+      "url": "https://tiendavirtualsuper.com/producto/n2175-sq-camara-digital-deportiva-4k-uhd-q8-n2175-8265",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No inferir resolución nativa a partir de 4K/8K en el título.",
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N2192",
+      "url": "https://tiendavirtualsuper.com/producto/n2192-masajeador-de-cintura-270215-n2192-8394",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2193",
+      "url": "https://tiendavirtualsuper.com/producto/n2193-pistola-de-clavos-fulminante-c-extensores-150193-n2193-8389",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2194",
+      "url": "https://tiendavirtualsuper.com/producto/n2194-set-de-reloj-smart-watch-s8-s8-100-n2194-8395",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2195",
+      "url": "https://tiendavirtualsuper.com/producto/n2195-cinta-adhesiva-doble-contacto-multifuncion-511835-5m-n2195-8396",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2196",
+      "url": "https://tiendavirtualsuper.com/producto/n2196-camara-de-auto-270321-n2196-8397",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2205",
+      "url": "https://tiendavirtualsuper.com/producto/n2205-taladro-atornillador-lantun-rs13636-2-baterias-n2205-8439",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2217",
+      "url": "https://tiendavirtualsuper.com/producto/n2217-lampara-de-luz-para-pared-jft105-n2217-8457",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2218",
+      "url": "https://tiendavirtualsuper.com/producto/n2218-lampara-de-luz-para-pared-jft106-n2218-8458",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2237",
+      "url": "https://tiendavirtualsuper.com/producto/n2237-tarjeta-de-sonido-para-live-mc14158-n2237-8553",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2249",
+      "url": "https://tiendavirtualsuper.com/producto/n2249-lampara-led-luna-levitante-n2249-8568",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2250",
+      "url": "https://tiendavirtualsuper.com/producto/n2250-lampara-led-mundo-levitante-n2250-8569",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2251",
+      "url": "https://tiendavirtualsuper.com/producto/n2251-reloj-acuatico-modelo-1-n2251-8570",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2252",
+      "url": "https://tiendavirtualsuper.com/producto/n2252-lampara-cristal-multicolor-n2252-8571",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2253",
+      "url": "https://tiendavirtualsuper.com/producto/n2253-espejo-de-tocador-led-n2253-8572",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2287",
+      "url": "https://tiendavirtualsuper.com/producto/n2287-poncho-impermeable-para-lluvia-f-655-2-lib-0479-n2287-8698",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "N2296",
+      "url": "https://tiendavirtualsuper.com/producto/n2296-reloj-smart-w11-pro-n2296-8722",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2297",
+      "url": "https://tiendavirtualsuper.com/producto/n2297-smart-watch-microwear-ultra-5-n2297-8723",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2298",
+      "url": "https://tiendavirtualsuper.com/producto/n2298-pla-consola-de-videojuego-portatil-r36s-r40xx-pro-n2298-8735",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2320",
+      "url": "https://tiendavirtualsuper.com/producto/n2320-pla-cargador-de-bateria-5-en-1-dcolor-12v-6a-n2124-n2320-8853",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2321",
+      "url": "https://tiendavirtualsuper.com/producto/n2321-palo-selfie-tripode-gimbal-con-sensor-de-movimiento-q625-n2321-8856",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2322",
+      "url": "https://tiendavirtualsuper.com/producto/n2322-camara-de-seguridad-ic-a24-lantun-n2322-8873",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2327",
+      "url": "https://tiendavirtualsuper.com/producto/n2327-traductor-de-voz-con-ia-lantun-ft20-n2327-8947",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2328",
+      "url": "https://tiendavirtualsuper.com/producto/n2328-lentes-con-ia-sg70-n2328-8948",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2330",
+      "url": "https://tiendavirtualsuper.com/producto/n2330-cortador-de-cabello-set-3-en-1-kogey-n2330-8951",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N2338",
+      "url": "https://tiendavirtualsuper.com/producto/n2338-sq-lentes-inteligentes-m88s-n2338-8961",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N238",
+      "url": "https://tiendavirtualsuper.com/producto/n238-antena-digital-hdtv-3-5dbi-511568-08ty-2399-ah-0031-sg-3003-n238-543",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "El título contiene varias referencias; confirmar el modelo exacto antes de usar documentación externa."
+      ]
+    },
+    {
+      "code": "N267",
+      "url": "https://tiendavirtualsuper.com/producto/n267-paquete-500-balines-hidrogel-st501a-st501a-n267-3034",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N299",
+      "url": "https://tiendavirtualsuper.com/producto/n299-colchon-inflable-para-auto-a145-61002-n299-3060",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N33",
+      "url": "https://tiendavirtualsuper.com/producto/n33-gancho-brazo-flexible-para-celular-n33-619",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N346",
+      "url": "https://tiendavirtualsuper.com/producto/n346-smart-watch-d20-d90-plus-fc7-g84-511341-n346-3100",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N357",
+      "url": "https://tiendavirtualsuper.com/producto/n357-cargador-multipuerto-60-usb-2-4a-usb-charger-station-n357-3110",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N379",
+      "url": "https://tiendavirtualsuper.com/producto/n379-smartwatch-t900-ultra-3-suit-n379-3128",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N38",
+      "url": "https://tiendavirtualsuper.com/producto/n38-stabilizador-de-video-pro-3-axis-11237-pp12321-n38-3129",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N385",
+      "url": "https://tiendavirtualsuper.com/producto/n385-correa-de-smartwatch-modelo-pulsera-a14-n385-152",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N388",
+      "url": "https://tiendavirtualsuper.com/producto/n388-correa-de-smartwatch-con-piedras-a12-n388-150",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N401",
+      "url": "https://tiendavirtualsuper.com/producto/n401-gorro-con-bufanda-tejido-n401-3141",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N476",
+      "url": "https://tiendavirtualsuper.com/producto/n476-sq-consola-de-video-juegos-mp5-x7-plus-n476-3206",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N476-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n476-sq-consola-de-video-juegos-mp5-x7-plus-n476-sq-3206",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N491",
+      "url": "https://tiendavirtualsuper.com/producto/n491-sq-proyector-hy300-ultra-hd-cod-hy300-n491-5984",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N491-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/n491-sq-projector-hy300-ultra-hd-cod-hy300-n491-sq",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N496",
+      "url": "https://tiendavirtualsuper.com/producto/n496-proyector-hy300-pro-caja-naranja-cod-3326-n496-115",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N512",
+      "url": "https://tiendavirtualsuper.com/producto/n512-tripode-para-celular-330a-n512-3236",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N53-NARANJA",
+      "url": "https://tiendavirtualsuper.com/producto/n53-s-naranja-adaptador-4k-caja-naranja-n53-naranja-2913",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No inferir resolución nativa a partir de 4K/8K en el título."
+      ]
+    },
+    {
+      "code": "N53-NEGRO",
+      "url": "https://tiendavirtualsuper.com/producto/n53-s-negro-adaptador-4k-caja-negra-n53-negro-121",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No inferir resolución nativa a partir de 4K/8K en el título."
+      ]
+    },
+    {
+      "code": "N551",
+      "url": "https://tiendavirtualsuper.com/producto/n551-2-pares-de-pila-alcalina-marca-1hora-codigo-gar132-n551-3263",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N563",
+      "url": "https://tiendavirtualsuper.com/producto/n563-bombilla-led-con-sensor-de-movimiento-xy1051-n563-3276",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N571",
+      "url": "https://tiendavirtualsuper.com/producto/n571-reloj-de-pulsera-digital-sport-c512627-n571-1053",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N647",
+      "url": "https://tiendavirtualsuper.com/producto/n647-adaptador-convertidor-hdmi2vga-c512622-n647-3354",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N665",
+      "url": "https://tiendavirtualsuper.com/producto/n665-balanza-de-peso-corporal-a-pilas-180kg-a89-270063-n665-3372",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N679",
+      "url": "https://tiendavirtualsuper.com/producto/n679-tira-led-neon-rope-light-xy11821-150168-n679-910",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N696",
+      "url": "https://tiendavirtualsuper.com/producto/n696-pistola-de-juguete-hidrogel-ak47-fe65-u63-n696-3401",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N726",
+      "url": "https://tiendavirtualsuper.com/producto/n726-correa-de-smartwatch-trenzada-ajustable-42-44-45-49ml-n726-3428",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N727",
+      "url": "https://tiendavirtualsuper.com/producto/n727-correa-de-smartwatch-tejido-20mm-n727-738",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N737",
+      "url": "https://tiendavirtualsuper.com/producto/n737-mini-ventilador-con-spray-250065-d4185-yukin-double-n737-3439",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N875",
+      "url": "https://tiendavirtualsuper.com/producto/n875-sq-consola-gamestick-x2-caja-roja-3d-games-x2-3d-q8-red-n875-848",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "N88",
+      "url": "https://tiendavirtualsuper.com/producto/n88-pla-consola-20000-juegos-modelo-m8-color-verde-lite-gamepad-m8-150030-n88-505",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N881",
+      "url": "https://tiendavirtualsuper.com/producto/n881-correa-smartwatch-con-piedras-ajustable-a15-n881-153",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N896",
+      "url": "https://tiendavirtualsuper.com/producto/n896-humificador-de-aromas-con-diseno-volcan-270144-n896-515",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N957",
+      "url": "https://tiendavirtualsuper.com/producto/n957-proyector-hdm-ar300-n957-644",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N970",
+      "url": "https://tiendavirtualsuper.com/producto/n970-home-projector-fhd-support-s1-bud-plus-s1-n970-681",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "N993",
+      "url": "https://tiendavirtualsuper.com/producto/n993-espaldar-lumbar-de-autos-y-sillas-b1051-n993-3638",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1001",
+      "url": "https://tiendavirtualsuper.com/producto/o1001-dron-dji-avata-360-motion-fly-more-combo-dji-goggles-n3-o1001-8442",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1005",
+      "url": "https://tiendavirtualsuper.com/producto/o1005-dron-dji-neo-2-drone-only-o1005-8487",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1012",
+      "url": "https://tiendavirtualsuper.com/producto/o1012-scooter-electrico-para-ninos-navee-kids-electric-scooter-k100-max-o1012-8603",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1018",
+      "url": "https://tiendavirtualsuper.com/producto/o1018-ugreen-two-way-fast-charging-powe-bank-pb532-55989b-o1018-8637",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1024",
+      "url": "https://tiendavirtualsuper.com/producto/o1024-localizador-air-tag-apple-1-pack-o1024-8724",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1039",
+      "url": "https://tiendavirtualsuper.com/producto/o1039-lapiz-optico-lenovo-pen-bp18-bl-003055-o1039-8764",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1041",
+      "url": "https://tiendavirtualsuper.com/producto/o1041-lapiz-optico-stylus-pen-bp18-bl-003053-o1041-8766",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1047",
+      "url": "https://tiendavirtualsuper.com/producto/o1047-smart-tag-4-xiaomi-blanco-003811-o1047-8783",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1065",
+      "url": "https://tiendavirtualsuper.com/producto/o1065-honor-choice-watch-2-pro-black-o1065-8927",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1066",
+      "url": "https://tiendavirtualsuper.com/producto/o1066-honor-choice-watch-2i-black-o1066-8928",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1067",
+      "url": "https://tiendavirtualsuper.com/producto/o1067-honor-choice-earbuds-x7-lite-white-o1067-8929",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1068",
+      "url": "https://tiendavirtualsuper.com/producto/o1068-honor-choice-headphone-lite-black-o1068-8930",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1070",
+      "url": "https://tiendavirtualsuper.com/producto/o1070-honor-choice-earbuds-a-pro-green-o1070-8932",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1071",
+      "url": "https://tiendavirtualsuper.com/producto/o1071-honor-choice-cubuds-o1071-8933",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1075",
+      "url": "https://tiendavirtualsuper.com/producto/o1075-honor-choice-mouse-buds-pro-grey-o1075-8937",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1076",
+      "url": "https://tiendavirtualsuper.com/producto/o1076-honor-choice-tlinlab-tws-earbuds-s8-white-o1076-8938",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1077",
+      "url": "https://tiendavirtualsuper.com/producto/o1077-honor-choice-earbuds-x7e-active-white-o1077-8939",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1078",
+      "url": "https://tiendavirtualsuper.com/producto/o1078-honor-choice-earbuds-clip-black-o1078-8940",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1079",
+      "url": "https://tiendavirtualsuper.com/producto/o1079-honor-pad-x9a-lte-8-128-space-gray-case-honor-choice-tnhchop-pencil-lite-serie-860851070588582-860851070584193-o1079-8941",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O130",
+      "url": "https://tiendavirtualsuper.com/producto/o130-audifono-piston-xiaomi-original-blanco-o130-3685",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1828",
+      "url": "https://tiendavirtualsuper.com/producto/o1828-ugreen-studio-max2-light-gray-45017-hp205-o1828-8647",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1835",
+      "url": "https://tiendavirtualsuper.com/producto/o1835-ugreen-finder-slim-g-cm915-o1835-8654",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1837",
+      "url": "https://tiendavirtualsuper.com/producto/o1837-ugreen-tracker-dual-pack-cm829-55769-cm829-o1837-8656",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O1839",
+      "url": "https://tiendavirtualsuper.com/producto/o1839-blackview-mp100-pro-i5-16gbram-512rom-black-o1839-8658",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O195",
+      "url": "https://tiendavirtualsuper.com/producto/o195-audifono-samsung-itfit103b-original-o195-3754",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O315",
+      "url": "https://tiendavirtualsuper.com/producto/o315-audifono-jbl-endurance-run-2-black-o315-5218",
+      "status": "BORRADOR",
+      "reason": "Endurance Run 2 existe en versiones diferentes; la imagen anuncia 10 horas y el título no define Wired/Wireless. Confirmar variante antes de importar especificaciones.",
+      "warnings": []
+    },
+    {
+      "code": "O321",
+      "url": "https://tiendavirtualsuper.com/producto/o321-audifono-oseo-xiaomi-bone-explore-conduction-headset-starry-gray-o321-3883",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O336",
+      "url": "https://tiendavirtualsuper.com/producto/o336-proyector-havit-prime-hematite-pj211-pro-o336-3897",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O337",
+      "url": "https://tiendavirtualsuper.com/producto/o337-proyector-havit-prime-sapphire-pj209a-pro-o337-3898",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O340",
+      "url": "https://tiendavirtualsuper.com/producto/o340-audifono-samsung-reforzado-original-ig935-o340-3902",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O396",
+      "url": "https://tiendavirtualsuper.com/producto/o396-camara-de-seguridad-imilab-ec4-gateway-001877-o396-3959",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O402",
+      "url": "https://tiendavirtualsuper.com/producto/o402-parlante-tribit-xsound-plus-2-black-o402-3964",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O405",
+      "url": "https://tiendavirtualsuper.com/producto/o405-mini-parlante-tribit-stormbox-mini-o405-3967",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O413",
+      "url": "https://tiendavirtualsuper.com/producto/o413-plato-para-mascota-smart-pet-feeder-xiaomi-us-002217-o413-3976",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O415",
+      "url": "https://tiendavirtualsuper.com/producto/o415-microfono-fifine-ampligame-a8-001557-o415-3978",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O436",
+      "url": "https://tiendavirtualsuper.com/producto/o436-tv-box-google-tv-dcolor-cod-gd2-o436-4001",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O439",
+      "url": "https://tiendavirtualsuper.com/producto/o439-parlante-tribit-stormbox-lava-black-o439-4004",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O440",
+      "url": "https://tiendavirtualsuper.com/producto/o440-lapiz-optico-universal-stylus-pen-original-o440-4006",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "Universal es una denominación comercial; no confirma compatibilidad con todos los equipos."
+      ]
+    },
+    {
+      "code": "O441",
+      "url": "https://tiendavirtualsuper.com/producto/o441-lapiz-optico-stylus-pen-jd18-p-por-ipad-002625-o441-4007",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O470",
+      "url": "https://tiendavirtualsuper.com/producto/o470-smartwatch-qcy-elite-gold-002463-o470-4038",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O519",
+      "url": "https://tiendavirtualsuper.com/producto/o519-redragon-teclado-kumara-rainbow-spanish-k552w-kr-sp-white-red-switch-o519-5631",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O558",
+      "url": "https://tiendavirtualsuper.com/producto/o558-sony-parlante-ult-tower-1000-srsult1000-o558-5780",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O559",
+      "url": "https://tiendavirtualsuper.com/producto/o559-sony-parlante-tawer-9ac-srsult900ac-o559-5781",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O589",
+      "url": "https://tiendavirtualsuper.com/producto/o589-havit-proyector-pj209a-plus-o589-5747",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O592",
+      "url": "https://tiendavirtualsuper.com/producto/o592-parlante-jbl-eon-one-compact-003034-o592-6024",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O642",
+      "url": "https://tiendavirtualsuper.com/producto/o460-sudio-audifono-a2-cristal-blanco-o642-5561",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O670",
+      "url": "https://tiendavirtualsuper.com/producto/o670-realme-buds-air-6-pro-blanco-rma2401-o670-5536",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O68",
+      "url": "https://tiendavirtualsuper.com/producto/o68-vincha-sony-xb910-original-o68-4074",
+      "status": "BORRADOR",
+      "reason": "El título abrevia XB910 y no basta para confirmar el sufijo exacto del modelo; comprobar etiqueta.",
+      "warnings": []
+    },
+    {
+      "code": "O691",
+      "url": "https://tiendavirtualsuper.com/producto/o691-audifono-piston-xiaomi-original-negro-00509-o691-5600",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O700",
+      "url": "https://tiendavirtualsuper.com/producto/o700-jbl-tune-buds-perfect-fit-blanco-o700-5668",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O800",
+      "url": "https://tiendavirtualsuper.com/producto/o800-h6c-pro-1080p-2mp-ezviz-con-boton-y-deteccion-humano-o800-6313",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O802",
+      "url": "https://tiendavirtualsuper.com/producto/o802-h9c-3k-5-5-mp-ezviz-doble-lente-exterior-o802-6315",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O804",
+      "url": "https://tiendavirtualsuper.com/producto/o804-h1c-fija-1080p-2mp-interior-ezviz-base-magnetica-o804-6317",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O812",
+      "url": "https://tiendavirtualsuper.com/producto/o812-h8c-pro-2k-3mp-ezviz-giratoria-exterior-o812-6325",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O867",
+      "url": "https://tiendavirtualsuper.com/producto/o867-ugreen-two-way-fast-charging-power-bank-pb535-o867-7218",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O869",
+      "url": "https://tiendavirtualsuper.com/producto/o869-maono-microphone-dm40-pro-s-black-o869-7231",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O870",
+      "url": "https://tiendavirtualsuper.com/producto/o870-maono-audio-interface-amc2-neo-o870-7232",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O880",
+      "url": "https://tiendavirtualsuper.com/producto/o880-parlante-alexa-echo-dot-max-ma49ca-o880-7260",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O887",
+      "url": "https://tiendavirtualsuper.com/producto/o887-radio-motorola-jgox2-t470-003312-o887-7402",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O888",
+      "url": "https://tiendavirtualsuper.com/producto/o888-radio-motorola-jgox2-t210-o888-7403",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O918",
+      "url": "https://tiendavirtualsuper.com/producto/o918-ugreen-inflador-portatil-de-neumaticos-cd259-15951-o918-7624",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O966",
+      "url": "https://tiendavirtualsuper.com/producto/o966-s-esviz-dl03-cerradura-inteligente-smart-lock-o966-7995",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O967",
+      "url": "https://tiendavirtualsuper.com/producto/o967-s-ezviz-r5c-nvr-8-canales-4k-con-funcion-nas-1hdd-hasta-8tb-o967-8009",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No inferir resolución nativa a partir de 4K/8K en el título."
+      ]
+    },
+    {
+      "code": "O989",
+      "url": "https://tiendavirtualsuper.com/producto/o989-mini-parlante-hifuture-mega-s-o989-8417",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "O99",
+      "url": "https://tiendavirtualsuper.com/producto/o99-parlante-tronsmart-bang-se-o99-4100",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P00332-139",
+      "url": "https://tiendavirtualsuper.com/producto/p00332-bicimoto-electrico-tdt086z-gris-hc4957225s3006903-mo-hk350w48v250216898x-marca-heemer-dua-118-2025-10-389145-serie-13-p00332-139-8792",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P00333-422",
+      "url": "https://tiendavirtualsuper.com/producto/p00333-bicimoto-electrico-tdt213z-azul-hc2987220s3001098-mo-hk400w48v2006091100-24-2h-marca-heemer-dua-118-2025-10-389145-se-p00333-422-8795",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P00334-327",
+      "url": "https://tiendavirtualsuper.com/producto/p00334-bicimoto-electrico-tdt213-1z-marron-hc2987224s8152956-mo-hk350w48v240826140x-marca-heemer-dua-118-2025-10-389145-seri-p00334-327-8794",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P00335-368",
+      "url": "https://tiendavirtualsuper.com/producto/p00335-bicimoto-electrico-tdt147z-negro-hc2987220s33001133-mo-hk400w48v2006091058-24-2h-marca-heemer-dua-118-2025-10-389145-p00335-368-8504",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P0170",
+      "url": "https://tiendavirtualsuper.com/producto/p0170-kaperh-parlante-kaboom-4-cod-kaperh-170-p0170-7327",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P1066",
+      "url": "https://tiendavirtualsuper.com/producto/p1066-parlante-power-bank-oneday-okp01-p1066-8858",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P156",
+      "url": "https://tiendavirtualsuper.com/producto/p156-parlante-hopestar-h48-ipx6-p156-4160",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P199",
+      "url": "https://tiendavirtualsuper.com/producto/p199-parlante-platillo-lp18-p199-1081",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P213",
+      "url": "https://tiendavirtualsuper.com/producto/p213-parlante-redondo-dcolor-cod-p213-p213-4212",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P373",
+      "url": "https://tiendavirtualsuper.com/producto/p373-simulador-parlante-max-diseno-empaque-cod-al05-p373-4348",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P41",
+      "url": "https://tiendavirtualsuper.com/producto/p41-parlante-redondo-dcolor-5ta-gen-cod-p41-p41-4374",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P420",
+      "url": "https://tiendavirtualsuper.com/producto/p420-parlante-a50-party-hopestar-p420-4385",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P501",
+      "url": "https://tiendavirtualsuper.com/producto/p501-kaperh-parlante-modelo-pelota-boomball-cod-p50-p501-4452",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P768",
+      "url": "https://tiendavirtualsuper.com/producto/p768-mini-parlante-zealot-s53-p768-5162",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P772",
+      "url": "https://tiendavirtualsuper.com/producto/p772-parlante-zealot-super-bass-s64-negro-p772-5166",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P777",
+      "url": "https://tiendavirtualsuper.com/producto/p777-mini-parlante-zealot-s75-p777-5177",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P786",
+      "url": "https://tiendavirtualsuper.com/producto/p786-mini-parlante-zealot-bass-s122-p786-5186",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P870",
+      "url": "https://tiendavirtualsuper.com/producto/p870-mini-parlante-diseno-kawai-flip-flop-cod-s05-p870-6722",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P943",
+      "url": "https://tiendavirtualsuper.com/producto/p943-radio-aiwa-am-fm-portatil-awfml1-p943-7717",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P944",
+      "url": "https://tiendavirtualsuper.com/producto/p944-radio-aiwa-am-fm-portatil-awfml2-p944-7718",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P976",
+      "url": "https://tiendavirtualsuper.com/producto/p976-parlante-zealot-m1-negro-p976-8052",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P979",
+      "url": "https://tiendavirtualsuper.com/producto/p979-parlante-zealot-p15-negro-p979-8057",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P980",
+      "url": "https://tiendavirtualsuper.com/producto/p980-parlante-zealot-p16-negro-p980-8058",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P981",
+      "url": "https://tiendavirtualsuper.com/producto/p981-parlante-zealot-pt01-black-p981-8059",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P982",
+      "url": "https://tiendavirtualsuper.com/producto/p982-parlante-zealot-pt02-negro-p982-8060",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P989",
+      "url": "https://tiendavirtualsuper.com/producto/p989-parlante-zealot-ze21-negro-p989-8066",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P992-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/p992-sq-parlante-inteligente-modelo-reloj-super-cod-p156-p992-sq-8084",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "P998",
+      "url": "https://tiendavirtualsuper.com/producto/p998-sq-parlante-kaperh-p13-p998-8120",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "PC105",
+      "url": "https://tiendavirtualsuper.com/producto/pc105-teclado-micronic-milano-mic-k704-pc105-293",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC189",
+      "url": "https://tiendavirtualsuper.com/producto/pc189-kit-teclado-mouse-cybertel-premier-cyb-wt802w-pc189-817",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC210",
+      "url": "https://tiendavirtualsuper.com/producto/pc210-mouse-enkore-bravio-enk313-ekm313-pc210-4749",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC237",
+      "url": "https://tiendavirtualsuper.com/producto/pc237-teclado-cybertel-elektron-cyb-k508-rainbow-pc237-294",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "Texto técnico anterior conservado en Product; no se publica como evidencia sin contrastarlo."
+      ]
+    },
+    {
+      "code": "PC240",
+      "url": "https://tiendavirtualsuper.com/producto/pc240-parlante-cybertel-exxpert-cbx-s500-pc240-4777",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC28",
+      "url": "https://tiendavirtualsuper.com/producto/pc28-pad-mouse-con-almoadilla-con-gel-colores-c51676-120-150080-pc28-278",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC346",
+      "url": "https://tiendavirtualsuper.com/producto/pc346-audifono-superbass-hb10-pc346-6021",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC351",
+      "url": "https://tiendavirtualsuper.com/producto/pc351-mando-gamepad-addict-enk-g300-enkore-pc351-6141",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC386",
+      "url": "https://tiendavirtualsuper.com/producto/pc386-sq-teclado-solo-diseno-pink-pc386-7555",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "PC387",
+      "url": "https://tiendavirtualsuper.com/producto/pc387-sq-set-2-en-1-de-teclado-y-mouse-diseno-pink-pc387-7556",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "PC388-SQ",
+      "url": "https://tiendavirtualsuper.com/producto/pc388-sq-m-super-cooler-para-laptop-15en1-cod-q9-pc388-sq-7611",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": [
+        "No trasladar especificaciones de una marca conocida por semejanza de nombre."
+      ]
+    },
+    {
+      "code": "PC403",
+      "url": "https://tiendavirtualsuper.com/producto/pc403-cooler-c200-pc403-8831",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC404",
+      "url": "https://tiendavirtualsuper.com/producto/pc404-cooler-c102-pc404-8832",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC405",
+      "url": "https://tiendavirtualsuper.com/producto/pc405-cooler-c204-pc405-8833",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "PC406",
+      "url": "https://tiendavirtualsuper.com/producto/pc406-cooler-airboom-cruiser-ab021-1-fan-12-5cm-2fam-7cm-s00179-pc406-8861",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "RGLO-BOT",
+      "url": "https://tiendavirtualsuper.com/producto/rglo-bot-ezviz-sports-bottle-rglo-bot-8918",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "RGLO-BOX",
+      "url": "https://tiendavirtualsuper.com/producto/rglo-box-ezviz-tool-box-rglo-box-8925",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "RGLO-CAR",
+      "url": "https://tiendavirtualsuper.com/producto/rglo-car-ezviz-car-window-sunshade-rglo-car-8923",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "RGLO-MATE",
+      "url": "https://tiendavirtualsuper.com/producto/rglo-mate-ezviz-cup-mate-rglo-mate-8922",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "RGLO-TAPE",
+      "url": "https://tiendavirtualsuper.com/producto/rglo-tape-ezviz-tape-rglo-tape-8921",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "RGLO-VEST",
+      "url": "https://tiendavirtualsuper.com/producto/rglo-vest-ezviz-installer-vest-rglo-vest-8920",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "SU980567",
+      "url": "https://tiendavirtualsuper.com/producto/speaker-tripod-cod-su980567-su980567-6861",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "TF-D52",
+      "url": "https://tiendavirtualsuper.com/producto/tf-d52-transformers-power-bank-yellow-tf-d52-tf-d52-5766",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    },
+    {
+      "code": "TFT02000",
+      "url": "https://tiendavirtualsuper.com/producto/jugt5-trotties-ojos-emoji-lucy-cod-tft02000-tft02000-6011",
+      "status": "BORRADOR",
+      "reason": "No se obtuvo evidencia técnica suficientemente específica para publicar una ficha; confirmar modelo, etiqueta o manual.",
+      "warnings": []
+    }
+  ]
+}

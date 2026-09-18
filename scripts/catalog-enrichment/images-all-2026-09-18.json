@@ -1,0 +1,3454 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-09-18",
+  "method": "Lectura OCR de imágenes existentes y revisión de transcripciones seleccionadas; las fotografías permanecen intactas.",
+  "products": [
+    {
+      "code": "07434",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-07434-9d83c71d5ed8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.2 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 35 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "BT28",
+        "SUPER AIR 1",
+        "4 35 HORAS DE MUSICA",
+        "4 BLUETOOTH 5.2",
+        "4 PRODUCTO ORIGINAL",
+        "4 6 MESES DE GARANTIA"
+      ]
+    },
+    {
+      "code": "BT10",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt10-82755e5f1fec.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100 PCS",
+        "BT10",
+        "AUDIFONOS SUPER GAMER G1",
+        "WIRELESS 5.4",
+        "SUPERGAMER G1"
+      ]
+    },
+    {
+      "code": "BT12",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt12-43f4ee704087.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "SPINNERBUDS 12",
+        "4 BLUETOOTH 5.4"
+      ]
+    },
+    {
+      "code": "BT14",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt14-1d2af0bd4b50.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "4",
+        "SUPERBUDS 14",
+        "4 BLUETOOTH 5.4",
+        "Bluetooth 5.4",
+        "4 APRUEBADEAGUA 4 PRODUCTO ORIGINAL"
+      ]
+    },
+    {
+      "code": "BT22",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt22-6039454a45b7.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "4 BLUETOOTH 5.4",
+        "4 BOTON MULTIFUNCIONAL",
+        "4 FUNCION COLLAR",
+        "4 CARGA: 1 HORA",
+        "4 GIROS LIBRES",
+        "CODIGO: BT22"
+      ]
+    },
+    {
+      "code": "BT11",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt11-7c15c4219196.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 18 horas; condiciones de volumen y modo no especificadas en la imagen.",
+        "Capacidad indicada en imagen": "220 mAh; la imagen la denomina power bank, componente exacto pendiente de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "BT11",
+        "5.4",
+        "SUPERBUDS 11",
+        "18 HORAS DE MUSICA",
+        "IMPERMEABLE IP54",
+        "DISTANCIA HASTA 18 METROS",
+        "POWER BANK 220 MAH",
+        "BLUETOOTH 5.4",
+        "18 HORAS",
+        "HASTA 10",
+        "220 MAH"
+      ]
+    },
+    {
+      "code": "BT144",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt144-a79122bfeeff.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.1 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "BLUETOOTH 5.1",
+        "010"
+      ]
+    },
+    {
+      "code": "BT178",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt178-63c2f52e0437.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 44 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "00",
+        "BATERIA HASTA 44HRS"
+      ]
+    },
+    {
+      "code": "BT190",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt190-5f7b3597bd03.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Batería del estuche anunciada": "2000 mAh según imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 10PCS",
+        "V5.3",
+        "Hasta 4-5 horas de reproduccién continua",
+        "Estuche de carga portatil de 2000mAh",
+        "Resistente al sudor y salpicaduras IPX4"
+      ]
+    },
+    {
+      "code": "BT190 - SQ",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt190-5f7b3597bd03.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Batería del estuche anunciada": "2000 mAh según imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 10PCS",
+        "V5.3",
+        "Hasta 4-5 horas de reproduccién continua",
+        "Estuche de carga portatil de 2000mAh",
+        "Resistente al sudor y salpicaduras IPX4"
+      ]
+    },
+    {
+      "code": "BT201",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt201-5281b63a15f9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 5 horas de reproducción; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "Buds2Pro",
+        "Buds2Pro",
+        "RESISTENCIA AL AGUA IPX7",
+        "HASTA 5 HORAS DE REPRODUCCION",
+        "HASTA 18 HORAS CON ESTUCHE DE CARGA",
+        "CONEXION BLUETOOTH 5.3",
+        "lo que mas te gusta, mientras que el sonido 360° y su disefio ergonémico",
+        "COMPATIBLE CON ANDROID E 10S.",
+        "4",
+        "‘AL AGUA IPX7"
+      ]
+    },
+    {
+      "code": "BT208",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt208-9d0a14da0b9b.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 22 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "SUPERBUDS 20",
+        "22H DE MUSICA",
+        "4y BLUETOOTH 5.4",
+        "PRODUCTO CON GARANTA DE 6 MESES"
+      ]
+    },
+    {
+      "code": "BT309",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt309-87f855736c1e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 35 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "BATERIA DE HASTA 35 HORAS"
+      ]
+    },
+    {
+      "code": "BT34",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt34-916f455beaf5.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 24 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "BT24",
+        "DE 100 IDIOMAS",
+        "24 HORAS DE MUSICA",
+        "BLUETOOTH 5.4",
+        "6 MESES DE GARANTIA"
+      ]
+    },
+    {
+      "code": "BT449",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt449-304aa9a6c538.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía por carga anunciada": "5–6 horas según imagen; condiciones de uso no especificadas.",
+        "Autonomía con estuche anunciada": "Hasta 30–36 horas según imagen; condiciones de uso no especificadas."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "5-6 horas por carga",
+        "Hasta 30-36 horas con estuche"
+      ]
+    },
+    {
+      "code": "BT463",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt463-4a258b9495f3.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "800 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "BATERIA 800 mAh",
+        "C. ORIGINAL: KZ-AZ09",
+        "52",
+        "800 mAh"
+      ]
+    },
+    {
+      "code": "BT469",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt469-3e43fdd3aaf4.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "AUDIFONO PRO 3 ANC 3RA GENERACION TRADUCTOR",
+        "BLUETOOTH 5.3 DE CONEXION ESTABLE"
+      ]
+    },
+    {
+      "code": "BT57",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt57-86b1c5b83247.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial.",
+        "Autonomía por carga anunciada": "Hasta 4–5 horas según imagen.",
+        "Autonomía con estuche anunciada": "Hasta 24 horas según imagen; depende del uso."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "AUDIFONOS INALAMBRICOS PRO DE 2DA GENERACION",
+        "RESISTENCIA AL AGUA IPX4",
+        "HASTA 4-5 HORAS DE REPRODUCCION",
+        "HASTA 24 HORAS CON ESTUCHE DE CARGA",
+        "CONEXION BLUETOOTH 5.3",
+        "COMPATIBLE CON ANDROID E 10S",
+        "53"
+      ]
+    },
+    {
+      "code": "BT78",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-bt78-e18d0991d29f.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada sin ANC": "Hasta 90 horas con ANC desactivado según imagen; depende del uso."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "Tiempo de reproduccién: hasta 90 horas (ANC OFF)"
+      ]
+    },
+    {
+      "code": "CA264",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-ca264-65352b34886a.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "60 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Longitud anunciada": "1 metro según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "CA264",
+        "4",
+        "4",
+        "60W Charge Cable (1 m)",
+        "de hasta 60W"
+      ]
+    },
+    {
+      "code": "CB10-BLANCO",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cb10-blanco-ea55d475a6eb.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "60 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Longitud anunciada": "1 metro según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "POR CAJON DE 100 PCS",
+        "Cable de carga 60W (1m)",
+        "iPhone 17 Pro Max",
+        "147 Pro Max",
+        "17 Pro Max"
+      ]
+    },
+    {
+      "code": "CB10-NARANJA",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cb10-naranja-ea55d475a6eb.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "60 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Longitud anunciada": "1 metro según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "POR CAJON DE 100 PCS",
+        "Cable de carga 60W (1m)",
+        "iPhone 17 Pro Max",
+        "147 Pro Max",
+        "17 Pro Max"
+      ]
+    },
+    {
+      "code": "CA43",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-ca43-cc757c372486.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "45 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CA43",
+        "CAJON DE 100PCS",
+        "CABLE SUPER TIPO USB A V8 45W 6A",
+        "Carga rapida 45W",
+        "Corriente de hasta 6A",
+        "MODELO: B43",
+        "MICRO V8"
+      ]
+    },
+    {
+      "code": "CA623",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-ca623-190bc80029f9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "45 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 200PCS",
+        "TYPE-V8",
+        "(8)",
+        "CARGA RAPIDA 45W",
+        "6.5 AMPERIOS",
+        "CABLE TIPO V8",
+        "1 METRO DE CABLE",
+        "DISPOSITIVO TIPO V8"
+      ]
+    },
+    {
+      "code": "CA605",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-ca605-7139876a1b6b.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia de carga pendiente": "El título anuncia 240 W y la imagen 100 W. Confirmar la etiqueta del cable antes de elegir cargador o dispositivo."
+      },
+      "warnings": [
+        "Conflicto entre título y foto: 240 W / 100 W."
+      ],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CA605",
+        "CAJON DE 100 PCS",
+        "POTENCIA CARGA RAPIDA 100W",
+        "CORRIENTE MAXIMA 6A"
+      ]
+    },
+    {
+      "code": "CA611",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-ca611-90931930a00c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "100 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CA611",
+        "CAJON DE 100 PCS",
+        "POTENCIA CARGA RAPIDA 100W",
+        "CORRIENTE MAXIMA 6A"
+      ]
+    },
+    {
+      "code": "CA97",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-ca97-92060fb6ffff.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "Hasta 20 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "4",
+        "12 pro max",
+        "Carga de hasta 20W",
+        "Longitud: 1 metro"
+      ]
+    },
+    {
+      "code": "CB31",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cb31-c8e9d58fa577.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "65 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CABLE DE NAYLON REFORZADO 3 EN 1",
+        "MODELO: B31",
+        "65W"
+      ]
+    },
+    {
+      "code": "CC3",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cc3-36a36b1aba6e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "30 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CARGADOR ve AUTO 100% METAL",
+        "30W DE POTENCIA",
+        "100% METAL"
+      ]
+    },
+    {
+      "code": "CC65",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cc65-eef6d1a5151e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Voltaje de entrada anunciado": "12–24 V según imagen; comprobar la etiqueta del equipo antes de conectarlo."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "ENTRADA 12-24V",
+        "vehiculo (12-24V)"
+      ]
+    },
+    {
+      "code": "CP270",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp270-26af31101e69.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "10000 mAh según la imagen; valor nominal no medido.",
+        "Potencia anunciada": "35 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CP27",
+        "POWER BANK TINY 2",
+        "10000mAh / 35W DE POTENCIA"
+      ]
+    },
+    {
+      "code": "CP44",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp44-426dda0b4ffa.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "30000 mAh según la imagen; valor nominal no medido.",
+        "Potencia total anunciada": "150 W anunciados; reparto entre puertos pendiente de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CARGADOR PORTATIL 30000mAh",
+        "150W DE POTENCIA",
+        "150W",
+        "TIPO C 20.4W",
+        "USB-A 65.6W",
+        "de 2 dispositivos",
+        "30000mAh",
+        "Potencia de 150W para",
+        "1 puerto USB-A 65.6W"
+      ]
+    },
+    {
+      "code": "CP560",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp560-f4e9263d51da.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "20000 mAh según la imagen; valor nominal no medido.",
+        "Potencia anunciada": "30 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CP56",
+        "POWER BANK NEO 2",
+        "20000mAh / 30W DE POTENCIA",
+        "POWER BANK NEO 2"
+      ]
+    },
+    {
+      "code": "CP588",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp588-4437ecec8f47.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia continua anunciada": "2200 W según imagen; confirmar condiciones y tensión de salida.",
+        "Energía de batería anunciada": "2200 Wh según imagen.",
+        "Química de batería anunciada": "LiFePO4 según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "LiFePO4 Lithium Battery",
+        "BATERIA LiFePO4 DE LARGA DURACION",
+        "POTENCIA CONTINUA 2200W",
+        "2200Wh"
+      ]
+    },
+    {
+      "code": "CP592",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp592-b07eba568402.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "38 Ah según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 10PCS",
+        "BS-S38AH-12V",
+        "Voltaje nominal: 12V",
+        "Capacidad: 38Ah"
+      ]
+    },
+    {
+      "code": "CP595",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp595-7b983f0eea7d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "250 Ah según imagen.",
+        "Voltaje nominal anunciado": "12 V según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 10PCS",
+        "BATERIA BOSSNEY 250AH 12V",
+        "BS-S250AH-12V",
+        "Capacidad: 250Ah",
+        "Voltaje nominal: 12V"
+      ]
+    },
+    {
+      "code": "CP603",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp603-9014d6e75f37.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "10000 mAh según la imagen; valor nominal no medido.",
+        "Carga inalámbrica anunciada": "Magnética, hasta 15 W según imagen; depende del dispositivo compatible."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CP603",
+        "1",
+        "CAJON DE 100PCS",
+        "POWER BANK MAGNETIC Q36A 10000mAn",
+        "Q36A",
+        "Capacidad: 10000mAh",
+        "Carga inalambrica magnética: 15W (Max)"
+      ]
+    },
+    {
+      "code": "CP604",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp604-106b73d609a9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "4000 mAh según la imagen; valor nominal no medido.",
+        "Panel solar anunciado": "6 V / 3 W según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "Bateria recargable de alta capacidad 4000mAh",
+        "Panel solar 6V / 3W para carga eficiente",
+        "2 lamparas LED de alta intensidad",
+        "Reproductor de musica MP3 (USB / TF)",
+        "Linterna LED con 3 niveles de brillo",
+        "4000mAh"
+      ]
+    },
+    {
+      "code": "CR244",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr244-05dced2bd7ec.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "35 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "DE 35W",
+        "35W Power Adapter",
+        "CALIDAD A1",
+        "Hasta 35W de potencia",
+        "17"
+      ]
+    },
+    {
+      "code": "CR33",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr33-807da2e330e8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "35 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CR33",
+        "CARGADOR CARGA RAPIDA DE 35W",
+        "35W DE POTENCIA",
+        "6.8 AMPERIOS",
+        "6 MESES DE GARANTIA",
+        "35W"
+      ]
+    },
+    {
+      "code": "CR411",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr411-2eb0af357959.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "35 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CR411",
+        "CAJON DE 100 PCS",
+        "iPhone 17 Pro Max",
+        "35W USB-C Power Adapter",
+        "4 COMPATIBILIDAD POWER",
+        "4 VOLTAJE SALIDA 5V/3A",
+        "4 CORRIENTE MAXIMA 3A",
+        "4 PROTECCION SOBRECARGA"
+      ]
+    },
+    {
+      "code": "CR354",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr354-79dc76514028.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "20 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CR354",
+        "CAJA DE 100",
+        "4",
+        "CARGADOR 20W",
+        "iPhone 15 Pro Max",
+        "iPhone 15 Pro Max"
+      ]
+    },
+    {
+      "code": "CR409",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr409-3a26063b2c53.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "75 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "CARGADOR MARCA REDD TIPO C 75W POTENCIA",
+        "POTENCIA 75W",
+        "Incluye cable de 1000 mm",
+        "75W"
+      ]
+    },
+    {
+      "code": "CR417",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr417-4f9bf2d75d81.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "Hasta 320 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 100PCS",
+        "CARGADOR MULTIPUERTOS 1036 320W GAN",
+        "320W",
+        "320w",
+        "320W MAX"
+      ]
+    },
+    {
+      "code": "CR418",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr418-036f1103b441.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "67 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "CR418",
+        "CAJON DE 20 PCS",
+        "67W DE POTENCIA",
+        "SALIDA 6.2A MAX",
+        "CABLE DE 1 METRO",
+        "6.2A",
+        "4",
+        "1"
+      ]
+    },
+    {
+      "code": "CR64",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr64-d44ac30ccb56.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "65 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "65W DE POTENCIA",
+        "QUALCOM 4.0",
+        "2 METROS DE CABLE",
+        "PRODUCTO CON GARANTA DE 6 MESES"
+      ]
+    },
+    {
+      "code": "CR69",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cr69-ee5fc65fee15.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "70 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100 PCS",
+        "CARGADOR SUPER CARGA RAPIDA DE 70W",
+        "6 MESES DE GARANTIA",
+        "70W",
+        "6 MESES DE",
+        "4",
+        "7 OW POTENCIA"
+      ]
+    },
+    {
+      "code": "L02",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l02-a74a819b017f.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "150 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "ATIDORA ELECTRICA DE GRANOS 150W"
+      ]
+    },
+    {
+      "code": "L361",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l361-f4f57976a2dd.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "2800 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "2 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "61",
+        "LICUADORA DE 2 LITROS 2800W"
+      ]
+    },
+    {
+      "code": "L451",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l451-6bd83d5064ba.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1200 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "L45",
+        "= PLANCHA ELECTRICA A VAPOR 1200W",
+        "20"
+      ]
+    },
+    {
+      "code": "L46",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l46-da4870262614.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1000 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 100PCS",
+        "$/32.50 | $/39.00",
+        "5 NIVELES DE POTENCIA",
+        "VOLTAJE: 220V - 50Hz",
+        "POTENCIA: 1000W"
+      ]
+    },
+    {
+      "code": "L731",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l731-a317e149f7e9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1500 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "2 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "| (APARTIR DE 3 AMAS",
+        "L731",
+        "CAJON DE 100 PCS",
+        "HERVIDOR ELECTRICO RAF 7999",
+        "4 CAPACIDAD 2 LITROS",
+        "4 POTENCIA 1500W RAPIDA",
+        "4 APAGADO AUTOMATICO SEGURIDAD",
+        "4 CONTRA SOBRECALENTAMIENTO",
+        "4 BASE GIRATORIA 360°",
+        "R.7999",
+        "4 INDICADOR NIVEL AGUA"
+      ]
+    },
+    {
+      "code": "L736",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l736-ee8feec4b1e7.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1500 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "2 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L736",
+        "CAJON DE 100 PCS",
+        "HERVIDOR ELECTRICO R7429",
+        "CAPACIDAD 2 LITROS",
+        "POTENCIA 1500W RAPIDA",
+        "BASE GIRATORIA 360 GRADOS",
+        "VOLTAJE 220V ESTANDAR"
+      ]
+    },
+    {
+      "code": "L734",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l734-bb755b1814b7.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1500 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "| L734",
+        "CAJON DE 100 PCS",
+        "HERVIDOR ELECTRICO R7434",
+        "POTENCIA 1500W RAPIDA",
+        "BASE GIRATORIA 360°"
+      ]
+    },
+    {
+      "code": "L742",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l742-bd85468276a9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "200 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L742",
+        "CAJON DE 100 PCS",
+        "BATIDORA DE MANO ELECTRICA RAF R.6703",
+        "200W",
+        "200 Br",
+        "R.6703"
+      ]
+    },
+    {
+      "code": "L747",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l747-f767e11e5a1c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1200 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L747",
+        "CAJON DE 100 PCS",
+        "PLANCHA A VAPOR ELECTRICA RAF R11221H 1200W",
+        "R.11221H"
+      ]
+    },
+    {
+      "code": "L748",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l748-ce4d1180691e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1000 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L748",
+        "CAJON DE 100 PCS",
+        "1000W",
+        "R.1172B"
+      ]
+    },
+    {
+      "code": "L753",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l753-4b025c65cf35.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "850 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de cocción anunciada": "2 huevos según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L753",
+        "CAJON DE 100 PCS",
+        "OMELETERA ELECTRICA RAF R512",
+        "POTENCIA CALEFACCION 850W",
+        "CAPACIDAD COCCION 2 HUEVOS",
+        "VOLTAJE OPERACION 220V"
+      ]
+    },
+    {
+      "code": "L754",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l754-2e16fbd7dc43.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1550 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "5 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L754",
+        "CAJON DE 100 PCS",
+        "OLLA Y PARRILLA RAF R.5433 2 EN 1 1550W",
+        "7",
+        "4 CAPACIDAD COCCION 5L",
+        "4 SUPERFICIE ANTIADHERENTE",
+        "4 TAPA VIDRIO TEMPLADO",
+        "4 MATERIAL ACERO INOXIDABLE"
+      ]
+    },
+    {
+      "code": "L755",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l755-ff5487a6a28b.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1200 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L755",
+        "CAJON DE 100 PCS",
+        "MAQUINA WAFLERA GIRATORIA RAF R.592",
+        "1200W",
+        "R.592"
+      ]
+    },
+    {
+      "code": "L756",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l756-80d08938793f.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "160 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L756",
+        "CAJON DE 100 PCS",
+        "160W",
+        "7 files speed",
+        "160 Br",
+        "R.6633"
+      ]
+    },
+    {
+      "code": "L759",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l759-e9fd20e3e1a1.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1500 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L759",
+        "CAJON DE 100 PCS",
+        "HERVIDOR ELECTRICO RAF R.7415G 2L",
+        "1500W",
+        "1500 Br",
+        "360° Swivel Base",
+        "Base giratoria 360"
+      ]
+    },
+    {
+      "code": "L760",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l760-2cb6972a0a83.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1500 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L760",
+        "CAJON DE 100 PCS",
+        "1500W",
+        "360° Swivel Base",
+        "Base giratoria 360",
+        "R.7428"
+      ]
+    },
+    {
+      "code": "L812",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l812-6e815f7a25ec.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1500 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "Since 1996",
+        "1500W"
+      ]
+    },
+    {
+      "code": "L772",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l772-6f6bb6b0f353.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "1200 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "1,2 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "L772",
+        "CAJON DE 100 PCS",
+        "ASPIRADORA STARLUX SL-3072 1.2L 1200W",
+        "SL-3072"
+      ]
+    },
+    {
+      "code": "L808",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l808-25ef6b12e674.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "2600 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "L608",
+        "2600W",
+        "BM-6037",
+        "Cable giratorio de 360° que",
+        "2600V",
+        "2600W",
+        "Modelo: BM-6037",
+        "Cable giratorio: 360°"
+      ]
+    },
+    {
+      "code": "L816",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l816-b038e03ade55.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "25 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "0,7 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "SL-21129",
+        "29",
+        "POTENCIA 25W",
+        "CAPACIDAD 0.7L",
+        "de 700ML."
+      ]
+    },
+    {
+      "code": "L824",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l824-15f8f38a4be5.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de recipiente anunciada": "3,5 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "L824",
+        "CAJON DE 24 PCS",
+        "TETERA SILBADORA 3.5 LITROS",
+        "SL-11809",
+        "1809"
+      ]
+    },
+    {
+      "code": "L831",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l831-a4d5ef5f046d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "300 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "CAJON DE 20 PCS",
+        "POTENCIA 300W",
+        "Motor de alto rendimiento de 300W",
+        "BM-8002",
+        "300W",
+        "Modelo: BM-8002",
+        "Potencia: 300W",
+        "Velocidades: 2 niveles",
+        "Longitud del brazo: 19 cm aprox."
+      ]
+    },
+    {
+      "code": "L830",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l830-19d4cf1ce504.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "2200 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Capacidad de recipiente anunciada": "12 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "L830",
+        "CAJON DE 100 UNIDADES",
+        "BATIDORA 12L 2200W",
+        "Potente motor de 2200W para",
+        "GRAN CAPACIDAD 12L",
+        "de 12 litros, ideal para grandes",
+        "4",
+        "6 niveles ajustables"
+      ]
+    },
+    {
+      "code": "L836",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l836-0c5d8b6d7ab7.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "850 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "Since1996",
+        "BM-804B",
+        "Potencia: 850W.",
+        "Dimensiones: 25 x 23 x 10 cm aprox."
+      ]
+    },
+    {
+      "code": "L848",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-l848-fc484f35c267.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de recipiente anunciada": "3 litros según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 24 PCS",
+        "TETERA STARLUX 3L",
+        "Capacidad de 3.0 litros, ideal para toda la familia."
+      ]
+    },
+    {
+      "code": "N1071",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1071-cdfdcd8f09db.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "280 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "A PARTIR DE 3 AMAS",
+        "SMARTWATCH T900 PRO MAX L",
+        "BATERIA 280mAh",
+        "T900 PRO MAX L",
+        "10"
+      ]
+    },
+    {
+      "code": "N1082",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1082-27db2c8e10a0.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial.",
+        "Capacidad de batería anunciada": "1200 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "N1082",
+        "INTERCOMUNICADOR BLUETOOTH PARA CASCO K10",
+        "BLUETOOTH 5.4",
+        "1200 MAH"
+      ]
+    },
+    {
+      "code": "N1127",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1127-d472da377862.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 7 horas de uso; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "$/55",
+        "v5.3 WIRELESS COLLAR MICROPHONE",
+        "Alcance 20-30 metros",
+        "hasta 7 horas de uso",
+        "20-30 M"
+      ]
+    },
+    {
+      "code": "N126",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n126-31c985ab8170.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "10 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "5",
+        "lluminacién RGB: 16 millones de colores",
+        "3 modbs de luz: Célida / Neutra / Fria",
+        "10 niveles de brillo ajustable",
+        "Potencia: 10W",
+        "Soporte para celular: Ajustable 360°",
+        "Compatibilidad: Smartphones de 4” a 6.5”",
+        "Altura del tripode: 2.10 m (max.)",
+        "10"
+      ]
+    },
+    {
+      "code": "N1300",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1300-675c4e6127ea.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "N1300",
+        "LENTES BLUETOOTH INTELIGENTE COD TUNEZ6 PRO",
+        "8h",
+        "BLUETOOTH 5.3"
+      ]
+    },
+    {
+      "code": "N1404",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1404-bb00f077ae3d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 210 minutos de uso; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "TIEMPO DE USO: HASTA 210 MINUTOS",
+        "CARGA COMPLETA EN 3 HORAS",
+        "USO CON 0 SIN CABLE"
+      ]
+    },
+    {
+      "code": "N1405",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1405-6648447482d2.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "6 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "MAQUINA KEMEI KM-T366",
+        "Potencia: 6W.",
+        "6"
+      ]
+    },
+    {
+      "code": "N1434",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1434-092fa0615b4c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "112 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "N1434",
+        "en 6-8 minutos",
+        "2 tamafios de hielo",
+        "12 kg por dia",
+        "de energia (112W)",
+        "2 TAMANOS",
+        "HASTA 12 KG",
+        "6-8 MINUTOS"
+      ]
+    },
+    {
+      "code": "N1453",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1453-36d7865290ef.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "N1453",
+        "BLUETOOTH 5.0"
+      ]
+    },
+    {
+      "code": "N1513",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1513-33b9360e06d9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "9600 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "LINTERNA MARCA LANTUN EPC-R69",
+        "EPC-R69",
+        "BATERIA 9600mAh"
+      ]
+    },
+    {
+      "code": "N1572",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1572-d8e35db6f360.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Niveles de potencia anunciados": "1000 W / 2000 W según imagen.",
+        "Dimensiones anunciadas": "Aproximadamente 16 × 16 × 41 cm según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "CAJON DE 100 PCS",
+        "2 niveles de potencia para",
+        "Potencia: 1000W / 2000W",
+        "Niveles de potencia: 2",
+        "Dimensiones: 16 x 16 x 41 cm (aprox.)"
+      ]
+    },
+    {
+      "code": "N2008",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2008-b52a01d3f5a4.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "3000 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2008",
+        "CAJON DE 100 PCS",
+        "BS-D5820",
+        "* BATERIA INTEGRADA: 3000 MAH",
+        "* TAMANO: 85 X 48 X180 MM",
+        "85 MM"
+      ]
+    },
+    {
+      "code": "N2016",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2016-61e182944876.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Niveles de refrigeración anunciados": "2 niveles según imagen; potencia eléctrica no confirmada."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "4 POTENCIA 2 NIVELES",
+        "4 ILUMINACION LLAMATIVO",
+        "4 ENFRIAMIENTO",
+        "4y DISENO PORTATIL",
+        "4 COMPATIBILIDAD ALTA",
+        "4 BAJO RUIDO",
+        "4 6 MESES DE GARANTIA",
+        "600 PCS"
+      ]
+    },
+    {
+      "code": "N2019",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2019-4bf1af2a6464.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "10 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "N2019",
+        "FOCO VENTILADOR DE 5 ASPAS 10W"
+      ]
+    },
+    {
+      "code": "N2026",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2026-c478c8ca5dfa.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Video anunciado": "Full HD 1080p según imagen.",
+        "Almacenamiento admitido anunciado": "Tarjeta microSD hasta 64 GB según imagen; tarjeta incluida no confirmada."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CAJON DE 100 PCS",
+        "CAMARA PARA CARRO BAIHUOCITY MY-7591 1080",
+        "4 RESOLUCION FULL HD 1080P",
+        "y SOPORTA MICROSD 64GB"
+      ]
+    },
+    {
+      "code": "N2027",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2027-31b23c7dbc15.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Voltaje de entrada anunciado": "12 V CC según imagen; comprobar etiqueta antes de conectar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2027",
+        "CAJON DE 100 PCS",
+        "INVERSOR DE CORRIENTE PARA AUTO NO.1669 OX",
+        "ENTRADA DC 12V",
+        "4 PUERTO USB 3.1A",
+        "FRECUENCIA 50/60HZ"
+      ]
+    },
+    {
+      "code": "N2086",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2086-792868448d9f.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 8 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2086",
+        "CAJON DE 100 PCS",
+        "MANDO 2.4G WIRELESS 7 EN 1 PC PS1-2-3 PP12",
+        "CONECTIVIDAD INALAMBRICA 2.4GHZ",
+        "COMPATIBILIDAD PC PS1 PS2",
+        "COMPATIBLE PS3 PP12",
+        "DISTANCIA CONEXION 10M",
+        "AUTONOMIA HASTA 8H"
+      ]
+    },
+    {
+      "code": "N2099",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2099-6b04a3b1c31d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia máxima anunciada": "65 W × 4 según imagen; no se confirma potencia RMS."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100 PCS",
+        "POTENCIA MAXIMA 65WX4",
+        "CDX-C5091BR",
+        "CAR DVD/VCD/CD/MP4/MP3 PLAYER"
+      ]
+    },
+    {
+      "code": "N2108",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2108-4d0b0268a0ab.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "2000 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2108",
+        "CAJON DE 100 PCS",
+        "2000W",
+        "MODEL NO.: NSB-200B1"
+      ]
+    },
+    {
+      "code": "N2139",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2139-3237fbecb789.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia continua máxima anunciada": "2000 W según imagen; condiciones y tensión de salida pendientes de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2139",
+        "CAJON DE 100 PCS",
+        "POTENCIA CONTINUA MAXIMA 2000W"
+      ]
+    },
+    {
+      "code": "N2189",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2189-f259f12e0e1e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "1400 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "N2189",
+        "20",
+        "BATERIA DE 1400mAh",
+        "TIEMPO DE USO: 120 MINUTOS",
+        "AFEITADORA Y RECORTADORA 2 EN 1",
+        "120 MIN"
+      ]
+    },
+    {
+      "code": "N2190",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2190-a05b6031b9cf.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Almacenamiento admitido anunciado": "Tarjeta microSD hasta 128 GB según imagen; no se confirma tarjeta incluida."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2190",
+        "CAJON DE 10PCS",
+        "CAMARA GRAVADORA PARA AUTO CON PANTALLA 3”",
+        "Pantalla IPS de 3 pulgadas",
+        "Grabacién Full HD 1080P",
+        "Grabacién de 4 canales (frontal, trasera e interior)",
+        "Camara frontal gran angular 170°",
+        "Compatible con tarjeta microSD hasta 128GB",
+        "1080P",
+        "3 PULGADAS"
+      ]
+    },
+    {
+      "code": "N2294",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2294-82745d89c97c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Almacenamiento admitido anunciado": "Tarjeta microSD hasta 128 GB según imagen; no se confirma tarjeta incluida."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "N2294",
+        "CAJON DE 100PCS",
+        "CAMARA ESPEJO RETROVISOR 1080P (DUAL)",
+        "PANTALLA TACTIL IPS 9.66” - GRABACION FRONTAL Y TRASERA - SEGURIDAD TOTAL",
+        "9.66 inch Touch Sc",
+        "Pantalla tactil IPS de 9.66 pulgadas",
+        "DV16 Driving recorder",
+        "Angulo de visién amplio: 170° frontal / 140° trasera",
+        "Soporta tarjeta microSD hasta 128GB (no incluida)",
+        "1080P",
+        "9.66 PULGADAS"
+      ]
+    },
+    {
+      "code": "N2191-DORADO",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2191-dorado-22fb23c6237a.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Tiempo de carga anunciado": "Aproximadamente 2 horas según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "DE CABELLO TRIMMER VGR 8000",
+        "V-886T",
+        "VELOCIDAD HASTA 8000 RPM",
+        "CARGA RAPIDA: 2 HORAS",
+        "180",
+        "FUNCIONA CON 0 SIN CABLE",
+        "RAPIDA 2H"
+      ]
+    },
+    {
+      "code": "N2191-VERDE",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2191-verde-171a30ce3afc.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Tiempo de carga anunciado": "Aproximadamente 2 horas según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "DE CABELLO TRIMMER VGR 8000",
+        "V-886T",
+        "VELOCIDAD HASTA 8000 RPM",
+        "CARGA RAPIDA: 2 HORAS",
+        "180",
+        "FUNCIONA CON 0 SIN CABLE",
+        "180 MINUTOS",
+        "RAPIDA 2H"
+      ]
+    },
+    {
+      "code": "N2209",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2209-47acd91bb18d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "60 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "N2209",
+        "BS-L3981",
+        "POTENCIA DE 60W",
+        "60W DE"
+      ]
+    },
+    {
+      "code": "N2211",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2211-81acdb43bc80.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "100 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "100W",
+        "@ Tamaiio farola: 22 x 27 cm",
+        "@ Tamaifio panel solar: 23.5 x 35 cm",
+        "4"
+      ]
+    },
+    {
+      "code": "N2221",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2221-b414742f88f9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Brillo anunciado": "300 lúmenes ANSI según imagen; dato comercial no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "PROYECTOR HY500 PRO",
+        "300 LUMENESS ANSI",
+        "¥ COMPATIBLE CON 4K ULTRA HD"
+      ]
+    },
+    {
+      "code": "N2238",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2238-5207e005473e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "Alcance de hasta 50 metros.",
+        "BLUETOOTH 5.0"
+      ]
+    },
+    {
+      "code": "N2248",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2248-30330857ff39.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Temporizador anunciado": "Programable de 1 a 12 horas según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "Termostato ajustable (15°C - 32°C)",
+        "Temporizador programable (1- 12 horas)",
+        "2 niveles de potencia (bajo / alto)"
+      ]
+    },
+    {
+      "code": "N2279",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2279-4fca16aaa819.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 6 horas de uso continuo; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "N2279",
+        "66B",
+        "Hasta 6 horas de uso continuo (aprox).",
+        "Cabezal ajustable 180°."
+      ]
+    },
+    {
+      "code": "N2281",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2281-5bdf85540f70.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 6 horas de uso continuo; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "N2281",
+        "MM-9798B",
+        "Hasta 6 horas de uso continuo (aprox).",
+        "Cabezal ajustable 180°."
+      ]
+    },
+    {
+      "code": "N2283",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2283-0cfd63624aa2.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 6 horas de uso continuo; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "$/30",
+        "CAJON DE 10PCS",
+        "© Receptor plug-and-play (6.35mm)",
+        "@ Alcance inalambrico: hasta 30 metros",
+        "© Hasta 6 horas de uso continuo"
+      ]
+    },
+    {
+      "code": "N2284",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2284-11a18cda8745.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 6 horas de uso continuo; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2284",
+        "CAJON DE 10PCS",
+        "41",
+        "Set de 2 micréfonos inalambricos UHF",
+        "Receptor plug-and-play (6.35mm)",
+        "Hasta 6 horas de uso continuo",
+        "HASTA 30M"
+      ]
+    },
+    {
+      "code": "N2285",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2285-312e44c11d49.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 6 horas de uso continuo; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "N2285",
+        "CAJON DE 10PCS",
+        "MICROFONO SET X 2 BLESS",
+        "‘Set de 2 micréfonos inalambricos UHF",
+        "Receptor plug-and-play (6.35mm)",
+        "Alcance inalambrico: hasta 30 metros",
+        "Hasta 6 horas de uso continuo",
+        "HASTA 30"
+      ]
+    },
+    {
+      "code": "N2323",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2323-463bc412caaa.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de cada pila anunciada": "480 mAh según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "N2323",
+        "CAJON DE 100PCS",
+        "PILA RECARGABLE PACK X4",
+        "ET-E2010",
+        "1200",
+        "Modelo: ET-E2010",
+        "Tipo: Pila recargable AAA (pack x4)",
+        "Voltaje: 1.5V",
+        "Capacidad: 480 mAh (cada pila)",
+        "Carga completa: 1 hora aprox.",
+        "Hasta 1200 recargas"
+      ]
+    },
+    {
+      "code": "N2324",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2324-957620e86234.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de cada pila anunciada": "1600 mAh según imagen.",
+        "Tiempo de carga anunciado": "Aproximadamente 1,5 horas según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "N2324",
+        "PILA RECARGABLE PACK X4",
+        "ET-E2009",
+        "1200",
+        "Modelo: ET-E2009",
+        "Tipo: Pila recargable AA (pack x4)",
+        "Voltaje: 1.5V",
+        "Capacidad: 1600 mAh (cada pila)",
+        "Carga completa: 1.5 horas aprox.",
+        "1.5V BATERIA RECARGABLE",
+        "Hasta 1200 recargas",
+        "200"
+      ]
+    },
+    {
+      "code": "N276",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n276-699791d2d2ec.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "3600 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "N276",
+        "GYMBALL 3 EJES",
+        "Bateria 3600mAh"
+      ]
+    },
+    {
+      "code": "N495",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n495-a4e416a4c789.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "N495",
+        "hasta 3 Mbps.",
+        "en.un rango de hasta 20 metros.",
+        "BLUETOOTH 5.0",
+        "HASTA 3 Mbps"
+      ]
+    },
+    {
+      "code": "N561",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n561-9ace1f91594b.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "2000 mAh según la imagen; valor nominal no medido.",
+        "Autonomía anunciada": "Hasta 100 minutos de uso; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "DE CABELLO KM-2628",
+        "BATERIA RECARGABLE 2000mAh",
+        "TIEMPO DE USO: HASTA 100 MINUTOS",
+        "USO CON 0 SIN CABLE"
+      ]
+    },
+    {
+      "code": "N564",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n564-ae9df95e721d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "1400 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "N564",
+        "CAJA DE 100",
+        "BATERIA 1400mAh"
+      ]
+    },
+    {
+      "code": "O1017",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1017-53ae825277d0.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "10000 mAh según la imagen; valor nominal no medido.",
+        "Energía de batería anunciada": "37 Wh según imagen.",
+        "Potencia de carga bidireccional anunciada": "Hasta 20 W según imagen; depende del protocolo y dispositivo."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 10PCS",
+        "20W TWO-WAY FAST CHARGING POWER BANK",
+        "20W",
+        "Carga rapida bidireccional de 20W",
+        "Capacidad de 10000mAh (37Wh)",
+        "Puertos: 1 x USB-C (In/Out) +",
+        "1x USB-A (Out)",
+        "Compatible con: PD3.0, QC3.0,",
+        "10000mAh"
+      ]
+    },
+    {
+      "code": "O1033-BLACK",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1033-black-d09f82bb4fe8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía total anunciada": "Hasta 50 horas según imagen; modos y condiciones de uso pendientes de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0103",
+        "CAJON DE 100PCS",
+        "MeloBuds N70",
+        "que reduce hasta 56dB* del ruido ambiental.",
+        "3 micréfonos con IA para llamadas claras",
+        "Hasta 50 horas de reproduccién total",
+        "Modo de juego de baja latencia (68ms)",
+        "Resistencia al agua IPX5, ideal para"
+      ]
+    },
+    {
+      "code": "O1033-PURPLE",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1033-purple-d09f82bb4fe8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía total anunciada": "Hasta 50 horas según imagen; modos y condiciones de uso pendientes de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0103",
+        "CAJON DE 100PCS",
+        "MeloBuds N70",
+        "que reduce hasta 56dB* del ruido ambiental.",
+        "3 micréfonos con IA para llamadas claras",
+        "Hasta 50 horas de reproduccién total",
+        "Modo de juego de baja latencia (68ms)",
+        "Resistencia al agua IPX5, ideal para"
+      ]
+    },
+    {
+      "code": "O1033-SILVER",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1033-silver-d09f82bb4fe8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía total anunciada": "Hasta 50 horas según imagen; modos y condiciones de uso pendientes de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0103",
+        "CAJON DE 100PCS",
+        "MeloBuds N70",
+        "que reduce hasta 56dB* del ruido ambiental.",
+        "3 micréfonos con IA para llamadas claras",
+        "Hasta 50 horas de reproduccién total",
+        "Modo de juego de baja latencia (68ms)",
+        "Resistencia al agua IPX5, ideal para"
+      ]
+    },
+    {
+      "code": "O1037",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1037-81e0a25b5d94.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 8 horas de uso continuo; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0103",
+        "CAJON DE 100PCS",
+        "EARBUDS X7E ACTIVE",
+        "Earbuds X7e Active",
+        "Sonido potente con driver dinamico de 12.4 mm",
+        "Hasta 38 horas de reproduccién total",
+        "Hasta 8 horas de uso continuo",
+        "2",
+        "Resistencia al agua IP54, ideales"
+      ]
+    },
+    {
+      "code": "O1051-NEGRO",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1051-negro-6cbc83b47fe1.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 95 horas de reproducción; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100 PCS",
+        "AUDIFONO BT COVE PRO 95H + CANGUR",
+        "Hasta 95 horas de reproduccién",
+        "(Volumen al 60%)",
+        "Bluetooth 5.3 estable y eficiente",
+        "95"
+      ]
+    },
+    {
+      "code": "O1819",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1819-3d5870bbbd5d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "10000 mAh según la imagen; valor nominal no medido.",
+        "Energía de batería anunciada": "37 Wh según imagen.",
+        "Potencia anunciada": "33 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 10PCS",
+        "33W FAST CHARGING POWER BANK",
+        "33W",
+        "Capacidad de 10000mAh (37Wh)",
+        "£0",
+        "Compatible con: PD3.0, QC4.0+, AFC,"
+      ]
+    },
+    {
+      "code": "O1833",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o1833-705984c5676e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.2 según la imagen comercial.",
+        "Pila anunciada": "CR2032 reemplazable según imagen.",
+        "Dimensiones anunciadas": "38,6 × 31 × 7,4 mm según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 100PCS",
+        "UGREEN Finder 2",
+        "2-Pack)",
+        "Modelo: CM919",
+        "Conexién: Bluetooth 5.2 de bajo consumo",
+        "Alcance Bluetooth: hasta 60 metros (en area abierta)",
+        "Sonido de alerta: hasta 80dB",
+        "Bateria: CR2032 reemplazable",
+        "Duracién de bateria: hasta 12 meses",
+        "Resistente al agua: IP67",
+        "Peso: 13 g (por unidad)",
+        "Dimensiones: 38.6 x 31.0 x 7.4mm"
+      ]
+    },
+    {
+      "code": "O319",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o319-f09ace70f9af.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia máxima anunciada": "Hasta 36 W según imagen; comprobar reparto entre puertos.",
+        "Entrada anunciada": "12–24 V CC según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "0319",
+        "CIGARRERA XIAOMI 36W CARGA RAPIDA",
+        "Carga rapida de hasta 36W Max",
+        "Carga 2 dispositivos al mismo tiempo",
+        "Voltaje de entrada: DC 12V - 24V",
+        "Producto 100% Original Xiaomi"
+      ]
+    },
+    {
+      "code": "O459-PURPLE",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o459-purpl-ae075c11ef0e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "A PARTIR DE 3 A MAS",
+        "AUDIFONO TWS QCY CROSSKY C30",
+        "BLUETOOTH 5.4",
+        "DISTANCIA 10M",
+        "C. ORIGINAL: 00246:",
+        "Packaging” 1",
+        "Headphones* 1"
+      ]
+    },
+    {
+      "code": "O469",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o469-4ecdfdea0773.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 70 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "0469",
+        "CAJON DE 100 PCS",
+        "4 CONECTIVIDAD BLUETOOTH 5.3",
+        "4 DRIVERS DINAMICOS 40MM",
+        "4y AUTONOMIA HASTA 70H",
+        "70 HOUR",
+        "soundcore H30i"
+      ]
+    },
+    {
+      "code": "O488",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o488-400f438ef181.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "Hasta 120 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "0488",
+        "CABLE XIAOMI 6A DUAL TC SPEED BRAIDED",
+        "+ Modelo: 6A Dual Type-C",
+        "+ Corriente maxima: 6A",
+        "+ Potencia maxima: 120W",
+        "Hasta 480Mbps (USB 2.0)"
+      ]
+    },
+    {
+      "code": "O534-NEGRO",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o534-negro-a1cbfa6c2183.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.3 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0534",
+        "CAJON DE 100PCS",
+        "Crossky C10",
+        "Crossky C10",
+        "Bluetooth 5.3",
+        "Crossky C10",
+        "Driver de 17 x 12 mm",
+        "Resistente al agua IPX5",
+        "BLUETOOTH 5.3",
+        "30H"
+      ]
+    },
+    {
+      "code": "O842-BLUE",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o842-blue-c3c353a5f1c7.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Memoria RAM anunciada": "4 GB según imagen; confirmar si incluye ampliación virtual.",
+        "Almacenamiento anunciado": "64 GB según imagen.",
+        "Capacidad de batería anunciada": "5100 mAh según la imagen; valor nominal no medido.",
+        "Conectividad anunciada": "Wi-Fi de 2,4 / 5 GHz y Bluetooth 5.0 según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0842",
+        "CAJON DE 100PCS",
+        "Pantalla: 10.1” IPS HD+ (1280 x 800)",
+        "Procesador: Allwinner A523 Octa-Core",
+        "Memoria RAM: 4GB",
+        "Almacenamiento interno: 64GB",
+        "Sistema operativo: Android 13",
+        "Bateria: 5100 mAh",
+        "Conectividad: Wi-Fi 2.4G/5G, Bluetooth 5.0",
+        "Expansién de almacenamiento: hasta 1TB",
+        "Peso: 530 g aprox.",
+        "4GB RAM",
+        "10.1\" IPS HD+",
+        "64GB ROM",
+        "5100mAh"
+      ]
+    },
+    {
+      "code": "O846",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o846-5dc0e14b4fbb.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Memoria RAM anunciada": "4 GB físicos + 8 GB virtuales; 12 GB anunciados en total según imagen.",
+        "Almacenamiento anunciado": "256 GB según imagen.",
+        "Capacidad de batería anunciada": "7680 mAh según la imagen; valor nominal no medido.",
+        "Conectividad anunciada": "Wi-Fi de 2,4 / 5 GHz y Bluetooth 5.0 según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "0846",
+        "TABLET MEGA 2 WIFI 12GB RAM 256 ROM",
+        "Pantalla: 10.36” FHD+ IPS (2000 x 1200)",
+        "Procesador: Unisoc T616 Octa-Core",
+        "Memoria RAM: 12GB (4GB + 8GB virtual)",
+        "Almacenamiento interno: 256GB",
+        "Sistema operativo: Android 13",
+        "(Camara trasera: 13MP con flash",
+        "Bateria: 7680 mAh",
+        "Conectividad: Wi-Fi 2.4G/5G, Bluetooth 5.0",
+        "Expansién de almacenamiento: hasta 1TB (microSD)",
+        "12GB RAM",
+        "Peso: 460 g approx.",
+        "android 13"
+      ]
+    },
+    {
+      "code": "O963-BLUE",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o963-blue-e887667f4df8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Memoria RAM anunciada": "6 GB según catálogo; confirmar si incluye ampliación virtual.",
+        "Almacenamiento anunciado": "256 GB según título del catálogo y encabezado de la imagen.",
+        "Conectividad anunciada": "Wi-Fi y Bluetooth 5.0 según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CAJON DE 100 PCS",
+        "BLACKVIEW LINK 8 SET 6GB RAM 256GB",
+        "Blackview LINK 8",
+        "* Conectividad Wi-Fi Bluetooth 5.0",
+        "56GB",
+        "LINK 8"
+      ]
+    },
+    {
+      "code": "O963-GRAY",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o963-gray-e887667f4df8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Memoria RAM anunciada": "6 GB según catálogo; confirmar si incluye ampliación virtual.",
+        "Almacenamiento anunciado": "256 GB según título del catálogo y encabezado de la imagen.",
+        "Conectividad anunciada": "Wi-Fi y Bluetooth 5.0 según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "CAJON DE 100 PCS",
+        "BLACKVIEW LINK 8 SET 6GB RAM 256GB",
+        "Blackview LINK 8",
+        "* Conectividad Wi-Fi Bluetooth 5.0",
+        "56GB",
+        "LINK 8"
+      ]
+    },
+    {
+      "code": "O994",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-o994-f4a76990d452.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 60 horas de reproducción; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 10PCS",
+        "Hasta 60 horas de reproduccién",
+        "60 HORAS"
+      ]
+    },
+    {
+      "code": "P1006",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1006-348de8e3137e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "25 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "P1006",
+        "CAJON DE 20 PCS",
+        "Potencia de salida 25W",
+        "Alcance hasta 50m"
+      ]
+    },
+    {
+      "code": "P1010",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1010-49350dfdec05.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "CAJON DE 50 PCS",
+        "P1010",
+        "5.0”",
+        "BLUETOOTH 5.0"
+      ]
+    },
+    {
+      "code": "P1016",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1016-ec5ba966666c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "P1016",
+        "MINI PARLANTE BT GTS-2485",
+        "BLUETOOTH 5.0",
+        "10 metros de distancia",
+        "1 Cable de carga USB",
+        "1 Manual de usuario",
+        "+ Tiempo de reproduccién: 2 - 4 horas",
+        "+ Tiempo de carga: 1 - 2 horas"
+      ]
+    },
+    {
+      "code": "P1028",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1028-d832c2a3892f.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 30 PCS",
+        "PARLANTE BT 40BT CON KARAOKE",
+        "BLUETOOTH 5.0",
+        "alcance de hasta 10"
+      ]
+    },
+    {
+      "code": "P1031",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1031-60d086a4a02e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 A MAS",
+        "CAJON DE 100PCS",
+        "P1031",
+        "BLUETOOTH 5.0",
+        "FUNCION TWS (EMPAREJA 2 PARLANTES)",
+        "TIEMPO DE CARGA: 5 HORAS",
+        "PESO: 2,42 kg"
+      ]
+    },
+    {
+      "code": "P438",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p438-cb5c461ca83c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "P438",
+        "INCLUYE 2 MICROFONOS",
+        "C. ORIGINAL: PU-K12",
+        "BLUETOOTH 5.0"
+      ]
+    },
+    {
+      "code": "P442",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p442-e486954b6498.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "INCLUYE 1 MICROFONO",
+        "C. ORIGINAL: PU-K12",
+        "BLUETOOTH 5.0",
+        "Hasta 4 horas de"
+      ]
+    },
+    {
+      "code": "P606",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p606-6df067064eb0.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "MINI PARLANTE BLUETOOTH X1",
+        "DIMENSION 5*5*4CM",
+        "BLUETOOTH 5.0",
+        "Bluetooth 5.0",
+        "Distance:up to 10M"
+      ]
+    },
+    {
+      "code": "P1027",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1027-572e7430de99.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia RMS anunciada": "400 W RMS según imagen; no es una medición independiente.",
+        "Bluetooth anunciado": "5.4 según la imagen comercial.",
+        "Batería anunciada": "14,8 V / 3000 mAh según imagen.",
+        "Autonomía anunciada": "Hasta 12 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "P1027",
+        "PARLANTE BOOMZA 4",
+        "2 MICROFONOS INALANBRICOS",
+        "BOOMZA 4",
+        "00",
+        "IPX6",
+        "400W DE POTENCIA RMS REAL",
+        "Reproduce MP3",
+        "Reproduce MP3",
+        "2 MICROFONOS INALAMBRICOS",
+        "NIVEL IMPERMEABLE IPX6",
+        "BATERIA 14.8V / 3000mAh",
+        "BLUETOOTH 5.4 WIRELESS",
+        "HASTA 12 HORAS DE REPRODUCCION",
+        "Bateria 12H"
+      ]
+    },
+    {
+      "code": "P1032",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1032-9935247e6078.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "120 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "P1032",
+        "120W DE POTENCIA",
+        "AWS244B"
+      ]
+    },
+    {
+      "code": "P1038",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1038-e435f11f1864.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia PMPO anunciada": "4000 W PMPO según catálogo e imagen; no equivale a RMS."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "107",
+        "P1038",
+        "4000W"
+      ]
+    },
+    {
+      "code": "P1042",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1042-e0290674e26c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Salida de auriculares anunciada": "Conector de 3,5 mm según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "CAJON DE 10PCS",
+        "P1042",
+        "Hasta 6 horas de reproduccién continua",
+        "Salida de auriculares de 3.5 mm",
+        "Puerto de carga Tipo C (DC 5V)"
+      ]
+    },
+    {
+      "code": "P1051",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1051-e9bb9eb7898b.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Salida de auriculares anunciada": "Conector de 3,5 mm según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 MAS",
+        "P1051",
+        "CAJON DE 50PCS",
+        "530-1600KHz",
+        "ET-F10",
+        "140",
+        "108",
+        "100",
+        "70.",
+        "@ Entrada para audifonos 3.5mm",
+        "3.5mm"
+      ]
+    },
+    {
+      "code": "P1056",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1056-6fc045ec82a9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia RMS anunciada": "300 W RMS según imagen; no es una medición independiente.",
+        "Batería anunciada": "7,4 V / 6000 mAh según imagen.",
+        "Autonomía anunciada": "Hasta 6–8 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "P1056",
+        "CAJON DE 100PCS",
+        "AU30",
+        "Woofer de 12 pulgadas de alta potencia",
+        "LD- -S961AC",
+        "Bateria: 7.4V / 6000mAh",
+        "Duracién de bateria: Hasta 6-8 horas reales’",
+        "Potencia real: 300W RMS"
+      ]
+    },
+    {
+      "code": "P1057",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1057-1f7e3afaa427.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "3600 mAh según la imagen; valor nominal no medido.",
+        "Autonomía anunciada": "De 4 a 6 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100PCS",
+        "2 parlantes de alta potencia",
+        "3600mAh",
+        "4",
+        "7.4V",
+        "DURACION EN USO: 4 A 6 HORAS",
+        "2 PARLANTES",
+        "4"
+      ]
+    },
+    {
+      "code": "P1058",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1058-9d12aa1c53d2.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia RMS anunciada": "200 W RMS según imagen; no es una medición independiente.",
+        "Capacidad de batería anunciada": "36000 mAh según la imagen; valor nominal no medido.",
+        "Autonomía anunciada": "Hasta 8 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "P1058",
+        "CAJON DE 100PCS",
+        "D-S687",
+        "Potencia real: 200W RMS",
+        "Bateria: 36,000mAh",
+        "Duracién de bateria: Hasta 8 horas reales*",
+        "200W rms",
+        "5.0"
+      ]
+    },
+    {
+      "code": "P1062",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1062-6f1768792116.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "3600 mAh según la imagen; valor nominal no medido.",
+        "Autonomía anunciada": "Hasta 8 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "P1062",
+        "2 parlantes de alta potencia",
+        "3600mAh",
+        "7.4V",
+        "4",
+        "HASTA 8 HORAS"
+      ]
+    },
+    {
+      "code": "P1064",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1064-decb2387cfb5.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "3600 mAh según la imagen; valor nominal no medido.",
+        "Autonomía anunciada": "Hasta 8 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "P1064",
+        "2 parlantes de alta potencia",
+        "LD-S652",
+        "3600mAh",
+        "7.4V",
+        "DURACION EN USO: HASTA 8 HORAS"
+      ]
+    },
+    {
+      "code": "P1063",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1063-6768434c8d9d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial.",
+        "Capacidad de batería anunciada": "1800 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "P1063",
+        "CAJON DE 100PCS",
+        "Conexién Bluetooth 5.0",
+        "2 parlantes de alta potencia",
+        "4",
+        "3.7V",
+        "1800mAh",
+        "DURACION EN USO: HASTA 6 HORAS"
+      ]
+    },
+    {
+      "code": "P1075",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1075-22c59d329670.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "1200 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "ET-R1781BS",
+        "RECEPTOR DE 3 BANDAS",
+        "Bateria recargable de 1200 mAh"
+      ]
+    },
+    {
+      "code": "P1076",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p1076-8156ac4b5357.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "1200 mAh según la imagen; valor nominal no medido."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "APARTIR DE 3 UNIDADES",
+        "P1076",
+        "CAJON DE 100PCS",
+        "RECEPTOR DE 3 BANDS",
+        "ET-R1543",
+        "Receptor de 3 bandas",
+        "Bateria recargable de 1200 mAh"
+      ]
+    },
+    {
+      "code": "P240",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p240-140c4682d015.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.1 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "$/39.00",
+        "P240",
+        "BLUETOOTH V5.1",
+        "6 MESES",
+        "0 CON GARANTIA"
+      ]
+    },
+    {
+      "code": "P439",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p439-deecc83d94b0.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "40 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "A PARTIR DE 3 A MAS",
+        "P439",
+        "CAJA DE 100",
+        "SONIDO ENVOLVENTE 40W"
+      ]
+    },
+    {
+      "code": "P717",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p717-1c6c024ae5ee.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia RMS anunciada": "300 W RMS según imagen; no es una medición independiente."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "P717",
+        "| $/1169",
+        "4",
+        "PARLANTE BARETONE ALTO RENDIMIENTO 300W RMS",
+        "00001"
+      ]
+    },
+    {
+      "code": "P728",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p728-a0e147673273.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "40 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "P728",
+        "POWER: 40W",
+        "MODEL: DM-D4"
+      ]
+    },
+    {
+      "code": "P731",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p731-1e2056a74b36.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "40 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "POWER: 40W",
+        "MODEL: B-A08"
+      ]
+    },
+    {
+      "code": "P730",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p730-1e688ddc604e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "60 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "POWER: 60W",
+        "MODEL: GD-SG10"
+      ]
+    },
+    {
+      "code": "P782-NEGRO",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p782-negro-97fce0157d1d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "160 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Autonomía anunciada": "Hasta 12 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "P782",
+        "CAJON DE 100 PCS",
+        "PARLANTE ZEALOT BASS S98",
+        "160W de potencia",
+        "Hasta 12horas de musica",
+        "ZEALOT-S98"
+      ]
+    },
+    {
+      "code": "P852",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p852-9f6ea5eb13b7.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "40 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "PARLANTE MARCA KIMISO-808",
+        "POTENCIA 40W",
+        "C. ORIGINAL: KMS-808"
+      ]
+    },
+    {
+      "code": "P874",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p874-5ba8e8c84786.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "30000 mAh según la imagen; valor nominal no medido.",
+        "Potencia total anunciada": "400 W según imagen; no se confirma RMS.",
+        "Autonomía anunciada": "De 6 a 10 horas; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "P874",
+        "CAJON DE 100 PCS",
+        "PARLANTE LIDIMI D-S655",
+        "30000 MAH",
+        "4 POTENCIA TOTAL 400W",
+        "4 BATERIA 30000 MAH",
+        "4 \\NCLUYE MICROFONO",
+        "4 DURACION 6-10 HORAS",
+        "4 BATERIA EXTRAIBLE",
+        "4 LUCES LED RGB"
+      ]
+    },
+    {
+      "code": "P956",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p956-a5bf738ceb72.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia PMPO anunciada": "1500 W PMPO según imagen; no equivale a RMS."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "P956",
+        "CAJON DE 100 PCS",
+        "MEGA BASS - S3 PRO",
+        "1500W PMPO",
+        "2 MICROFONOS + CONTROL REMOTO",
+        "MEGA BASS - $3 PRO",
+        "15”"
+      ]
+    },
+    {
+      "code": "P961",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p961-b1d46cba2cb3.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "1200 mAh según la imagen; valor nominal no medido.",
+        "Versión inalámbrica anunciada": "Wireless v5.3 según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(A PARTIR DE 3 UNIDADES",
+        "CAJON DE 100 PCS",
+        "Bateria recargable de 1200mAh",
+        "Wireless v5.3",
+        "V5.3",
+        "EN 4 COLORES",
+        "20 pes",
+        "12 pes",
+        "12 pes"
+      ]
+    },
+    {
+      "code": "P996",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p996-201c29230cc2.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Bluetooth anunciado": "5.0 según la imagen comercial.",
+        "Potencia anunciada": "120 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "PARLANTE BS-P8579 MB",
+        "BLUETOOTH 5.0",
+        "y rapida hasta 10 metros",
+        "8”",
+        "120W",
+        "4"
+      ]
+    },
+    {
+      "code": "P997",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p997-d7a5df4792f4.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "120 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 UNIDADES",
+        "P997",
+        "y rapida hasta 10 metros de",
+        "120W"
+      ]
+    },
+    {
+      "code": "CP43",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp43-99485e035ab8.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "60000 mAh según la imagen; valor nominal no medido.",
+        "Puertos de salida anunciados": "4 según imagen.",
+        "Indicador anunciado": "Pantalla digital según imagen.",
+        "Material anunciado": "ABS según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "4 PUERTOS DE SALIDA",
+        "60000 mAh"
+      ]
+    },
+    {
+      "code": "CP15",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp15-c10f27fd2a4e.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "15000 mAh según la imagen; valor nominal no medido.",
+        "Indicador anunciado": "Pantalla LED según imagen.",
+        "Material anunciado": "ABS según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "GARANTIA DE 6 MESES",
+        "15000 mAh",
+        "STOCK 1000"
+      ]
+    },
+    {
+      "code": "CP360",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp360-1a471cd004e1.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "30000 mAh según la imagen; valor nominal no medido.",
+        "Potencia anunciada": "100 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CP36",
+        "POWER BANK MEGA 4",
+        "30000mAh / 100W DE POTENCIA",
+        "$26 Ultra"
+      ]
+    },
+    {
+      "code": "CP450",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp450-34479b47adc4.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "30000 mAh según la imagen; valor nominal no medido.",
+        "Potencia anunciada": "140 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CP45",
+        "POWER BANK ULTRA 4",
+        "30000mAh / 140W DE POTENCIA",
+        "$26 Ultra"
+      ]
+    },
+    {
+      "code": "CP570",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp570-de3cb6b83832.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "10000 mAh según la imagen; valor nominal no medido.",
+        "Potencia anunciada": "35 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CP57",
+        "POWER BANK MINI 1",
+        "10000mAh / 35W DE POTENCIA",
+        "POWER BANK MINI 1"
+      ]
+    },
+    {
+      "code": "CP580",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-cp580-ea99421a7548.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Capacidad de batería anunciada": "20000 mAh según la imagen; valor nominal no medido.",
+        "Potencia anunciada": "45 W según la imagen; valor comercial pendiente de comprobación técnica."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "POWER BANK MINI 2",
+        "20000mAh / 45W DE POTENCIA",
+        "POWER BANK MINI 2"
+      ]
+    },
+    {
+      "code": "AU65",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-au65-b37e6de1f752.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Conector anunciado": "Audio de 3,5 mm según imagen.",
+        "Longitud del cable anunciada": "120 cm según imagen.",
+        "Diseño anunciado": "Desmontable; control en el cable según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "4 ENTRADA PUNTA 3.5MM",
+        "4y CONTROL DEL CABLE",
+        "4 SONIDO PROFUNDO",
+        "MODEL: X2 PRO",
+        "4 COLORES DISPONIBLES",
+        "4y PRODUCTO ORIGINAL"
+      ]
+    },
+    {
+      "code": "PC028",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-pc028-2500a4c0e6a0.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Materiales anunciados": "Base de silicona y superficie de tela densa según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "4 BASE DE SILICONA",
+        "4 TELA DENSA",
+        "4 NO AFECTA HUMEDAD",
+        "4 RESISTENTEAALTAS 4 GARANTIA 6 MESES"
+      ]
+    },
+    {
+      "code": "PC11",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-pc11-aa110ec9d51c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Tipo de sensor anunciado": "Óptico según imagen.",
+        "Conexión anunciada": "Con cable según imagen; interfaz pendiente de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "4 SENSOR OPTICO",
+        "7",
+        "7",
+        "7",
+        "4 PRODUCTO ORIGINAL"
+      ]
+    },
+    {
+      "code": "PC31-SQ",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-pc31-sq-5b0a76e851e6.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Iluminación anunciada": "RGB según imagen.",
+        "Medidas anunciadas": "21,5 cm de ancho × 29,8 cm de alto según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3AMAS |",
+        "PC31",
+        "4 GRATIS MOUSE PAD",
+        "ENFRIAMIENTO RAPIDO 4 GRATIS DEDAL GAMER",
+        "MEDIDA: ANCHO 21.5CM 4 PRODUCTO ORIGINAL",
+        "2 PRODUCTOS"
+      ]
+    },
+    {
+      "code": "PC33-SQ",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-pc33-sq-ebe6a1da2d14.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Diámetro de ventilador anunciado": "12,6 cm según imagen.",
+        "Interfaz anunciada": "USB según imagen.",
+        "Apoyo anunciado": "Topes antideslizantes según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "PC33",
+        "CAJON DE 100 PCS",
+        "VENTILADOR DE 12.6CM",
+        "4 GRATIS MOUSE PAD",
+        "4 PRODUCTO CON GARANTIA"
+      ]
+    },
+    {
+      "code": "N2017",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2017-d5e1edaaa63d.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Refrigeración anunciada": "Doble cooler para celular según imagen.",
+        "Iluminación anunciada": "RGB según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "4 DOBLE COOLER",
+        "4 COMPATIBILIDAD ALTA",
+        "6 MESES DE GARANTIA"
+      ]
+    },
+    {
+      "code": "N1369",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1369-70ec80bce746.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Modelo anunciado": "M13 Pro según imagen.",
+        "Micrófonos anunciados": "2 según imagen.",
+        "Captación anunciada": "360 grados según imagen; patrón no medido independientemente."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "MOD: M13 PRO",
+        "2:",
+        "4 RECEPCION 360°",
+        "4y PRODUCTO ORIGINAL"
+      ]
+    },
+    {
+      "code": "N1371",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n1371-2804ccd2757c.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Modelo anunciado": "N10 Pro según imagen.",
+        "Micrófonos anunciados": "2 según imagen.",
+        "Alcance anunciado": "Hasta 20 metros según imagen; depende de obstáculos y entorno."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "MOD: N10 PRO",
+        "RANGO DE 20 METROS",
+        "6 MESES DE GARANTIA"
+      ]
+    },
+    {
+      "code": "P014",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p014-f314bd8a5ab9.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia PMPO anunciada": "1200 W PMPO según imagen; no equivale a RMS.",
+        "Transductores anunciados": "Dos de 12 pulgadas según imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": []
+    },
+    {
+      "code": "P239",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p239-1a4699274c21.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 15 horas de música; condiciones de volumen y modo no especificadas en la imagen."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "$/289"
+      ]
+    },
+    {
+      "code": "P497",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p497-69e39cb235dd.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia anunciada": "150 W según la imagen; valor comercial pendiente de comprobación técnica.",
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": []
+    },
+    {
+      "code": "P38",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p38-72e0104ac3df.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 20 horas de música; condiciones de volumen y modo no especificadas en la imagen.",
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": []
+    },
+    {
+      "code": "P54",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p54-d11ec307f499.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Autonomía anunciada": "Hasta 40 horas de música; condiciones de volumen y modo no especificadas en la imagen.",
+        "Bluetooth anunciado": "5.4 según la imagen comercial."
+      },
+      "warnings": [],
+      "ocrEvidence": []
+    },
+    {
+      "code": "P992",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-p992-61286e376ba2.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Potencia RMS anunciada": "20 W RMS según imagen; no es una medición independiente.",
+        "Bluetooth anunciado": "5.1 según la imagen comercial.",
+        "Autonomía anunciada": "Hasta 15 horas; condiciones de volumen y modo no especificadas en la imagen.",
+        "Capacidad de batería anunciada": "1500 mAh según la imagen; valor nominal no medido.",
+        "Puerto de carga anunciado": "USB-C según imagen.",
+        "Enlace de parlantes anunciado": "TWS dual según imagen; compatibilidad pendiente de confirmar."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "(APARTIR DE 3 AMAS",
+        "P992",
+        "CAJON DE 100 PCS",
+        "¢ Bluetooth 5.1 Estable"
+      ]
+    },
+    {
+      "code": "N2247",
+      "source": "https://tiendavirtualsuper.com/uploads/products/erp-n2247-f8ad8ed5b1b6.webp",
+      "reviewed": true,
+      "reviewMethod": "Texto OCR revisado; valores anunciados, no mediciones independientes",
+      "specs": {
+        "Iluminación anunciada": "LED de colores según imagen.",
+        "Modos de iluminación anunciados": "5 modos según imagen.",
+        "Funcionamiento anunciado": "La imagen indica añadir agua para el efecto medusa; seguir el manual de la unidad."
+      },
+      "warnings": [],
+      "ocrEvidence": [
+        "CAJON DE 100PCS",
+        "5 modos de colores diferentes"
+      ]
+    }
+  ]
+}

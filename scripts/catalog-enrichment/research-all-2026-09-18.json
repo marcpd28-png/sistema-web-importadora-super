@@ -1,0 +1,1269 @@
+{
+  "version": 1,
+  "researchedAt": "2026-09-18",
+  "method": "Fuentes oficiales consultadas desde Codex; conservar imágenes existentes.",
+  "models": [
+    {
+      "id": "redmi-buds-8-active",
+      "brand": "Redmi",
+      "model": "Buds 8 Active",
+      "codes": [
+        "O896-BLACK",
+        "O896-BLUE",
+        "O896-WHITE"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-buds-8-active/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos con estuche",
+        "Bluetooth": "5.4",
+        "Autonomía de los audífonos": "Hasta 7 horas; música AAC al 50 % de volumen en condiciones de prueba del fabricante",
+        "Autonomía con estuche": "Hasta 37 horas en las mismas condiciones de prueba",
+        "Batería de los audífonos": "37 mAh por audífono",
+        "Batería del estuche": "475 mAh",
+        "Puerto de carga": "USB-C",
+        "Peso por audífono": "3,8 g aproximadamente",
+        "Impedancia": "32 Ω"
+      }
+    },
+    {
+      "id": "redmi-buds-8-pro",
+      "brand": "Redmi",
+      "model": "Buds 8 Pro",
+      "codes": [
+        "O976",
+        "O976-BLUE",
+        "O976-WHITE"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-buds-8-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos con estuche",
+        "Bluetooth": "5.4",
+        "Batería de los audífonos": "54 mAh por audífono",
+        "Batería del estuche": "480 mAh",
+        "Puerto de carga": "USB-C",
+        "Peso por audífono": "5,3 g aproximadamente",
+        "Peso total": "46,9 g aproximadamente",
+        "Alcance Bluetooth": "Hasta 10 m en espacio abierto sin obstáculos"
+      }
+    },
+    {
+      "id": "xiaomi-smart-band-11-active",
+      "brand": "Xiaomi",
+      "model": "Smart Band 11 Active",
+      "codes": [
+        "O1026-GREY",
+        "O1026-NEGRO",
+        "O1026-PINK"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-band-11-active/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Pulsera de actividad",
+        "Pantalla": "TFT de 1,47 pulgadas; 172 × 320 píxeles",
+        "Bluetooth": "5.3 BLE",
+        "Batería": "300 mAh",
+        "Autonomía en uso ligero": "Hasta 21 días según condiciones de prueba del fabricante",
+        "Carga": "Magnética; menos de 120 minutos",
+        "Compatibilidad": "Android 8.0 o posterior; iOS 14.0 o posterior",
+        "Aplicación": "Mi Fitness",
+        "Resistencia al agua": "5 ATM; no equivale a uso para buceo",
+        "Peso": "18 g sin correa",
+        "Modos deportivos": "50",
+        "Sensores": "PPG y acelerómetro; seguimiento de bienestar, no diagnóstico médico"
+      }
+    },
+    {
+      "id": "redmi-watch-6-active",
+      "brand": "Redmi",
+      "model": "Watch 6 Active",
+      "codes": [
+        "O1027-BLACK",
+        "O1027-ORANGE",
+        "O1027-SILVER"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-watch-6-active/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reloj inteligente",
+        "Pantalla": "AMOLED de 1,85 pulgadas; 390 × 450 píxeles",
+        "Brillo máximo de pantalla": "Hasta 1200 nits de pico",
+        "Bluetooth": "5.3; llamadas Bluetooth y altavoz",
+        "Batería": "470 mAh",
+        "Autonomía": "Hasta 18 días en uso ligero, 12 en uso normal y 6 en uso intenso; según pruebas del fabricante",
+        "Compatibilidad": "Android 8.0 o posterior; iOS 14.0 o posterior",
+        "Sistema operativo": "Xiaomi HyperOS",
+        "Resistencia al agua": "IP68 según fabricante",
+        "Peso": "26 g sin correa",
+        "Dimensiones": "44,5 × 39,4 × 9,9 mm; excluye correa y protuberancias"
+      },
+      "warnings": [
+        "Sustituir el texto técnico antiguo de O1027-BLACK: pantalla, protección y compatibilidad no coinciden con la fuente oficial actual."
+      ]
+    },
+    {
+      "id": "redmi-watch-6-lite",
+      "brand": "Redmi",
+      "model": "Watch 6 Lite",
+      "codes": [
+        "O1028-BLACK",
+        "O1028-GREY"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-watch-6-lite/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reloj inteligente",
+        "Pantalla": "AMOLED de 1,96 pulgadas; 410 × 502 píxeles",
+        "Brillo máximo de pantalla": "Hasta 1500 nits de pico",
+        "Bluetooth": "5.3; llamadas Bluetooth y altavoz",
+        "Batería": "470 mAh",
+        "Autonomía": "Hasta 18 días en uso ligero, 12 en uso normal y 6 en uso intenso; según pruebas del fabricante",
+        "Compatibilidad": "Android 8.0 o posterior; iOS 14.0 o posterior",
+        "Sistema operativo": "Xiaomi HyperOS",
+        "Posicionamiento": "GNSS integrado: GPS, Galileo, GLONASS, BeiDou y QZSS",
+        "Resistencia al agua": "5 ATM; no equivale a uso para buceo",
+        "Peso": "27,8 g sin correa"
+      }
+    },
+    {
+      "id": "xiaomi-camera-c700",
+      "brand": "Xiaomi",
+      "model": "Smart Camera C700",
+      "codes": [
+        "O387"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-camera-c700/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Cámara de seguridad",
+        "Resolución": "3840 × 2160 píxeles",
+        "Códec de video": "H.265",
+        "Wi-Fi": "2,4 y 5 GHz; IEEE 802.11 a/b/g/n/ac/ax",
+        "Bluetooth": "5.3",
+        "Almacenamiento admitido": "Tarjeta microSD de 8 a 256 GB",
+        "Alimentación": "5 V ⎓ 2 A",
+        "Compatibilidad": "Android 8.0 o posterior; iOS 12.0 o posterior",
+        "Dimensiones": "82 × 82 × 130 mm",
+        "Peso": "Aproximadamente 362 g"
+      }
+    },
+    {
+      "id": "xiaomi-camera-c701",
+      "brand": "Xiaomi",
+      "model": "Smart Camera C701",
+      "codes": [
+        "O540"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-camera-c701/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Cámara de seguridad",
+        "Resolución": "3840 × 2160 píxeles",
+        "Wi-Fi": "2,4 y 5 GHz; IEEE 802.11 a/b/g/n/ac/ax",
+        "Bluetooth": "5.4",
+        "Almacenamiento admitido": "Tarjeta microSD de 8 a 256 GB",
+        "Alimentación": "5 V ⎓ 2 A",
+        "Compatibilidad": "Android 8.0 o posterior; iOS 12.0 o posterior",
+        "Dimensiones": "79 × 79 × 119 mm",
+        "Modelo del fabricante": "MJSXJ27CM"
+      }
+    },
+    {
+      "id": "jbl-go-essential-2",
+      "brand": "JBL",
+      "model": "Go Essential 2",
+      "codes": [
+        "O834-AZUL",
+        "O834-NEGRO"
+      ],
+      "sources": [
+        "https://www.jbl.com/GO-ESSENTIAL-2.html?dwvar_GO-ESSENTIAL-2_color=Black+CSTM-AM-Current"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia de salida": "3,1 W RMS",
+        "Bluetooth": "4.2",
+        "Autonomía": "Hasta 5 horas; depende del volumen y contenido",
+        "Tiempo de carga": "2,5 horas",
+        "Protección": "IP67",
+        "Respuesta de frecuencia": "180 Hz–20 kHz",
+        "Peso": "0,18 kg"
+      }
+    },
+    {
+      "id": "jbl-partybox-330",
+      "brand": "JBL",
+      "model": "PartyBox 330",
+      "codes": [
+        "O1008"
+      ],
+      "sources": [
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwae36789b/pdfs/JBL_PartyBox_330_Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil para fiestas",
+        "Potencia de salida": "280 W RMS (IEC 60268)",
+        "Bluetooth": "6.0",
+        "Autonomía": "Hasta 18 horas; depende del volumen y contenido",
+        "Batería": "JBL Battery 400, ion-litio de 68 Wh",
+        "Tiempo de carga": "3 horas con el parlante apagado",
+        "Alimentación": "CA 100–240 V, 50/60 Hz",
+        "Transductores": "Dos woofers de 6,5 pulgadas y dos tweeters de 1 pulgada",
+        "Respuesta de frecuencia": "40 Hz–20 kHz (-6 dB)",
+        "Peso": "17,1 kg",
+        "Dimensiones": "334 × 662,5 × 375 mm"
+      }
+    },
+    {
+      "id": "sony-wfc710n",
+      "brand": "Sony",
+      "model": "WF-C710N",
+      "codes": [
+        "O1020"
+      ],
+      "sources": [
+        "https://www.sony.com/electronics/support/wireless-headphones-bluetooth-headphones/wf-c710n/specifications",
+        "https://electronics.sony.com/audio/headphones/all-headphones/p/wfc710n-w"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos con cancelación de ruido",
+        "Bluetooth": "5.3; conexión multipunto",
+        "Códecs": "SBC y AAC",
+        "Autonomía por carga": "Hasta 8,5 horas con cancelación de ruido activada; hasta 12 horas desactivada",
+        "Autonomía total con estuche": "Hasta 30 horas con cancelación activada o 40 horas desactivada; depende del uso",
+        "Carga rápida": "5 minutos permiten aproximadamente una hora de reproducción",
+        "Protección de los audífonos": "IPX4; resistencia a salpicaduras",
+        "Carga de los audífonos": "Aproximadamente 1,5 horas",
+        "Carga del estuche": "Aproximadamente 3,5 horas por USB"
+      }
+    },
+    {
+      "id": "sony-ierex15c",
+      "brand": "Sony",
+      "model": "IER-EX15C",
+      "codes": [
+        "O1022-AZUL",
+        "O1022-BLANCO",
+        "O1022-NEGRO",
+        "O1022-ROSA"
+      ],
+      "sources": [
+        "https://www.sony.com/electronics/support/wired-headphones-in-ear/ier-ex15c/specifications",
+        "https://electronics.sony.com/audio/headphones/all-headphones/p/ierex15c-l"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos intraaurales con cable",
+        "Conexión": "USB-C; compatibles con dispositivos USB Audio Class 1.0",
+        "Alimentación": "Desde la conexión USB-C; no requieren cargar una batería",
+        "Transductor": "5 mm",
+        "Micrófono": "Integrado en el mando del cable",
+        "Controles": "Botón multifunción y volumen; disponibilidad según equipo y aplicación",
+        "Longitud del cable": "Aproximadamente 1,2 m; cable en Y",
+        "Resistencia al agua": "No son impermeables"
+      }
+    },
+    {
+      "id": "sony-ult-field1",
+      "brand": "Sony",
+      "model": "ULT FIELD 1 / SRS-ULT10",
+      "codes": [
+        "O255"
+      ],
+      "sources": [
+        "https://www.sony.com/en-qa/wireless-speakers/products/srs-ult10",
+        "https://helpguide.sony.net/speaker/7862/v1/en/print.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Conectividad": "Bluetooth",
+        "Autonomía": "Hasta 12 horas; depende del volumen y uso",
+        "Protección": "IP67 contra agua y polvo",
+        "Dimensiones": "Aproximadamente 206 × 77 × 76 mm",
+        "Peso": "Aproximadamente 650 g, batería incluida",
+        "Transductores": "Woofer de 83 × 42 mm y tweeter de 16 mm",
+        "Micrófono": "Integrado; llamadas con cancelación de eco",
+        "Alimentación": "USB-C o batería de ion-litio integrada"
+      }
+    },
+    {
+      "id": "sony-ult-field3",
+      "brand": "Sony",
+      "model": "ULT FIELD 3 / SRS-ULT30",
+      "codes": [
+        "O561"
+      ],
+      "sources": [
+        "https://www.sony.com/electronics/support/speakers-wireless-speakers/srs-ult30/specifications"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Bluetooth": "5.2",
+        "Códecs": "SBC y AAC",
+        "Autonomía": "Aproximadamente hasta 24 horas; depende del volumen y uso",
+        "Protección": "IP66 / IP67",
+        "Puerto USB-C": "Entrada y salida de alimentación; no es entrada de audio USB",
+        "Enlace de parlantes": "Stereo Pair y Party Connect con modelos compatibles",
+        "Aplicación": "Sony Sound Connect",
+        "Llamadas manos libres": "Sí"
+      }
+    },
+    {
+      "id": "sony-ult-field5",
+      "brand": "Sony",
+      "model": "ULT FIELD 5 / SRS-ULT50",
+      "codes": [
+        "O562"
+      ],
+      "sources": [
+        "https://electronics.sony.com/audio/speakers/all-speakers/p/srsult50-b?sku=srsult50-b"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil Bluetooth",
+        "Autonomía": "Hasta 25 horas; varía con volumen, contenido, temperatura y uso",
+        "Protección": "IP67 contra agua y polvo",
+        "Modos de sonido": "ULT desactivado, ULT1 y ULT2",
+        "Enlace de parlantes": "Par estéreo con otro ULT FIELD 5; Party Connect con modelos compatibles",
+        "Transporte": "Correa de hombro desmontable"
+      }
+    },
+    {
+      "id": "jbl-boombox4",
+      "brand": "JBL",
+      "model": "Boombox 4",
+      "codes": [
+        "O494-CAMUFLADO"
+      ],
+      "sources": [
+        "https://www.jbl.com/BOOMBOX-4.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia RMS con corriente externa": "210 W: dos woofers de 65 W y dos tweeters de 40 W",
+        "Potencia RMS con batería": "200 W: dos woofers de 60 W y dos tweeters de 40 W",
+        "Autonomía": "Hasta 28 horas; hasta 34 horas con Playtime Boost. Depende del volumen y uso",
+        "Bluetooth": "5.4",
+        "Protección": "IP68",
+        "Batería": "Ion-litio de 99,02 Wh; reemplazable",
+        "Tiempo de carga": "3 horas",
+        "Enlace de parlantes": "Auracast con equipos compatibles",
+        "Peso": "5,89 kg",
+        "Dimensiones": "51 × 26 × 21 cm"
+      }
+    },
+    {
+      "id": "jbl-partybox720",
+      "brand": "JBL",
+      "model": "PartyBox 720",
+      "codes": [
+        "O623"
+      ],
+      "sources": [
+        "https://www.jbl.com/PARTYBOX-720.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante para fiestas",
+        "Potencia de salida": "800 W RMS (IEC 60268)",
+        "Bluetooth": "5.4",
+        "Autonomía": "Hasta 15 horas; depende del volumen y condiciones de uso",
+        "Baterías": "Dos JBL Battery 600 de 99,02 Wh cada una",
+        "Tiempo de carga": "3 horas",
+        "Protección": "IPX4, resistente a salpicaduras",
+        "Entradas": "Auxiliar de 3,5 mm y dos entradas XLR para micrófono, guitarra o consola",
+        "Enlace de parlantes": "Auracast con equipos compatibles",
+        "Peso": "31 kg",
+        "Dimensiones": "41,6 × 94,2 × 40,6 cm"
+      }
+    },
+    {
+      "id": "jbl-encore-essential2",
+      "brand": "JBL",
+      "model": "PartyBox Encore Essential 2",
+      "codes": [
+        "O891"
+      ],
+      "sources": [
+        "https://www.jbl.com/PARTYBOX-ENCORE-ESSENTIAL-2.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil para fiestas",
+        "Potencia de salida": "100 W RMS (IEC 60268)",
+        "Bluetooth": "5.4",
+        "Autonomía": "Hasta 15 horas; depende del volumen y condiciones de uso",
+        "Batería": "Ion-litio de 34 Wh (7,4 V / 4722 mAh)",
+        "Tiempo de carga": "3,5 horas",
+        "Respuesta de frecuencia": "40 Hz–20 kHz (-6 dB)",
+        "Entradas": "Auxiliar de 3,5 mm, micrófono y guitarra",
+        "Peso": "6,2 kg",
+        "Dimensiones": "32 × 34,2 × 26 cm"
+      }
+    },
+    {
+      "id": "jbl-tunebuds2",
+      "brand": "JBL",
+      "model": "Tune Buds 2",
+      "codes": [
+        "O426-BLACK"
+      ],
+      "sources": [
+        "https://www.jbl.com/TUNE-BUDS-2.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos con estuche",
+        "Bluetooth": "5.3; conexión multipunto",
+        "Transductor": "10 mm",
+        "Cancelación de ruido": "Adaptativa; Ambient Aware y TalkThru",
+        "Micrófonos": "6",
+        "Autonomía de los audífonos": "Hasta 12 horas con ANC desactivado o 10 horas con ANC activado",
+        "Autonomía total con estuche": "Hasta 48 horas con ANC desactivado; depende del uso",
+        "Tiempo de carga": "2 horas",
+        "Protección": "IP54",
+        "Aplicación": "JBL Headphones"
+      }
+    },
+    {
+      "id": "jbl-tuneflex2",
+      "brand": "JBL",
+      "model": "Tune Flex 2",
+      "codes": [
+        "O524-BLANCO"
+      ],
+      "sources": [
+        "https://www.jbl.com/TUNE-FLEX-2.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos inalámbricos con estuche",
+        "Bluetooth": "5.3; conexión multipunto",
+        "Transductor": "12 mm",
+        "Cancelación de ruido": "Adaptativa; Ambient Aware y TalkThru",
+        "Micrófonos": "6",
+        "Autonomía de los audífonos con ANC": "Hasta 8 horas con ANC activado; depende del uso",
+        "Tiempo de carga": "Aproximadamente 2 horas",
+        "Protección": "IP54",
+        "Aplicación": "JBL Headphones"
+      }
+    },
+    {
+      "id": "jbl-endurancepeak3",
+      "brand": "JBL",
+      "model": "Endurance Peak 3",
+      "codes": [
+        "O314"
+      ],
+      "sources": [
+        "https://www.jbl.com/ENDURANCE-PEAK-3.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos deportivos inalámbricos con estuche",
+        "Bluetooth": "5.2",
+        "Transductor": "10 mm",
+        "Micrófonos": "4",
+        "Autonomía total con estuche": "Hasta 50 horas; depende del uso",
+        "Tiempo de carga": "2 horas",
+        "Protección": "IP68",
+        "Funciones ambientales": "Ambient Aware y TalkThru",
+        "Ajuste": "Powerhook y TwistLock",
+        "Aplicación": "JBL Headphones"
+      }
+    },
+    {
+      "id": "jbl-endurancerace2",
+      "brand": "JBL",
+      "model": "Endurance Race 2",
+      "codes": [
+        "O449-BLANCO"
+      ],
+      "sources": [
+        "https://www.jbl.com/ENDURANCE-RACE-2.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos deportivos inalámbricos con estuche",
+        "Bluetooth": "5.3; conexión multipunto",
+        "Transductor": "6,8 mm",
+        "Micrófonos": "4",
+        "Cancelación de ruido": "Activa; Ambient Aware y TalkThru",
+        "Protección": "IP68",
+        "Carga rápida": "10 minutos permiten hasta 4 horas de reproducción según fabricante",
+        "Aplicación": "JBL Headphones"
+      }
+    },
+    {
+      "id": "soundcore-q20i",
+      "brand": "Soundcore",
+      "model": "Q20i",
+      "codes": [
+        "O956"
+      ],
+      "sources": [
+        "https://www.soundcore.com/uk/products/q20i-a3004g11"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos de diadema inalámbricos",
+        "Bluetooth": "5.0; conexión simultánea a dos dispositivos",
+        "Cancelación de ruido": "ANC híbrida, modo normal y transparencia",
+        "Autonomía": "Hasta 40 horas con ANC y 60 horas sin ANC; pruebas al 50 % de volumen",
+        "Transductores": "40 mm",
+        "Conexión por cable": "Entrada AUX",
+        "Aplicación": "Soundcore; ecualización personalizable",
+        "Tiempo de carga": "Aproximadamente 2 horas"
+      }
+    },
+    {
+      "id": "soundcore-spaceone",
+      "brand": "Soundcore",
+      "model": "Space One / A3035",
+      "codes": [
+        "O679",
+        "O692"
+      ],
+      "sources": [
+        "https://www.soundcore.com/products/space-one-a3035011"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos de diadema inalámbricos",
+        "Conectividad": "Bluetooth; conexión multipunto y AUX",
+        "Transductores": "40 mm",
+        "Cancelación de ruido": "ANC adaptativa, modo normal y transparencia",
+        "Autonomía": "Hasta 40 horas con ANC o transparencia; hasta 55 horas en modo normal. Pruebas con iPhone al 50 % de volumen",
+        "Carga rápida": "5 minutos permiten hasta 4 horas en modo normal",
+        "Micrófonos para llamadas": "3",
+        "Peso": "265 g",
+        "Ecualización": "HearID y ajustes en la aplicación"
+      }
+    },
+    {
+      "id": "soundcore-select4go",
+      "brand": "Soundcore",
+      "model": "Select 4 Go",
+      "codes": [
+        "O462-NEGRO"
+      ],
+      "sources": [
+        "https://www.soundcore.com/es/products/a31x1-select-4-go-bluetooth-speaker"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil Bluetooth",
+        "Potencia de salida": "5 W",
+        "Autonomía": "Hasta 20 horas por carga; depende del volumen y uso",
+        "Protección": "IP67 contra polvo y agua",
+        "Enlace de parlantes": "TWS para formar un par estéreo con otro equipo compatible",
+        "Transporte": "Correa incorporada"
+      }
+    },
+    {
+      "id": "soundcore-boom2",
+      "brand": "Soundcore",
+      "model": "Boom 2",
+      "codes": [
+        "O464-BLUE"
+      ],
+      "sources": [
+        "https://www.soundcore.com/es/products/boom2-bluetooth-speaker-for-bass",
+        "https://service.soundcore.com/article-description/soundcore-Boom-2-Gu%C3%ADa-del-Usuario-A3138"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil Bluetooth",
+        "Potencia de salida": "60 W en modo normal; hasta 80 W con BassUp 2.0",
+        "Autonomía": "Hasta 24 horas al 50 % de volumen, BassUp y luces apagados; depende del contenido y ecualización",
+        "Protección": "IPX7",
+        "Tiempo de carga": "Aproximadamente 5,5 horas con cargador de 5 V / 3 A",
+        "Batería": "4900 mAh / 7,3 V en la guía del modelo A3138; confirmar revisión en etiqueta",
+        "Carga para otros dispositivos": "Salida de 5 V / 1 A",
+        "Entrada AUX": "No dispone de entrada AUX"
+      }
+    },
+    {
+      "id": "redmi-watch-5-lite-extra-sku",
+      "brand": "Xiaomi / Redmi",
+      "model": "Redmi Watch 5 Lite",
+      "codes": [
+        "O429"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/redmi-watch-5-lite/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Reloj inteligente",
+        "Pantalla": "AMOLED de 1,96 pulgadas",
+        "Resolución de pantalla": "410 × 502 píxeles",
+        "Batería": "470 mAh",
+        "Autonomía": "Hasta 18 días de uso típico; varía según configuración y uso.",
+        "Conectividad Bluetooth": "5.3; admite llamadas mediante el teléfono vinculado",
+        "Sistema operativo": "Xiaomi HyperOS",
+        "Compatibilidad": "Smartphones con Android 8.0 o posterior, o iOS 12.0 o posterior",
+        "Posicionamiento": "GNSS integrado: GPS, Galileo, GLONASS, BeiDou y QZSS",
+        "Dimensiones": "48,1 × 39,2 × 10,6 mm, sin correa ni salientes",
+        "Peso": "29,2 g sin correa"
+      }
+    },
+    {
+      "id": "xiaomi-scooter6",
+      "brand": "Xiaomi",
+      "model": "Electric Scooter 6",
+      "codes": [
+        "O987"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-electric-scooter-6/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Scooter eléctrico",
+        "Potencia nominal de motor": "400 W",
+        "Potencia máxima de motor": "800 W",
+        "Velocidad máxima": "25 km/h en la versión global documentada; límites regionales pueden variar",
+        "Autonomía de recorrido": "Hasta 45 km en condiciones de prueba; varía con peso, terreno, velocidad y temperatura",
+        "Carga máxima": "120 kg",
+        "Peso": "26.3 kg aproximadamente",
+        "Neumáticos": "12 pulgadas, sin cámara",
+        "Frenos": "Tambor delantero y EABS trasero",
+        "Batería": "360 Wh",
+        "Tiempo de carga": "8 horas aproximadamente",
+        "Protección": "IPX5"
+      }
+    },
+    {
+      "id": "xiaomi-scooter6lite",
+      "brand": "Xiaomi",
+      "model": "Electric Scooter 6 Lite",
+      "codes": [
+        "O988"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-electric-scooter-6-lite/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Scooter eléctrico",
+        "Potencia nominal de motor": "300 W",
+        "Potencia máxima de motor": "500 W",
+        "Velocidad máxima": "25 km/h en la versión global documentada; límites regionales pueden variar",
+        "Autonomía de recorrido": "Hasta 25 km en condiciones de prueba; varía con peso, terreno, velocidad y temperatura",
+        "Carga máxima": "100 kg",
+        "Peso": "18.1 kg aproximadamente",
+        "Neumáticos": "10 pulgadas, neumáticas",
+        "Frenos": "Tambor delantero y EABS trasero",
+        "Batería": "216 Wh",
+        "Tiempo de carga": "8 horas aproximadamente",
+        "Protección": "IPX4"
+      }
+    },
+    {
+      "id": "xiaomi-scooter6pro",
+      "brand": "Xiaomi",
+      "model": "Electric Scooter 6 Pro",
+      "codes": [
+        "O986"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-electric-scooter-6-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Scooter eléctrico",
+        "Potencia nominal de motor": "400 W",
+        "Potencia máxima de motor": "1000 W",
+        "Velocidad máxima": "25 km/h en la versión global documentada; límites regionales pueden variar",
+        "Autonomía de recorrido": "Hasta 70 km en condiciones de prueba; varía con peso, terreno, velocidad y temperatura",
+        "Carga máxima": "120 kg",
+        "Peso": "27.3 kg aproximadamente",
+        "Neumáticos": "12 pulgadas, todoterreno",
+        "Frenos": "Disco delantero y freno electrónico trasero",
+        "Batería": "468 Wh",
+        "Tiempo de carga": "9 horas aproximadamente",
+        "Protección": "IPX5"
+      }
+    },
+    {
+      "id": "xiaomi-scooter6max",
+      "brand": "Xiaomi",
+      "model": "Electric Scooter 6 Max",
+      "codes": [
+        "O985"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-electric-scooter-6-max/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Scooter eléctrico",
+        "Potencia nominal de motor": "450 W",
+        "Potencia máxima de motor": "1100 W",
+        "Velocidad máxima": "25 km/h en la versión global documentada; límites regionales pueden variar",
+        "Autonomía de recorrido": "Hasta 70 km en condiciones de prueba; varía con peso, terreno, velocidad y temperatura",
+        "Carga máxima": "130 kg",
+        "Peso": "29.7 kg aproximadamente",
+        "Neumáticos": "12 pulgadas, sin cámara",
+        "Frenos": "Frenos de disco",
+        "Batería": "468 Wh",
+        "Tiempo de carga": "9 horas aproximadamente",
+        "Protección": "IPX6"
+      }
+    },
+    {
+      "id": "xiaomi-scooter6ultra",
+      "brand": "Xiaomi",
+      "model": "Electric Scooter 6 Ultra",
+      "codes": [
+        "O1009"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-electric-scooter-6-ultra/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Scooter eléctrico",
+        "Potencia nominal de motor": "500 W",
+        "Potencia máxima de motor": "1200 W",
+        "Velocidad máxima": "25 km/h en la versión global documentada; límites regionales pueden variar",
+        "Autonomía de recorrido": "Hasta 75 km en condiciones de prueba; varía con peso, terreno, velocidad y temperatura",
+        "Carga máxima": "140 kg",
+        "Peso": "33.7 kg aproximadamente",
+        "Neumáticos": "12 pulgadas, todoterreno",
+        "Frenos": "Frenos de disco",
+        "Batería": "585 Wh",
+        "Tiempo de carga": "10.5 horas aproximadamente",
+        "Protección": "IPX6"
+      }
+    },
+    {
+      "id": "xiaomi-graphene-heater",
+      "brand": "Xiaomi",
+      "model": "Smart Graphene Heater / LSNFJ04ZMEU",
+      "codes": [
+        "O927"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-smart-graphene-heater/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Calefactor eléctrico",
+        "Potencia nominal": "2000 W",
+        "Alimentación": "220–230 V CA en la versión EU; comprobar etiqueta de la unidad",
+        "Peso": "Aproximadamente 2,3 kg",
+        "Dimensiones": "176 mm de diámetro × 467 mm de altura"
+      }
+    },
+    {
+      "id": "xiaomi-mesh-be3600pro-1",
+      "brand": "Xiaomi",
+      "model": "Mesh System BE3600 Pro",
+      "codes": [
+        "O578"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-mesh-system-be3600-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Sistema Wi-Fi Mesh",
+        "Unidades del conjunto": "1",
+        "Estándares Wi-Fi": "IEEE 802.11 a/b/g/n/ac/ax/be (Wi-Fi 7)",
+        "Bandas": "2,4 GHz y 5 GHz",
+        "Velocidad inalámbrica teórica": "688 Mbps en 2,4 GHz + 2882 Mbps en 5 GHz; no equivale a velocidad real de Internet",
+        "Puertos por unidad": "1 de 2,5 Gbps + 3 de 1 Gbps; WAN/LAN con detección automática",
+        "Antenas": "4 internas por unidad",
+        "Administración": "Web y Xiaomi Home para Android/iOS",
+        "Seguridad inalámbrica": "WPA-PSK, WPA2-PSK y WPA3-SAE",
+        "Dimensiones por unidad": "178 × 70 × 217,2 mm"
+      }
+    },
+    {
+      "id": "xiaomi-mesh-be3600pro-3",
+      "brand": "Xiaomi",
+      "model": "Mesh System BE3600 Pro",
+      "codes": [
+        "O579"
+      ],
+      "sources": [
+        "https://www.mi.com/global/product/xiaomi-mesh-system-be3600-pro/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Sistema Wi-Fi Mesh",
+        "Unidades del conjunto": "3",
+        "Estándares Wi-Fi": "IEEE 802.11 a/b/g/n/ac/ax/be (Wi-Fi 7)",
+        "Bandas": "2,4 GHz y 5 GHz",
+        "Velocidad inalámbrica teórica": "688 Mbps en 2,4 GHz + 2882 Mbps en 5 GHz; no equivale a velocidad real de Internet",
+        "Puertos por unidad": "1 de 2,5 Gbps + 3 de 1 Gbps; WAN/LAN con detección automática",
+        "Antenas": "4 internas por unidad",
+        "Administración": "Web y Xiaomi Home para Android/iOS",
+        "Seguridad inalámbrica": "WPA-PSK, WPA2-PSK y WPA3-SAE",
+        "Dimensiones por unidad": "178 × 70 × 217,2 mm"
+      }
+    },
+    {
+      "id": "jbl-endurancepace",
+      "brand": "JBL",
+      "model": "Endurance Pace",
+      "codes": [
+        "O633-BLACK",
+        "O633-PURPLE",
+        "O633-WHITE"
+      ],
+      "sources": [
+        "https://www.jbl.com/ENDURANCE-PACE.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos deportivos de oído abierto",
+        "Conectividad": "Bluetooth; conexión multipunto",
+        "Autonomía de música": "Hasta 10 horas; depende del volumen y uso",
+        "Autonomía de llamadas": "Hasta 8 horas",
+        "Tiempo de carga": "2 horas",
+        "Peso": "33,15 g",
+        "Protección": "IP68",
+        "Micrófono": "1",
+        "Aplicación": "JBL Headphones"
+      }
+    },
+    {
+      "id": "jbl-endurancepeak4",
+      "brand": "JBL",
+      "model": "Endurance Peak 4",
+      "codes": [
+        "O968"
+      ],
+      "sources": [
+        "https://www.jbl.com/ENDURANCE-PEAK-4.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos deportivos inalámbricos con estuche",
+        "Bluetooth": "5.4; conexión multipunto",
+        "Cancelación de ruido": "Adaptativa",
+        "Transductores": "10 mm",
+        "Micrófonos": "6",
+        "Autonomía de audífonos": "Hasta 12 horas sin ANC o 8 horas con ANC; depende del uso",
+        "Autonomía total con estuche": "Hasta 48 horas sin ANC; depende del uso",
+        "Protección de los audífonos": "IP68",
+        "Protección del estuche": "IPX2",
+        "Tiempo de carga": "2 horas"
+      }
+    },
+    {
+      "id": "jbl-horizon3",
+      "brand": "JBL",
+      "model": "Horizon 3",
+      "codes": [
+        "O977"
+      ],
+      "sources": [
+        "https://www.jbl.com/HORIZON-3.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante con reloj y radio",
+        "Bluetooth": "5.3",
+        "Potencia nominal": "2 × 5 W RMS",
+        "Alimentación": "100–240 V CA, 50/60 Hz",
+        "Pila de respaldo": "CR2032 de 210 mAh; no equivale a batería para reproducción portátil",
+        "Salida USB-C para carga": "Hasta 5 V / 3 A",
+        "Radio": "FM 87,5–108 MHz; bandas y disponibilidad DAB/DAB+ dependen de región",
+        "Transductores": "Dos de rango completo de 1,5 pulgadas",
+        "Dimensiones": "209 × 137 × 83 mm",
+        "Peso": "0,78 kg"
+      }
+    },
+    {
+      "id": "jbl-authentics500",
+      "brand": "JBL",
+      "model": "Authentics 500",
+      "codes": [
+        "O168"
+      ],
+      "sources": [
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw30fc2a10/pdfs/JBL%20Authentics%20500_Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante inteligente para el hogar",
+        "Potencia máxima total": "270 W con THD del 1 % según fabricante",
+        "Sistema de sonido": "3.1; Dolby Atmos Music con servicios compatibles",
+        "Alimentación": "100–240 V CA, 50/60 Hz",
+        "Transductores": "Tres tweeters de 25 mm, tres medios de 2,75 pulgadas y un subwoofer de 6,5 pulgadas",
+        "Bluetooth": "5.3",
+        "Entradas": "Audio auxiliar, Bluetooth, Wi-Fi y Ethernet",
+        "Puerto USB-C": "La reproducción por USB está disponible en la versión estadounidense; en otras versiones es solo de servicio",
+        "Respuesta de frecuencia": "40 Hz–20 kHz (-6 dB)"
+      }
+    },
+    {
+      "id": "jbl-onthego2",
+      "brand": "JBL",
+      "model": "PartyBox On-The-Go 2",
+      "codes": [
+        "O974"
+      ],
+      "sources": [
+        "https://support.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw371f3482/pdfs/JBL_PartyBox_On-The-Go-2_%282mics%29Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil para fiestas",
+        "Potencia de salida": "100 W RMS (IEC 60268)",
+        "Bluetooth": "5.4",
+        "Autonomía": "Hasta 15 horas; depende del volumen y contenido",
+        "Batería": "34 Wh",
+        "Tiempo de carga": "Menos de 3,5 horas con el parlante apagado",
+        "Alimentación": "100–240 V CA, 50/60 Hz",
+        "Dimensiones": "501 × 258 × 221 mm",
+        "Peso": "6,36 kg",
+        "Micrófonos del conjunto": "La ficha consultada corresponde al paquete de dos micrófonos; confirmar el contenido de la unidad de tienda"
+      }
+    },
+    {
+      "id": "jbl-quantum50",
+      "brand": "JBL",
+      "model": "Quantum 50",
+      "codes": [
+        "O1053"
+      ],
+      "sources": [
+        "https://support.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw7911f007/pdfs/JBL_Quantum_50_Spec_Sheet_English.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos intraaurales con cable para videojuegos",
+        "Transductores": "Dinámicos de 8,6 mm",
+        "Respuesta de frecuencia": "20 Hz–20 kHz",
+        "Impedancia": "16 Ω",
+        "Peso": "21,5 g",
+        "Micrófono": "Integrado en el cable; respuesta de 100 Hz–10 kHz",
+        "Controles": "Deslizador de volumen, silencio de micrófono y botón multifunción",
+        "Ajuste": "TwistLock; almohadillas de silicona en tamaños S, M y L"
+      }
+    },
+    {
+      "id": "hk-go-play-3",
+      "brand": "Harman Kardon",
+      "model": "Go + Play 3",
+      "codes": [
+        "O311"
+      ],
+      "sources": [
+        "https://www.harmankardon.com/speakers/GO-PLAY-3.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia nominal": "160 W RMS según fabricante",
+        "Bluetooth": "5.2",
+        "Autonomía": "Hasta 8 horas; depende del volumen y contenido",
+        "Carga": "Aproximadamente 3 horas",
+        "Entrada auxiliar": "3,5 mm",
+        "Peso": "4,7 kg"
+      }
+    },
+    {
+      "id": "hk-onyx-studio-6",
+      "brand": "Harman Kardon",
+      "model": "Onyx Studio 6",
+      "codes": [
+        "O479"
+      ],
+      "sources": [
+        "https://support.harmankardon.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwb9683c62/pdfs/HK_Onyx_Studio6_SpecSheet_French.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia nominal con alimentación externa": "50 W RMS biamplificados en modo AC",
+        "Bluetooth": "4.2",
+        "Autonomía": "Hasta 8 horas; depende del volumen y contenido",
+        "Carga": "Aproximadamente 5 horas",
+        "Resistencia al agua": "IPX7 según fabricante",
+        "Peso": "2,94 kg"
+      }
+    },
+    {
+      "id": "hk-luna-2",
+      "brand": "Harman Kardon",
+      "model": "Luna 2",
+      "codes": [
+        "O975"
+      ],
+      "sources": [
+        "https://www.harmankardon.com/LUNA-2.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Parlante portátil",
+        "Potencia nominal": "25 W RMS + 15 W RMS",
+        "Bluetooth": "5.4",
+        "Batería": "23,76 Wh; 7,2 V / 3300 mAh",
+        "Carga": "USB-C, alimentación 5 V / 3 A",
+        "Dimensiones": "216 × 84 × 81 mm",
+        "Peso": "735 g"
+      }
+    },
+    {
+      "id": "jbl-battery-200",
+      "brand": "JBL",
+      "model": "Battery 200",
+      "codes": [
+        "O362"
+      ],
+      "sources": [
+        "https://global.jbl.com/party-speakers/BATTERY200-CHARGING-CASE.html",
+        "https://support.jbl.com/au/en/howto/battery-and-charger-compatibility-for-portable-speakers-and-partybox-mgkmsjgqxsl-apac/000052965.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Batería recargable de repuesto",
+        "Capacidad nominal": "34 Wh; 7,2 V / 4722 mAh",
+        "Tecnología de batería": "Iones de litio",
+        "Compatibilidad": "PartyBox Club 120, Encore 2 y On-The-Go 2, según JBL",
+        "Presentación por confirmar": "La fuente incluye una variante con estuche; confirmar si este SKU trae el estuche. No se da por incluido."
+      }
+    },
+    {
+      "id": "jbl-battery-400",
+      "brand": "JBL",
+      "model": "Battery 400",
+      "codes": [
+        "O551"
+      ],
+      "sources": [
+        "https://jp.jbl.com/BATTERY400.html",
+        "https://support.jbl.com/au/en/howto/battery-and-charger-compatibility-for-portable-speakers-and-partybox-mgkmsjgqxsl-apac/000052965.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Batería recargable de repuesto",
+        "Capacidad nominal": "68 Wh; 7,2 V / 9444 mAh",
+        "Compatibilidad": "PartyBox Stage 320 y Xtreme 4; confirmar la revisión antes de comprar para otros equipos",
+        "Presentación": "No se confirma estuche cargador incluido"
+      }
+    },
+    {
+      "id": "jbl-battery-600",
+      "brand": "JBL",
+      "model": "Battery 600",
+      "codes": [
+        "O949"
+      ],
+      "sources": [
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwa28a7a40/pdfs/PA_JBL_Battery%20600%2BCHARGING_QSG_CR_V5.pdf",
+        "https://support.jbl.com/au/en/howto/battery-and-charger-compatibility-for-portable-speakers-and-partybox-mgkmsjgqxsl-apac/000052965.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Batería recargable de repuesto",
+        "Capacidad nominal": "99,02 Wh; 21,6 V / 4584 mAh según documentación JBL",
+        "Compatibilidad": "Boombox 4, PartyBox 520 y PartyBox 720; el 720 utiliza dos baterías",
+        "Presentación por confirmar": "No se confirma estuche ni segunda batería incluidos",
+        "Advertencia de ficha": "La imagen de tienda anuncia 6000 mAh; difiere de la documentación JBL. Confirmar etiqueta de la unidad antes de comprar"
+      },
+      "warnings": [
+        "La imagen comercial no coincide con la capacidad oficial; no inferir autonomía del equipo a partir de la imagen."
+      ]
+    },
+    {
+      "id": "jbl-endurance-zone",
+      "brand": "JBL",
+      "model": "Endurance Zone",
+      "codes": [
+        "O996"
+      ],
+      "sources": [
+        "https://www.jbl.com/ENDURANCEZONE.html",
+        "https://www.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw37beaeec/pdfs/JBL_Endurance_Zone_Specsheet_EN.pdf"
+      ],
+      "specs": {
+        "Tipo de producto": "Audífonos deportivos abiertos inalámbricos",
+        "Bluetooth": "5.3",
+        "Autonomía de los audífonos": "Hasta 8 horas según condiciones de prueba del fabricante",
+        "Autonomía con estuche": "Hasta 32 horas en total: 8 horas más 24 horas de recargas",
+        "Transductores": "Dinámicos de 18 × 11 mm",
+        "Resistencia anunciada": "IP68 según fabricante; no implica aptitud para nadar",
+        "Conexión multipunto": "Hasta dos dispositivos Bluetooth",
+        "Micrófonos": "Cuatro"
+      }
+    },
+    {
+      "id": "logitech-g502-lightspeed",
+      "brand": "Logitech",
+      "model": "G502 LIGHTSPEED",
+      "codes": [
+        "O443"
+      ],
+      "sources": [
+        "https://www.logitechg.com/en-us/products/gaming-mice/g502-lightspeed-wireless-gaming-mouse.html"
+      ],
+      "specs": {
+        "Tipo de producto": "Mouse inalámbrico",
+        "Sensor": "HERO 25K según ficha vigente; mantener firmware y software compatibles",
+        "Resolución": "100 a 25 600 DPI",
+        "Conectividad": "LIGHTSPEED mediante receptor USB",
+        "Tasa de informe": "Hasta 1000 Hz",
+        "Autonomía": "Hasta 48 horas con iluminación predeterminada; hasta 60 horas sin iluminación",
+        "Peso": "114 g sin pesas adicionales",
+        "Carga inalámbrica": "Compatible con sistema POWERPLAY, vendido por separado"
+      }
+    },
+    {
+      "id": "logitech-g300s",
+      "brand": "Logitech",
+      "model": "G300s",
+      "codes": [
+        "O461"
+      ],
+      "sources": [
+        "https://support.logi.com/hc/en-us/articles/360024548954-G300s-Optical-Gaming-Mouse-Technical-Specifications"
+      ],
+      "specs": {
+        "Tipo de producto": "Mouse óptico con cable",
+        "Conexión": "USB",
+        "Resolución": "200 a 2500 DPI ajustables",
+        "Tasa de informe": "Hasta 1000 informes por segundo",
+        "Iluminación": "LED RGB de acento, ajustable mediante software compatible",
+        "Peso": "82 g según ficha técnica"
+      }
+    },
+    {
+      "id": "dji-flip",
+      "brand": "DJI",
+      "model": "Flip",
+      "codes": [
+        "O1006",
+        "O1007"
+      ],
+      "sources": [
+        "https://www.dji.com/flip/specs"
+      ],
+      "specs": {
+        "Tipo de producto": "Dron con cámara",
+        "Peso de despegue": "Menos de 249 g en configuración estándar del fabricante",
+        "Autonomía de vuelo": "Hasta 31 minutos en prueba controlada sin viento, a 6 m/s y hasta agotar batería; la duración real es menor según uso",
+        "Sensor de cámara": "1/1,3 pulgadas",
+        "Fotografía": "Hasta 48 MP",
+        "Video": "4K hasta 60 fps; 4K/100 fps en el modo correspondiente",
+        "Estabilización": "Gimbal mecánico de tres ejes",
+        "Batería": "3110 mAh / 22,3 Wh",
+        "Contenido del combo": "Confirmar accesorios según la presentación de este SKU; no trasladar el contenido de otro combo"
+      }
+    },
+    {
+      "id": "dji-osmo-360",
+      "brand": "DJI",
+      "model": "Osmo 360",
+      "codes": [
+        "O1002"
+      ],
+      "sources": [
+        "https://www.dji.com/360/specs"
+      ],
+      "specs": {
+        "Tipo de producto": "Cámara panorámica de 360°",
+        "Video panorámico": "8K (7680 × 3840) hasta 50 fps según ficha vigente",
+        "Fotografía panorámica": "Hasta 120 MP",
+        "Almacenamiento interno": "128 GB nominales; aproximadamente 105 GB disponibles",
+        "Ampliación": "microSD de hasta 1 TB compatible",
+        "Pantalla": "Táctil de 2 pulgadas",
+        "Batería": "1950 mAh / 7,5 Wh",
+        "Autonomía de referencia": "Hasta 100 minutos en 8K/30 fps, o 120 minutos en modo Endurance; prueba a 25 °C con pantalla, Wi-Fi y controles adicionales apagados",
+        "Resistencia al agua": "IP68, cuerpo hasta 10 m con tapas cerradas; DJI desaconseja grabar bajo agua sin protección por distorsión y errores de unión",
+        "Peso": "183 g"
+      }
+    },
+    {
+      "id": "dji-mic-3",
+      "brand": "DJI",
+      "model": "Mic 3 (2 TX + 1 RX + estuche)",
+      "codes": [
+        "O718"
+      ],
+      "sources": [
+        "https://www.dji.com/mic-3/specs"
+      ],
+      "specs": {
+        "Tipo de producto": "Sistema de micrófonos inalámbricos",
+        "Transmisor": "DMT03, 16 g con imán",
+        "Receptor": "DMR03, 25,1 g",
+        "Bluetooth": "5.4",
+        "Autonomía del transmisor": "Hasta 8 horas, sin cancelación de ruido ni grabación interna y bajo las condiciones de prueba del fabricante",
+        "Carga del transmisor": "Aproximadamente 50 minutos",
+        "Batería del transmisor": "137 mAh / 0,531 Wh",
+        "Grabación interna": "Admite archivos de 24 bits y 32 bits flotantes"
+      }
+    },
+    {
+      "id": "dji-mic-2",
+      "brand": "DJI",
+      "model": "Mic 2 (2 TX + 1 RX + estuche)",
+      "codes": [
+        "O720"
+      ],
+      "sources": [
+        "https://www.dji.com/mic-2/specs"
+      ],
+      "specs": {
+        "Tipo de producto": "Sistema de micrófonos inalámbricos",
+        "Patrón de captación": "Omnidireccional",
+        "Autonomía": "Hasta 6 horas por transmisor y receptor, sin grabación interna, con receptor conectado a cámara por TRS de 3,5 mm",
+        "Batería de transmisor y receptor": "360 mAh / 1,39 Wh en cada unidad",
+        "Carga de transmisor y receptor": "Aproximadamente 70 minutos",
+        "Batería del estuche": "3250 mAh / 11,7 Wh",
+        "Alcance de referencia": "Hasta 250 m FCC o 160 m CE en exterior sin obstáculos ni interferencia; no equivale a alcance garantizado"
+      }
+    },
+    {
+      "id": "xiaomi-tv-a-pro-43-2026",
+      "brand": "Xiaomi",
+      "model": "TV A Pro 43 2026",
+      "codes": [
+        "O885"
+      ],
+      "sources": [
+        "https://www.mi.com/sg/product/xiaomi-tv-a-pro-43-2026/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Televisor QLED",
+        "Diagonal": "43 pulgadas",
+        "Resolución": "3840 × 2160 (4K)",
+        "Frecuencia del panel": "60 Hz; no confundir con modos de mejora para juegos",
+        "Sistema": "Google TV",
+        "Memoria RAM": "2 GB",
+        "Almacenamiento": "8 GB nominales; parte reservada por el sistema",
+        "Audio": "Dos altavoces de 10 W",
+        "Conectividad inalámbrica": "Wi-Fi de 2,4 y 5 GHz; Bluetooth 5.0",
+        "Variación regional": "Sintonizador, alimentación, puertos y accesorios deben comprobarse en la unidad para Perú"
+      }
+    },
+    {
+      "id": "xiaomi-tv-a-pro-55-2026",
+      "brand": "Xiaomi",
+      "model": "TV A Pro 55 2026",
+      "codes": [
+        "O872"
+      ],
+      "sources": [
+        "https://www.mi.com/ph/product/xiaomi-tv-a-pro-55-2026/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Televisor QLED",
+        "Diagonal": "55 pulgadas",
+        "Resolución": "3840 × 2160 (4K)",
+        "Frecuencia del panel": "60 Hz; no confundir con modos de mejora para juegos",
+        "Sistema": "Google TV",
+        "Memoria RAM": "2 GB",
+        "Almacenamiento": "8 GB nominales; parte reservada por el sistema",
+        "Audio": "Dos altavoces de 10 W",
+        "Conectividad inalámbrica": "Wi-Fi de 2,4 y 5 GHz; Bluetooth 5.0",
+        "Variación regional": "Sintonizador, alimentación, puertos y accesorios deben comprobarse en la unidad para Perú"
+      }
+    },
+    {
+      "id": "xiaomi-tv-a-pro-65-2026",
+      "brand": "Xiaomi",
+      "model": "TV A Pro 65 2026",
+      "codes": [
+        "O889"
+      ],
+      "sources": [
+        "https://www.mi.com/ph/product/xiaomi-tv-a-pro-65-2026/specs/"
+      ],
+      "specs": {
+        "Tipo de producto": "Televisor QLED",
+        "Diagonal": "65 pulgadas",
+        "Resolución": "3840 × 2160 (4K)",
+        "Frecuencia del panel": "60 Hz; no confundir con modos de mejora para juegos",
+        "Sistema": "Google TV",
+        "Memoria RAM": "2 GB",
+        "Almacenamiento": "8 GB nominales; parte reservada por el sistema",
+        "Audio": "Dos altavoces de 10 W",
+        "Conectividad inalámbrica": "Wi-Fi de 2,4 y 5 GHz; Bluetooth 5.0",
+        "Variación regional": "Sintonizador, alimentación, puertos y accesorios deben comprobarse en la unidad para Perú"
+      }
+    }
+  ]
+}
