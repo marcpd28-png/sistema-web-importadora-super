@@ -120,3 +120,11 @@ No se ha desplegado esta iteración ni activado respuesta automática a clientes
 - Pasaron las pruebas que reproducían el reinicio, TypeScript, ESLint y las 85 regresiones del build aislado. Publicado en Git y activado en VPS con respaldo.
 - Recorrido completo por API del simulador y n8n: pregunta de envío al pedir cantidad, pregunta sobre Yape al confirmar precio, datos, entrega, cambio a tres unidades, pedido SIM y comprobante pendiente de validación. Correcto, sin pedido real; contacto temporal eliminado. Evidencia `2026-09-18-checkout-interruptions.json`.
 - Mantener pendiente el alcance restante: interpretación visual/social real, cambios de datos y de pedidos existentes, varios artículos y evaluación con más conversaciones reales anonimizadas. No hay confirmación de proveedor/presupuesto de IA todavía.
+
+## Reconocimiento de fotos de origen sin proveedor
+
+- Motor `1aa5f53` publicado y activo. El endpoint de visión compara SHA-256 de imágenes adjuntas inline (máximo 4 MB) con `sourceImageContentHash`. Solo devuelve código si hay un único producto visible; una foto compartida no permite elegir arbitrariamente una variante. No descarga enlaces del cliente para esta comparación.
+- El catálogo tenía 1,653 productos visibles con huella de origen: 1,469 fotos únicas y 76 huellas compartidas. Este dato indica disponibilidad de referencias, no precisión general de visión.
+- Pasaron 67 pruebas, TypeScript, ESLint, compilación e integración del endpoint con PostgreSQL temporal: coincidencia única, duplicados y cambios de visibilidad. Base temporal eliminada.
+- Prueba real: foto de origen de N1321 obtenida del host ERP ya utilizado (`original.negocioserp.com`), descarga limitada a 4 MB y validada contra la huella almacenada. El endpoint devolvió `catalog-source-image-sha256`, y la misma foto enviada por el simulador atravesó n8n y seleccionó N1321, mostró precio vigente y avanzó a pedir cantidad. Contacto temporal eliminado; cero llamadas a proveedor de IA.
+- Límite explícito: identifica archivos de origen idénticos. Una captura de TikTok/Instagram, foto desde otro ángulo, recorte o recompresión puede tener otra huella y aún necesita visión/OCR u otro análisis. Esto no sustituye la comprensión visual general ni acredita el objetivo completo.
