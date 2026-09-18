@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "evidence": [
+    {
+      "known": true,
+      "passed": true,
+      "requests": [
+        {
+          "kind": "PAYMENT",
+          "status": "ANSWERED",
+          "quantity": null
+        },
+        {
+          "kind": "PRICE",
+          "status": "ANSWERED",
+          "quantity": 2
+        },
+        {
+          "kind": "SHIPPING",
+          "status": "NEEDS_CLARIFICATION",
+          "quantity": null
+        }
+      ],
+      "answer": "¡Buenas tardes! 😊 Métodos de pago: Yape, Plin, transferencia bancaria.\n(N1321) CUDY AC1200 GIGABIT WI-FI ROUTER WR1300E (N1321)\n2 unidad(es): S/ 129.00 cada una. Total: S/ 258.00 (Unitario). Precio y stock consultados ahora.\nModalidades de entrega: DELIVERY, SHALOM, RECOJO. Para confirmar cobertura, costo y plazo necesitamos el destino y la agencia o dirección; no tengo una cotización de transporte registrada."
+    },
+    {
+      "known": false,
+      "passed": true,
+      "requests": [
+        {
+          "kind": "PAYMENT",
+          "status": "ANSWERED",
+          "quantity": null
+        },
+        {
+          "kind": "PRICE",
+          "status": "NEEDS_CLARIFICATION",
+          "quantity": 2
+        },
+        {
+          "kind": "SHIPPING",
+          "status": "NEEDS_CLARIFICATION",
+          "quantity": null
+        }
+      ],
+      "answer": "¡Buenas tardes! 😊 Métodos de pago: Yape, Plin, transferencia bancaria.\nRecibí la foto 1 de este grupo, pero aún no pude identificar el producto con certeza. Dime su marca, modelo o código para continuar con esta consulta.\nModalidades de entrega: DELIVERY, SHALOM, RECOJO. Para confirmar cobertura, costo y plazo necesitamos el destino y la agencia o dirección; no tengo una cotización de transporte registrada."
+    }
+  ]
+}
