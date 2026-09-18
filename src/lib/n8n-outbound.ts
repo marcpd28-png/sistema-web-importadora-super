@@ -82,6 +82,9 @@ function getRemoteError(payload: unknown) {
   }
 
   const responseBody = payload as Record<string, unknown>;
+  if (responseBody.error === "INVALID_REQUEST") {
+    return "El flujo de envío rechazó el tipo o los datos del mensaje. Revisa la compatibilidad del flujo de n8n.";
+  }
   const details = [responseBody.error, responseBody.message]
     .filter((value): value is string => typeof value === "string")
     .join(" ")

@@ -504,6 +504,7 @@ export function MessagesWorkspace() {
     );
     window.requestAnimationFrame(() => scrollToBottom("smooth"));
 
+    let persistedFailureId: string | undefined;
     try {
       const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
         body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined, requestId, template }),
@@ -512,7 +513,8 @@ export function MessagesWorkspace() {
       });
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        const payload = (await response.json().catch(() => null)) as { error?: string; messageId?: string } | null;
+        if (typeof payload?.messageId === "string") persistedFailureId = payload.messageId;
         throw new Error(payload?.error || "No se pudo enviar el mensaje.");
       }
 
@@ -528,9 +530,10 @@ export function MessagesWorkspace() {
       const reason = error instanceof Error ? error.message : "No se pudo enviar el mensaje.";
       console.error("Send error", { requestId, reason });
       setActiveMessages((current) =>
-        activeIdRef.current !== activeId ? current : current.map((message) => (message.id === tempMessage.id
-          ? { ...message, status: "failed", metadata: { requestId, error: reason, ...(template ? { template } : {}) } }
-          : message)),
+        activeIdRef.current !== activeId ? current : mergeMessages(
+          current.filter(message => message.id !== tempMessage.id),
+          [{ ...tempMessage, id: persistedFailureId || tempMessage.id, status: "failed", metadata: { requestId, error: reason, ...(template ? { template } : {}) } }],
+        ),
       );
       return false;
     }

@@ -178,3 +178,10 @@ test("no considera exitoso un 200 sin confirmación válida de Meta", async () =
       error instanceof N8nOutboundError && error.code === "N8N_INVALID_RESPONSE",
   );
 });
+
+test("informa el rechazo de validación de n8n sin confundirlo con una caída del servidor", async () => {
+  configureOutbound();
+  await assert.rejects(sendN8nOutboundMessage(input({ type: "image", mediaUrl: "https://example.test/photo.jpg" }), {
+    fetchImpl: async () => jsonResponse(400, { ok: false, error: "INVALID_REQUEST" }),
+  }), (error: unknown) => error instanceof N8nOutboundError && error.code === "N8N_REMOTE_ERROR" && /rechazó el tipo/.test(error.message));
+});
