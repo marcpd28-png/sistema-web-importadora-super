@@ -1,0 +1,12 @@
+{
+  "runStartedAt": "2026-09-18T01:04:48.799Z",
+  "reviewMethod": "Agent-assisted inspection of the simulator outputs; separate from automatic scoring, not owner-certified business-policy review.",
+  "checks": [
+    { "case": "BC061", "outcome": "CATALOG_NO_PRICES", "status": "FAIL", "reason": "El BC pidió identificar un producto para las frases sobre catálogo sin precios y reventa; no entregó ni explicó una alternativa sin precios." },
+    { "case": "BC068", "outcome": "DEMO", "status": "FAIL", "reason": "Interpretó 'puedo ir' y 'Para probar los sonidos' como búsquedas de productos. No respondió ni reconoció como pendiente la consulta sobre probarlos en tienda." },
+    { "case": "BC125", "outcome": "ORIGINAL", "status": "FAIL", "reason": "No identificó Alexa y no abordó la originalidad. La pregunta quedó sin respuesta." },
+    { "case": "BC133", "outcome": "ORIGINAL", "status": "FAIL", "reason": "La lista incluyó CR289, denominado 'SEGUNDERO', y CR150 de marca SUPER pese a pedir Xiaomi/Redmi/Samsung originales. No distinguió ni confirmó la originalidad; la marca ajena también falla en la evaluación de relevancia." }
+  ],
+  "clarificationCaveat": "Las 24 alertas automáticas de aclaración evitable requieren adjudicación adicional. Frases como 'tablet gigante', 'tablet grande', 'Selfi ia' y 'Cart play' pueden admitir una aclaración útil. No se presentan como 24 fallos humanos certificados.",
+  "referenceAdjudication": "Durante la auditoría se corrigieron etiquetas incompletas: cámaras EZVIZ sin la palabra cámara; nombres comerciales de audífonos; cargadores llamados dado/charger; TV box N1407 según categoría; JBL Tuner/Encore; se excluyeron correas de smartwatch, adaptadores de audífono y parlantes con panel solar. No se modificó el BC para mejorar estas puntuaciones. Las etiquetas quedan congeladas para comparar versiones futuras."
+}

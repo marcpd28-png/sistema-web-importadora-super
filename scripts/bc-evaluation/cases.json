@@ -1,0 +1,2372 @@
+{
+  "version": 1,
+  "sampledAt": "2026-09-18T00:53:27.063Z",
+  "sampleSizeConversations": 300,
+  "windowStart": "2026-09-17T00:00:00.000Z",
+  "notes": "Manually selected customer TEXT excerpts; greetings and identifying/payment/delivery details omitted. No paraphrases or generated customer queries. Excerpts grouped from the same conversation, replayed as a burst. Text-only benchmark; unseen images/audio and previous agent messages are not reconstructed.",
+  "cases": [
+    {
+      "id": "BC001",
+      "sourceGroup": "R003",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Generador solar 3000 w precio"
+      ],
+      "targets": [
+        "generator3000"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC002",
+      "sourceGroup": "R004",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Quisiera ver tu catálogo"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC003",
+      "sourceGroup": "R005",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "CATALOGO GENERAL"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC004",
+      "sourceGroup": "R007",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "BUENAS NOCHES, CONSOLA DE VIDEO JUEGOS VENDES AMIGO"
+      ],
+      "targets": [
+        "consoles"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC005",
+      "sourceGroup": "R008",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catálogo de JBL",
+        "Catálogo solo de JBL"
+      ],
+      "targets": [
+        "jbl"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC006",
+      "sourceGroup": "R009",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catalago",
+        "Hacen envíos a provincias?"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG",
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC007",
+      "sourceGroup": "R011",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes \n tienen escurridor de platos?"
+      ],
+      "targets": [
+        "dishrack"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC008",
+      "sourceGroup": "R013",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas noches quisiera información del JBL Turner 3. Precio y stock disponible.",
+        "JBL tuner 3"
+      ],
+      "targets": [
+        "tuner3"
+      ],
+      "outcomes": [
+        "INFORMATION",
+        "PRICE",
+        "STOCK"
+      ]
+    },
+    {
+      "id": "BC009",
+      "sourceGroup": "R014",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Intereaada en las caamras espias"
+      ],
+      "targets": [
+        "spycameras"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC010",
+      "sourceGroup": "R015",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Me pueden enviar el catálogo"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC011",
+      "sourceGroup": "R016",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Quiero saber el precio de boombox JBL"
+      ],
+      "targets": [
+        "jblboombox"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC012",
+      "sourceGroup": "R018",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "No tienen ningún aromatizador?"
+      ],
+      "targets": [
+        "aroma"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC013",
+      "sourceGroup": "R019",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Porfa el catálogo"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC014",
+      "sourceGroup": "R020",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Pásame el catálogo general"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC015",
+      "sourceGroup": "R021",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "DIRECCION y HORARIO"
+      ],
+      "targets": [
+        "business"
+      ],
+      "outcomes": [
+        "STORE"
+      ]
+    },
+    {
+      "id": "BC016",
+      "sourceGroup": "R022",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Precio de las estación de carga portátil"
+      ],
+      "targets": [
+        "powerstations"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC017",
+      "sourceGroup": "R024",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Televisor??"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC018",
+      "sourceGroup": "R025",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "deseo parlantes"
+      ],
+      "targets": [
+        "speakers"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC019",
+      "sourceGroup": "R026",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "auriculares",
+        "hacen envios por shalom?",
+        "tiene los redmi buds",
+        "con cancelación de ruido"
+      ],
+      "targets": [
+        "redmianc"
+      ],
+      "outcomes": [
+        "SEARCH",
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC020",
+      "sourceGroup": "R028",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "DIRECCION y HORARIO"
+      ],
+      "targets": [
+        "business"
+      ],
+      "outcomes": [
+        "STORE"
+      ]
+    },
+    {
+      "id": "BC021",
+      "sourceGroup": "R031",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola quiero hacer una consulta",
+        "Tachos inteligente",
+        "Tachos de basura inteligente"
+      ],
+      "targets": [
+        "bins"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC022",
+      "sourceGroup": "R032",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Cargador para moto"
+      ],
+      "targets": [
+        "motocharger"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC023",
+      "sourceGroup": "R033",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas noches, Disculpe informacion sobre los hotwheels",
+        "Hotwheels por mayor, precio de cajon"
+      ],
+      "targets": [
+        "hotwheels"
+      ],
+      "outcomes": [
+        "INFORMATION",
+        "BOX_PRICE"
+      ]
+    },
+    {
+      "id": "BC024",
+      "sourceGroup": "R035",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Tienes catálogo de juegos tecnológicos para niños de 12 años a más"
+      ],
+      "targets": [
+        "unclear"
+      ],
+      "outcomes": [
+        "CLARIFY"
+      ]
+    },
+    {
+      "id": "BC025",
+      "sourceGroup": "R037",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tienes el ecoflow river 2 pro?",
+        "CP602",
+        "Necesito 01 unidad"
+      ],
+      "targets": [
+        "river2pro"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC026",
+      "sourceGroup": "R038",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Estoy buscando la mano led para carros"
+      ],
+      "targets": [
+        "ledhand"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC027",
+      "sourceGroup": "R041",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Disculpe. El pago es contra entrega o cuál es la otra opción?"
+      ],
+      "targets": [
+        "business"
+      ],
+      "outcomes": [
+        "PAYMENT"
+      ]
+    },
+    {
+      "id": "BC028",
+      "sourceGroup": "R044",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas noches, me brinda su catálogo de TVs por favor, gracias"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC029",
+      "sourceGroup": "R047",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tiene. Catalogo  de parlante  jbl"
+      ],
+      "targets": [
+        "jblspeakers"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC030",
+      "sourceGroup": "R049",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Maquinas de barberia",
+        "Clipper",
+        "Y shaver",
+        "Profesional",
+        "Trimer"
+      ],
+      "targets": [
+        "barber"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC031",
+      "sourceGroup": "R050",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Catálofo porfavor"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC032",
+      "sourceGroup": "R051",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Vendes drones?"
+      ],
+      "targets": [
+        "drones"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC033",
+      "sourceGroup": "R052",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tienes box para tv",
+        "Mi esposo ayer le dijeron unos de marca super",
+        "Osea quiero no se como ae llama para pasa de una tv normal a smart tv"
+      ],
+      "targets": [
+        "superbox"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC034",
+      "sourceGroup": "R055",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "amplificador de pantalla para laptops tienen",
+        "deseo extensor de pantalla para laptop"
+      ],
+      "targets": [
+        "extenders"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC035",
+      "sourceGroup": "R056",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "También quiero un adaptador USB-C a USB común"
+      ],
+      "targets": [
+        "usbcadapter"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC036",
+      "sourceGroup": "R059",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Me gustaría saber si tienen regulador de voltaje marca forza u otra marca"
+      ],
+      "targets": [
+        "voltageregulator"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC037",
+      "sourceGroup": "R060",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Hola tendrán el parlante kids Alexa?"
+      ],
+      "targets": [
+        "alexakids"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC038",
+      "sourceGroup": "R061",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Autorradio",
+        "Autoradio"
+      ],
+      "targets": [
+        "autoradio"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC039",
+      "sourceGroup": "R063",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola quería saber costos de tv"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC040",
+      "sourceGroup": "R064",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes tendrán autoradios"
+      ],
+      "targets": [
+        "autoradio"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC041",
+      "sourceGroup": "R065",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Necesito audífonos Bluetooth"
+      ],
+      "targets": [
+        "btheadphones"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC042",
+      "sourceGroup": "R066",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "bateria"
+      ],
+      "targets": [
+        "unclear"
+      ],
+      "outcomes": [
+        "CLARIFY"
+      ]
+    },
+    {
+      "id": "BC043",
+      "sourceGroup": "R067",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tela para proyector"
+      ],
+      "targets": [
+        "screens"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC044",
+      "sourceGroup": "R069",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Aire acondicionado y calefacción 2 en 1",
+        "Codigo  N2100",
+        "A contraentrega?",
+        "Cuanto me sale el delivery?",
+        "Consulta horario de atención??"
+      ],
+      "targets": [
+        "aircon"
+      ],
+      "outcomes": [
+        "SEARCH",
+        "PAYMENT",
+        "SHIPPING",
+        "STORE"
+      ]
+    },
+    {
+      "id": "BC045",
+      "sourceGroup": "R070",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Buenas tardes deseo información de precios de televisor",
+        "Quiero el catálogo de los televisores"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "PRICE",
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC046",
+      "sourceGroup": "R071",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Y el partibox 720",
+        "Precio por favor"
+      ],
+      "targets": [
+        "party720"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC047",
+      "sourceGroup": "R072",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "soporte para celular"
+      ],
+      "targets": [
+        "phoneholders"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC048",
+      "sourceGroup": "R073",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "No lo puedo abrir quiero el proyector con lapiz",
+        "Precio"
+      ],
+      "targets": [
+        "penprojector"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC049",
+      "sourceGroup": "R074",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes. Me podría facilitar información de LOONA por favor?"
+      ],
+      "targets": [
+        "loona"
+      ],
+      "outcomes": [
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC050",
+      "sourceGroup": "R075",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Catálogo de los tv"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC051",
+      "sourceGroup": "R080",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Tienes disponible el trípode mt78"
+      ],
+      "targets": [
+        "mt78"
+      ],
+      "outcomes": [
+        "STOCK"
+      ]
+    },
+    {
+      "id": "BC052",
+      "sourceGroup": "R081",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Un televisor de 85 a más",
+        "Precion de 85 pulgada"
+      ],
+      "targets": [
+        "tv85"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC053",
+      "sourceGroup": "R082",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "El autorradio de 70 Lucas",
+        "Autorradio para carro"
+      ],
+      "targets": [
+        "autoradio70"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC054",
+      "sourceGroup": "R084",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Alexa echo dot quinta generación?",
+        "Precio por mayor , 96 unidades"
+      ],
+      "targets": [
+        "alexa5"
+      ],
+      "outcomes": [
+        "PRICE"
+      ],
+      "quantity": 96
+    },
+    {
+      "id": "BC055",
+      "sourceGroup": "R086",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Televisor de 55\""
+      ],
+      "targets": [
+        "tv55"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC056",
+      "sourceGroup": "R087",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catálogo tv"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC057",
+      "sourceGroup": "R088",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola dirección de su tienda"
+      ],
+      "targets": [
+        "business"
+      ],
+      "outcomes": [
+        "STORE"
+      ]
+    },
+    {
+      "id": "BC058",
+      "sourceGroup": "R090",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Precio de las Alexas 5ta generación"
+      ],
+      "targets": [
+        "alexa5"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC059",
+      "sourceGroup": "R093",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Drones",
+        "Más modelos de drones"
+      ],
+      "targets": [
+        "drones"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC060",
+      "sourceGroup": "R095",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "No puedo abrir"
+      ],
+      "targets": [
+        "unclear"
+      ],
+      "outcomes": [
+        "CLARIFY"
+      ]
+    },
+    {
+      "id": "BC061",
+      "sourceGroup": "R097",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "No tienen un catalago para promocionar sin precios",
+        "Quiero revender"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG_NO_PRICES"
+      ]
+    },
+    {
+      "id": "BC062",
+      "sourceGroup": "R101",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Y también parlante alexa me puede mandar que modelos tiene, mi internet está un poco lento no puedo visualizar el catálogo completo."
+      ],
+      "targets": [
+        "alexa"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC063",
+      "sourceGroup": "R104",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tienen mouse inalámbrico?"
+      ],
+      "targets": [
+        "wirelessmouse"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC064",
+      "sourceGroup": "R105",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Tablet de 32 pulgadas",
+        "Precio"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC065",
+      "sourceGroup": "R107",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Quiero la pantalla android de 100pulgadas"
+      ],
+      "targets": [
+        "android100"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC066",
+      "sourceGroup": "R110",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Selfi ia",
+        "Donde esta ubicado?"
+      ],
+      "targets": [
+        "selfie"
+      ],
+      "outcomes": [
+        "SEARCH",
+        "STORE"
+      ]
+    },
+    {
+      "id": "BC067",
+      "sourceGroup": "R113",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "precio de la hidrolavadora portátil lamtun"
+      ],
+      "targets": [
+        "lantunwasher"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC068",
+      "sourceGroup": "R115",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Los parlantes de 8\"",
+        "Precio",
+        "Y puedo ir",
+        "Para probar los sonidos ?"
+      ],
+      "targets": [
+        "speakers8"
+      ],
+      "outcomes": [
+        "PRICE",
+        "DEMO"
+      ]
+    },
+    {
+      "id": "BC069",
+      "sourceGroup": "R116",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Cual es el precio de harman kardon aura 5"
+      ],
+      "targets": [
+        "aura5"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC070",
+      "sourceGroup": "R117",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Ollas de vidrio y tetera de vidrio"
+      ],
+      "targets": [
+        "glasspots"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC071",
+      "sourceGroup": "R118",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Precios de cámara y modelos"
+      ],
+      "targets": [
+        "cameras"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC072",
+      "sourceGroup": "R120",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Televisores",
+        "Y juegos retro en hdmi",
+        "Y Alexa"
+      ],
+      "targets": [
+        "tv",
+        "consoles",
+        "alexa"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC073",
+      "sourceGroup": "R121",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catalogo de televisores"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC074",
+      "sourceGroup": "R124",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Excelente , su batería me alcanzará para 4 horas de uso continuo ?"
+      ],
+      "targets": [
+        "unclear"
+      ],
+      "outcomes": [
+        "CLARIFY"
+      ]
+    },
+    {
+      "id": "BC075",
+      "sourceGroup": "R125",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Hola buenas tardes tienes la tablet de 32\""
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC076",
+      "sourceGroup": "R126",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "TV de 75\""
+      ],
+      "targets": [
+        "tv75"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC077",
+      "sourceGroup": "R127",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buen dia Televisores tendra"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC078",
+      "sourceGroup": "R128",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Me podría ayudar con un video de la instalación para poder jugar en mi TV"
+      ],
+      "targets": [
+        "unclear"
+      ],
+      "outcomes": [
+        "CLARIFY"
+      ]
+    },
+    {
+      "id": "BC079",
+      "sourceGroup": "R129",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas , proyector con mandos"
+      ],
+      "targets": [
+        "gameprojector"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC080",
+      "sourceGroup": "R131",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catálogo de tv no tiene ?"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC081",
+      "sourceGroup": "R135",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Cargadores y audifonos inalambricos"
+      ],
+      "targets": [
+        "chargers",
+        "btheadphones"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC082",
+      "sourceGroup": "R136",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "reloj smartwatch"
+      ],
+      "targets": [
+        "smartwatches"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC083",
+      "sourceGroup": "R137",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Información de las televisiones"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC084",
+      "sourceGroup": "R138",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Precio del",
+        "Cart play"
+      ],
+      "targets": [
+        "carplay"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC085",
+      "sourceGroup": "R140",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Tendrá pantalla para laptop?",
+        "Pantalla para laptop lenovo yoga"
+      ],
+      "targets": [
+        "lenovoscreen"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC086",
+      "sourceGroup": "R142",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "la tablet gigante"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC087",
+      "sourceGroup": "R144",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola precio de tv box?"
+      ],
+      "targets": [
+        "tvbox"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC088",
+      "sourceGroup": "R148",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tendra televisor led 22 pulgadas"
+      ],
+      "targets": [
+        "tv22"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC089",
+      "sourceGroup": "R149",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Necesito catálogo de drones",
+        "Cuant cobra el envío para huaraz?"
+      ],
+      "targets": [
+        "drones"
+      ],
+      "outcomes": [
+        "CATALOG",
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC090",
+      "sourceGroup": "R151",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes que productos tiene"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC091",
+      "sourceGroup": "R153",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "El de la propaganda, tv box"
+      ],
+      "targets": [
+        "tvbox"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC092",
+      "sourceGroup": "R154",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Dron catálogos?",
+        "Dron",
+        "Hay catálogo?"
+      ],
+      "targets": [
+        "drones"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC093",
+      "sourceGroup": "R156",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Deseo saber precio de una hidrolavadora",
+        "Deseo unidad hacen delivery"
+      ],
+      "targets": [
+        "washers"
+      ],
+      "outcomes": [
+        "PRICE",
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC094",
+      "sourceGroup": "R157",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tachos con sensor",
+        "Que color tiene"
+      ],
+      "targets": [
+        "bins"
+      ],
+      "outcomes": [
+        "SEARCH",
+        "COLORS"
+      ]
+    },
+    {
+      "id": "BC095",
+      "sourceGroup": "R160",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "me puede enviar su catalgo",
+        "de artefactos de cosina",
+        "hervidora olla arrocera y cosina elstric"
+      ],
+      "targets": [
+        "kitchen"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC096",
+      "sourceGroup": "R163",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Les escribo por el aire",
+        "Cuál es el más fuerte",
+        "El de 55 soles? O tienes uno más potente",
+        "Uno q enfríe muy bien"
+      ],
+      "targets": [
+        "unclear"
+      ],
+      "outcomes": [
+        "CLARIFY"
+      ]
+    },
+    {
+      "id": "BC097",
+      "sourceGroup": "R166",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "El precio de los dumpling",
+        "Por cajon",
+        "Los dimpling"
+      ],
+      "targets": [
+        "dumpling"
+      ],
+      "outcomes": [
+        "BOX_PRICE"
+      ]
+    },
+    {
+      "id": "BC098",
+      "sourceGroup": "R168",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes qusiera saber cuanto esta Los audifonos traductores"
+      ],
+      "targets": [
+        "translatorbuds"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC099",
+      "sourceGroup": "R173",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola ví sus videos de pantallas tactiles",
+        "Pantalla táctil"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC100",
+      "sourceGroup": "R175",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Precio",
+        "Tablet 32 pulgadas multifuncional"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC101",
+      "sourceGroup": "R177",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Información",
+        "Por mayor por favor",
+        "TV estoy buscando señorita"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "INFORMATION",
+        "WHOLESALE"
+      ]
+    },
+    {
+      "id": "BC102",
+      "sourceGroup": "R178",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola buenas tardes",
+        "tienes disponible alexa kids",
+        "a cuanto si llevo 24?",
+        "cuanto por caja"
+      ],
+      "targets": [
+        "alexakids"
+      ],
+      "outcomes": [
+        "STOCK",
+        "PRICE",
+        "BOX_PRICE"
+      ],
+      "quantity": 24
+    },
+    {
+      "id": "BC103",
+      "sourceGroup": "R179",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tiene cargador 6 en 1 para auto",
+        "El que tiene aromstizador incluido",
+        "Cargador para carro con aromatizante incluido"
+      ],
+      "targets": [
+        "cararomacharger"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC104",
+      "sourceGroup": "R181",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tendrás estantes flotantes",
+        "Estantes",
+        "O repizas"
+      ],
+      "targets": [
+        "shelves"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC105",
+      "sourceGroup": "R182",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola. Estoy buscando repetidor de internet",
+        "Necesito un repetidor de internet",
+        "Tienes tienda física ? \nHaces delivery ?"
+      ],
+      "targets": [
+        "repeaters"
+      ],
+      "outcomes": [
+        "SEARCH",
+        "STORE",
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC106",
+      "sourceGroup": "R183",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Basurero inteligente",
+        "Estoy buscando un Tacho de basura inteligente"
+      ],
+      "targets": [
+        "bins"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC107",
+      "sourceGroup": "R186",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buen dia ventilador de mesa",
+        "Ventilador de mesa",
+        "Que no ocupe mucho espacio"
+      ],
+      "targets": [
+        "deskfans"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC108",
+      "sourceGroup": "R187",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catálogo de tv"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC109",
+      "sourceGroup": "R188",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Ctalogo"
+      ],
+      "targets": [
+        "general"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC110",
+      "sourceGroup": "R189",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Catalogo de las staciones ecoflow, porfavor"
+      ],
+      "targets": [
+        "ecoflowstations"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC111",
+      "sourceGroup": "R190",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Mini camara espía A9"
+      ],
+      "targets": [
+        "camA9"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC112",
+      "sourceGroup": "R192",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Deo precio de la tableta gigante."
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC113",
+      "sourceGroup": "R195",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Necesito taladro y atornillador",
+        "Precio"
+      ],
+      "targets": [
+        "drills"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC114",
+      "sourceGroup": "R196",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes asen delivery",
+        "Alexa de quinta generación"
+      ],
+      "targets": [
+        "alexa5"
+      ],
+      "outcomes": [
+        "SHIPPING",
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC115",
+      "sourceGroup": "R197",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Televisor 50 p"
+      ],
+      "targets": [
+        "tv50"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC116",
+      "sourceGroup": "R198",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes, me podría mostrar precios y modelos de tvs"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC117",
+      "sourceGroup": "R199",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Información sobre estación de energía"
+      ],
+      "targets": [
+        "powerstations"
+      ],
+      "outcomes": [
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC118",
+      "sourceGroup": "R200",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Pero quiero el modelo f3 pro segway"
+      ],
+      "targets": [
+        "segwayf3pro"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC119",
+      "sourceGroup": "R202",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardes el precio de la tablet de 32 pulgadas que estan ofreciendo x fa"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC120",
+      "sourceGroup": "R204",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "buenas tardes me podría brindar su catalogo",
+        "DE TV",
+        "EL CATALOGO"
+      ],
+      "targets": [
+        "tv"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC121",
+      "sourceGroup": "R205",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Hola, tienes el hot whells",
+        "Hot whells de nissan skyline gtr",
+        "Me refiero al modelo *NISSAN SKYLINE GTR*"
+      ],
+      "targets": [
+        "hotwheelgtr"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC122",
+      "sourceGroup": "R206",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Domplins",
+        "Dumpling squishy"
+      ],
+      "targets": [
+        "dumpling"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC123",
+      "sourceGroup": "R207",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "El catálogo de los parlantes pequeños",
+        "Que modelos tiene"
+      ],
+      "targets": [
+        "minispeakers"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC124",
+      "sourceGroup": "R212",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Power Bank y audífonos"
+      ],
+      "targets": [
+        "powerbanks",
+        "headphones"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC125",
+      "sourceGroup": "R214",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Qisiera saber el precio de alexa originale"
+      ],
+      "targets": [
+        "alexa"
+      ],
+      "outcomes": [
+        "PRICE",
+        "ORIGINAL"
+      ]
+    },
+    {
+      "id": "BC126",
+      "sourceGroup": "R215",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Busco la estación solar"
+      ],
+      "targets": [
+        "powerstations"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC127",
+      "sourceGroup": "R218",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "TV 75\""
+      ],
+      "targets": [
+        "tv75"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC128",
+      "sourceGroup": "R219",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Me envía su catálogo de sillas gamers porfa"
+      ],
+      "targets": [
+        "gamersilla"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC129",
+      "sourceGroup": "R221",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Parlante Alexa"
+      ],
+      "targets": [
+        "alexa"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC130",
+      "sourceGroup": "R223",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "precio lima delivery",
+        "Rimac"
+      ],
+      "targets": [
+        "business"
+      ],
+      "outcomes": [
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC131",
+      "sourceGroup": "R230",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Hola cual es el precio de las pantallas interactivas"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC132",
+      "sourceGroup": "R232",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Buenas tardespirf precio y características del jbl 330 party box."
+      ],
+      "targets": [
+        "party330"
+      ],
+      "outcomes": [
+        "PRICE",
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC133",
+      "sourceGroup": "R234",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tiene cargador original en la marca Xiaomi Redmi y Samsung"
+      ],
+      "targets": [
+        "originalchargers"
+      ],
+      "outcomes": [
+        "SEARCH",
+        "ORIGINAL"
+      ]
+    },
+    {
+      "id": "BC134",
+      "sourceGroup": "R235",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Precio de las tablets",
+        "Disculpe hace envíos a domicilio"
+      ],
+      "targets": [
+        "tablets"
+      ],
+      "outcomes": [
+        "PRICE",
+        "SHIPPING"
+      ]
+    },
+    {
+      "id": "BC135",
+      "sourceGroup": "R237",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Tiene piscina pequeña",
+        "Piscina de 1 metro aproximadamente"
+      ],
+      "targets": [
+        "pool1m"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC136",
+      "sourceGroup": "R238",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Quiero saber precio del tv de 65 pulgadas"
+      ],
+      "targets": [
+        "tv65"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC137",
+      "sourceGroup": "R240",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Robot asistente"
+      ],
+      "targets": [
+        "robots"
+      ],
+      "outcomes": [
+        "SEARCH"
+      ]
+    },
+    {
+      "id": "BC138",
+      "sourceGroup": "R243",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Presió de parlante jbl GO5"
+      ],
+      "targets": [
+        "jblgo5"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC139",
+      "sourceGroup": "R246",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola por favor catálogo de tv box"
+      ],
+      "targets": [
+        "tvbox"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    },
+    {
+      "id": "BC140",
+      "sourceGroup": "R250",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Aspiradora robot",
+        "X cajon",
+        "Esto precio x caaj",
+        "Caja"
+      ],
+      "targets": [
+        "robotvac"
+      ],
+      "outcomes": [
+        "BOX_PRICE"
+      ]
+    },
+    {
+      "id": "BC141",
+      "sourceGroup": "R252",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola información de tus bases de refrigeración para Laptop"
+      ],
+      "targets": [
+        "laptopcooler"
+      ],
+      "outcomes": [
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC142",
+      "sourceGroup": "R253",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Y el parlante antigravedad que precio"
+      ],
+      "targets": [
+        "antigravity"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC143",
+      "sourceGroup": "R259",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "El set de cuchillos cuanto es el precio x cajon"
+      ],
+      "targets": [
+        "knives"
+      ],
+      "outcomes": [
+        "BOX_PRICE"
+      ]
+    },
+    {
+      "id": "BC144",
+      "sourceGroup": "R260",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Buenas información de la pantalla grande tactil"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC145",
+      "sourceGroup": "R264",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Hola precio de la tablet grande"
+      ],
+      "targets": [
+        "screen32"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC146",
+      "sourceGroup": "R267",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Redmi Note 15 Pro 5G, precio"
+      ],
+      "targets": [
+        "redminote15pro5g"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC147",
+      "sourceGroup": "R271",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "Información de panel solar"
+      ],
+      "targets": [
+        "solarpanels"
+      ],
+      "outcomes": [
+        "INFORMATION"
+      ]
+    },
+    {
+      "id": "BC148",
+      "sourceGroup": "R275",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Quiero la consola de video juego cual es el precio"
+      ],
+      "targets": [
+        "consoles"
+      ],
+      "outcomes": [
+        "PRICE"
+      ]
+    },
+    {
+      "id": "BC149",
+      "sourceGroup": "R288",
+      "origin": "real_anonymized_excerpt",
+      "split": "development",
+      "messages": [
+        "El proyector HY 300 pro max cajón de 20 unidades  cuanto es su precio"
+      ],
+      "targets": [
+        "hy300promax"
+      ],
+      "outcomes": [
+        "BOX_PRICE"
+      ],
+      "quantity": 20
+    },
+    {
+      "id": "BC150",
+      "sourceGroup": "R300",
+      "origin": "real_anonymized_excerpt",
+      "split": "holdout",
+      "messages": [
+        "Catálogo de los hotwheels por unidad"
+      ],
+      "targets": [
+        "hotwheels"
+      ],
+      "outcomes": [
+        "CATALOG"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7413 @@
+{
+  "version": 1,
+  "runStartedAt": "2026-09-18T01:04:48.799Z",
+  "runCompletedAt": "2026-09-18T01:16:49.025Z",
+  "referenceSnapshotAt": "2026-09-18T00:54:46.243Z",
+  "notes": "Automatic diagnostic rubric, not a human-certified sales quality score. Product relevance uses curated inventory labels; incomplete labels are excluded from precision/recall. Intent outcomes may overlap; manually review semantic/factual edge cases. General links are not product recommendations.",
+  "summary": {
+    "cases": 150,
+    "passed": 75,
+    "failed": 73,
+    "review": 2,
+    "outcomes": {
+      "total": 174,
+      "passed": 86,
+      "failed": 84,
+      "review": 4
+    },
+    "transport": {
+      "answered": 149,
+      "timeout": 1,
+      "errors": 0,
+      "lateOrExtraReplyCases": 1
+    },
+    "retrieval": {
+      "judgedReturnedProducts": 249,
+      "relevantReturnedProducts": 184,
+      "microPrecision": 0.7389558232931727,
+      "casesWithWrongProducts": 17,
+      "positiveTargetGroups": 99,
+      "positiveGroupsFound": 47,
+      "targetHitRate": 0.47474747474747475,
+      "completeCatalogCases": 16,
+      "meanCatalogRecall": 0.3229166666666667,
+      "avoidableClarificationCases": 24
+    },
+    "pdfs": {
+      "checked": 10,
+      "valid": 10
+    },
+    "textPrices": {
+      "checked": 236,
+      "mismatches": 0
+    },
+    "latencyMs": {
+      "median": 12503,
+      "p95": 13271
+    }
+  },
+  "development": {
+    "cases": 115,
+    "passed": 57,
+    "failed": 57,
+    "review": 1,
+    "outcomes": {
+      "total": 135,
+      "passed": 66,
+      "failed": 66,
+      "review": 3
+    },
+    "transport": {
+      "answered": 114,
+      "timeout": 1,
+      "errors": 0,
+      "lateOrExtraReplyCases": 1
+    },
+    "retrieval": {
+      "judgedReturnedProducts": 198,
+      "relevantReturnedProducts": 138,
+      "microPrecision": 0.696969696969697,
+      "casesWithWrongProducts": 14,
+      "positiveTargetGroups": 74,
+      "positiveGroupsFound": 35,
+      "targetHitRate": 0.47297297297297297,
+      "completeCatalogCases": 13,
+      "meanCatalogRecall": 0.37179487179487175,
+      "avoidableClarificationCases": 18
+    },
+    "pdfs": {
+      "checked": 9,
+      "valid": 9
+    },
+    "textPrices": {
+      "checked": 179,
+      "mismatches": 0
+    },
+    "latencyMs": {
+      "median": 12500,
+      "p95": 13271
+    }
+  },
+  "holdout": {
+    "cases": 35,
+    "passed": 18,
+    "failed": 16,
+    "review": 1,
+    "outcomes": {
+      "total": 39,
+      "passed": 20,
+      "failed": 18,
+      "review": 1
+    },
+    "transport": {
+      "answered": 35,
+      "timeout": 0,
+      "errors": 0,
+      "lateOrExtraReplyCases": 0
+    },
+    "retrieval": {
+      "judgedReturnedProducts": 51,
+      "relevantReturnedProducts": 46,
+      "microPrecision": 0.9019607843137255,
+      "casesWithWrongProducts": 3,
+      "positiveTargetGroups": 25,
+      "positiveGroupsFound": 12,
+      "targetHitRate": 0.48,
+      "completeCatalogCases": 3,
+      "meanCatalogRecall": 0.1111111111111111,
+      "avoidableClarificationCases": 6
+    },
+    "pdfs": {
+      "checked": 1,
+      "valid": 1
+    },
+    "textPrices": {
+      "checked": 57,
+      "mismatches": 0
+    },
+    "latencyMs": {
+      "median": 12528,
+      "p95": 13333
+    }
+  },
+  "cases": [
+    {
+      "id": "BC001",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "generator3000",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13271,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC002",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13317,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC003",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13333,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC004",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 12,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "consoles",
+            "expected": 12,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12504,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC005",
+      "split": "development",
+      "transport": "TIMEOUT",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL",
+          "reason": "No completed simulator response"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 92,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "jbl",
+            "expected": 92,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": null,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 2,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC006",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "PASS"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12773,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC007",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "L721"
+        ],
+        "targetCoverage": [
+          {
+            "target": "dishrack",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12489,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "L721",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC008",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        },
+        {
+          "outcome": "STOCK",
+          "status": "PASS"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O1030"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tuner3",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12513,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O1030",
+          "quantity": 1,
+          "quotedUnit": 415,
+          "expectedUnit": 415,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC009",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "spycameras",
+            "expected": 4,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12660,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC010",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12580,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC011",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O494-CAMUFLADO"
+        ],
+        "targetCoverage": [
+          {
+            "target": "jblboombox",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12441,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O494-CAMUFLADO",
+          "quantity": 1,
+          "quotedUnit": 1650,
+          "expectedUnit": 1650,
+          "unitMatches": true,
+          "quotedTotal": 1650,
+          "expectedTotal": 1650,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC012",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "aroma",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12446,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC013",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12460,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC014",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12616,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC015",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "STORE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12628,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC016",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 9,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N1391",
+          "CP588"
+        ],
+        "targetCoverage": [
+          {
+            "target": "powerstations",
+            "expected": 9,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12627,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N1391",
+          "quantity": 1,
+          "quotedUnit": 375,
+          "expectedUnit": 375,
+          "unitMatches": true
+        },
+        {
+          "code": "CP588",
+          "quantity": 1,
+          "quotedUnit": 2860,
+          "expectedUnit": 2860,
+          "unitMatches": true
+        },
+        {
+          "code": "N1391",
+          "quantity": 1,
+          "quotedUnit": 375,
+          "expectedUnit": 375,
+          "unitMatches": true
+        },
+        {
+          "code": "CP588",
+          "quantity": 1,
+          "quotedUnit": 2860,
+          "expectedUnit": 2860,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC017",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12477,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC018",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 285,
+        "shownCount": 8,
+        "relevantCount": 8,
+        "wrongCodes": [],
+        "shownCodes": [
+          "P1026-GRIS",
+          "P1026-NEGRO",
+          "P1029",
+          "P1030",
+          "P1031",
+          "P1032",
+          "P1034",
+          "P1035"
+        ],
+        "targetCoverage": [
+          {
+            "target": "speakers",
+            "expected": 285,
+            "matched": 8
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12485,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1029",
+          "quantity": 1,
+          "quotedUnit": 199,
+          "expectedUnit": 199,
+          "unitMatches": true
+        },
+        {
+          "code": "P1030",
+          "quantity": 1,
+          "quotedUnit": 239,
+          "expectedUnit": 239,
+          "unitMatches": true
+        },
+        {
+          "code": "P1031",
+          "quantity": 1,
+          "quotedUnit": 239,
+          "expectedUnit": 239,
+          "unitMatches": true
+        },
+        {
+          "code": "P1032",
+          "quantity": 1,
+          "quotedUnit": 399,
+          "expectedUnit": 399,
+          "unitMatches": true
+        },
+        {
+          "code": "P1034",
+          "quantity": 1,
+          "quotedUnit": 499,
+          "expectedUnit": 499,
+          "unitMatches": true
+        },
+        {
+          "code": "P1035",
+          "quantity": 1,
+          "quotedUnit": 749,
+          "expectedUnit": 749,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC019",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": false,
+        "expectedCount": 16,
+        "shownCount": 14,
+        "relevantCount": 5,
+        "wrongCodes": [],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "O139",
+          "N1562",
+          "O468",
+          "O469",
+          "O679",
+          "O956",
+          "O383-NEGRO",
+          "O383-PURPURA",
+          "O667",
+          "O668-AZUL",
+          "O923-BLACK",
+          "O381-NEGRO"
+        ],
+        "targetCoverage": [
+          {
+            "target": "redmianc",
+            "expected": 16,
+            "matched": 5
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12497,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "N1562",
+          "quantity": 1,
+          "quotedUnit": 9,
+          "expectedUnit": 9,
+          "unitMatches": true
+        },
+        {
+          "code": "O468",
+          "quantity": 1,
+          "quotedUnit": 269,
+          "expectedUnit": 269,
+          "unitMatches": true
+        },
+        {
+          "code": "O469",
+          "quantity": 1,
+          "quotedUnit": 85,
+          "expectedUnit": 85,
+          "unitMatches": true
+        },
+        {
+          "code": "O679",
+          "quantity": 1,
+          "quotedUnit": 315,
+          "expectedUnit": 315,
+          "unitMatches": true
+        },
+        {
+          "code": "O956",
+          "quantity": 1,
+          "quotedUnit": 139,
+          "expectedUnit": 139,
+          "unitMatches": true
+        },
+        {
+          "code": "O383-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 249,
+          "expectedUnit": 249,
+          "unitMatches": true
+        },
+        {
+          "code": "O383-PURPURA",
+          "quantity": 1,
+          "quotedUnit": 249,
+          "expectedUnit": 249,
+          "unitMatches": true
+        },
+        {
+          "code": "O667",
+          "quantity": 1,
+          "quotedUnit": 270,
+          "expectedUnit": 270,
+          "unitMatches": true
+        },
+        {
+          "code": "O668-AZUL",
+          "quantity": 1,
+          "quotedUnit": 69,
+          "expectedUnit": 69,
+          "unitMatches": true
+        },
+        {
+          "code": "O923-BLACK",
+          "quantity": 1,
+          "quotedUnit": 169,
+          "expectedUnit": 169,
+          "unitMatches": true
+        },
+        {
+          "code": "O381-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 189,
+          "expectedUnit": 189,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC020",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "STORE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12493,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC021",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "bins",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12487,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC022",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "CR204"
+        ],
+        "targetCoverage": [
+          {
+            "target": "motocharger",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12654,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC023",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "PASS"
+        },
+        {
+          "outcome": "BOX_PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "hotwheels",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12540,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC024",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CLARIFY",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12522,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC025",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 9,
+        "relevantCount": 1,
+        "wrongCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "shownCodes": [
+          "CP602",
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "targetCoverage": [
+          {
+            "target": "river2pro",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12627,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "CP602",
+          "quantity": 1,
+          "quotedUnit": 2099,
+          "expectedUnit": 2099,
+          "unitMatches": true
+        },
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N1120",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "N551",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC026",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "ledhand",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12463,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC027",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PAYMENT",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12438,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC028",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12493,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC029",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 38,
+        "shownCount": 39,
+        "relevantCount": 38,
+        "wrongCodes": [
+          "O362"
+        ],
+        "shownCodes": [
+          "O1008",
+          "O1030",
+          "O141-BLANCO",
+          "O141-ROJO",
+          "O168",
+          "O237-AZUL.",
+          "O237-NEGRO",
+          "O278-NEGRO",
+          "O278-PINK",
+          "O278-PURPURA",
+          "O362",
+          "O398-ROJO.",
+          "O398-ROSADO",
+          "O399-CAMUFLADO",
+          "O399-ROSADO",
+          "O494-CAMUFLADO",
+          "O592",
+          "O618-AZUL.",
+          "O618-BLANCO",
+          "O618-CAMUFLADO",
+          "O618-NEGRO.",
+          "O618-ORANGE",
+          "O618-PINK",
+          "O618-PURPURA.",
+          "O618-ROJO",
+          "O623",
+          "O834-AZUL",
+          "O834-NEGRO",
+          "O891",
+          "O894-AMARILLO",
+          "O894-CELESTE",
+          "O894-PURPURA",
+          "O894-ROJO",
+          "O894-ROSADO",
+          "O958-AZUL",
+          "O958-CAMUFLADO",
+          "O958-NEGRO",
+          "O974",
+          "O977"
+        ],
+        "targetCoverage": [
+          {
+            "target": "jblspeakers",
+            "expected": 38,
+            "matched": 38
+          }
+        ],
+        "catalogRecall": 1
+      },
+      "avoidableClarification": false,
+      "latencyMs": 38234,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC030",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 13,
+        "shownCount": 14,
+        "relevantCount": 4,
+        "wrongCodes": [
+          "O1049-SILVER",
+          "O1050-SILVER",
+          "BT487-BLACK",
+          "T14-1",
+          "T43-SILVER",
+          "O1033-SILVER",
+          "O537-SILVER",
+          "O1027-SILVER",
+          "O105",
+          "L211"
+        ],
+        "shownCodes": [
+          "L443",
+          "O1049-SILVER",
+          "O1050-SILVER",
+          "BT487-BLACK",
+          "T14-1",
+          "T43-SILVER",
+          "O1033-SILVER",
+          "O537-SILVER",
+          "O1027-SILVER",
+          "O105",
+          "N454",
+          "L211",
+          "N2191-DORADO",
+          "N2191-VERDE"
+        ],
+        "targetCoverage": [
+          {
+            "target": "barber",
+            "expected": 13,
+            "matched": 4
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12573,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "L443",
+          "quantity": 1,
+          "quotedUnit": 15,
+          "expectedUnit": 15,
+          "unitMatches": true
+        },
+        {
+          "code": "O1049-SILVER",
+          "quantity": 1,
+          "quotedUnit": 135,
+          "expectedUnit": 135,
+          "unitMatches": true
+        },
+        {
+          "code": "O1050-SILVER",
+          "quantity": 1,
+          "quotedUnit": 175,
+          "expectedUnit": 175,
+          "unitMatches": true
+        },
+        {
+          "code": "BT487-BLACK",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "T14-1",
+          "quantity": 1,
+          "quotedUnit": 69,
+          "expectedUnit": 69,
+          "unitMatches": true
+        },
+        {
+          "code": "T43-SILVER",
+          "quantity": 1,
+          "quotedUnit": 50,
+          "expectedUnit": 50,
+          "unitMatches": true
+        },
+        {
+          "code": "O1033-SILVER",
+          "quantity": 1,
+          "quotedUnit": 230,
+          "expectedUnit": 230,
+          "unitMatches": true
+        },
+        {
+          "code": "O537-SILVER",
+          "quantity": 1,
+          "quotedUnit": 169,
+          "expectedUnit": 169,
+          "unitMatches": true
+        },
+        {
+          "code": "O1027-SILVER",
+          "quantity": 1,
+          "quotedUnit": 175,
+          "expectedUnit": 175,
+          "unitMatches": true
+        },
+        {
+          "code": "O105",
+          "quantity": 1,
+          "quotedUnit": 189,
+          "expectedUnit": 189,
+          "unitMatches": true
+        },
+        {
+          "code": "N454",
+          "quantity": 1,
+          "quotedUnit": 45,
+          "expectedUnit": 45,
+          "unitMatches": true
+        },
+        {
+          "code": "L211",
+          "quantity": 1,
+          "quotedUnit": 45,
+          "expectedUnit": 45,
+          "unitMatches": true
+        },
+        {
+          "code": "N2191-DORADO",
+          "quantity": 1,
+          "quotedUnit": 80,
+          "expectedUnit": 80,
+          "unitMatches": true
+        },
+        {
+          "code": "N2191-VERDE",
+          "quantity": 1,
+          "quotedUnit": 80,
+          "expectedUnit": 80,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC031",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12510,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC032",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "drones",
+            "expected": 4,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12500,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC033",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 3,
+        "relevantCount": 0,
+        "wrongCodes": [
+          "N1407",
+          "O436",
+          "O437"
+        ],
+        "shownCodes": [
+          "N1407",
+          "O436",
+          "O437"
+        ],
+        "targetCoverage": [
+          {
+            "target": "superbox",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12458,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N1407",
+          "quantity": 1,
+          "quotedUnit": 129,
+          "expectedUnit": 129,
+          "unitMatches": true
+        },
+        {
+          "code": "O436",
+          "quantity": 1,
+          "quotedUnit": 199,
+          "expectedUnit": 199,
+          "unitMatches": true
+        },
+        {
+          "code": "O437",
+          "quantity": 1,
+          "quotedUnit": 345,
+          "expectedUnit": 345,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC034",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "PC401",
+          "PC402"
+        ],
+        "targetCoverage": [
+          {
+            "target": "extenders",
+            "expected": 4,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12450,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "PC401",
+          "quantity": 1,
+          "quotedUnit": 950,
+          "expectedUnit": 950,
+          "unitMatches": true
+        },
+        {
+          "code": "PC402",
+          "quantity": 1,
+          "quotedUnit": 450,
+          "expectedUnit": 450,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC035",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": false,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "usbcadapter",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12450,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC036",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "voltageregulator",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12452,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC037",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "alexakids",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12450,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC038",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 2,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "H109",
+          "N2099"
+        ],
+        "targetCoverage": [
+          {
+            "target": "autoradio",
+            "expected": 2,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12463,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "H109",
+          "quantity": 1,
+          "quotedUnit": 479,
+          "expectedUnit": 479,
+          "unitMatches": true
+        },
+        {
+          "code": "N2099",
+          "quantity": 1,
+          "quotedUnit": 145,
+          "expectedUnit": 145,
+          "unitMatches": true
+        },
+        {
+          "code": "H109",
+          "quantity": 1,
+          "quotedUnit": 479,
+          "expectedUnit": 479,
+          "unitMatches": true
+        },
+        {
+          "code": "N2099",
+          "quantity": 1,
+          "quotedUnit": 145,
+          "expectedUnit": 145,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC039",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12447,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC040",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 2,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "H109",
+          "N2099"
+        ],
+        "targetCoverage": [
+          {
+            "target": "autoradio",
+            "expected": 2,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12432,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "H109",
+          "quantity": 1,
+          "quotedUnit": 479,
+          "expectedUnit": 479,
+          "unitMatches": true
+        },
+        {
+          "code": "N2099",
+          "quantity": 1,
+          "quotedUnit": 145,
+          "expectedUnit": 145,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC041",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 204,
+        "shownCount": 8,
+        "relevantCount": 6,
+        "wrongCodes": [
+          "AU147-BLANCO",
+          "N1562"
+        ],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "O139",
+          "N1562",
+          "O468",
+          "O469",
+          "O679",
+          "O956"
+        ],
+        "targetCoverage": [
+          {
+            "target": "btheadphones",
+            "expected": 204,
+            "matched": 6
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12472,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "N1562",
+          "quantity": 1,
+          "quotedUnit": 9,
+          "expectedUnit": 9,
+          "unitMatches": true
+        },
+        {
+          "code": "O468",
+          "quantity": 1,
+          "quotedUnit": 269,
+          "expectedUnit": 269,
+          "unitMatches": true
+        },
+        {
+          "code": "O469",
+          "quantity": 1,
+          "quotedUnit": 85,
+          "expectedUnit": 85,
+          "unitMatches": true
+        },
+        {
+          "code": "O679",
+          "quantity": 1,
+          "quotedUnit": 315,
+          "expectedUnit": 315,
+          "unitMatches": true
+        },
+        {
+          "code": "O956",
+          "quantity": 1,
+          "quotedUnit": 139,
+          "expectedUnit": 139,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC042",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CLARIFY",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12440,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC043",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O881"
+        ],
+        "targetCoverage": [
+          {
+            "target": "screens",
+            "expected": 6,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12426,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O881",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC044",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        },
+        {
+          "outcome": "PAYMENT",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "STORE",
+          "status": "PASS"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N2100"
+        ],
+        "targetCoverage": [
+          {
+            "target": "aircon",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12750,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N2100",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC045",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12650,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC046",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O623"
+        ],
+        "targetCoverage": [
+          {
+            "target": "party720",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12435,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O623",
+          "quantity": 1,
+          "quotedUnit": 3389,
+          "expectedUnit": 3389,
+          "unitMatches": true
+        },
+        {
+          "code": "O623",
+          "quantity": 1,
+          "quotedUnit": 3389,
+          "expectedUnit": 3389,
+          "unitMatches": true,
+          "quotedTotal": 3389,
+          "expectedTotal": 3389,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC047",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 8,
+        "shownCount": 8,
+        "relevantCount": 6,
+        "wrongCodes": [
+          "PC278",
+          "PC54"
+        ],
+        "shownCodes": [
+          "CP65",
+          "H117",
+          "H120",
+          "H144",
+          "N1408",
+          "N2208",
+          "PC278",
+          "PC54"
+        ],
+        "targetCoverage": [
+          {
+            "target": "phoneholders",
+            "expected": 8,
+            "matched": 6
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12575,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "CP65",
+          "quantity": 1,
+          "quotedUnit": 35,
+          "expectedUnit": 35,
+          "unitMatches": true
+        },
+        {
+          "code": "H117",
+          "quantity": 1,
+          "quotedUnit": 18,
+          "expectedUnit": 18,
+          "unitMatches": true
+        },
+        {
+          "code": "H120",
+          "quantity": 1,
+          "quotedUnit": 129,
+          "expectedUnit": 129,
+          "unitMatches": true
+        },
+        {
+          "code": "H144",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "N1408",
+          "quantity": 1,
+          "quotedUnit": 25,
+          "expectedUnit": 25,
+          "unitMatches": true
+        },
+        {
+          "code": "N2208",
+          "quantity": 1,
+          "quotedUnit": 89,
+          "expectedUnit": 89,
+          "unitMatches": true
+        },
+        {
+          "code": "PC278",
+          "quantity": 1,
+          "quotedUnit": 15,
+          "expectedUnit": 15,
+          "unitMatches": true
+        },
+        {
+          "code": "PC54",
+          "quantity": 1,
+          "quotedUnit": 69,
+          "expectedUnit": 69,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC048",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "penprojector",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12655,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC049",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": false,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "loona",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12496,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC050",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 4,
+        "relevantCount": 2,
+        "wrongCodes": [
+          "O436",
+          "O437"
+        ],
+        "shownCodes": [
+          "O436",
+          "O437",
+          "O885",
+          "O889"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": 0.3333333333333333
+      },
+      "avoidableClarification": false,
+      "latencyMs": 16015,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC051",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "STOCK",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "mt78",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12621,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC052",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv85",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12513,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC053",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "autoradio70",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12512,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC054",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "alexa5",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12475,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC055",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv55",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12492,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC056",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 4,
+        "relevantCount": 2,
+        "wrongCodes": [
+          "O436",
+          "O437"
+        ],
+        "shownCodes": [
+          "O436",
+          "O437",
+          "O885",
+          "O889"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": 0.3333333333333333
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12484,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC057",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "STORE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12458,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC058",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O15-AZUL"
+        ],
+        "targetCoverage": [
+          {
+            "target": "alexa5",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12454,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O15-AZUL",
+          "quantity": 1,
+          "quotedUnit": 249,
+          "expectedUnit": 249,
+          "unitMatches": true,
+          "quotedTotal": 249,
+          "expectedTotal": 249,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC059",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 4,
+        "relevantCount": 4,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O1001",
+          "O1005",
+          "O1007",
+          "N157"
+        ],
+        "targetCoverage": [
+          {
+            "target": "drones",
+            "expected": 4,
+            "matched": 4
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12492,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O1001",
+          "quantity": 1,
+          "quotedUnit": 4989,
+          "expectedUnit": 4989,
+          "unitMatches": true
+        },
+        {
+          "code": "O1005",
+          "quantity": 1,
+          "quotedUnit": 1030,
+          "expectedUnit": 1030,
+          "unitMatches": true
+        },
+        {
+          "code": "O1007",
+          "quantity": 1,
+          "quotedUnit": 3259,
+          "expectedUnit": 3259,
+          "unitMatches": true
+        },
+        {
+          "code": "N157",
+          "quantity": 1,
+          "quotedUnit": 45,
+          "expectedUnit": 45,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC060",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CLARIFY",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12441,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC061",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG_NO_PRICES",
+          "status": "REVIEW",
+          "reason": "Manual semantic review required"
+        }
+      ],
+      "status": "REVIEW",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12447,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC062",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "alexa",
+            "expected": 4,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12484,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC063",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 9,
+        "shownCount": 6,
+        "relevantCount": 6,
+        "wrongCodes": [],
+        "shownCodes": [
+          "PC292-BLACK",
+          "PC292-BLUE",
+          "PC292-PINK",
+          "PC53",
+          "PC78",
+          "O1013"
+        ],
+        "targetCoverage": [
+          {
+            "target": "wirelessmouse",
+            "expected": 9,
+            "matched": 6
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12453,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "PC292-BLACK",
+          "quantity": 1,
+          "quotedUnit": 20,
+          "expectedUnit": 20,
+          "unitMatches": true
+        },
+        {
+          "code": "PC292-BLUE",
+          "quantity": 1,
+          "quotedUnit": 20,
+          "expectedUnit": 20,
+          "unitMatches": true
+        },
+        {
+          "code": "PC292-PINK",
+          "quantity": 1,
+          "quotedUnit": 20,
+          "expectedUnit": 20,
+          "unitMatches": true
+        },
+        {
+          "code": "PC53",
+          "quantity": 1,
+          "quotedUnit": 15,
+          "expectedUnit": 15,
+          "unitMatches": true
+        },
+        {
+          "code": "PC78",
+          "quantity": 1,
+          "quotedUnit": 19,
+          "expectedUnit": 19,
+          "unitMatches": true
+        },
+        {
+          "code": "O1013",
+          "quantity": 1,
+          "quotedUnit": 39,
+          "expectedUnit": 39,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC064",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12520,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC065",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "android100",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12428,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC066",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "STORE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "selfie",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12497,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC067",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "lantunwasher",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12418,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC068",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        },
+        {
+          "outcome": "DEMO",
+          "status": "REVIEW",
+          "reason": "Manual semantic review required"
+        }
+      ],
+      "status": "REVIEW",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 12,
+        "shownCount": 8,
+        "relevantCount": 8,
+        "wrongCodes": [],
+        "shownCodes": [
+          "P1048",
+          "P539",
+          "P77",
+          "P898",
+          "P548",
+          "P041",
+          "P698",
+          "P1025"
+        ],
+        "targetCoverage": [
+          {
+            "target": "speakers8",
+            "expected": 12,
+            "matched": 8
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12585,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "P1048",
+          "quantity": 1,
+          "quotedUnit": 45,
+          "expectedUnit": 45,
+          "unitMatches": true
+        },
+        {
+          "code": "P539",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P77",
+          "quantity": 1,
+          "quotedUnit": 95,
+          "expectedUnit": 95,
+          "unitMatches": true
+        },
+        {
+          "code": "P898",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P548",
+          "quantity": 1,
+          "quotedUnit": 485,
+          "expectedUnit": 485,
+          "unitMatches": true
+        },
+        {
+          "code": "P041",
+          "quantity": 1,
+          "quotedUnit": 500,
+          "expectedUnit": 500,
+          "unitMatches": true
+        },
+        {
+          "code": "P698",
+          "quantity": 1,
+          "quotedUnit": 599,
+          "expectedUnit": 599,
+          "unitMatches": true
+        },
+        {
+          "code": "P1025",
+          "quantity": 1,
+          "quotedUnit": 559,
+          "expectedUnit": 559,
+          "unitMatches": true
+        },
+        {
+          "code": "P1048",
+          "quantity": 1,
+          "quotedUnit": 45,
+          "expectedUnit": 45,
+          "unitMatches": true
+        },
+        {
+          "code": "P539",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P77",
+          "quantity": 1,
+          "quotedUnit": 95,
+          "expectedUnit": 95,
+          "unitMatches": true
+        },
+        {
+          "code": "P898",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P548",
+          "quantity": 1,
+          "quotedUnit": 485,
+          "expectedUnit": 485,
+          "unitMatches": true
+        },
+        {
+          "code": "P041",
+          "quantity": 1,
+          "quotedUnit": 500,
+          "expectedUnit": 500,
+          "unitMatches": true
+        },
+        {
+          "code": "P698",
+          "quantity": 1,
+          "quotedUnit": 599,
+          "expectedUnit": 599,
+          "unitMatches": true
+        },
+        {
+          "code": "P1025",
+          "quantity": 1,
+          "quotedUnit": 559,
+          "expectedUnit": 559,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC069",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "aura5",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12429,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC070",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "glasspots",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12457,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC071",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 53,
+        "shownCount": 8,
+        "relevantCount": 8,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N1036",
+          "O1002",
+          "O800",
+          "O802",
+          "O803",
+          "O804",
+          "O807",
+          "O812"
+        ],
+        "targetCoverage": [
+          {
+            "target": "cameras",
+            "expected": 53,
+            "matched": 8
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12506,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N1036",
+          "quantity": 1,
+          "quotedUnit": 69,
+          "expectedUnit": 69,
+          "unitMatches": true
+        },
+        {
+          "code": "O1002",
+          "quantity": 1,
+          "quotedUnit": 1899,
+          "expectedUnit": 1899,
+          "unitMatches": true
+        },
+        {
+          "code": "O800",
+          "quantity": 1,
+          "quotedUnit": 109,
+          "expectedUnit": 109,
+          "unitMatches": true
+        },
+        {
+          "code": "O802",
+          "quantity": 1,
+          "quotedUnit": 269,
+          "expectedUnit": 269,
+          "unitMatches": true
+        },
+        {
+          "code": "O803",
+          "quantity": 1,
+          "quotedUnit": 219,
+          "expectedUnit": 219,
+          "unitMatches": true
+        },
+        {
+          "code": "O804",
+          "quantity": 1,
+          "quotedUnit": 109,
+          "expectedUnit": 109,
+          "unitMatches": true
+        },
+        {
+          "code": "O807",
+          "quantity": 1,
+          "quotedUnit": 269,
+          "expectedUnit": 269,
+          "unitMatches": true
+        },
+        {
+          "code": "O812",
+          "quantity": 1,
+          "quotedUnit": 219,
+          "expectedUnit": 219,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC072",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 22,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O1038-WHITE"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          },
+          {
+            "target": "consoles",
+            "expected": 12,
+            "matched": 0
+          },
+          {
+            "target": "alexa",
+            "expected": 4,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12545,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O1038-WHITE",
+          "quantity": 1,
+          "quotedUnit": 1030,
+          "expectedUnit": 1030,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC073",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12464,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC074",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CLARIFY",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12583,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC075",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12462,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC076",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv75",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12449,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC077",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12502,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC078",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CLARIFY",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12450,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC079",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "gameprojector",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12486,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC080",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12508,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC081",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 309,
+        "shownCount": 8,
+        "relevantCount": 8,
+        "wrongCodes": [],
+        "shownCodes": [
+          "CP55",
+          "O220",
+          "O221",
+          "O222",
+          "N2320",
+          "CR192",
+          "CR293",
+          "CR413"
+        ],
+        "targetCoverage": [
+          {
+            "target": "chargers",
+            "expected": 105,
+            "matched": 8
+          },
+          {
+            "target": "btheadphones",
+            "expected": 204,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12477,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "O220",
+          "quantity": 1,
+          "quotedUnit": 85,
+          "expectedUnit": 85,
+          "unitMatches": true
+        },
+        {
+          "code": "O221",
+          "quantity": 1,
+          "quotedUnit": 160,
+          "expectedUnit": 160,
+          "unitMatches": true
+        },
+        {
+          "code": "O222",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "N2320",
+          "quantity": 1,
+          "quotedUnit": 35,
+          "expectedUnit": 35,
+          "unitMatches": true
+        },
+        {
+          "code": "CR192",
+          "quantity": 1,
+          "quotedUnit": 20,
+          "expectedUnit": 20,
+          "unitMatches": true
+        },
+        {
+          "code": "CR293",
+          "quantity": 1,
+          "quotedUnit": 19,
+          "expectedUnit": 19,
+          "unitMatches": true
+        },
+        {
+          "code": "CR413",
+          "quantity": 1,
+          "quotedUnit": 19,
+          "expectedUnit": 19,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC082",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 42,
+        "shownCount": 8,
+        "relevantCount": 5,
+        "wrongCodes": [
+          "A16",
+          "A18",
+          "N1032"
+        ],
+        "shownCodes": [
+          "O1049-NEGRO",
+          "O1049-SILVER",
+          "O1050-NEGRO",
+          "O1050-SILVER",
+          "A16",
+          "A18",
+          "N1032",
+          "N1071"
+        ],
+        "targetCoverage": [
+          {
+            "target": "smartwatches",
+            "expected": 42,
+            "matched": 5
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12432,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O1049-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 135,
+          "expectedUnit": 135,
+          "unitMatches": true
+        },
+        {
+          "code": "O1049-SILVER",
+          "quantity": 1,
+          "quotedUnit": 135,
+          "expectedUnit": 135,
+          "unitMatches": true
+        },
+        {
+          "code": "O1050-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 175,
+          "expectedUnit": 175,
+          "unitMatches": true
+        },
+        {
+          "code": "O1050-SILVER",
+          "quantity": 1,
+          "quotedUnit": 175,
+          "expectedUnit": 175,
+          "unitMatches": true
+        },
+        {
+          "code": "A16",
+          "quantity": 1,
+          "quotedUnit": 25,
+          "expectedUnit": 25,
+          "unitMatches": true
+        },
+        {
+          "code": "A18",
+          "quantity": 1,
+          "quotedUnit": 25,
+          "expectedUnit": 25,
+          "unitMatches": true
+        },
+        {
+          "code": "N1032",
+          "quantity": 1,
+          "quotedUnit": 13,
+          "expectedUnit": 13,
+          "unitMatches": true
+        },
+        {
+          "code": "N1071",
+          "quantity": 1,
+          "quotedUnit": 29,
+          "expectedUnit": 29,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC083",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12487,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC084",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "carplay",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12459,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC085",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "lenovoscreen",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12445,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC086",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12452,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC087",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 3,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N1407"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tvbox",
+            "expected": 3,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12446,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N1407",
+          "quantity": 1,
+          "quotedUnit": 129,
+          "expectedUnit": 129,
+          "unitMatches": true,
+          "quotedTotal": 129,
+          "expectedTotal": 129,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC088",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv22",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12428,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC089",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 4,
+        "relevantCount": 4,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O1001",
+          "O1005",
+          "O1007",
+          "N157"
+        ],
+        "targetCoverage": [
+          {
+            "target": "drones",
+            "expected": 4,
+            "matched": 4
+          }
+        ],
+        "catalogRecall": 1
+      },
+      "avoidableClarification": false,
+      "latencyMs": 15314,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC090",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 8,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12519,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N1120",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "N551",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC091",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 3,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tvbox",
+            "expected": 3,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12507,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC092",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O1001",
+          "O1005"
+        ],
+        "targetCoverage": [
+          {
+            "target": "drones",
+            "expected": 4,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": 0.5
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13747,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        },
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O1001",
+          "quantity": 1,
+          "quotedUnit": 4989,
+          "expectedUnit": 4989,
+          "unitMatches": true
+        },
+        {
+          "code": "O1005",
+          "quantity": 1,
+          "quotedUnit": 1030,
+          "expectedUnit": 1030,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC093",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 3,
+        "shownCount": 3,
+        "relevantCount": 3,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N1145",
+          "N2176",
+          "N2177"
+        ],
+        "targetCoverage": [
+          {
+            "target": "washers",
+            "expected": 3,
+            "matched": 3
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12692,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N1145",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N2176",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "N2177",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC094",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "COLORS",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 8,
+        "relevantCount": 0,
+        "wrongCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "targetCoverage": [
+          {
+            "target": "bins",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12530,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N1120",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "N551",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC095",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 30,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "kitchen",
+            "expected": 30,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12565,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC096",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CLARIFY",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12695,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC097",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "BOX_PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "JUGT369"
+        ],
+        "targetCoverage": [
+          {
+            "target": "dumpling",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12482,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "JUGT369",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true,
+          "quotedTotal": 10,
+          "expectedTotal": 10,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC098",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "translatorbuds",
+            "expected": 4,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12841,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC099",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12654,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC100",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12422,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC101",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "WHOLESALE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 8,
+        "relevantCount": 0,
+        "wrongCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12571,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N1120",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "N551",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC102",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "STOCK",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "BOX_PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 9,
+        "relevantCount": 0,
+        "wrongCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO",
+          "N2137"
+        ],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO",
+          "N2137"
+        ],
+        "targetCoverage": [
+          {
+            "target": "alexakids",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12612,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N1120",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "N551",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "N2137",
+          "quantity": 1,
+          "quotedUnit": 280,
+          "expectedUnit": 280,
+          "unitMatches": true,
+          "quotedTotal": 280,
+          "expectedTotal": 280,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC103",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "cararomacharger",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12619,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC104",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "shelves",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12677,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC105",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "STORE",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 5,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "repeaters",
+            "expected": 5,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12900,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC106",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "bins",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12688,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC107",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": false,
+        "expectedCount": 2,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "deskfans",
+            "expected": 2,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13037,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC108",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 4,
+        "relevantCount": 2,
+        "wrongCodes": [
+          "O436",
+          "O437"
+        ],
+        "shownCodes": [
+          "O436",
+          "O437",
+          "O885",
+          "O889"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": 0.3333333333333333
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13158,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC109",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12979,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC110",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 5,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "ecoflowstations",
+            "expected": 5,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": 0
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12784,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC111",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "camA9",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12773,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC112",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12728,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC113",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N2205",
+          "N2098"
+        ],
+        "targetCoverage": [
+          {
+            "target": "drills",
+            "expected": 4,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12698,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N2205",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "N2098",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "N2205",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "N2098",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC114",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SHIPPING",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "alexa5",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12813,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC115",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv50",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12501,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC116",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12487,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC117",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 9,
+        "shownCount": 8,
+        "relevantCount": 8,
+        "wrongCodes": [],
+        "shownCodes": [
+          "CP598",
+          "CP599",
+          "CP600",
+          "CP601",
+          "CP602",
+          "N1391",
+          "CP588",
+          "CP591"
+        ],
+        "targetCoverage": [
+          {
+            "target": "powerstations",
+            "expected": 9,
+            "matched": 8
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12587,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "CP598",
+          "quantity": 1,
+          "quotedUnit": 2999,
+          "expectedUnit": 2999,
+          "unitMatches": true
+        },
+        {
+          "code": "CP599",
+          "quantity": 1,
+          "quotedUnit": 4799,
+          "expectedUnit": 4799,
+          "unitMatches": true
+        },
+        {
+          "code": "CP600",
+          "quantity": 1,
+          "quotedUnit": 6999,
+          "expectedUnit": 6999,
+          "unitMatches": true
+        },
+        {
+          "code": "CP601",
+          "quantity": 1,
+          "quotedUnit": 1139,
+          "expectedUnit": 1139,
+          "unitMatches": true
+        },
+        {
+          "code": "CP602",
+          "quantity": 1,
+          "quotedUnit": 2099,
+          "expectedUnit": 2099,
+          "unitMatches": true
+        },
+        {
+          "code": "N1391",
+          "quantity": 1,
+          "quotedUnit": 375,
+          "expectedUnit": 375,
+          "unitMatches": true
+        },
+        {
+          "code": "CP588",
+          "quantity": 1,
+          "quotedUnit": 2860,
+          "expectedUnit": 2860,
+          "unitMatches": true
+        },
+        {
+          "code": "CP591",
+          "quantity": 1,
+          "quotedUnit": 259,
+          "expectedUnit": 259,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC118",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "segwayf3pro",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12740,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC119",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12464,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC120",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 6,
+        "shownCount": 4,
+        "relevantCount": 2,
+        "wrongCodes": [
+          "O436",
+          "O437"
+        ],
+        "shownCodes": [
+          "O436",
+          "O437",
+          "O885",
+          "O889"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tv",
+            "expected": 6,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": 0.3333333333333333
+      },
+      "avoidableClarification": false,
+      "latencyMs": 16138,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O436",
+          "quantity": 1,
+          "quotedUnit": 199,
+          "expectedUnit": 199,
+          "unitMatches": true
+        },
+        {
+          "code": "O437",
+          "quantity": 1,
+          "quotedUnit": 345,
+          "expectedUnit": 345,
+          "unitMatches": true
+        },
+        {
+          "code": "O885",
+          "quantity": 1,
+          "quotedUnit": 924,
+          "expectedUnit": 924,
+          "unitMatches": true
+        },
+        {
+          "code": "O889",
+          "quantity": 1,
+          "quotedUnit": 1899,
+          "expectedUnit": 1899,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC121",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "hotwheelgtr",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12671,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC122",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "JUGT369"
+        ],
+        "targetCoverage": [
+          {
+            "target": "dumpling",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12459,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "JUGT369",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC123",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": false,
+        "expectedCount": 35,
+        "shownCount": 8,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "CP55",
+          "N1120",
+          "N551",
+          "O139",
+          "P1026-GRIS",
+          "P1026-NEGRO"
+        ],
+        "targetCoverage": [
+          {
+            "target": "minispeakers",
+            "expected": 35,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12503,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "CP55",
+          "quantity": 1,
+          "quotedUnit": 55,
+          "expectedUnit": 55,
+          "unitMatches": true
+        },
+        {
+          "code": "N1120",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "N551",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-GRIS",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "P1026-NEGRO",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC124",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 293,
+        "shownCount": 8,
+        "relevantCount": 7,
+        "wrongCodes": [
+          "N1562"
+        ],
+        "shownCodes": [
+          "AU147-BLANCO",
+          "BT383",
+          "O139",
+          "N1562",
+          "O468",
+          "O469",
+          "O679",
+          "O956"
+        ],
+        "targetCoverage": [
+          {
+            "target": "powerbanks",
+            "expected": 47,
+            "matched": 0
+          },
+          {
+            "target": "headphones",
+            "expected": 246,
+            "matched": 7
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12472,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "AU147-BLANCO",
+          "quantity": 1,
+          "quotedUnit": 10,
+          "expectedUnit": 10,
+          "unitMatches": true
+        },
+        {
+          "code": "BT383",
+          "quantity": 1,
+          "quotedUnit": 40,
+          "expectedUnit": 40,
+          "unitMatches": true
+        },
+        {
+          "code": "O139",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        },
+        {
+          "code": "N1562",
+          "quantity": 1,
+          "quotedUnit": 9,
+          "expectedUnit": 9,
+          "unitMatches": true
+        },
+        {
+          "code": "O468",
+          "quantity": 1,
+          "quotedUnit": 269,
+          "expectedUnit": 269,
+          "unitMatches": true
+        },
+        {
+          "code": "O469",
+          "quantity": 1,
+          "quotedUnit": 85,
+          "expectedUnit": 85,
+          "unitMatches": true
+        },
+        {
+          "code": "O679",
+          "quantity": 1,
+          "quotedUnit": 315,
+          "expectedUnit": 315,
+          "unitMatches": true
+        },
+        {
+          "code": "O956",
+          "quantity": 1,
+          "quotedUnit": 139,
+          "expectedUnit": 139,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC125",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "ORIGINAL",
+          "status": "REVIEW",
+          "reason": "Manual semantic review required"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "alexa",
+            "expected": 4,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12452,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC126",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 9,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "powerstations",
+            "expected": 9,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12457,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC127",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv75",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12446,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC128",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N2107-RED"
+        ],
+        "targetCoverage": [
+          {
+            "target": "gamersilla",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": 1
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12766,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC129",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 4,
+        "shownCount": 3,
+        "relevantCount": 3,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O15-AZUL",
+          "O256-AZUL",
+          "O880"
+        ],
+        "targetCoverage": [
+          {
+            "target": "alexa",
+            "expected": 4,
+            "matched": 3
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12503,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O15-AZUL",
+          "quantity": 1,
+          "quotedUnit": 249,
+          "expectedUnit": 249,
+          "unitMatches": true
+        },
+        {
+          "code": "O256-AZUL",
+          "quantity": 1,
+          "quotedUnit": 350,
+          "expectedUnit": 350,
+          "unitMatches": true
+        },
+        {
+          "code": "O880",
+          "quantity": 1,
+          "quotedUnit": 499,
+          "expectedUnit": 499,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC130",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SHIPPING",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": false,
+        "precisionEligible": false,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12504,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC131",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N2315"
+        ],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12473,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N2315",
+          "quantity": 1,
+          "quotedUnit": 2690,
+          "expectedUnit": 2690,
+          "unitMatches": true,
+          "quotedTotal": 2690,
+          "expectedTotal": 2690,
+          "totalMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC132",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "party330",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12516,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC133",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        },
+        {
+          "outcome": "ORIGINAL",
+          "status": "REVIEW",
+          "reason": "Manual semantic review required"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 14,
+        "shownCount": 8,
+        "relevantCount": 7,
+        "wrongCodes": [
+          "CR150"
+        ],
+        "shownCodes": [
+          "O31",
+          "O33",
+          "O356",
+          "O902",
+          "O946",
+          "CR150",
+          "CR289",
+          "O02"
+        ],
+        "targetCoverage": [
+          {
+            "target": "originalchargers",
+            "expected": 14,
+            "matched": 7
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12465,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O31",
+          "quantity": 1,
+          "quotedUnit": 99,
+          "expectedUnit": 99,
+          "unitMatches": true
+        },
+        {
+          "code": "O33",
+          "quantity": 1,
+          "quotedUnit": 130,
+          "expectedUnit": 130,
+          "unitMatches": true
+        },
+        {
+          "code": "O356",
+          "quantity": 1,
+          "quotedUnit": 49,
+          "expectedUnit": 49,
+          "unitMatches": true
+        },
+        {
+          "code": "O902",
+          "quantity": 1,
+          "quotedUnit": 120,
+          "expectedUnit": 120,
+          "unitMatches": true
+        },
+        {
+          "code": "O946",
+          "quantity": 1,
+          "quotedUnit": 149,
+          "expectedUnit": 149,
+          "unitMatches": true
+        },
+        {
+          "code": "CR150",
+          "quantity": 1,
+          "quotedUnit": 5,
+          "expectedUnit": 5,
+          "unitMatches": true
+        },
+        {
+          "code": "CR289",
+          "quantity": 1,
+          "quotedUnit": 30,
+          "expectedUnit": 30,
+          "unitMatches": true
+        },
+        {
+          "code": "O02",
+          "quantity": 1,
+          "quotedUnit": 89,
+          "expectedUnit": 89,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC134",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        },
+        {
+          "outcome": "SHIPPING",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 5,
+        "shownCount": 5,
+        "relevantCount": 5,
+        "wrongCodes": [],
+        "shownCodes": [
+          "O831-GREY",
+          "O842-BLUE",
+          "O846",
+          "O185",
+          "O279"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tablets",
+            "expected": 5,
+            "matched": 5
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12545,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "O831-GREY",
+          "quantity": 1,
+          "quotedUnit": 570,
+          "expectedUnit": 570,
+          "unitMatches": true
+        },
+        {
+          "code": "O842-BLUE",
+          "quantity": 1,
+          "quotedUnit": 399,
+          "expectedUnit": 399,
+          "unitMatches": true
+        },
+        {
+          "code": "O846",
+          "quantity": 1,
+          "quotedUnit": 825,
+          "expectedUnit": 825,
+          "unitMatches": true
+        },
+        {
+          "code": "O185",
+          "quantity": 1,
+          "quotedUnit": 629,
+          "expectedUnit": 629,
+          "unitMatches": true
+        },
+        {
+          "code": "O279",
+          "quantity": 1,
+          "quotedUnit": 560,
+          "expectedUnit": 560,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC135",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "pool1m",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12566,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC136",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "tv65",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12450,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC137",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "SEARCH",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": false,
+        "expectedCount": 4,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "robots",
+            "expected": 4,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12528,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC138",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 5,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "jblgo5",
+            "expected": 5,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12494,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC139",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 3,
+        "shownCount": 1,
+        "relevantCount": 1,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N1407"
+        ],
+        "targetCoverage": [
+          {
+            "target": "tvbox",
+            "expected": 3,
+            "matched": 1
+          }
+        ],
+        "catalogRecall": 0.3333333333333333
+      },
+      "avoidableClarification": false,
+      "latencyMs": 13102,
+      "pdfChecks": [
+        {
+          "ok": true,
+          "httpStatus": 200
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC140",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "BOX_PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 1,
+        "relevantCount": 0,
+        "wrongCodes": [
+          "N2137"
+        ],
+        "shownCodes": [
+          "N2137"
+        ],
+        "targetCoverage": [
+          {
+            "target": "robotvac",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12717,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N2137",
+          "quantity": 1,
+          "quotedUnit": 280,
+          "expectedUnit": 280,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC141",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 3,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "laptopcooler",
+            "expected": 3,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12694,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC142",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "antigravity",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12484,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC143",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "BOX_PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "knives",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12603,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC144",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12543,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC145",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "FAIL"
+        }
+      ],
+      "status": "FAIL",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 1,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "screen32",
+            "expected": 1,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": true,
+      "latencyMs": 12486,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC146",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "redminote15pro5g",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12463,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC147",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "INFORMATION",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 8,
+        "shownCount": 8,
+        "relevantCount": 8,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N109",
+          "N2102",
+          "N2199",
+          "N2289",
+          "N2290",
+          "N2291",
+          "N1084",
+          "N745"
+        ],
+        "targetCoverage": [
+          {
+            "target": "solarpanels",
+            "expected": 8,
+            "matched": 8
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12639,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N109",
+          "quantity": 1,
+          "quotedUnit": 140,
+          "expectedUnit": 140,
+          "unitMatches": true
+        },
+        {
+          "code": "N2102",
+          "quantity": 1,
+          "quotedUnit": 185,
+          "expectedUnit": 185,
+          "unitMatches": true
+        },
+        {
+          "code": "N2199",
+          "quantity": 1,
+          "quotedUnit": 229,
+          "expectedUnit": 229,
+          "unitMatches": true
+        },
+        {
+          "code": "N2289",
+          "quantity": 1,
+          "quotedUnit": 489,
+          "expectedUnit": 489,
+          "unitMatches": true
+        },
+        {
+          "code": "N2290",
+          "quantity": 1,
+          "quotedUnit": 889,
+          "expectedUnit": 889,
+          "unitMatches": true
+        },
+        {
+          "code": "N2291",
+          "quantity": 1,
+          "quotedUnit": 1089,
+          "expectedUnit": 1089,
+          "unitMatches": true
+        },
+        {
+          "code": "N1084",
+          "quantity": 1,
+          "quotedUnit": 239,
+          "expectedUnit": 239,
+          "unitMatches": true
+        },
+        {
+          "code": "N745",
+          "quantity": 1,
+          "quotedUnit": 65,
+          "expectedUnit": 65,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC148",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 12,
+        "shownCount": 2,
+        "relevantCount": 2,
+        "wrongCodes": [],
+        "shownCodes": [
+          "N476-SQ",
+          "N476"
+        ],
+        "targetCoverage": [
+          {
+            "target": "consoles",
+            "expected": 12,
+            "matched": 2
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12462,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": [
+        {
+          "code": "N476-SQ",
+          "quantity": 1,
+          "quotedUnit": 110,
+          "expectedUnit": 110,
+          "unitMatches": true
+        },
+        {
+          "code": "N476",
+          "quantity": 1,
+          "quotedUnit": 110,
+          "expectedUnit": 110,
+          "unitMatches": true
+        }
+      ]
+    },
+    {
+      "id": "BC149",
+      "split": "development",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "BOX_PRICE",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "hy300promax",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12433,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    },
+    {
+      "id": "BC150",
+      "split": "holdout",
+      "transport": "ANSWERED",
+      "checks": [
+        {
+          "outcome": "CATALOG",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS",
+      "retrieval": {
+        "eligible": true,
+        "precisionEligible": true,
+        "expectedCount": 0,
+        "shownCount": 0,
+        "relevantCount": 0,
+        "wrongCodes": [],
+        "shownCodes": [],
+        "targetCoverage": [
+          {
+            "target": "hotwheels",
+            "expected": 0,
+            "matched": 0
+          }
+        ],
+        "catalogRecall": null
+      },
+      "avoidableClarification": false,
+      "latencyMs": 12569,
+      "pdfChecks": [],
+      "lateOrExtraReplies": 0,
+      "textPriceChecks": []
+    }
+  ]
+}
