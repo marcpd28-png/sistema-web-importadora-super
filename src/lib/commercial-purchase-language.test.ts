@@ -40,6 +40,7 @@ test("purchase spread across messages preserves quantities and explicit follow-u
   assert.deepEqual(first.agenda.requests.slice(0, 2).map(job => job.quantity), [null, 2]);
   first.agenda.requests.forEach(job => { job.status = "NEEDS_CLARIFICATION"; });
   const next = planRequests(first.agenda, [{ id: "f", content: "del parlante quiero 1 unidad" }]);
+  assert.equal(next.recognized, true);
   assert.equal(next.agenda.requests[0].quantity, 1);
   assert.equal(next.agenda.requests[1].quantity, 2);
 });

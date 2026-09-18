@@ -193,6 +193,7 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
           refining.quantity = requestedQuantity(clause) ?? refining.quantity;
           refining.status = "PENDING";
           touched.add(refining.id);
+          recognized = true;
           refining.sourceMessageIds = [...new Set([...refining.sourceMessageIds, ...sourceIds])];
           refining.question += `; ${clause.trim()}`;
           continue;
