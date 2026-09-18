@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
 import { loadCommercialCatalog, type CommercialCatalog } from "@/lib/commercial-catalog";
 import { resolveProductBrand } from "@/lib/product-discovery";
+import { getBotProductImageUrls } from "@/lib/bot-product-availability";
 
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -32,6 +33,7 @@ export type GeneratedCatalogPdf = {
 };
 
 const inFlightCatalogs = new Map<string, Promise<GeneratedCatalogPdf>>();
+const inFlightScopedCatalogs = new Map<string, Promise<(GeneratedCatalogPdf & { codes: string[] }) | null>>();
 
 export function isProjectorCatalogRequest(content: string) {
   const normalized = content
@@ -63,6 +65,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
       imageUrl: true,
       localImageUrl: true,
       media: {
+        where: { type: "IMAGE" },
         orderBy: { sortOrder: "asc" },
         select: { url: true },
       },
@@ -72,16 +75,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
   });
 
   return products.flatMap((product) => {
-    const imageUrls = Array.from(
-      new Set(
-        [
-          product.localImageUrl,
-          ...product.media.map((media) => media.url),
-          product.sourceImageUrl,
-          product.imageUrl,
-        ].filter((value): value is string => Boolean(value?.trim())),
-      ),
-    );
+    const imageUrls = getBotProductImageUrls(product);
 
     return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
   });
@@ -364,24 +358,30 @@ export function renderScopedCatalogPdf(items: { image: Buffer | null; name: stri
 
 async function createScopedCatalogPdf(products: ScopedCatalogItem[], label: string, fingerprint: string, largeImages = false) {
   const slug = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 70);
-  const filename = `catalogo-${slug}-${fingerprint}.pdf`;
-  const relativeUrl = `/uploads/catalogs/${filename}`;
-  const outputPath = path.join(CATALOG_DIRECTORY, filename);
-  const result = { absoluteUrl: buildPublicUrl(relativeUrl), filename, productCount: products.length, relativeUrl };
   await mkdir(CATALOG_DIRECTORY, { recursive: true });
-  try { await access(outputPath); return { ...result, generated: false }; } catch { /* Generate below. */ }
-  const images: { image: Buffer | null; name: string; code: string; brand: string }[] = new Array(products.length);
+  const loaded: ({ image: Buffer; name: string; code: string; brand: string } | null)[] = new Array(products.length).fill(null);
   let next = 0;
   // Bound image decoding to avoid exhausting memory for a category with hundreds of products.
   await Promise.all(Array.from({ length: Math.min(4, products.length) }, async () => {
     while (next < products.length) {
       const index = next++;
       const product = products[index];
-      let image: Buffer | null = null;
-      try { image = await sharp(await loadFirstAvailableImage(product)).resize({ width: largeImages ? 1600 : 800, height: largeImages ? 1600 : 800, fit: "inside", withoutEnlargement: true }).jpeg({ quality: largeImages ? 90 : 78 }).toBuffer(); } catch { /* Keep the product even without a usable image. */ }
-      images[index] = { image, name: product.name, code: product.code, brand: resolveProductBrand(product) || "Otras marcas" };
+      try {
+        const image = await sharp(await loadFirstAvailableImage(product)).resize({ width: largeImages ? 1600 : 800, height: largeImages ? 1600 : 800, fit: "inside", withoutEnlargement: true }).jpeg({ quality: largeImages ? 90 : 78 }).toBuffer();
+        loaded[index] = { image, name: product.name, code: product.code, brand: resolveProductBrand(product) || "Otras marcas" };
+      } catch { /* A product without a readable photo must never become a catalog card. */ }
     }
   }));
+  const images = loaded.filter((item): item is NonNullable<typeof item> => item !== null);
+  if (!images.length) return null;
+  // Include successful image loads in the cache key and metadata, even after a cached PDF exists.
+  const codes = images.map(item => item.code);
+  const imageFingerprint = createHash("sha256").update(fingerprint).update(JSON.stringify(codes)).digest("hex").slice(0, 16);
+  const filename = `catalogo-${slug}-${imageFingerprint}.pdf`;
+  const relativeUrl = `/uploads/catalogs/${filename}`;
+  const outputPath = path.join(CATALOG_DIRECTORY, filename);
+  const result = { absoluteUrl: buildPublicUrl(relativeUrl), filename, productCount: images.length, relativeUrl, codes };
+  try { await access(outputPath); return { ...result, generated: false }; } catch { /* Generate below. */ }
   const pdf = largeImages ? await renderCatalogImagePdf(images, "Extensores de pantalla") : await renderScopedCatalogPdf(images, `Catálogo de ${label}`);
   const temporary = `${outputPath}.${process.pid}.tmp`;
   try { await writeFile(temporary, pdf, { flag: "wx" }); await rename(temporary, outputPath); }
@@ -393,7 +393,7 @@ async function selectRequestedCatalog(content: string, snapshot?: CommercialCata
   const catalog = snapshot ?? await loadCommercialCatalog();
   const index = catalog.index;
   const selection = catalog.search(content);
-  const products = selection.products.map(p => ({ ...p, brand: index.productBrand(p), imageUrls: [...new Set([p.localImageUrl, ...p.media.map(m => m.url), p.sourceImageUrl, p.imageUrl].filter((v): v is string => Boolean(v?.trim())))] }));
+  const products = selection.products.map(p => ({ ...p, brand: index.productBrand(p), imageUrls: getBotProductImageUrls(p) }));
   return { ...selection, products };
 }
 
@@ -401,27 +401,29 @@ export async function generateRequestedCatalogPdf(content: string, largeImages =
   const selection = await selectRequestedCatalog(content, snapshot);
   const products = selection.products;
   if (!selection.scoped || !products.length) return { ...selection, catalog: null };
-  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v1" : "scoped-grid-v3"}:${content}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
-  let generation = inFlightCatalogs.get(fingerprint);
+  const fingerprint = createHash("sha256").update(`${largeImages ? "full-page-v2-photos" : "scoped-grid-v4-photos"}:${content}:${selection.label}:${JSON.stringify(products.map(p => [p.brand, p.stockUnits, String(p.unitPrice)]))}:${getCatalogFingerprint(products)}`).digest("hex").slice(0, 16);
+  let generation = inFlightScopedCatalogs.get(fingerprint);
   if (!generation) {
-    generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightCatalogs.delete(fingerprint));
-    inFlightCatalogs.set(fingerprint, generation);
+    generation = createScopedCatalogPdf(products, selection.label, fingerprint, largeImages).finally(() => inFlightScopedCatalogs.delete(fingerprint));
+    inFlightScopedCatalogs.set(fingerprint, generation);
   }
   const generated = await generation;
+  const included = products.filter(product => generated?.codes.includes(product.code));
+  if (!generated) return { ...selection, products: included, catalog: null };
   const manifestDirectory = path.join(process.cwd(), ".cache", "catalog-manifests");
   await mkdir(manifestDirectory, { recursive: true });
   await writeFile(path.join(manifestDirectory, `${generated.filename}.json`), JSON.stringify({
-    version: 1, generatedAt: new Date().toISOString(), query: content, codes: products.map(p => p.code),
-    products: products.map(p => ({ code: p.code, stockUnits: p.stockUnits, unitPrice: String(p.unitPrice), updatedAt: p.updatedAt.toISOString() })),
+    version: 2, generatedAt: new Date().toISOString(), query: content, codes: included.map(p => p.code),
+    products: included.map(p => ({ code: p.code, stockUnits: p.stockUnits, unitPrice: String(p.unitPrice), updatedAt: p.updatedAt.toISOString() })),
   }));
-  return { ...selection, catalog: generated };
+  return { ...selection, products: included, catalog: generated };
 }
 
 export async function generateRequestedProductImages(content: string, snapshot?: CommercialCatalog) {
   const selection = await selectRequestedCatalog(content, snapshot);
   await mkdir(CATALOG_DIRECTORY, { recursive: true });
-  const outboundMessages = await Promise.all(selection.products.map(async (product, index) => {
-    const caption = `${index + 1}/${selection.products.length} · ${product.name}\nCódigo: ${product.code} · Precio unitario: S/${Number(product.unitPrice).toFixed(2)}`;
+  const results = await Promise.all(selection.products.map(async (product) => {
+    const caption = `${product.name}\nCódigo: ${product.code} · Precio unitario: S/${Number(product.unitPrice).toFixed(2)}`;
     const fingerprint = getCatalogFingerprint([product]);
     const filename = `producto-${fingerprint}.jpg`;
     const output = path.join(CATALOG_DIRECTORY, filename);
@@ -434,8 +436,10 @@ export async function generateRequestedProductImages(content: string, snapshot?:
       }
       return { type: "IMAGE" as const, content: caption, mediaUrl: buildPublicUrl(`/uploads/catalogs/${filename}`), code: product.code };
     } catch {
-      return { type: "TEXT" as const, content: `${caption}\nImagen no disponible.`, mediaUrl: null, code: product.code };
+      return null;
     }
   }));
-  return { ...selection, outboundMessages };
+  const images = results.filter((item): item is NonNullable<typeof item> => item !== null);
+  const outboundMessages = images.map((item, index) => ({ ...item, content: `${index + 1}/${images.length} · ${item.content}` }));
+  return { ...selection, products: selection.products.filter(product => images.some(item => item.code === product.code)), outboundMessages };
 }

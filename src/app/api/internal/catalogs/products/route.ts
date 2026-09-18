@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       const result = await generateRequestedProductImages(input.content);
       return NextResponse.json({
         ok: true, matched: true, simulation: true, conversationId: conversation.id, requestId,
-        outboundMessages: result.outboundMessages.length ? result.outboundMessages : [{ type: "TEXT", content: `No encontré productos publicados para ${result.label}.`, mediaUrl: null }],
+        outboundMessages: result.outboundMessages.length ? result.outboundMessages : [{ type: "TEXT", content: `No encontré productos publicados con stock y foto disponible para ${result.label}.`, mediaUrl: null }],
         filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },
       });
     }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       requestId,
       content: result.catalog ? `Te comparto el catálogo de ${result.label}: ${result.catalog.productCount} productos.${missingScopeNote}`
         : !result.scoped ? `Te comparto nuestro catálogo completo: ${buildPublicUrl("/")}\nTambién puedes pedirme un catálogo por marca, categoría o tipo de producto, por ejemplo: JBL, audífonos o cables.`
-        : `No encontré productos publicados para el catálogo de ${result.label}. Puedes indicarme otra marca, categoría o tipo de producto.`,
+        : `No encontré productos publicados con stock y foto disponible para el catálogo de ${result.label}. Puedes indicarme otra marca, categoría o tipo de producto.`,
       type: result.catalog ? "document" : "text", mediaUrl: result.catalog?.absoluteUrl ?? null,
       catalog: result.catalog ? { filename: result.catalog.filename, productCount: result.catalog.productCount, url: result.catalog.absoluteUrl } : null,
       filters: { brands: result.brands, categories: result.categories, types: result.types, terms: result.terms },

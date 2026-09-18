@@ -14,8 +14,8 @@ const schema = z.object({
   requestId: z.string().min(1).max(191),
   triggerMessageId: z.string().min(1).max(191).optional(),
   agenda: z.object({ expectedRevision: z.number().int().nonnegative(), state: agendaSchema }).optional(),
-  inventory: z.array(z.object({ id: z.string(), stockUnits: z.number(), unitPrice: z.string(), wholesalePrice: z.string().nullable(), wholesaleMinQty: z.number() })).max(10000).optional(),
-  selection: z.object({ code: z.string().max(64), quantity: z.number().int().positive().nullable() }).optional(),
+  inventory: z.array(z.object({ id: z.string(), updatedAt: z.string().datetime().optional(), stockUnits: z.number(), unitPrice: z.string(), wholesalePrice: z.string().nullable(), wholesaleMinQty: z.number() })).max(10000).optional(),
+  selection: z.object({ code: z.string().max(64).nullable(), quantity: z.number().int().positive().nullable() }).optional(),
   messages: z.array(z.object({
     type: z.enum(["TEXT", "IMAGE", "DOCUMENT", "VIDEO"]),
     content: z.string().trim().min(1).max(4000),
@@ -52,8 +52,8 @@ export async function POST(request: Request) {
       }
       if (input.inventory?.length) {
         const live = await tx.product.findMany({ where: { id: { in: input.inventory.map(product => product.id) }, isVisible: true },
-          select: { id: true, stockUnits: true, unitPrice: true, wholesalePrice: true, wholesaleMinQty: true } });
-        if (input.inventory.some(product => !live.some(row => row.id === product.id && row.stockUnits === product.stockUnits && String(row.unitPrice) === product.unitPrice && (row.wholesalePrice === null ? null : String(row.wholesalePrice)) === product.wholesalePrice && row.wholesaleMinQty === product.wholesaleMinQty))) {
+          select: { id: true, updatedAt: true, stockUnits: true, unitPrice: true, wholesalePrice: true, wholesaleMinQty: true } });
+        if (input.inventory.some(product => !live.some(row => row.id === product.id && (!product.updatedAt || row.updatedAt.toISOString() === product.updatedAt) && row.stockUnits === product.stockUnits && String(row.unitPrice) === product.unitPrice && (row.wholesalePrice === null ? null : String(row.wholesalePrice)) === product.wholesalePrice && row.wholesaleMinQty === product.wholesaleMinQty))) {
           return { skipped: true, reason: "INVENTORY_CHANGED", messages: [] };
         }
       }
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
           const state = await tx.conversationSalesState.findUnique({ where: { conversationId: input.conversationId }, select: { stage: true } });
           // Keep checkout/customer/payment state intact while sharing an explicitly resolved SKU.
           if (!state || !/CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(state.stage)) {
-            const data = { selectedProductCode: selected, quantity: input.selection.quantity, unitPrice: null, total: null, priceTier: null, stage: "AWAITING_PURCHASE_CONFIRMATION" as const };
+            const data = { selectedProductCode: selected, quantity: selected ? input.selection.quantity : null, unitPrice: null, total: null, priceTier: null, stage: selected ? "AWAITING_PURCHASE_CONFIRMATION" as const : "AWAITING_PRODUCT_QUERY" as const };
             await tx.conversationSalesState.upsert({ where: { conversationId: input.conversationId }, create: { conversationId: input.conversationId, ...data }, update: data });
           }
         }

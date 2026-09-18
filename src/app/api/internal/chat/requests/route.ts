@@ -81,8 +81,8 @@ export async function POST(request: Request) {
             result.products.forEach(product => checked.add(product.id));
             if (topic) topic.shownCodes = result.products.map(product => product.code);
             const missing = result.unmatchedScopes.length ? `\nSin coincidencias para: ${result.unmatchedScopes.join(", ")}. Indícame el modelo o código de esos productos.` : "";
-            replies.push(result.catalog ? { type: "DOCUMENT", mediaUrl: result.catalog.absoluteUrl, content: `Catálogo de ${query}: ${result.catalog.productCount} productos con stock. Disponibilidad consultada al generar este catálogo.${missing}` }
-              : { type: "TEXT", content: result.scoped ? `No encontré productos publicados con stock para ${query}. Indícame otra opción o el código exacto.` : `Catálogo completo: ${buildPublicUrl("/")}\nPuedes pedirme un PDF por marca, tipo o modelo.` });
+            replies.push(result.catalog ? { type: "DOCUMENT", mediaUrl: result.catalog.absoluteUrl, content: `Catálogo de ${query}: ${result.catalog.productCount} productos con stock y foto. Disponibilidad consultada al generar este catálogo.${missing}` }
+              : { type: "TEXT", content: result.scoped ? `No encontré productos publicados con stock y foto disponible para el catálogo de ${query}. Indícame otra opción o el código exacto.` : `Catálogo completo: ${buildPublicUrl("/")}\nPuedes pedirme un PDF por marca, tipo o modelo.` });
             job.status = result.catalog && !result.unmatchedScopes.length || !result.scoped ? "ANSWERED" : "NEEDS_CLARIFICATION";
             job.evidence = result.products.map(product => `Product:${product.id}`);
           } else if (topic && (isScreenExtenderQuery(topic.query) || /\b(?:fotos?|imagenes?)\b/.test(normalizeCommercialText(job.question)))) {
@@ -90,9 +90,15 @@ export async function POST(request: Request) {
             result.products.forEach(product => checked.add(product.id));
             topic.shownCodes = result.products.map(product => product.code);
             replies.push(...result.outboundMessages);
-            if (!result.outboundMessages.length) replies.push({ type: "TEXT", content: `No encontré imágenes de productos disponibles para ${topic.query}. Indícame el código exacto.` });
-            job.status = result.outboundMessages.length ? "ANSWERED" : "NEEDS_CLARIFICATION";
-            job.evidence = result.products.map(product => `Product:${product.id}`);
+            let unavailableAnswer;
+            if (!result.outboundMessages.length) {
+              const matches = catalog.search(topic.selectedCode || topic.query, false).products;
+              matches.forEach(product => checked.add(product.id));
+              unavailableAnswer = answerProductRequest(job, topic, matches, { photoUnavailable: true });
+              replies.push({ type: "TEXT", content: unavailableAnswer.content });
+            }
+            job.status = result.outboundMessages.length ? "ANSWERED" : unavailableAnswer!.status;
+            job.evidence = unavailableAnswer?.evidence ?? result.products.map(product => `Product:${product.id}`);
           } else {
             const selection = topic ? catalog.search(topic.selectedCode || topic.query, false) : null;
             const products = selection?.products ?? [];
@@ -117,8 +123,8 @@ export async function POST(request: Request) {
       const response = await persistBatch(new Request(new URL("../simulator-batch", request.url), { method: "POST", headers: { "content-type": "application/json", "x-internal-api-key": key }, body: JSON.stringify({
         ...input, requestId: `bc:${input.triggerMessageId}`, messages: replies,
         agenda: { expectedRevision: conversation.requestAgenda?.revision ?? 0, state: agendaSchema.parse(agenda) },
-        ...(selectedTopic?.selectedCode ? { selection: { code: selectedTopic.selectedCode, quantity: selectedQuantity } } : {}),
-        inventory: catalog.products.filter(product => checked.has(product.id)).map(product => ({ id: product.id, stockUnits: product.stockUnits, unitPrice: String(product.unitPrice), wholesalePrice: product.wholesalePrice === null ? null : String(product.wholesalePrice), wholesaleMinQty: product.wholesaleMinQty })),
+        ...(selectedTopic ? { selection: { code: selectedTopic.selectedCode, quantity: selectedQuantity } } : {}),
+        inventory: catalog.products.filter(product => checked.has(product.id)).map(product => ({ id: product.id, updatedAt: product.updatedAt.toISOString(), stockUnits: product.stockUnits, unitPrice: String(product.unitPrice), wholesalePrice: product.wholesalePrice === null ? null : String(product.wholesalePrice), wholesaleMinQty: product.wholesaleMinQty })),
       }) }));
       const result = await response.json();
       if (result.reason === "INVENTORY_CHANGED" && attempt === 0) continue;

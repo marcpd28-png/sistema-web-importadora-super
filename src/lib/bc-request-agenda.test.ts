@@ -6,7 +6,7 @@ import { createCatalogIndex } from "./catalog-selection";
 import type { CommercialProduct } from "./commercial-catalog";
 import { literalProductCodes } from "./commercial-query";
 
-const product = (code: string, name: string, override = {}) => ({ id: code, code, name, brand: "JBL", category: "AURICULARES", stockUnits: 20, unitPrice: 90, wholesalePrice: 75, wholesaleMinQty: 6, boxPrice: null, unitsPerBox: null, unitLabel: "unidad", updatedAt: new Date("2026-09-17"), digitalProfile: { status: "PUBLICADA", descriptionShort: "Ficha aprobada" }, specifications: [], ...override }) as unknown as CommercialProduct;
+const product = (code: string, name: string, override = {}) => ({ id: code, code, name, brand: "JBL", category: "AURICULARES", isVisible: true, imageUrl: "/uploads/products/photo.jpg", stockUnits: 20, unitPrice: 90, wholesalePrice: 75, wholesaleMinQty: 6, boxPrice: null, unitsPerBox: null, unitLabel: "unidad", updatedAt: new Date("2026-09-17"), digitalProfile: { status: "PUBLICADA", descriptionShort: "Ficha aprobada" }, specifications: [], ...override }) as unknown as CommercialProduct;
 const products = [product("A1", "AUDIFONO JBL TUNE NEGRO"), product("A2", "AUDIFONO JBL TUNE BLANCO"), product("A3", "AUDIFONO JBL DIADEMA NEGRO"), product("A4", "AUDIFONO JBL NEGRO", { unitPrice: 130 }), product("P1", "PROYECTOR HY300", { brand: null, category: "PROYECTORES" }), product("P2", "PROYECTOR HY300 PRO", { brand: null, category: "PROYECTORES" })];
 const index = createCatalogIndex(products);
 

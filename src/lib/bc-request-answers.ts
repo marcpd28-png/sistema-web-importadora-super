@@ -2,6 +2,7 @@ import { SPECIFICATION_FIELDS, type AgendaRequest, type AgendaTopic } from "./bc
 import { normalizeCommercialText } from "./commercial-query";
 import type { CommercialProduct } from "./commercial-catalog";
 import { getLinePricing } from "./pricing";
+import { getBotProductImageUrls, isBotProductAvailable } from "./bot-product-availability";
 
 export type BusinessAnswers = { supportHours: string; storeAddress: string; paymentMethods: string[]; deliveryMethods: string[] };
 export type RequestAnswer = { content: string; status: AgendaRequest["status"]; evidence: string[] };
@@ -23,11 +24,22 @@ export function answerBusinessRequest(request: AgendaRequest, business: Business
   return null;
 }
 
-export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[]): RequestAnswer {
+export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean } = {}): RequestAnswer {
+  products = products.filter(product => product.isVisible);
+  if (topic) { topic.selectedCode = null; topic.shownCodes = []; }
   if (!topic || !products.length) return { content: `Sobre «${topic?.query || request.question}»: no pude identificar un producto publicado con esos datos. ¿Puedes indicar el código o modelo exacto?`, status: "NEEDS_CLARIFICATION", evidence: [] };
+  const available = options.photoUnavailable ? [] : products.filter(isBotProductAvailable);
+  if (!available.length) {
+    const inStock = products.filter(product => product.stockUnits > 0);
+    const noPhoto = (options.photoUnavailable && inStock.length > 0) || (inStock.length ? inStock : products).every(product => !getBotProductImageUrls(product).length);
+    const availability = !inStock.length
+      ? `Este producto actualmente se encuentra sin stock.${noPhoto ? " Tampoco tiene una foto disponible." : ""}`
+      : "Este producto actualmente no tiene una foto disponible.";
+    return { content: `Sobre «${topic.query}»: ${availability}`, status: "ANSWERED", evidence: products.map(product => `Product:${product.id}:${product.updatedAt.toISOString()}`) };
+  }
+  products = available;
   if (products.length > 1) {
-    const available = products.filter(product => product.stockUnits > 0);
-    const choices = (available.length ? available : products).slice(0, 8);
+    const choices = products.slice(0, 8);
     topic.shownCodes = choices.map(product => product.code);
     return { content: `Para ${topic.query} encontré ${products.length} opciones:\n${choices.map((product, index) => `${index + 1}. ${product.name} — código ${product.code}${product.stockUnits > 0 ? ` — S/ ${Number(product.unitPrice).toFixed(2)}` : " — sin stock"}`).join("\n")}\nIndícame el código del modelo que necesitas${request.kind === "PRICE" ? ` para cotizar ${request.quantity || "la cantidad que deseas de"} unidades` : ""}.`, status: "NEEDS_CLARIFICATION", evidence: choices.map(product => `Product:${product.id}`) };
   }
