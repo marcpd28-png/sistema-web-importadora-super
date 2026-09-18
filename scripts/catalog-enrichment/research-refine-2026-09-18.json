@@ -1,0 +1,844 @@
+[
+  {
+    "id": "blackview-mega-2-wifi",
+    "brand": "Blackview",
+    "model": "MEGA 2 WiFi",
+    "codes": [
+      "O846"
+    ],
+    "sources": [
+      "https://store.blackview.hk/zh/products/mega2-wifi-price"
+    ],
+    "specs": {
+      "Pantalla": "IPS de 12 pulgadas, 2000 × 1200 píxeles, 90 Hz",
+      "Procesador": "AllWinner A733 de ocho núcleos",
+      "Memoria RAM": "12 GB físicos; ampliación virtual de hasta 24 GB",
+      "Almacenamiento": "256 GB; microSD de hasta 2 TB",
+      "Sistema operativo": "DokeOS P 4.1 basado en Android 15",
+      "Cámaras": "Trasera de 16 MP y frontal de 8 MP",
+      "Batería": "9000 mAh",
+      "Carga rápida": "18 W",
+      "Conectividad": "Wi-Fi 6 de 2,4 y 5 GHz",
+      "Audio": "Dos altavoces",
+      "Peso": "615 g",
+      "Dimensiones": "281,7 × 177,2 × 8 mm"
+    },
+    "notes": [
+      "La imagen de tienda enumera especificaciones diferentes (T616, 7680mAh, Android13). Se prioriza la documentación oficial del modelo exacto y se conserva la imagen por solicitud del usuario."
+    ]
+  },
+  {
+    "id": "jbl-tune-530bt",
+    "brand": "JBL",
+    "model": "Tune 530BT",
+    "codes": [
+      "O952-BEIGE",
+      "O952-BLACK",
+      "O952-BLUE",
+      "O952-PURPURA"
+    ],
+    "sources": [
+      "https://support.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwd0639287/pdfs/JBL_TUNE_530BT_Specsheet_EN.pdf"
+    ],
+    "specs": {
+      "Bluetooth": "6.0; conexión multipunto con dos dispositivos",
+      "Autonomía": "Hasta 76 horas",
+      "Transductores": "Dinámicos de 33 mm",
+      "Batería": "450 mAh",
+      "Tiempo de carga": "Hasta 2 horas",
+      "Carga rápida": "5 minutos para hasta 5 horas de reproducción",
+      "Micrófonos": "2",
+      "Diseño": "Plegable, sobre la oreja",
+      "Peso": "152 g"
+    }
+  },
+  {
+    "id": "jbl-tune-730bt",
+    "brand": "JBL",
+    "model": "Tune 730BT",
+    "codes": [
+      "O973",
+      "O973-BLUE"
+    ],
+    "sources": [
+      "https://support.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw6aef9ba1/pdfs/JBL_TUNE_730BT_Specsheet_EN.pdf"
+    ],
+    "specs": {
+      "Bluetooth": "6.0; conexión multipunto con dos dispositivos",
+      "Autonomía": "Hasta 76 horas",
+      "Transductores": "Dinámicos de 40 mm",
+      "Batería": "500 mAh",
+      "Tiempo de carga": "2 horas",
+      "Carga rápida": "5 minutos para hasta 5 horas de reproducción",
+      "Diseño": "Plegable, alrededor de la oreja",
+      "Peso": "218,2 g"
+    }
+  },
+  {
+    "id": "jbl-sense-lite",
+    "brand": "JBL",
+    "model": "Sense Lite",
+    "codes": [
+      "O665-BLANCO",
+      "O665-BLUE",
+      "O665-NEGRO",
+      "O665-PURPLE"
+    ],
+    "sources": [
+      "https://www.jbl.com/SENSELITE.html"
+    ],
+    "specs": {
+      "Diseño": "Abierto, con gancho de sujeción",
+      "Bluetooth": "5.4; conexión multipunto con dos dispositivos",
+      "Autonomía de los audífonos": "Hasta 8 horas",
+      "Autonomía con estuche": "Hasta 32 horas en total",
+      "Transductores": "Dinámicos de 18 × 11 mm",
+      "Micrófonos": "4",
+      "Protección": "IP54",
+      "Tiempo de carga": "2 horas",
+      "Carga rápida": "10 minutos para hasta 3 horas de reproducción"
+    }
+  },
+  {
+    "id": "jbl-endurance-run-3-wireless",
+    "brand": "JBL",
+    "model": "Endurance Run 3 Wireless",
+    "codes": [
+      "O661-AZUL",
+      "O661-BLANCO",
+      "O661-NEGRO",
+      "O661-PURPURA"
+    ],
+    "sources": [
+      "https://ca.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dw17912a76/pdfs/JBL_Endurance_Run_3_Wireless_Specsheet_EN.pdf"
+    ],
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 25 horas de música",
+      "Transductores": "Dinámicos de 8 mm",
+      "Protección": "IP65",
+      "Tiempo de carga": "2 horas",
+      "Batería": "130 mAh",
+      "Carga rápida": "10 minutos para hasta 3 horas de reproducción",
+      "Peso": "21 g"
+    }
+  },
+  {
+    "id": "jbl-tour-one-m3",
+    "brand": "JBL",
+    "model": "Tour One M3",
+    "codes": [
+      "O980-BLACK",
+      "O980-CHAMPAGNE"
+    ],
+    "sources": [
+      "https://global.jbl.com/over-ear-headphones/TOUR-ONE-M3.html",
+      "https://uk.jbl.com/on/demandware.static/-/Sites-masterCatalog_Harman/default/dwe60635de/pdfs/LS_JBL_Tour%20ONE%20M3_QSG_Multilingual.pdf"
+    ],
+    "specs": {
+      "Bluetooth": "5.3",
+      "Transductores": "40 mm",
+      "Cancelación de ruido": "True Adaptive Noise Cancelling 2.0",
+      "Autonomía": "Hasta 70 horas sin ANC; hasta 40 horas con ANC",
+      "Batería": "850 mAh",
+      "Tiempo de carga": "2 horas",
+      "Códecs": "SBC, AAC, LC3 y LDAC",
+      "Conexiones": "Bluetooth, audio USB y cable de 3,5 mm",
+      "Peso": "278 g"
+    }
+  },
+  {
+    "id": "jbl-quantum-650",
+    "brand": "JBL",
+    "model": "Quantum 650",
+    "codes": [
+      "O997"
+    ],
+    "sources": [
+      "https://www.jbl.com/QUANTUM650.html"
+    ],
+    "specs": {
+      "Bluetooth": "5.3",
+      "Transductores": "50 mm con diafragma de carbono",
+      "Conexiones": "Bluetooth, receptor USB de 2,4 GHz y audio por USB-C",
+      "Autonomía": "Hasta 45 horas de música",
+      "Micrófono": "Desmontable, cardioide, de 6 mm",
+      "Peso": "331,5 g"
+    }
+  },
+  {
+    "id": "sony-linkbuds-fit",
+    "brand": "Sony",
+    "model": "LinkBuds Fit WF-LS910N",
+    "codes": [
+      "O1021-BLANCO",
+      "O1021-NEGRO"
+    ],
+    "sources": [
+      "https://electronics.sony.com/audio/headphones/all-headphones/p/wfls910n-w"
+    ],
+    "specs": {
+      "Cancelación de ruido": "ANC y modo ambiente",
+      "Autonomía de los audífonos": "Hasta 5,5 horas con ANC",
+      "Autonomía con estuche": "Hasta 21 horas en total",
+      "Protección": "IPX4 en los audífonos",
+      "Conexión multipunto": "Dos dispositivos"
+    }
+  },
+  {
+    "id": "sony-ult-tower-9-ac",
+    "brand": "Sony",
+    "model": "ULT TOWER 9AC SRS-ULT900AC",
+    "codes": [
+      "O559"
+    ],
+    "sources": [
+      "https://www.sony.com/electronics/support/speakers-wireless-speakers/srs-ult900ac/specifications"
+    ],
+    "specs": {
+      "Bluetooth": "5.3",
+      "Códecs": "SBC, AAC y LDAC",
+      "Altavoces": "1 woofer, 2 medios y 4 tweeters",
+      "Alimentación": "Red eléctrica",
+      "Conexiones": "Entrada óptica, auxiliar de 3,5 mm, USB-A, micrófono y guitarra/micrófono",
+      "Enlace de altavoces": "Stereo Pair y Party Connect",
+      "Modos de graves": "ULT1 y ULT2"
+    }
+  },
+  {
+    "id": "sony-ult-tower-9",
+    "brand": "Sony",
+    "model": "ULT TOWER 9 SRS-ULT900",
+    "codes": [
+      "O951"
+    ],
+    "sources": [
+      "https://www.sony.com/electronics/support/speakers-wireless-speakers/srs-ult900/specifications"
+    ],
+    "specs": {
+      "Bluetooth": "5.3",
+      "Códecs": "SBC, AAC y LDAC",
+      "Altavoces": "1 woofer, 2 medios y 4 tweeters",
+      "Alimentación": "Batería recargable y red eléctrica",
+      "Autonomía": "Hasta 25 horas",
+      "Conexiones": "Entrada óptica, auxiliar de 3,5 mm, USB-A, micrófono y guitarra/micrófono",
+      "Enlace de altavoces": "Stereo Pair y Party Connect",
+      "Modos de graves": "ULT1 y ULT2",
+      "Ecualizador": "10 bandas"
+    }
+  },
+  {
+    "id": "qcy-crossky-c30",
+    "brand": "QCY",
+    "model": "Crossky C30",
+    "codes": [
+      "O459-NEGRO",
+      "O459-PURPLE"
+    ],
+    "sources": [
+      "https://www.qcy.com/products/qcy-crossky-c30"
+    ],
+    "specs": {
+      "Diseño": "Abierto, con clip de sujeción",
+      "Bluetooth": "5.4",
+      "Transductores": "Dinámicos de 10,8 mm",
+      "Micrófonos": "4, con reducción de ruido para llamadas",
+      "Autonomía de los audífonos": "Hasta 5,5 horas",
+      "Autonomía con estuche": "Hasta 25 horas en total",
+      "Protección": "IPX4",
+      "Aplicación": "QCY"
+    }
+  },
+  {
+    "id": "qcy-h3-pro",
+    "brand": "QCY",
+    "model": "H3 Pro",
+    "codes": [
+      "O531-BLANCO",
+      "O531-MORADO",
+      "O531-NEGRO"
+    ],
+    "sources": [
+      "https://www.qcy.com/products/qcy-h3-pro"
+    ],
+    "specs": {
+      "Bluetooth": "5.4",
+      "Transductores": "40 mm",
+      "Códecs": "LDAC y SBC",
+      "Cancelación de ruido": "ANC adaptativa y modo ambiente",
+      "Autonomía": "Hasta 55 horas sin ANC; hasta 40 horas con ANC",
+      "Batería": "550 mAh",
+      "Puerto de carga": "USB-C",
+      "Peso": "231 g",
+      "Aplicación": "QCY"
+    }
+  },
+  {
+    "id": "soundpeats-space-pro",
+    "brand": "Soundpeats",
+    "model": "Space Pro",
+    "codes": [
+      "O837-BEIGE",
+      "O837-NEGRO"
+    ],
+    "sources": [
+      "https://soundpeats.com/products/soundpeats-space-pro-over-ear-anc-headphones-with-long-battery-life",
+      "https://jp.soundpeats.com/products/space-pro"
+    ],
+    "specs": {
+      "Bluetooth": "5.4; conexión con dos dispositivos",
+      "Transductores": "Dinámicos coaxiales de 40 mm y 10 mm",
+      "Códecs": "AAC, SBC y LDAC",
+      "Cancelación de ruido": "ANC híbrida y modo ambiente",
+      "Autonomía": "Hasta 151 horas sin ANC; hasta 58 horas con ANC",
+      "Batería": "1100 mAh",
+      "Tiempo de carga": "2,5 horas",
+      "Carga rápida": "5 minutos para hasta 4 horas de reproducción",
+      "Conexiones": "Bluetooth, USB y entrada auxiliar",
+      "Peso": "282 g"
+    }
+  },
+  {
+    "id": "soundpeats-air4-pro",
+    "brand": "Soundpeats",
+    "model": "Air4 Pro",
+    "codes": [
+      "O359"
+    ],
+    "sources": [
+      "https://soundpeats.com/en-fr/products/air4-pro-in-ear-aptx-lossless-wireless-earbuds"
+    ],
+    "specs": {
+      "Bluetooth": "5.3",
+      "Transductores": "Dinámicos de 13 mm",
+      "Chip": "Qualcomm QCC3071",
+      "Códecs": "aptX Lossless, aptX Adaptive, aptX, AAC y SBC",
+      "Cancelación de ruido": "ANC adaptativa",
+      "Controles": "Táctiles",
+      "Protección": "IPX4",
+      "Batería": "35 mAh por audífono; estuche de 330 mAh",
+      "Puerto de carga": "USB-C",
+      "Peso por audífono": "4 g"
+    },
+    "notes": [
+      "Se omite la autonomía total: la página oficial contiene valores contradictorios de 26 y 40 horas."
+    ]
+  },
+  {
+    "id": "redmi-a7-pro",
+    "brand": "Xiaomi",
+    "model": "Redmi A7 Pro",
+    "codes": [
+      "(CE103-BLUE)",
+      "(CE103-GREEN)"
+    ],
+    "sources": [
+      "https://www.mi.com/sg/product/redmi-a7-pro/specs/",
+      "https://www.mi.com/global/product/redmi-a7-pro/"
+    ],
+    "specs": {
+      "Pantalla": "LCD de 6,9 pulgadas, 1600 × 720 píxeles, hasta 120 Hz",
+      "Procesador": "UNISOC T7250 de ocho núcleos",
+      "Memoria RAM": "4 GB físicos; ampliación virtual de hasta 4 GB",
+      "Almacenamiento": "128 GB UFS 2.2",
+      "Batería": "6000 mAh",
+      "Carga rápida": "15 W",
+      "Cámaras": "Principal de 13 MP y frontal de 8 MP",
+      "Conectividad": "4G, Wi-Fi de 2,4 y 5 GHz y Bluetooth 5.2",
+      "Sistema operativo": "Xiaomi HyperOS 3",
+      "Seguridad": "Lector lateral de huellas y desbloqueo facial",
+      "Audio": "Conector de 3,5 mm",
+      "Peso": "208 g"
+    }
+  },
+  {
+    "id": "ecoflow-delta3-classic",
+    "brand": "EcoFlow",
+    "model": "DELTA 3 Classic",
+    "codes": [
+      "CP598"
+    ],
+    "sources": [
+      "https://www.ecoflow.com/es/delta-3-classic-portable-power-station/specs"
+    ],
+    "specs": {
+      "Capacidad": "1024 Wh",
+      "Tipo de batería": "LiFePO4 (LFP)",
+      "Potencia continua": "1800 W",
+      "Potencia de pico": "3600 W",
+      "Carga de 0 a 80 %": "45 minutos en modo rápido",
+      "Carga completa": "60 minutos",
+      "Entrada solar": "Hasta 500 W",
+      "Conectividad": "Wi-Fi y Bluetooth, con aplicación EcoFlow",
+      "Peso": "12,1 kg",
+      "Dimensiones": "398 × 200 × 283 mm"
+    },
+    "notes": [
+      "Se prioriza ficha oficial sobre la imagen y se omiten tensión/cantidad de tomas al no identificar la revisión regional."
+    ]
+  },
+  {
+    "id": "ecoflow-delta3-1500",
+    "brand": "EcoFlow",
+    "model": "DELTA 3 1500",
+    "codes": [
+      "CP599"
+    ],
+    "sources": [
+      "https://ch.ecoflow.com/products/ecoflow-delta-3-1500-powerstation-1536-wh-eu-version",
+      "https://us.ecoflow.com/es/products/ecoflow-delta-3-1500-solar-generator"
+    ],
+    "specs": {
+      "Capacidad": "1536 Wh",
+      "Tipo de batería": "LiFePO4 (LFP)",
+      "Potencia continua": "1800 W",
+      "Potencia de pico": "3600 W",
+      "Conmutación de respaldo": "Menos de 15 ms",
+      "Entrada solar": "Hasta 500 W",
+      "Salida USB-C": "Hasta 100 W",
+      "Dimensiones": "40 × 21 × 28 cm"
+    },
+    "notes": [
+      "Se omite X-Boost por diferencia entre regiones; no se confunde con potencia continua."
+    ]
+  },
+  {
+    "id": "ecoflow-delta3-max",
+    "brand": "EcoFlow",
+    "model": "DELTA 3 Max",
+    "codes": [
+      "CP600"
+    ],
+    "sources": [
+      "https://eu.ecoflow.com/products/delta-3-max-series-portable-power-station?variant=51787034591575"
+    ],
+    "specs": {
+      "Capacidad": "2048 Wh",
+      "Tipo de batería": "LiFePO4 (LFP)",
+      "Potencia continua": "2400 W",
+      "Potencia de pico": "4800 W",
+      "X-Boost": "Hasta 3200 W para cargas compatibles",
+      "Salida USB-C": "1 puerto de hasta 100 W y 2 puertos de hasta 30 W combinados",
+      "Salida USB-A": "Hasta 18 W",
+      "Entrada solar": "Hasta 500 W",
+      "Conmutación de respaldo": "10 ms"
+    },
+    "notes": [
+      "La imagen confunde X-Boost con potencia de pico; se usa la ficha europea del SKU GEU."
+    ]
+  },
+  {
+    "id": "ecoflow-trail300",
+    "brand": "EcoFlow",
+    "model": "TRAIL 300 DC",
+    "codes": [
+      "CP601"
+    ],
+    "sources": [
+      "https://us.ecoflow.com/products/trail-series?variant=54553980043337"
+    ],
+    "specs": {
+      "Capacidad": "288 Wh",
+      "Tipo de batería": "LiFePO4 (LFP)",
+      "Potencia de salida total": "300 W DC",
+      "Puertos USB-C": "2, de hasta 140 W por puerto",
+      "Puertos USB-A": "2, de hasta 12 W por puerto",
+      "Toma para automóvil": "Hasta 120 W",
+      "Entrada solar o de automóvil": "Hasta 110 W",
+      "Protección": "IP30",
+      "Peso": "2,58 kg",
+      "Dimensiones": "167 × 115 × 166 mm"
+    },
+    "notes": []
+  },
+  {
+    "id": "ecoflow-river2-pro",
+    "brand": "EcoFlow",
+    "model": "RIVER 2 Pro",
+    "codes": [
+      "CP602"
+    ],
+    "sources": [
+      "https://us.ecoflow.com/collections/river-2-series/products/river-2-pro-portable-power-station"
+    ],
+    "specs": {
+      "Capacidad": "768 Wh",
+      "Tipo de batería": "LiFePO4 (LFP)",
+      "Potencia continua": "800 W",
+      "Potencia de pico": "1600 W",
+      "Carga completa": "70 minutos por corriente alterna",
+      "Entrada solar": "Hasta 220 W, de 11 a 50 V",
+      "USB-C": "Entrada y salida de hasta 100 W",
+      "Conectividad": "Wi-Fi y Bluetooth, con aplicación EcoFlow",
+      "Vida útil de batería": "3000 ciclos hasta conservar al menos el 80 % de capacidad",
+      "Dimensiones": "270 × 260 × 226 mm"
+    },
+    "notes": []
+  },
+  {
+    "id": "ecoflow-glacier",
+    "brand": "EcoFlow",
+    "model": "GLACIER",
+    "codes": [
+      "L847"
+    ],
+    "sources": [
+      "https://www.ecoflow.com/us/glacier-portable-refrigerator",
+      "https://websiteoss.ecoflow.com/cms/upload/2023/4/26/EcoFlow%20Glacier-%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C%20V1.0%20%28CHS%29_1682474317600.pdf"
+    ],
+    "specs": {
+      "Capacidad": "38 L en una zona; 36 L en doble zona",
+      "Temperatura": "De −25 a 10 °C",
+      "Funciones": "Refrigerador, congelador y fabricador de hielo",
+      "Compresor": "120 W",
+      "Conectividad": "Wi-Fi de 2,4 GHz y Bluetooth",
+      "Control": "Aplicación EcoFlow",
+      "Peso": "23,3 kg",
+      "Dimensiones sin ruedas ni asa": "776 × 385 × 445 mm",
+      "Alimentación": "100 a 240 V AC o 12/24 V DC"
+    },
+    "notes": []
+  },
+  {
+    "id": "qcy-n70",
+    "brand": "QCY",
+    "model": "MeloBuds N70",
+    "codes": [
+      "O1033-BLACK",
+      "O1033-PURPLE",
+      "O1033-SILVER"
+    ],
+    "sources": [
+      "https://www.qcy.com/products/qcy-melobuds-n70"
+    ],
+    "specs": {
+      "Bluetooth": "6.0",
+      "Cancelación de ruido": "ANC adaptativa",
+      "Códec": "LDAC",
+      "Protección": "IPX5",
+      "Autonomía de los auriculares": "Hasta 10 h sin ANC o 7 h con ANC",
+      "Autonomía con estuche": "Hasta 50 h sin ANC o 35 h con ANC",
+      "Carga": "USB-C",
+      "Batería": "40 mAh por auricular; estuche de 480 mAh"
+    },
+    "notes": []
+  },
+  {
+    "id": "qcy-h3",
+    "brand": "QCY",
+    "model": "H3",
+    "codes": [
+      "O206-AZUL",
+      "O206-NEGRO"
+    ],
+    "sources": [
+      "https://www.qcy.com/products/qcy-h3-wireless-headphone?variant=44403706593337"
+    ],
+    "specs": {
+      "Transductores": "40 mm, con recubrimiento de titanio",
+      "Cancelación de ruido": "ANC; modo ambiente",
+      "Micrófonos": "3",
+      "Conexión": "Bluetooth y entrada auxiliar",
+      "Conexión multipunto": "Hasta 2 dispositivos",
+      "Aplicación": "QCY",
+      "Peso": "293 g"
+    },
+    "notes": [
+      "La fuente oficial discrepa en autonomía y versión Bluetooth; se omiten esos campos."
+    ]
+  },
+  {
+    "id": "qcy-ailybuds-pro-plus",
+    "brand": "QCY",
+    "model": "AilyBuds Pro+",
+    "codes": [
+      "O1032-VERDE"
+    ],
+    "sources": [
+      "https://www.qcy.com/products/qcy-ailybuds-pro-plus"
+    ],
+    "specs": {
+      "Bluetooth": "5.3",
+      "Micrófonos": "6",
+      "Códec": "LDAC",
+      "Cancelación de ruido": "ANC adaptativa",
+      "Conexión multipunto": "Hasta 2 dispositivos",
+      "Carga": "USB-C",
+      "Aplicación": "QCY"
+    },
+    "notes": [
+      "Se omite autonomía porque la propia página presenta cifras distintas."
+    ]
+  },
+  {
+    "id": "haylou-s40",
+    "brand": "Haylou",
+    "model": "S40",
+    "codes": [
+      "O1034"
+    ],
+    "sources": [
+      "https://haylou.com/products/haylou-s40"
+    ],
+    "specs": {
+      "Cancelación de ruido": "ANC de hasta 50 dB",
+      "Audio espacial": "360°, con seguimiento de movimiento de la cabeza",
+      "Ecualización": "Adaptativa",
+      "Conexión multipunto": "Hasta 2 dispositivos",
+      "Carga": "USB-C",
+      "Autonomía": "Hasta 90 h sin ANC o 60 h con ANC, con volumen al 30 %"
+    },
+    "notes": []
+  },
+  {
+    "id": "kz-libra",
+    "brand": "KZ",
+    "model": "Libra",
+    "codes": [
+      "O1035"
+    ],
+    "sources": [
+      "https://www.kztws.com/products/kz-libra"
+    ],
+    "specs": {
+      "Diseño": "Intraaural",
+      "Impedancia": "25 Ω",
+      "Sensibilidad": "108 dB",
+      "Respuesta de frecuencia": "20 Hz–40 kHz",
+      "Conector": "3,5 mm",
+      "Cable": "Desmontable, de 1,2 m ± 5 cm, con recubrimiento de plata",
+      "Conexión del cable": "Pines de 0,75 mm",
+      "Micrófono": "Integrado"
+    },
+    "notes": [
+      "Se priorizan 25 Ω y 108 dB del fabricante; se omite configuración híbrida no respaldada."
+    ]
+  },
+  {
+    "id": "ecoflow-60w-type-c",
+    "brand": "EcoFlow",
+    "model": "Panel solar portátil de 60 W con USB-C",
+    "codes": [
+      "N2289"
+    ],
+    "sources": [
+      "https://manuals.ecoflow.com/us/product/60w-portable-solar-panel-type-c?lang=en_US"
+    ],
+    "specs": {
+      "Potencia nominal": "60 W ± 5 W",
+      "Salidas": "DC5521 y USB-C",
+      "Salida USB-C": "Hasta 15 W (5 V / 3 A)",
+      "Eficiencia": "Hasta 25 %",
+      "Protección": "IP68",
+      "Peso": "2 kg",
+      "Dimensiones desplegado": "1356 × 309 × 16 mm"
+    },
+    "notes": []
+  },
+  {
+    "id": "ecoflow-110w-light",
+    "brand": "EcoFlow",
+    "model": "Panel solar portátil ligero de 110 W",
+    "codes": [
+      "N2290"
+    ],
+    "sources": [
+      "https://manuals.ecoflow.com/cn/product/110w-lightweight-portable-solar-panel?lang=en_US"
+    ],
+    "specs": {
+      "Potencia nominal": "110 W en condiciones STC",
+      "Celdas": "Monocristalinas TOPCon; panel bifacial",
+      "Eficiencia": "Hasta 25 %",
+      "Conector": "XT60i",
+      "Tensión en circuito abierto": "23,5 V",
+      "Tensión de funcionamiento": "19,5 V",
+      "Peso": "3,3 kg",
+      "Dimensiones desplegado": "1944 × 413 × 26 mm",
+      "Dimensiones plegado": "544 × 413 × 36 mm"
+    },
+    "notes": [
+      "La imagen de la tienda menciona USB-C, incompatible con la ficha oficial XT60i."
+    ]
+  },
+  {
+    "id": "dahua-p3as-pv",
+    "brand": "Dahua",
+    "model": "P3AS-PV",
+    "codes": [
+      "O1062"
+    ],
+    "sources": [
+      "https://www.dahuasecurity.com/products/wireless-products/outdoor-camera/picoo-series/p3as-pv"
+    ],
+    "specs": {
+      "Resolución": "3 MP; 2304 × 1296 píxeles",
+      "Lente": "4 mm, F2.0",
+      "Visión nocturna": "Infrarroja y luz cálida, hasta 30 m",
+      "Movimiento": "Giro horizontal de 345° e inclinación de 90°",
+      "Detección": "Personas y vehículos; seguimiento automático",
+      "Audio": "Bidireccional, con micrófono y altavoz",
+      "Conectividad": "Wi-Fi 6 de 2,4 y 5 GHz; Ethernet 10/100",
+      "Almacenamiento": "microSD de hasta 256 GB",
+      "Aplicación": "DMSS para Android e iOS",
+      "Alimentación": "12 V CC",
+      "Protección": "IP66",
+      "Peso": "400 g"
+    },
+    "notes": []
+  },
+  {
+    "id": "blackview-tab20-kids",
+    "brand": "Blackview",
+    "model": "Tab 20 Kids",
+    "codes": [
+      "O842-BLUE"
+    ],
+    "sources": [
+      "https://www.blackview.hk/products/item/tab20kids"
+    ],
+    "specs": {
+      "Pantalla": "IPS de 10,1 pulgadas, 1280 × 800 píxeles, 60 Hz",
+      "Procesador": "UNISOC T310 de cuatro núcleos",
+      "Memoria RAM": "4 GB físicos",
+      "Almacenamiento": "64 GB; microSD de hasta 2 TB",
+      "Sistema operativo": "DokeOS P 4.1 basado en Android 15",
+      "Cámaras": "Trasera de 8 MP y frontal de 5 MP",
+      "Batería": "6600 mAh",
+      "Carga": "10 W",
+      "Conectividad": "Wi-Fi de 2,4 y 5 GHz; Bluetooth 5.0",
+      "Audio": "Dos altavoces",
+      "Peso": "514,5 g"
+    },
+    "notes": [
+      "Imagen con Android 13/A523/5100mAh; se prioriza ficha exacta oficial. Se omite RAM virtual por cifras contradictorias en la página oficial."
+    ]
+  },
+  {
+    "id": "blackview-link8",
+    "brand": "Blackview",
+    "model": "LINK 8",
+    "codes": [
+      "O963-BLUE",
+      "O963-GRAY"
+    ],
+    "sources": [
+      "https://www.blackview.hk/products/item/link8"
+    ],
+    "specs": {
+      "Pantalla": "IPS de 12,7 pulgadas, 2K+, 90 Hz",
+      "Procesador": "MediaTek Helio G100 de ocho núcleos, hasta 2,2 GHz",
+      "Memoria RAM": "6 GB físicos",
+      "Almacenamiento": "256 GB UFS 3.1",
+      "Sistema operativo": "DokeOS P 4.2 basado en Android 15",
+      "Cámaras traseras": "16 MP y sensor de profundidad de 2 MP",
+      "Cámara frontal": "13 MP",
+      "Batería": "8400 mAh",
+      "Carga rápida": "18 W",
+      "Audio": "Cuatro altavoces estéreo",
+      "Conectividad": "Wi-Fi 5 y Bluetooth 5.0",
+      "Peso": "710 g"
+    },
+    "notes": [
+      "Se corrigen pantalla, sistema y batería de imagen. Las páginas oficiales difieren ligeramente en resolución horizontal; se usa denominación 2K+."
+    ]
+  },
+  {
+    "id": "dahua-h3a",
+    "brand": "Dahua",
+    "model": "H3A",
+    "codes": [
+      "O1061"
+    ],
+    "sources": [
+      "https://www.dahuasecurity.com/products/wireless-products/indoor-cameras/hero-series/h3a"
+    ],
+    "specs": {
+      "Resolución": "3 MP",
+      "Uso": "Interiores",
+      "Detección": "Personas y mascotas; seguimiento automático",
+      "Audio": "Bidireccional, con micrófono y altavoz",
+      "Almacenamiento": "microSD de hasta 256 GB",
+      "Aplicación": "DMSS para Android e iOS",
+      "Privacidad": "Modo de privacidad con un toque",
+      "Alimentación": "5 V CC"
+    },
+    "notes": [
+      "Imagen 2 MP incorrecta para modelo H3A."
+    ]
+  },
+  {
+    "id": "dahua-h5a",
+    "brand": "Dahua",
+    "model": "H5A",
+    "codes": [
+      "O1060"
+    ],
+    "sources": [
+      "https://www.dahuasecurity.com/products/wireless-products/indoor-cameras/hero-series/h5a"
+    ],
+    "specs": {
+      "Resolución": "5 MP; 2880 × 1620 píxeles",
+      "Visión nocturna": "Infrarroja, hasta 10 m",
+      "Movimiento": "Giro de 355°; inclinación de −5° a 80°",
+      "Compresión de video": "H.265",
+      "Audio": "Bidireccional",
+      "Conectividad": "Wi-Fi 6 de 2,4 GHz y Ethernet 10/100",
+      "Almacenamiento": "microSD de hasta 256 GB",
+      "Aplicación": "DMSS para Android e iOS",
+      "Alimentación": "5 V CC",
+      "Peso": "195 g"
+    },
+    "notes": [
+      "Imagen 2 MP incorrecta para modelo H5A."
+    ]
+  },
+  {
+    "id": "redmi-pad-se-87-4g",
+    "brand": "Xiaomi",
+    "model": "Redmi Pad SE 8.7 4G",
+    "codes": [
+      "O185"
+    ],
+    "sources": [
+      "https://www.mi.com/uk/product/redmi-pad-se-8-7-inch-4g/specs/"
+    ],
+    "specs": {
+      "Pantalla": "LCD de 8,7 pulgadas, 1340 × 800 píxeles, hasta 90 Hz",
+      "Procesador": "MediaTek Helio G85 de ocho núcleos",
+      "Memoria RAM": "4 GB LPDDR4X",
+      "Almacenamiento": "128 GB; microSD de hasta 2 TB",
+      "Batería": "6650 mAh",
+      "Carga rápida": "Hasta 18 W por USB-C",
+      "Cámaras": "Trasera de 8 MP y frontal de 5 MP",
+      "Conectividad": "4G, doble SIM, Wi-Fi 5 y Bluetooth 5.3",
+      "Audio": "Dos altavoces con Dolby Atmos; conector de 3,5 mm",
+      "Sistema operativo": "Xiaomi HyperOS",
+      "Peso": "Hasta 375 g"
+    },
+    "notes": [
+      "Se corrige sistema operativo de la imagen; variante 4G 4/128 exacta del título."
+    ]
+  },
+  {
+    "id": "jbl-eon-one-compact",
+    "brand": "JBL",
+    "model": "EON ONE Compact",
+    "codes": [
+      "O592"
+    ],
+    "sources": [
+      "https://support.jbl.com/br/pt/howto/?start=114&sz=24"
+    ],
+    "specs": {
+      "Mezclador": "4 canales",
+      "Altavoz": "8 pulgadas",
+      "Presión sonora máxima": "112 dB",
+      "Respuesta en graves": "Hasta 37,5 Hz",
+      "Autonomía": "Hasta 12 h",
+      "Peso": "8 kg"
+    },
+    "notes": [
+      "Se descarta la imagen de tienda que afirma ocho canales."
+    ]
+  }
+]

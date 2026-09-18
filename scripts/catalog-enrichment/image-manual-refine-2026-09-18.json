@@ -1,0 +1,6502 @@
+[
+  {
+    "code": "05703",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Uso": "Montaje en casco"
+    },
+    "notes": []
+  },
+  {
+    "code": "07337",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 24 horas de música",
+      "Protección": "IP54",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "07434",
+    "specs": {
+      "Bluetooth": "5.2",
+      "Autonomía": "Hasta 35 horas de música",
+      "Protección": "IP54",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT39",
+    "specs": {
+      "Bluetooth": "5.2",
+      "Autonomía": "Hasta 35 horas de música",
+      "Protección": "IP54",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU206",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Controles": "Volumen"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU212",
+    "specs": {
+      "Controles": "Volumen",
+      "Micrófono": "Manos libres",
+      "Cable": "Reforzado"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU238",
+    "specs": {
+      "Conector": "USB-C",
+      "Micrófono": "Integrado",
+      "Controles": "Reproducción, pausa y llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU239",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Micrófono": "Integrado",
+      "Almohadillas": "Silicona"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU243",
+    "specs": {
+      "Conector": "USB-C",
+      "Audio": "Estéreo",
+      "Micrófonos": "Dos",
+      "Diseño": "Transparente"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU255",
+    "specs": {
+      "Conector": "USB-C",
+      "Micrófono": "Integrado",
+      "Controles": "Reproducción, pausa y llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU65",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Cable": "Desmontable, 120 cm",
+      "Controles": "En el cable"
+    },
+    "notes": []
+  },
+  {
+    "code": "AU84",
+    "specs": {
+      "Conector": "USB-C",
+      "Cable": "Desmontable",
+      "Controles": "En el cable"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT03",
+    "specs": {
+      "Cancelación de ruido": "ANC para escucha y ENC para llamadas",
+      "Autonomía": "Hasta 20 horas de música",
+      "Puerto de carga": "USB-C",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT20",
+    "specs": {
+      "Cancelación de ruido": "ANC para escucha y ENC para llamadas",
+      "Autonomía": "Hasta 20 horas de música",
+      "Puerto de carga": "USB-C",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT05",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 30 horas de música",
+      "Protección": "IP54",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT07",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Alcance inalámbrico": "Hasta 10 m",
+      "Diseño": "Cable flexible y sujeción magnética"
+    },
+    "notes": [
+      "Se omite la autonomía de 400 horas por inconsistencia."
+    ]
+  },
+  {
+    "code": "BT09",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Protección": "IP54",
+      "Alcance inalámbrico": "Hasta 15 m",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": [
+      "La imagen contiene dos autonomías incompatibles: se omiten ambas."
+    ]
+  },
+  {
+    "code": "BT10",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Batería del estuche": "220 mAh"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT10-SQ",
+    "specs": {
+      "Batería del estuche": "220 mAh",
+      "Protección": "IP54",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT11",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 18 horas de música",
+      "Protección": "IP54",
+      "Reducción de ruido en llamadas": "ENC",
+      "Batería del estuche": "220 mAh"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT119",
+    "specs": {
+      "Autonomía": "Hasta 30 horas",
+      "Conexión multipunto": "Dos dispositivos",
+      "Micrófono": "Manos libres",
+      "Controles": "Botón multidireccional"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT12",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Puerto de carga": "USB-C",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT123",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Autonomía de los audífonos": "4 a 5 horas",
+      "Micrófono": "Integrado",
+      "Controles": "Táctiles",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT125 - SQ",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Micrófono": "Integrado",
+      "Entrada auxiliar": "3,5 mm",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT132",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Alcance inalámbrico": "Hasta 10 m",
+      "Conexiones": "Tarjeta TF y entrada auxiliar",
+      "Iluminación": "RGB"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT14",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Puerto de carga": "USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT144",
+    "specs": {
+      "Bluetooth": "5.1",
+      "Micrófono": "Integrado",
+      "Controles": "Táctiles",
+      "Estuche": "Indicador LED de batería y función de batería externa",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT159 - SQ",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Reducción de ruido en llamadas": "ENC",
+      "Controles": "Táctiles",
+      "Autonomía de los audífonos": "4 a 5 horas",
+      "Batería del estuche": "2000 mAh",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT160",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Controles": "Táctiles",
+      "Micrófono": "Integrado",
+      "Autonomía": "Hasta 4 horas",
+      "Tiempo de carga": "1 a 2 horas",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT162-SQ",
+    "specs": {
+      "Bluetooth": "4.2 + EDR",
+      "Alcance inalámbrico": "Hasta 10 m",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT17",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 25 horas de música",
+      "Protección": "IP54",
+      "Reducción de ruido en llamadas": "ENC",
+      "Modos": "Juego y deporte"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT178",
+    "specs": {
+      "Estuche": "Pantalla de control",
+      "Micrófono": "Integrado"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT190",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Reducción de ruido en llamadas": "ENC",
+      "Autonomía de los audífonos": "4 a 5 horas",
+      "Batería del estuche": "2000 mAh",
+      "Protección": "IPX4",
+      "Controles": "Táctiles",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT190 - SQ",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Reducción de ruido en llamadas": "ENC",
+      "Autonomía de los audífonos": "4 a 5 horas",
+      "Batería del estuche": "2000 mAh",
+      "Protección": "IPX4",
+      "Controles": "Táctiles",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT203",
+    "specs": {
+      "Estuche": "Indicador digital LED",
+      "Modo de juego": "Baja latencia"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT207-SQ",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Estuche": "Indicador LED y función de batería externa",
+      "Controles": "Táctiles",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT208",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 22 horas",
+      "Puerto de carga": "USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT22",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Tiempo de carga": "1 hora",
+      "Controles": "Multifunción"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT23",
+    "specs": {
+      "Autonomía": "Hasta 20 horas de música",
+      "Reducción de ruido en llamadas": "ENC",
+      "Sujeción": "Magnética"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT24",
+    "specs": {
+      "Autonomía": "Hasta 40 horas de música",
+      "Reducción de ruido en llamadas": "ENC",
+      "Indicador": "Pantalla digital"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT250",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Modo de juego": "Baja latencia",
+      "Controles": "Táctiles",
+      "Micrófono": "Reducción de ruido",
+      "Compatibilidad": "Android, iOS y PC"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT266",
+    "specs": {
+      "Autonomía": "Hasta 40 horas de música",
+      "Reducción de ruido en llamadas": "ENC",
+      "Sujeción": "Magnética"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT270",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Estuche": "Indicador LED y carga automática",
+      "Controles": "Táctiles",
+      "Reducción de ruido en llamadas": "CVC 8.0"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT271",
+    "specs": {
+      "Autonomía": "Hasta 50 horas de música",
+      "Reducción de ruido en llamadas": "ENC",
+      "Sujeción": "Magnética",
+      "Batería": "Doble batería con función de cargador portátil"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT30",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 50 horas de música",
+      "Cancelación de ruido": "ANC para escucha y ENC para llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT309",
+    "specs": {
+      "Autonomía": "Hasta 35 horas",
+      "Micrófono": "Manos libres",
+      "Conexión multipunto": "Dos dispositivos",
+      "Almohadillas": "Acolchadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT34",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Autonomía": "Hasta 24 horas",
+      "Control por voz": "Asistente de voz"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT391",
+    "specs": {
+      "Conexiones": "Bluetooth y entrada auxiliar"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT449",
+    "specs": {
+      "Estuche": "Pantalla táctil",
+      "Controles": "Táctiles",
+      "Autonomía de los audífonos": "5 a 6 horas",
+      "Autonomía con estuche": "30 a 36 horas en total",
+      "Micrófono": "Integrado"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT463",
+    "specs": {
+      "Bluetooth": "5.2",
+      "Indicador": "LED",
+      "Micrófono": "Integrado"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT469",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Cancelación de ruido": "ANC y modo ambiente",
+      "Micrófonos": "Dos, con ENC para llamadas",
+      "Controles": "Táctiles"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT473",
+    "specs": {
+      "Iluminación": "RGB",
+      "Audio": "Estéreo",
+      "Micrófono": "Integrado",
+      "Diadema": "Ajustable",
+      "Almohadillas": "Acolchadas",
+      "Conexión": "Por cable"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT487-BLACK",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Autonomía": "Hasta 10 horas",
+      "Tiempo de carga": "2 horas",
+      "Alcance inalámbrico": "Hasta 10 m",
+      "Micrófono": "Integrado",
+      "Compatibilidad": "Android, iOS y Windows"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT487-GRIS",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Autonomía": "Hasta 10 horas",
+      "Tiempo de carga": "2 horas",
+      "Alcance inalámbrico": "Hasta 10 m",
+      "Micrófono": "Integrado",
+      "Compatibilidad": "Android, iOS y Windows"
+    },
+    "notes": []
+  },
+  {
+    "code": "BT76",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Autonomía de los audífonos": "3 a 4 horas",
+      "Tiempo de carga": "1 a 2 horas",
+      "Micrófono": "Integrado",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA100",
+    "specs": {
+      "Conectores": "USB-A a micro-USB (V8)",
+      "Material": "PVC",
+      "Corriente máxima": "5 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA114",
+    "specs": {
+      "Longitud": "1 m",
+      "Cable": "Nylon trenzado con terminales metálicos",
+      "Audio": "Estéreo"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA173",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA18",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "1 m",
+      "Corriente máxima": "8 A",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA181",
+    "specs": {
+      "Conectores": "USB-C a Lightning",
+      "Longitud": "2 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA227",
+    "specs": {
+      "Conectores": "3,5 mm",
+      "Longitud": "1,2 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA228",
+    "specs": {
+      "Longitud": "1,5 m",
+      "Capacidad eléctrica": "7 A / 250 V",
+      "Color": "Blanco"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA229",
+    "specs": {
+      "Longitud": "1,5 m",
+      "Capacidad eléctrica": "10 A / 250 V",
+      "Color": "Blanco"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA230",
+    "specs": {
+      "Controles": "Llamadas y reproducción de música"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA237",
+    "specs": {
+      "Conexión": "USB 2.0 macho a hembra",
+      "Velocidad de datos": "Hasta 480 Mbps",
+      "Longitud": "3 m",
+      "Material": "PVC",
+      "Color": "Negro"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA264",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Potencia de carga": "Hasta 60 W",
+      "Longitud": "1 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA268",
+    "specs": {
+      "Conectores": "USB-A a USB-C",
+      "Corriente máxima": "6 A",
+      "Longitud": "1 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA269",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Corriente máxima": "5 A",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA279",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Corriente máxima": "6 A",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA43",
+    "specs": {
+      "Conectores": "USB-A a micro-USB (V8)",
+      "Cable": "Nylon reforzado",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA60",
+    "specs": {
+      "Audio": "Estéreo",
+      "Longitud": "1,5 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA605",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Material": "Nylon trenzado",
+      "Soporte": "Plegable, integrado",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": [
+      "Se omite potencia: título 240 W e imagen 100 W no coinciden."
+    ]
+  },
+  {
+    "code": "CA609",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "2 m",
+      "Potencia de carga": "Hasta 100 W",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA611",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Potencia de carga": "Hasta 100 W",
+      "Corriente máxima": "6 A",
+      "Soporte": "Plegable, separado",
+      "Terminales": "Aluminio",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA616",
+    "specs": {
+      "Conector": "USB-C",
+      "Conductores": "Cobre libre de oxígeno, plateado",
+      "Micrófono": "Integrado",
+      "Diseño": "Transparente"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA618",
+    "specs": {
+      "Longitud": "1,2 m",
+      "Potencia de carga": "Hasta 120 W",
+      "Corriente máxima": "6 A",
+      "Material": "Nylon trenzado y aleación de aluminio",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA620",
+    "specs": {
+      "Longitud": "2 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA621",
+    "specs": {
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA622",
+    "specs": {
+      "Longitud": "1 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA623",
+    "specs": {
+      "Longitud": "1 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA624",
+    "specs": {
+      "Longitud": "1 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA625",
+    "specs": {
+      "Longitud": "1 m",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA627",
+    "specs": {
+      "Longitud": "1 m",
+      "Material": "Silicona",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA630",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "3 m",
+      "Terminales": "Aluminio",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA634",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "1,5 m",
+      "Soporte": "Plegable, con giro de 360°",
+      "Conductores": "Cobre",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA636",
+    "specs": {
+      "Longitud": "10 m",
+      "Conectores": "HDMI macho a macho",
+      "Resoluciones": "1080p, 2K y 4K",
+      "Transmisión": "Audio y video digital",
+      "Material": "PVC"
+    },
+    "notes": []
+  },
+  {
+    "code": "CA97",
+    "specs": {
+      "Conectores": "USB-C a Lightning",
+      "Longitud": "1 m",
+      "Potencia de carga": "Hasta 20 W",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB08",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "1,5 m",
+      "Soporte": "Integrado para celular",
+      "Terminales": "Aluminio",
+      "Cable": "Trenzado",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB09-BLANCO",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB09-NEGRO",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB10-BLANCO",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB10-NARANJA",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Funciones": "Carga y transferencia de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB31",
+    "specs": {
+      "Material": "Nylon reforzado"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB39",
+    "specs": {
+      "Funciones": "Carga y transferencia de datos",
+      "Cable": "Reforzado"
+    },
+    "notes": []
+  },
+  {
+    "code": "CB39 - SQ",
+    "specs": {
+      "Funciones": "Carga y transferencia de datos",
+      "Cable": "Reforzado"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC10",
+    "specs": {
+      "Cable": "2 m",
+      "Puertos": "USB y USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC11",
+    "specs": {
+      "Cable": "2 m",
+      "Puertos": "USB y USB-C"
+    },
+    "notes": [
+      "Se omite potencia: título 90 W e imagen 100 W no coinciden."
+    ]
+  },
+  {
+    "code": "CC13",
+    "specs": {
+      "Potencia": "30 W",
+      "Material": "Metal",
+      "Corriente máxima": "4,5 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC14",
+    "specs": {
+      "Potencia": "40 W",
+      "Material": "Metal",
+      "Corriente máxima": "5,5 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC15",
+    "specs": {
+      "Potencia": "45 W",
+      "Material": "Metal"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC151",
+    "specs": {
+      "Potencia": "150 W",
+      "Puertos USB": "2",
+      "Toma eléctrica": "Admite clavijas planas y redondas",
+      "Conexión de entrada": "Encendedor del vehículo"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC155",
+    "specs": {
+      "Potencia": "66 W",
+      "Corriente máxima": "6,2 A",
+      "Cables integrados": "USB-C y Lightning",
+      "Diseño": "Retráctil, 4 en 1"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC16",
+    "specs": {
+      "Potencia": "35 W",
+      "Material": "Metal",
+      "Corriente máxima": "5,8 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC17",
+    "specs": {
+      "Potencia": "65 W",
+      "Material": "Metal",
+      "Corriente máxima": "6,5 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC18",
+    "specs": {
+      "Potencia": "150 W",
+      "Material": "Metal"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC2",
+    "specs": {
+      "Potencia": "30 W",
+      "Conector": "Micro-USB (V8)"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC23",
+    "specs": {
+      "Potencia": "66 W",
+      "Corriente máxima": "7,1 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC24",
+    "specs": {
+      "Potencia": "45 W",
+      "Corriente máxima": "7,1 A",
+      "Cable": "USB-C a USB-C",
+      "Transmisor": "Bluetooth"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC3",
+    "specs": {
+      "Potencia": "30 W",
+      "Material": "Metal"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC47",
+    "specs": {
+      "Iluminación": "LED multicolor"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC65",
+    "specs": {
+      "Voltaje de entrada": "12 a 24 V",
+      "Puertos": "USB y USB-C",
+      "Cables": "Integrados, retráctiles",
+      "Carga rápida": "Power Delivery"
+    },
+    "notes": []
+  },
+  {
+    "code": "CC8",
+    "specs": {
+      "Potencia": "85 W",
+      "Puertos": "USB y USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP15",
+    "specs": {
+      "Pantalla": "LED",
+      "Material": "ABS",
+      "Color": "Negro"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP270",
+    "specs": {
+      "Capacidad": "10000 mAh",
+      "Potencia": "35 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP360",
+    "specs": {
+      "Capacidad": "30000 mAh",
+      "Potencia": "100 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP43",
+    "specs": {
+      "Puertos de salida": "4",
+      "Pantalla": "Digital",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP450",
+    "specs": {
+      "Capacidad": "30000 mAh",
+      "Potencia": "140 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP560",
+    "specs": {
+      "Capacidad": "20000 mAh",
+      "Potencia": "30 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP570",
+    "specs": {
+      "Capacidad": "10000 mAh",
+      "Potencia": "35 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP580",
+    "specs": {
+      "Capacidad": "20000 mAh",
+      "Potencia": "45 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP587",
+    "specs": {
+      "Batería": "12 V, 14 Ah",
+      "Potencia nominal": "200 W",
+      "Altavoz": "40 W",
+      "Conectividad": "Bluetooth",
+      "Funciones": "Linterna LED y puertos USB",
+      "Accesorio incluido": "Panel solar plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP588",
+    "specs": {
+      "Tipo de batería": "LiFePO4",
+      "Voltaje de batería": "51,2 V",
+      "Potencia continua": "2200 W",
+      "Salida de corriente alterna": "Onda senoidal pura",
+      "Protecciones": "BMS contra sobrecarga, sobretensión y cortocircuito",
+      "Transporte": "Ruedas y asa"
+    },
+    "notes": [
+      "Se omite capacidad en Wh por valores contradictorios en la imagen."
+    ]
+  },
+  {
+    "code": "CP592",
+    "specs": {
+      "Voltaje nominal": "12 V",
+      "Capacidad": "38 Ah",
+      "Tecnología": "GEL, sellada y libre de mantenimiento",
+      "Diseño": "Descarga profunda"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP595",
+    "specs": {
+      "Voltaje nominal": "12 V",
+      "Capacidad": "250 Ah",
+      "Tecnología": "GEL, sellada y libre de mantenimiento",
+      "Diseño": "Descarga profunda"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP603",
+    "specs": {
+      "Capacidad": "10000 mAh",
+      "Carga inalámbrica": "Magnética, hasta 15 W",
+      "Salida USB-C": "Hasta 20 W",
+      "Entrada USB-C": "5 V / 3 A o 9 V / 2 A",
+      "Indicador": "LED de batería"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP604",
+    "specs": {
+      "Batería": "4000 mAh",
+      "Panel solar": "6 V / 3 W",
+      "Iluminación": "2 lámparas LED y linterna de 3 niveles",
+      "Conectividad": "Bluetooth",
+      "Reproducción": "MP3 por USB o tarjeta TF y radio FM",
+      "Accesorios incluidos": "Panel solar, 2 lámparas LED y cable de carga"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP605",
+    "specs": {
+      "Capacidad": "85000 mAh",
+      "Carga solar": "Panel integrado",
+      "Indicador": "Pantalla LED de batería",
+      "Salidas": "USB",
+      "Iluminación": "Linterna LED",
+      "Transporte": "Correa"
+    },
+    "notes": []
+  },
+  {
+    "code": "CP89",
+    "specs": {
+      "Batería": "Litio, 12 V / 9 Ah (108 Wh)",
+      "Salida de corriente alterna": "220 V / 50 Hz, hasta 300 W",
+      "Salidas": "USB, DC y toma de 12 V",
+      "Reproducción": "Radio FM y MP3"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR03",
+    "specs": {
+      "Potencia": "35 W",
+      "Puertos": "2 USB-C",
+      "Cable incluido": "USB-C a Lightning"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR141",
+    "specs": {
+      "Puertos": "3"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR164",
+    "specs": {
+      "Puertos": "USB-A y USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR220",
+    "specs": {
+      "Puertos": "USB-A y USB-C",
+      "Cable": "USB-C a USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR224",
+    "specs": {
+      "Cable": "USB-C a USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR227",
+    "specs": {
+      "Puertos USB": "1",
+      "Cable": "USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR301",
+    "specs": {
+      "Cable incluido": "USB-C a Lightning"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR409",
+    "specs": {
+      "Cable incluido": "USB-C a USB-C, 1 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR413",
+    "specs": {
+      "Voltaje de salida": "Ajustable de 3 a 12 V",
+      "Potencia": "30 W",
+      "Corriente máxima": "3 A",
+      "Conectores incluidos": "7 clavijas intercambiables"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR418",
+    "specs": {
+      "Potencia máxima": "67 W",
+      "Corriente máxima": "6,2 A",
+      "Cable incluido": "USB-A a USB-C, 1 m",
+      "Material del cable": "PVC reforzado"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR419",
+    "specs": {
+      "Cable": "USB-C a USB-C",
+      "Corriente máxima": "7,1 A"
+    },
+    "notes": [
+      "Se omite potencia: título 75 W e imagen 70 W no coinciden."
+    ]
+  },
+  {
+    "code": "CR425",
+    "specs": {
+      "Tecnología": "GaN",
+      "Potencia": "Hasta 35 W",
+      "Cable": "Retráctil, integrado"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR62",
+    "specs": {
+      "Longitud del cable": "2 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "CR64",
+    "specs": {
+      "Longitud del cable": "2 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "DS7016-32",
+    "specs": {
+      "Conector": "USB-A 2.0",
+      "Velocidad de lectura": "Hasta 18 MB/s",
+      "Velocidad de escritura": "Hasta 8 MB/s",
+      "Carcasa": "Metal",
+      "Compatibilidad": "Windows, macOS y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "H10",
+    "specs": {
+      "Montaje": "Espejo retrovisor",
+      "Rotación": "360°",
+      "Orientación": "Horizontal y vertical"
+    },
+    "notes": []
+  },
+  {
+    "code": "H104",
+    "specs": {
+      "Sujeción": "Magnética",
+      "Rotación": "360°",
+      "Brazo": "Ajustable y extensible",
+      "Base": "Ventosa"
+    },
+    "notes": []
+  },
+  {
+    "code": "H107",
+    "specs": {
+      "Pantalla": "TFT LCD de 7 pulgadas",
+      "Entrada de video": "AV",
+      "Compatibilidad": "Cámaras de retroceso",
+      "Alimentación": "DC de 12 a 24 V",
+      "Soporte": "Ajustable, 360°",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "H109",
+    "specs": {
+      "Pantalla": "Táctil capacitiva de 10,1 pulgadas",
+      "Sistema operativo": "Android",
+      "Conectividad": "Bluetooth para música y llamadas",
+      "Radio": "FM",
+      "Conexiones": "USB y entrada auxiliar",
+      "Compatibilidad": "Cámara de retroceso y controles del volante",
+      "Audio": "Ecualizador integrado"
+    },
+    "notes": []
+  },
+  {
+    "code": "H117",
+    "specs": {
+      "Sujeción": "Magnética",
+      "Base": "Ventosa de vacío",
+      "Diseño": "Plegable, con ángulo ajustable",
+      "Material": "ABS",
+      "Orientación": "Horizontal y vertical"
+    },
+    "notes": []
+  },
+  {
+    "code": "H118",
+    "specs": {
+      "Material": "Metal",
+      "Rotación": "360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "H119",
+    "specs": {
+      "Material": "Metal",
+      "Rotación": "360°",
+      "Apoyos": "Silicona antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "H120",
+    "specs": {
+      "Montaje": "Retrovisor",
+      "Rotación": "360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "H131",
+    "specs": {
+      "Sujeción": "Magnética"
+    },
+    "notes": []
+  },
+  {
+    "code": "H131-SQ",
+    "specs": {
+      "Sujeción": "Magnética"
+    },
+    "notes": []
+  },
+  {
+    "code": "H135",
+    "specs": {
+      "Material": "ABS",
+      "Rotación": "360°",
+      "Orientación": "Horizontal y vertical",
+      "Base": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "H138",
+    "specs": {
+      "Compatibilidad": "Celulares de 4,5 a 7 pulgadas",
+      "Montaje": "Ventosa para tablero o parabrisas",
+      "Rotación": "360°",
+      "Color": "Negro"
+    },
+    "notes": []
+  },
+  {
+    "code": "H139",
+    "specs": {
+      "Compatibilidad": "Celulares de 4,5 a 7 pulgadas",
+      "Montaje": "Ventosa para tablero o parabrisas",
+      "Rotación": "360°",
+      "Brazo": "Ajustable y extensible",
+      "Sujeción": "Brazos laterales de cierre automático",
+      "Apoyos": "Silicona antideslizante",
+      "Color": "Negro"
+    },
+    "notes": []
+  },
+  {
+    "code": "H144",
+    "specs": {
+      "Sujeción": "Magnética",
+      "Diseño": "Plegable, con ángulo ajustable",
+      "Material": "Aleación de aluminio",
+      "Montaje": "Adhesivo incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "H28",
+    "specs": {
+      "Montaje": "Ventosa",
+      "Brazo": "Ajustable, 360°",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "H47",
+    "specs": {
+      "Montaje": "Ventosa",
+      "Rotación": "360°",
+      "Diseño": "Plegable",
+      "Material": "ABS",
+      "Control": "Apertura mediante botón"
+    },
+    "notes": []
+  },
+  {
+    "code": "H65",
+    "specs": {
+      "Rotación": "360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "H98",
+    "specs": {
+      "Montaje": "Adhesivo",
+      "Rotación": "360°",
+      "Material": "Metal y ABS",
+      "Sujeción": "Magnética"
+    },
+    "notes": []
+  },
+  {
+    "code": "JUGT369",
+    "specs": {
+      "Textura": "Suave y elástica",
+      "Diseño": "Colores y expresiones surtidas"
+    },
+    "notes": []
+  },
+  {
+    "code": "JUGT370",
+    "specs": {
+      "Escala": "1:64",
+      "Materiales": "Metal y plástico",
+      "Ruedas": "Rotación libre"
+    },
+    "notes": []
+  },
+  {
+    "code": "Kaperh 220",
+    "specs": {
+      "Autonomía": "Hasta 15 horas de música"
+    },
+    "notes": []
+  },
+  {
+    "code": "L100",
+    "specs": {
+      "Capacidad": "1,2 L",
+      "Material": "Acero inoxidable",
+      "Base": "Giratoria, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L103",
+    "specs": {
+      "Potencia": "1800 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "L107",
+    "specs": {
+      "Potencia": "2200 W",
+      "Funciones": "Vapor vertical, antigoteo y autolimpieza",
+      "Cable": "Giratorio, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L178",
+    "specs": {
+      "Potencia": "1200 W",
+      "Preparación": "Sin aceite"
+    },
+    "notes": []
+  },
+  {
+    "code": "L186",
+    "specs": {
+      "Potencia": "45 W",
+      "Temperatura máxima": "200 °C",
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Indicador": "Luminoso de temperatura"
+    },
+    "notes": []
+  },
+  {
+    "code": "L19",
+    "specs": {
+      "Canasta": "Acero inoxidable",
+      "Control": "Temporizador"
+    },
+    "notes": []
+  },
+  {
+    "code": "L193",
+    "specs": {
+      "Diseño": "Plegable",
+      "Material": "Resina",
+      "Uso": "Prendas ligeras y delicadas"
+    },
+    "notes": [
+      "Se omite capacidad: título 4,5 L e imagen 6,5 L no coinciden."
+    ]
+  },
+  {
+    "code": "L232",
+    "specs": {
+      "Material": "Polipropileno (PP)",
+      "Altura": "Ajustable de 6 a 45 cm aproximadamente",
+      "Diámetro del asiento": "25 cm aproximadamente",
+      "Peso": "1 kg aproximadamente",
+      "Carga máxima": "150 kg",
+      "Transporte": "Asa integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "L238",
+    "specs": {
+      "Encendido": "Eléctrico, sin llama",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "L283",
+    "specs": {
+      "Quemadores": "3, de hierro fundido",
+      "Cuerpo": "Acero esmaltado",
+      "Tapa": "Metálica"
+    },
+    "notes": []
+  },
+  {
+    "code": "L300",
+    "specs": {
+      "Cuchillas": "Doble cuchilla en S"
+    },
+    "notes": []
+  },
+  {
+    "code": "L335",
+    "specs": {
+      "Potencia": "1200 W",
+      "Función": "Planchado a vapor"
+    },
+    "notes": []
+  },
+  {
+    "code": "L353",
+    "specs": {
+      "Capacidad": "6 L"
+    },
+    "notes": []
+  },
+  {
+    "code": "L385",
+    "specs": {
+      "Voltaje": "220 V, 50 Hz",
+      "Control": "Temperatura ajustable",
+      "Resistencia": "En espiral",
+      "Base": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "L420",
+    "specs": {
+      "Potencia": "1000 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "L443",
+    "specs": {
+      "Carga": "USB",
+      "Mango": "Antideslizante",
+      "Accesorios": "Peines de corte"
+    },
+    "notes": []
+  },
+  {
+    "code": "L453",
+    "specs": {
+      "Capacidad": "4 L",
+      "Potencia": "800 W",
+      "Funciones": "6 en 1"
+    },
+    "notes": []
+  },
+  {
+    "code": "L46",
+    "specs": {
+      "Hornillas": "1",
+      "Potencia": "1000 W",
+      "Niveles de potencia": "5",
+      "Voltaje": "220 V, 50 Hz",
+      "Resistencia": "En espiral",
+      "Base": "Antideslizante",
+      "Indicador": "Luminoso"
+    },
+    "notes": []
+  },
+  {
+    "code": "L462",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Cable": "Giratorio, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L466",
+    "specs": {
+      "Dimensiones": "42 × 35 × 85 cm",
+      "Material": "Metal y plástico ABS",
+      "Ruedas": "Giratorias, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L721",
+    "specs": {
+      "Niveles": "2",
+      "Material": "Metal",
+      "Base": "Bandeja antigoteo"
+    },
+    "notes": []
+  },
+  {
+    "code": "L722",
+    "specs": {
+      "Estructura": "Acero",
+      "Soporte de piernas": "Acolchado",
+      "Base": "Antideslizante",
+      "Monitor": "Digital integrado"
+    },
+    "notes": []
+  },
+  {
+    "code": "L731",
+    "specs": {
+      "Capacidad": "2 L",
+      "Potencia": "1500 W",
+      "Voltaje": "220 V",
+      "Apagado": "Automático",
+      "Protección": "Contra sobrecalentamiento",
+      "Base": "Giratoria, 360°",
+      "Indicadores": "Nivel de agua y luz de funcionamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L734",
+    "specs": {
+      "Capacidad": "2 L",
+      "Potencia": "1500 W",
+      "Voltaje": "220 V",
+      "Apagado": "Automático",
+      "Protección": "Contra sobrecalentamiento",
+      "Base": "Giratoria, 360°",
+      "Indicadores": "Nivel de agua y luz de funcionamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L736",
+    "specs": {
+      "Capacidad": "2 L",
+      "Potencia": "1500 W",
+      "Voltaje": "220 V",
+      "Apagado": "Automático",
+      "Protección": "Contra sobrecalentamiento",
+      "Base": "Giratoria, 360°",
+      "Indicadores": "Nivel de agua y luz de funcionamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L737",
+    "specs": {
+      "Capacidad": "2 L",
+      "Potencia": "1500 W",
+      "Base": "Giratoria, 360°",
+      "Indicador": "Luminoso"
+    },
+    "notes": []
+  },
+  {
+    "code": "L744",
+    "specs": {
+      "Capacidad": "2 L",
+      "Potencia": "1500 W",
+      "Base": "Giratoria, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L747",
+    "specs": {
+      "Suela": "Cerámica",
+      "Funciones": "Vapor vertical y autolimpieza"
+    },
+    "notes": []
+  },
+  {
+    "code": "L748",
+    "specs": {
+      "Suela": "Cerámica",
+      "Funciones": "Vapor vertical"
+    },
+    "notes": []
+  },
+  {
+    "code": "L753",
+    "specs": {
+      "Potencia": "850 W",
+      "Capacidad": "2 huevos",
+      "Voltaje": "220 V",
+      "Superficie": "Antiadherente",
+      "Material": "Acero inoxidable",
+      "Control": "Temperatura automática",
+      "Indicador": "LED de encendido"
+    },
+    "notes": []
+  },
+  {
+    "code": "L754",
+    "specs": {
+      "Capacidad": "5 L",
+      "Voltaje": "220 V",
+      "Superficie": "Antiadherente",
+      "Control": "Temperatura ajustable",
+      "Tapa": "Vidrio templado",
+      "Material": "Acero inoxidable",
+      "Funciones": "Olla y parrilla"
+    },
+    "notes": []
+  },
+  {
+    "code": "L755",
+    "specs": {
+      "Superficie": "Antiadherente"
+    },
+    "notes": []
+  },
+  {
+    "code": "L756",
+    "specs": {
+      "Velocidades": "7",
+      "Batidores": "Dos varillas"
+    },
+    "notes": []
+  },
+  {
+    "code": "L759",
+    "specs": {
+      "Base": "Giratoria, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L760",
+    "specs": {
+      "Base": "Giratoria, 360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "L767",
+    "specs": {
+      "Voltaje": "220 V",
+      "Control": "Temperatura ajustable",
+      "Material": "Acero inoxidable",
+      "Indicador": "LED de encendido"
+    },
+    "notes": []
+  },
+  {
+    "code": "L772",
+    "specs": {
+      "Voltaje": "220 V",
+      "Filtro": "HEPA lavable",
+      "Longitud del cable": "5 m",
+      "Nivel de ruido": "75 dB"
+    },
+    "notes": []
+  },
+  {
+    "code": "L774",
+    "specs": {
+      "Velocidades": "2",
+      "Cuchillas": "Acero inoxidable",
+      "Jarra": "Transparente, graduada",
+      "Motor": "Cobre"
+    },
+    "notes": []
+  },
+  {
+    "code": "L777",
+    "specs": {
+      "Suela": "Cerámica antiadherente",
+      "Control": "Temperatura ajustable",
+      "Indicador": "LED de encendido",
+      "Cable": "Giratorio, 360°",
+      "Funciones": "Vapor continuo y golpe de vapor"
+    },
+    "notes": []
+  },
+  {
+    "code": "L778",
+    "specs": {
+      "Suela": "Cerámica antiadherente",
+      "Control": "Temperatura ajustable",
+      "Indicador": "LED de encendido",
+      "Cable": "Giratorio, 360°",
+      "Funciones": "Vapor continuo y golpe de vapor"
+    },
+    "notes": []
+  },
+  {
+    "code": "L780",
+    "specs": {
+      "Voltaje": "220 V",
+      "Diseño": "Plegable",
+      "Material": "Silicona y ABS",
+      "Temporizador": "10 minutos"
+    },
+    "notes": []
+  },
+  {
+    "code": "L781",
+    "specs": {
+      "Potencia": "1200 W",
+      "Voltaje": "220 V",
+      "Velocidades": "6",
+      "Tazón": "Acero inoxidable",
+      "Mezclado": "Planetario"
+    },
+    "notes": []
+  },
+  {
+    "code": "L783",
+    "specs": {
+      "Diámetros": "16, 18, 20 y 24 cm",
+      "Material": "Acero inoxidable",
+      "Tapas": "Vidrio templado",
+      "Fondo": "Difusor térmico",
+      "Compatibilidad": "Cocinas de gas y eléctricas"
+    },
+    "notes": []
+  },
+  {
+    "code": "L784",
+    "specs": {
+      "Diámetro": "22 cm",
+      "Material": "Aluminio reforzado",
+      "Mango": "Aislante térmico",
+      "Compatibilidad": "Cocinas de gas y eléctricas"
+    },
+    "notes": []
+  },
+  {
+    "code": "L789",
+    "specs": {
+      "Diseño": "Doble nivel apilable",
+      "Tapa": "Transparente, resistente al calor",
+      "Control": "Un botón"
+    },
+    "notes": []
+  },
+  {
+    "code": "L794",
+    "specs": {
+      "Velocidad máxima": "2200 rpm",
+      "Estructura": "Metal",
+      "Accesorio": "Bandeja para hielo triturado"
+    },
+    "notes": []
+  },
+  {
+    "code": "L797",
+    "specs": {
+      "Tipo de masaje": "Amasamiento shiatsu",
+      "Sujeción": "Correa ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "L804",
+    "specs": {
+      "Niveles": "9",
+      "Puertas": "Transparentes",
+      "Estructura": "Plástico, modular y apilable",
+      "Montaje": "Sin herramientas"
+    },
+    "notes": []
+  },
+  {
+    "code": "L808",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Funciones": "Seco, spray, vapor, vapor vertical y golpe de vapor",
+      "Protección": "Contra sobrecalentamiento",
+      "Cable": "Giratorio, 360°",
+      "Indicador": "Luminoso de funcionamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L810",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Funciones": "Seco, spray, vapor, vapor vertical y golpe de vapor",
+      "Protección": "Contra sobrecalentamiento",
+      "Cable": "Giratorio, 360°",
+      "Indicador": "Luminoso de funcionamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L811",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Funciones": "Seco, spray, vapor, vapor vertical y golpe de vapor",
+      "Protección": "Contra sobrecalentamiento",
+      "Cable": "Giratorio, 360°",
+      "Indicador": "Luminoso de funcionamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L809",
+    "specs": {
+      "Depósito de agua": "1,8 L",
+      "Presión": "15 bar",
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Funciones": "Espresso, capuchino y agua caliente",
+      "Panel": "Digital táctil",
+      "Material": "Acero inoxidable y ABS",
+      "Bandeja": "Extraíble"
+    },
+    "notes": []
+  },
+  {
+    "code": "L812",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Control": "Temperatura ajustable",
+      "Protección": "Contra sobrecalentamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L813",
+    "specs": {
+      "Velocidades": "5",
+      "Cuerpo": "ABS y acero inoxidable",
+      "Accesorios": "2 batidores y 2 amasadores de acero inoxidable",
+      "Voltaje": "220 a 240 V, 50/60 Hz"
+    },
+    "notes": []
+  },
+  {
+    "code": "L815",
+    "specs": {
+      "Velocidades": "5",
+      "Cuerpo": "ABS y acero inoxidable",
+      "Accesorios": "2 batidores y 2 amasadores de acero inoxidable",
+      "Voltaje": "220 a 240 V, 50/60 Hz"
+    },
+    "notes": []
+  },
+  {
+    "code": "L816",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Encendido": "Automático al presionar la fruta",
+      "Jarra": "Plástico transparente AS",
+      "Cono": "Polipropileno (PP)",
+      "Base": "ABS",
+      "Piezas": "Desmontables"
+    },
+    "notes": []
+  },
+  {
+    "code": "L819",
+    "specs": {
+      "Diámetro": "26 cm",
+      "Material": "Aluminio forjado",
+      "Recubrimiento": "Antiadherente de piedra",
+      "Mango": "Baquelita",
+      "Tapa": "Vidrio templado con salida de vapor",
+      "Compatibilidad": "Cocinas de gas y eléctricas"
+    },
+    "notes": []
+  },
+  {
+    "code": "L820",
+    "specs": {
+      "Contenido": "3 ollas y 3 tapas",
+      "Material": "Acero inoxidable SUS 304",
+      "Tapas": "Vidrio templado con válvula de vapor",
+      "Fondo": "Difusor multicapa"
+    },
+    "notes": []
+  },
+  {
+    "code": "L824",
+    "specs": {
+      "Material": "Acero inoxidable",
+      "Mango": "Baquelita",
+      "Silbato": "Automático",
+      "Fondo": "Encapsulado"
+    },
+    "notes": [
+      "Se omite capacidad: la imagen contiene 3,5 L y 3,8 L."
+    ]
+  },
+  {
+    "code": "L827",
+    "specs": {
+      "Tapas": "Vidrio templado con válvula de vapor",
+      "Mangos": "Baquelita",
+      "Superficie": "Antiadherente",
+      "Compatibilidad": "Gas, eléctrica y vitrocerámica"
+    },
+    "notes": [
+      "Se omiten medidas y capacidades adicionales: título e imagen no coinciden."
+    ]
+  },
+  {
+    "code": "L831",
+    "specs": {
+      "Velocidades": "2",
+      "Voltaje": "220 V, 50/60 Hz",
+      "Brazo": "Desmontable, de acero inoxidable, 19 cm aproximadamente",
+      "Cuerpo": "ABS",
+      "Cuchillas": "Acero inoxidable"
+    },
+    "notes": []
+  },
+  {
+    "code": "L835",
+    "specs": {
+      "Capacidad": "400 ml",
+      "Material": "Acero inoxidable de doble pared",
+      "Aislamiento": "Al vacío",
+      "Parlante": "Bluetooth integrado",
+      "Batería": "Recargable por USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "L836",
+    "specs": {
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Placas": "4 juegos intercambiables, antiadherentes",
+      "Indicadores": "Encendido y temperatura lista",
+      "Cierre": "Clip de seguridad",
+      "Dimensiones": "25 × 23 × 10 cm aproximadamente"
+    },
+    "notes": []
+  },
+  {
+    "code": "L837",
+    "specs": {
+      "Tecnología": "Iónica",
+      "Función": "Aire frío",
+      "Accesorio": "Boquilla concentradora",
+      "Cable": "Giratorio, 360°",
+      "Voltaje": "220 a 240 V, 50/60 Hz"
+    },
+    "notes": []
+  },
+  {
+    "code": "L838",
+    "specs": {
+      "Tecnología": "Iónica",
+      "Función": "Aire frío",
+      "Accesorio": "Boquilla concentradora",
+      "Cable": "Giratorio, 360°",
+      "Voltaje": "220 a 240 V, 50/60 Hz"
+    },
+    "notes": []
+  },
+  {
+    "code": "L839",
+    "specs": {
+      "Tecnología": "Iónica",
+      "Función": "Aire frío",
+      "Accesorio": "Boquilla concentradora",
+      "Cable": "Giratorio, 360°",
+      "Voltaje": "220 a 240 V, 50/60 Hz"
+    },
+    "notes": []
+  },
+  {
+    "code": "L840",
+    "specs": {
+      "Potencia": "1800 a 2200 W",
+      "Tecnología": "Iónica",
+      "Velocidades": "2",
+      "Temperaturas": "3",
+      "Accesorio": "Boquilla concentradora",
+      "Cable": "Giratorio, 360°",
+      "Voltaje": "220 a 240 V, 50/60 Hz"
+    },
+    "notes": []
+  },
+  {
+    "code": "L843",
+    "specs": {
+      "Temperatura": "Ajustable de 30 a 60 °C",
+      "Pantalla": "LED digital de temperatura",
+      "Entrada de agua": "Lateral",
+      "Protección": "Contra sobrecalentamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "L844",
+    "specs": {
+      "Material": "Acero inoxidable de doble pared",
+      "Tapa": "Cierre hermético",
+      "Transporte": "Asa plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "L845",
+    "specs": {
+      "Material": "Acero inoxidable de doble pared",
+      "Tapa": "Cierre hermético",
+      "Transporte": "Asa plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "L846",
+    "specs": {
+      "Diseño": "Plegable",
+      "Temporizador": "De 1 a 8 horas",
+      "Control": "Táctil"
+    },
+    "notes": []
+  },
+  {
+    "code": "L848",
+    "specs": {
+      "Material": "Acero inoxidable",
+      "Silbato": "Integrado",
+      "Compatibilidad": "Cocinas de gas, eléctricas, vitrocerámicas e inducción"
+    },
+    "notes": []
+  },
+  {
+    "code": "N023",
+    "specs": {
+      "Potencia de salida": "300 W",
+      "Voltaje de salida": "220 V AC",
+      "Puertos": "2 USB de 2,1 A y 1 USB-C",
+      "Tomas eléctricas": "3 universales",
+      "Control": "Interruptor independiente"
+    },
+    "notes": [
+      "La imagen mezcla entradas de 12 V y 12/24 V; se omite ese dato."
+    ]
+  },
+  {
+    "code": "N03",
+    "specs": {
+      "Funciones": "Palo selfie y trípode",
+      "Soporte": "Giratorio, 360°",
+      "Control remoto": "Inalámbrico, alcance de hasta 10 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1014",
+    "specs": {
+      "Control": "Desde aplicación móvil",
+      "Pantalla": "LED programable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1016",
+    "specs": {
+      "Conectividad": "Wi-Fi",
+      "Material": "ABS y PC",
+      "Color": "Blanco"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1036",
+    "specs": {
+      "Fotografía": "16 MP",
+      "Video": "1080p",
+      "Almacenamiento ampliable": "Tarjeta TF de hasta 64 GB",
+      "Conexiones": "USB 2.0 y salida HD",
+      "Ángulo de visión": "170°"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1039-SQ",
+    "specs": {
+      "Video": "4K Ultra HD",
+      "Estabilización": "Gimbal de 3 ejes",
+      "Rotación": "180°",
+      "Pantalla": "Táctil",
+      "Función": "Seguimiento de objetos",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1052",
+    "specs": {
+      "Funciones": "Arrancador de batería e inflador de neumáticos",
+      "Pantalla": "LCD digital",
+      "Iluminación": "LED de emergencia",
+      "Puerto": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1055",
+    "specs": {
+      "Diseño": "Doble rodillo",
+      "Material": "ABS",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1058",
+    "specs": {
+      "Video": "Full HD 1080p",
+      "Pantalla": "Táctil de 4,3 pulgadas",
+      "Cámaras": "Frontal y trasera",
+      "Grabación": "En bucle",
+      "Ángulo de visión": "170°",
+      "Visión nocturna": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1071",
+    "specs": {
+      "Batería": "280 mAh",
+      "Notificaciones": "Redes sociales"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1082",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Pantalla": "LCD"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1090",
+    "specs": {
+      "Red inalámbrica": "Wi-Fi AC1200",
+      "Funciones": "MU-MIMO y roaming entre nodos",
+      "Capacidad de conexión": "Hasta 100 dispositivos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1115",
+    "specs": {
+      "Pantalla": "Táctil HD",
+      "Llamadas": "Bluetooth",
+      "Notificaciones": "Mensajes y aplicaciones del teléfono",
+      "Modos": "Deportivos",
+      "Control de música": "Desde el reloj",
+      "Correas": "Intercambiables",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1119",
+    "specs": {
+      "Longitud": "5 m",
+      "Iluminación": "RGB, 16 millones de colores",
+      "Control": "Aplicación móvil",
+      "Sincronización": "Música y sonido",
+      "Diseño": "Flexible",
+      "Alimentación": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1120",
+    "specs": {
+      "Tomas eléctricas": "10 universales"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1127",
+    "specs": {
+      "Reducción de ruido": "Automática",
+      "Alcance inalámbrico": "20 a 30 m",
+      "Autonomía": "Hasta 7 horas",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1145",
+    "specs": {
+      "Funcionamiento": "Inalámbrico",
+      "Batería": "Recargable, 48 V",
+      "Boquilla": "Pulverización ajustable",
+      "Accesorio": "Botella para espuma"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1152",
+    "specs": {
+      "Ventiladores": "2",
+      "Alimentación": "USB, 5 V",
+      "Cabezal": "Ajustable, 360°",
+      "Velocidades": "2",
+      "Motor": "Cobre"
+    },
+    "notes": []
+  },
+  {
+    "code": "n1163",
+    "specs": {
+      "Sistema operativo": "Android 13",
+      "Memoria RAM": "1 GB",
+      "Almacenamiento": "8 GB",
+      "Bluetooth": "5.0",
+      "Audio": "Parlante integrado",
+      "Tecnología de proyección": "LCD TFT de 2,69 pulgadas",
+      "Lente": "Vidrio, 3 piezas"
+    },
+    "notes": [
+      "El soporte de señal 4K no se publica como resolución nativa."
+    ]
+  },
+  {
+    "code": "N1166",
+    "specs": {
+      "Sistema operativo": "Android 11",
+      "Memoria RAM": "1 GB",
+      "Almacenamiento": "8 GB",
+      "Audio": "Parlante integrado",
+      "Relación de aspecto": "16:9 y 4:3",
+      "Lente": "Vidrio, 3 piezas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1167",
+    "specs": {
+      "Memoria RAM": "1 GB",
+      "Almacenamiento": "8 GB",
+      "Bluetooth": "5.0",
+      "Audio": "Parlante integrado",
+      "Tecnología de proyección": "LCD TFT de 2,69 pulgadas",
+      "Lente": "Vidrio, 3 piezas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1175",
+    "specs": {
+      "Alimentación": "Panel solar",
+      "Sensor": "Movimiento",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N119",
+    "specs": {
+      "Conectores": "USB-C a auxiliar de 3,5 mm",
+      "Cable": "Nylon",
+      "Terminales": "Metal"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1218",
+    "specs": {
+      "Lentes": "4",
+      "Zoom digital": "10x",
+      "Detección": "Personas",
+      "Movimiento": "PTZ motorizado",
+      "Conectividad": "Wi-Fi de 2,4 GHz",
+      "Visualización": "4 vistas simultáneas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1220",
+    "specs": {
+      "Contenido": "Cortadora, recortadora y afeitadora",
+      "Batería": "Recargable",
+      "Accesorios": "Peines guía"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1246",
+    "specs": {
+      "Desbloqueo": "Huella dactilar",
+      "Usuarios": "Registro de varias huellas",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N126",
+    "specs": {
+      "Diámetro del aro": "33 cm (13 pulgadas)",
+      "Iluminación": "RGB y luz cálida, neutra o fría",
+      "Niveles de brillo": "10",
+      "Potencia": "10 W",
+      "Alimentación": "USB, 5 V",
+      "Soporte": "Ajustable, 360°",
+      "Compatibilidad": "Celulares de 4 a 6,5 pulgadas",
+      "Altura máxima del trípode": "2,10 m",
+      "Material del trípode": "Aluminio y ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1266",
+    "specs": {
+      "Iluminación": "RGB, 16 millones de colores",
+      "Control": "Aplicación móvil",
+      "Sincronización": "Música y sonido",
+      "Montaje": "Adhesivo 3M",
+      "Corte": "Cada 3 LED",
+      "Uso": "Interiores"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1280",
+    "specs": {
+      "Disparo": "Emisión continua de agua",
+      "Alcance": "Hasta 8 m",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1295",
+    "specs": {
+      "Modos de iluminación": "11",
+      "Luces": "LED multicolor",
+      "Diseño": "Flexible"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1300",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Audio": "Diseño abierto",
+      "Controles": "Táctiles"
+    },
+    "notes": []
+  },
+  {
+    "code": "N133",
+    "specs": {
+      "Altura máxima": "1,7 m",
+      "Material": "Metal",
+      "Rosca": "1/4 de pulgada",
+      "Diseño": "Telescópico y plegable",
+      "Compatibilidad": "Aros de luz LED"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1336",
+    "specs": {
+      "Pantalla": "AMOLED de 2,4 pulgadas",
+      "Compatibilidad": "Android e iOS",
+      "Notificaciones": "Llamadas, mensajes y redes sociales",
+      "Correas": "Lisa y de tela"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1337",
+    "specs": {
+      "Pantalla": "2,4 pulgadas",
+      "Compatibilidad": "Android e iOS",
+      "Correas": "Dos intercambiables",
+      "Notificaciones": "Llamadas, mensajes y redes sociales"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1339",
+    "specs": {
+      "Pantalla": "AMOLED de 2 pulgadas",
+      "Memoria RAM": "128 MB",
+      "Almacenamiento": "4 GB"
+    },
+    "notes": [
+      "Se omiten Bluetooth y batería por rangos ambiguos."
+    ]
+  },
+  {
+    "code": "N134",
+    "specs": {
+      "Accesorio": "Cordón desmontable",
+      "Uso": "Permite operar la pantalla táctil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1367",
+    "specs": {
+      "Iluminación": "LED RGB",
+      "Altura": "Ajustable",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1368",
+    "specs": {
+      "Soporte": "Ajustable para celular",
+      "Puerto de carga": "USB-C",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1368-SQ",
+    "specs": {
+      "Soporte": "Ajustable para celular",
+      "Puerto de carga": "USB-C",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1369",
+    "specs": {
+      "Micrófonos": "2",
+      "Captación": "Omnidireccional, 360°",
+      "Reducción de ruido": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1371",
+    "specs": {
+      "Micrófonos": "2",
+      "Alcance inalámbrico": "Hasta 20 m",
+      "Reducción de ruido": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1372",
+    "specs": {
+      "Cámara": "8 MP",
+      "Funciones": "Fotografía y grabación de video",
+      "Control": "Aplicación móvil",
+      "Compatibilidad": "Android e iOS",
+      "Lentes": "Tres juegos intercambiables"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1404",
+    "specs": {
+      "Cuchillas": "Acero inoxidable",
+      "Autonomía": "Hasta 210 minutos",
+      "Tiempo de carga": "3 horas",
+      "Carga": "USB",
+      "Pantalla": "LCD",
+      "Funcionamiento": "Con cable o batería"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1405",
+    "specs": {
+      "Sistema de corte": "Doble cuchilla magnética flotante",
+      "Recortador": "Lateral",
+      "Batería": "600 mAh",
+      "Tiempo de carga": "2 horas",
+      "Autonomía": "Hasta 100 minutos",
+      "Carga": "USB",
+      "Potencia": "6 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1425",
+    "specs": {
+      "Bluetooth": "5.3",
+      "Audio": "Diseño abierto"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1434",
+    "specs": {
+      "Producción de hielo": "Hasta 12 kg al día",
+      "Tiempo por ciclo": "6 a 8 minutos",
+      "Tamaños de hielo": "2",
+      "Potencia": "112 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1436",
+    "specs": {
+      "Longitud extendida": "Hasta 45 m",
+      "Diseño": "Se expande con la presión del agua",
+      "Accesorios": "Pistola rociadora y conector para grifo"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1440",
+    "specs": {
+      "Conector de entrada": "USB-C",
+      "Puertos": "3 USB-A y 1 HDMI"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1445",
+    "specs": {
+      "Llamadas": "Desde el reloj",
+      "Protección": "IP68",
+      "Funciones": "Modos deportivos y control de música",
+      "Correa": "Acero inoxidable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1513",
+    "specs": {
+      "Batería": "9600 mAh, recargable",
+      "Material": "Aleación de aluminio",
+      "Carga": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1518",
+    "specs": {
+      "Soporte": "Ajustable para celular",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N153",
+    "specs": {
+      "Altura máxima": "70 cm",
+      "Rotación": "360°",
+      "Material": "Acero inoxidable y ABS",
+      "Control": "Bluetooth, desmontable",
+      "Batería del control": "CR1632",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1548",
+    "specs": {
+      "Cuchilla": "En T, desmontable",
+      "Motor": "7000 rpm",
+      "Autonomía": "Hasta 80 minutos",
+      "Carga": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1554",
+    "specs": {
+      "Voltaje": "12 a 80 V DC",
+      "Carcasa": "Aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1556",
+    "specs": {
+      "Voltaje": "12 a 80 V DC",
+      "Carcasa": "Aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1557",
+    "specs": {
+      "Luces": "8 LED",
+      "Carcasa": "Aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1559",
+    "specs": {
+      "Zoom": "Telescópico",
+      "Puerto de carga": "USB-C",
+      "Protección": "IPX4",
+      "Cuerpo": "Aleación de aluminio",
+      "Modos": "Alto, medio, bajo y estroboscópico"
+    },
+    "notes": []
+  },
+  {
+    "code": "N156",
+    "specs": {
+      "Mandos": "2 inalámbricos recargables",
+      "Salida de video": "HDMI",
+      "Almacenamiento": "64 GB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2178",
+    "specs": {
+      "Mandos": "2 inalámbricos recargables",
+      "Salida de video": "HDMI",
+      "Almacenamiento": "64 GB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1561",
+    "specs": {
+      "Protección": "IPX4",
+      "Sujeción": "Banda elástica ajustable",
+      "Modo de emergencia": "Luz estroboscópica"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1562",
+    "specs": {
+      "Conectores": "Lightning a auxiliar de 3,5 mm",
+      "Audio": "Estéreo",
+      "Cable": "Trenzado",
+      "Carcasa": "Aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1569",
+    "specs": {
+      "Pantalla": "IPS táctil",
+      "Conectividad": "Bluetooth",
+      "Integración con teléfono": "CarPlay inalámbrico y Android Auto",
+      "Grabación": "Doble cámara"
+    },
+    "notes": []
+  },
+  {
+    "code": "N157",
+    "specs": {
+      "Autonomía de vuelo": "Aproximadamente 12 a 15 minutos por batería",
+      "Funciones": "Mantenimiento de altura, modo sin cabeza y giros de 360°",
+      "Cámara": "HD gran angular"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1572",
+    "specs": {
+      "Potencia": "1000 W o 2000 W",
+      "Voltaje": "220 a 240 V, 50/60 Hz",
+      "Tecnología": "Cerámica PTC",
+      "Control": "Táctil y remoto",
+      "Pantalla": "LED",
+      "Funciones": "Oscilación y temporizador",
+      "Protección": "Sobrecalentamiento y vuelco",
+      "Dimensiones": "16 × 16 × 41 cm aproximadamente"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1576",
+    "specs": {
+      "Iluminación": "UV y LED",
+      "Potencia": "288 W",
+      "Sensor": "Encendido al detectar la mano",
+      "Temporizador": "30, 60, 90 y 120 segundos",
+      "Pantalla": "LED digital"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1577",
+    "specs": {
+      "Iluminación": "36 LED UV",
+      "Potencia": "108 W",
+      "Sensor": "Encendido al detectar la mano",
+      "Temporizador": "10, 30, 60 y 99 segundos",
+      "Pantalla": "LED digital"
+    },
+    "notes": []
+  },
+  {
+    "code": "N1579",
+    "specs": {
+      "Material": "Cuero sintético",
+      "Transporte": "Asa de mano con cadena decorativa"
+    },
+    "notes": []
+  },
+  {
+    "code": "N190",
+    "specs": {
+      "Visualización": "Doble pantalla",
+      "Rotación": "360°"
+    },
+    "notes": []
+  },
+  {
+    "code": "N198",
+    "specs": {
+      "Diámetro del aro": "33 cm",
+      "Potencia": "10 W",
+      "Temperatura de color": "3000 a 6500 K",
+      "Niveles de brillo": "10",
+      "Alimentación": "USB, 5 V",
+      "Longitud del cable": "2 m aproximadamente",
+      "Altura del trípode": "70 a 210 cm",
+      "Compatibilidad": "Celulares de 4 a 6,5 pulgadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N20",
+    "specs": {
+      "Control": "Teclado y panel táctil",
+      "Conexión": "Inalámbrica"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2000",
+    "specs": {
+      "Matriz LED": "16 × 32",
+      "Iluminación": "RGB",
+      "Control": "Aplicación móvil y control remoto",
+      "Sincronización": "Música",
+      "Alimentación": "USB",
+      "Diseño": "Flexible"
+    },
+    "notes": [
+      "Se omiten dimensiones: título 17 × 0,7 cm e imagen 17 × 7 cm."
+    ]
+  },
+  {
+    "code": "N2002",
+    "specs": {
+      "Matriz LED": "20 × 64",
+      "Iluminación": "RGB",
+      "Control": "Aplicación móvil y control remoto",
+      "Sincronización": "Música",
+      "Alimentación": "USB",
+      "Diseño": "Flexible"
+    },
+    "notes": [
+      "Se omiten dimensiones: título e imagen no coinciden."
+    ]
+  },
+  {
+    "code": "N2003",
+    "specs": {
+      "Matriz LED": "16 × 96",
+      "Iluminación": "RGB",
+      "Control": "Aplicación móvil y control remoto",
+      "Sincronización": "Música",
+      "Alimentación": "USB"
+    },
+    "notes": [
+      "Se omiten dimensiones: título e imagen no coinciden."
+    ]
+  },
+  {
+    "code": "N2008",
+    "specs": {
+      "Potencia": "120 W",
+      "Batería": "3000 mAh",
+      "Dimensiones": "85 × 48 × 180 mm",
+      "Color": "Negro"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2010",
+    "specs": {
+      "Pantalla": "HD de 2,3 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Notificaciones": "Aplicaciones del teléfono",
+      "Funciones": "Control de música y cámara",
+      "Protección": "IP67",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2015 - SQ",
+    "specs": {
+      "Jugadores": "Hasta 2",
+      "Salida de video": "AV",
+      "Cable AV": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2016",
+    "specs": {
+      "Niveles de potencia": "2",
+      "Iluminación": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2016 - SQ",
+    "specs": {
+      "Niveles de potencia": "2",
+      "Iluminación": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2017",
+    "specs": {
+      "Ventilación": "Doble cooler",
+      "Iluminación": "RGB",
+      "Refrigeración": "Por semiconductores"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2019",
+    "specs": {
+      "Potencia": "10 W",
+      "Aspas": "5"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2022",
+    "specs": {
+      "Contenido": "Cepillo suave y spray de limpieza"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2023",
+    "specs": {
+      "Pantalla": "AMOLED de 2,02 pulgadas"
+    },
+    "notes": [
+      "Se omiten RAM, batería y aplicación: la imagen ofrece rangos o alternativas no específicos."
+    ]
+  },
+  {
+    "code": "N2025",
+    "specs": {
+      "Filtro": "Lavable y reutilizable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2026",
+    "specs": {
+      "Resolución": "Full HD 1080p",
+      "Pantalla": "LCD",
+      "Ángulo de visión": "170°",
+      "Visión nocturna": "LED",
+      "Grabación": "En bucle",
+      "Sensor": "G",
+      "Almacenamiento ampliable": "MicroSD de hasta 64 GB",
+      "Alimentación": "12 V para automóvil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2027",
+    "specs": {
+      "Potencia continua": "150 W",
+      "Entrada": "12 V DC",
+      "Puertos": "USB de 3,1 A y USB-C",
+      "Frecuencia": "50/60 Hz",
+      "Protección": "Contra cortocircuito"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2028",
+    "specs": {
+      "Conectividad": "Wi-Fi",
+      "Control por voz": "Alexa y Google",
+      "Funciones": "Temporizador y monitoreo de consumo mediante aplicación"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2033",
+    "specs": {
+      "Función de calor": "Luz roja",
+      "Sujeción": "Correas para regular la presión",
+      "Superficie": "Acolchada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N204",
+    "specs": {
+      "Material": "Nylon"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2041",
+    "specs": {
+      "Rotación": "360°",
+      "Material": "Aluminio",
+      "Patas": "Telescópicas",
+      "Carga máxima": "3 kg",
+      "Accesorio incluido": "Soporte para celular",
+      "Base": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2043",
+    "specs": {
+      "Diseño": "Unisex",
+      "Cierre": "Frontal completo",
+      "Tela": "Transpirable, de secado rápido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2062",
+    "specs": {
+      "Velocidades": "6",
+      "Niveles de intensidad": "3",
+      "Cabezal": "Intercambiable",
+      "Diseño": "Mango curvo extendido",
+      "Carga": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2069",
+    "specs": {
+      "Material": "Poliéster",
+      "Interior": "Acolchado térmico",
+      "Bolsillos": "Laterales con cierre",
+      "Cierre": "Frontal"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2070",
+    "specs": {
+      "Carga máxima": "150 kg",
+      "Rueda": "Ancha, antideslizante",
+      "Sistema": "Retorno automático",
+      "Mangos": "Acolchados",
+      "Estructura": "Acero y ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2078",
+    "specs": {
+      "Pantalla": "120 pulgadas",
+      "Dimensiones": "2,65 × 1,5 m",
+      "Formato": "16:9",
+      "Material": "Tela reflectiva blanca"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2086",
+    "specs": {
+      "Conectividad": "Inalámbrica de 2,4 GHz",
+      "Compatibilidad": "PC, PS1, PS2 y PS3",
+      "Batería": "Recargable",
+      "Funciones": "Vibración",
+      "Alcance inalámbrico": "Hasta 10 m",
+      "Receptor USB": "Incluido",
+      "Autonomía": "Hasta 8 horas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2087",
+    "specs": {
+      "Batería": "12000 mAh",
+      "Iluminación": "Linterna LED",
+      "Protección": "Contra cortocircuito"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2092",
+    "specs": {
+      "Material": "Algodón y poliéster",
+      "Interior": "Afelpado térmico",
+      "Diseño": "Unisex, holgado",
+      "Capucha": "Ajustable",
+      "Puños": "Elásticos",
+      "Bolsillos": "Laterales"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2094",
+    "specs": {
+      "Movimiento": "Cuarzo analógico",
+      "Diámetro del reloj": "42 mm",
+      "Correa": "Acero inoxidable",
+      "Contenido": "Reloj, pulsera, collar con cruz y anillo ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2097",
+    "specs": {
+      "Peso": "12 kg",
+      "Diseño": "Kettlebell",
+      "Material": "Hierro recubierto",
+      "Agarre": "Antideslizante",
+      "Base": "Plana"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2098",
+    "specs": {
+      "Funciones": "Taladro y atornillador",
+      "Baterías": "Dos recargables de litio",
+      "Control": "Velocidad variable",
+      "Mango": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2099",
+    "specs": {
+      "Potencia máxima": "4 × 65 W",
+      "Pantalla": "LCD multicolor",
+      "Entradas": "USB y auxiliar",
+      "Panel": "Desmontable",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2100",
+    "specs": {
+      "Potencia de calefacción": "2000 W",
+      "Voltaje": "220 V, 50/60 Hz",
+      "Pantalla": "LED",
+      "Temporizador": "Programable",
+      "Niveles de potencia": "2",
+      "Montaje": "Pared",
+      "Control remoto": "Incluido"
+    },
+    "notes": [
+      "Se omite la supuesta potencia de refrigeración hasta identificar compresor; no se publica como capacidad frigorífica."
+    ]
+  },
+  {
+    "code": "N2102",
+    "specs": {
+      "Voltaje de salida": "18 V",
+      "Corriente máxima": "8,3 A",
+      "Tecnología": "Monocristalina",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2104",
+    "specs": {
+      "Potencia nominal": "650 W",
+      "Capacidad": "1300 VA",
+      "Entrada y salida": "220 V",
+      "Tomas": "8",
+      "Protección": "Contra picos de voltaje"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2108",
+    "specs": {
+      "Control": "Temperatura ajustable",
+      "Cobertura": "Hasta 20 m²"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2110",
+    "specs": {
+      "Material": "Cuero PU y estructura ABS",
+      "Portabotellas": "Doble",
+      "Portaservilletas": "Integrado",
+      "Base": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2111",
+    "specs": {
+      "Pantalla": "HD de 2,3 pulgadas",
+      "Bluetooth": "5.0",
+      "Carga": "Magnética",
+      "Modos": "Deportivos",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2113",
+    "specs": {
+      "Correa": "Metal",
+      "Accesorios": "Billetera de cuero PU y caja de regalo"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2114",
+    "specs": {
+      "Pantalla": "HD",
+      "Bluetooth": "5.0",
+      "Llamadas": "Bluetooth",
+      "Carga": "Magnética",
+      "Accesorios": "Batería externa y audífonos TWS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2115",
+    "specs": {
+      "Función": "Masaje con calor infrarrojo",
+      "Sujeción": "Correas ajustables"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2122",
+    "specs": {
+      "Iluminación": "LED",
+      "Brillo y temperatura de color": "Ajustables",
+      "Soporte para celular": "Integrado",
+      "Alimentación": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2125",
+    "specs": {
+      "Potencia": "650 W",
+      "Sistema de pulverización": "HVLP",
+      "Boquilla": "360°",
+      "Flujo": "Ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2128",
+    "specs": {
+      "Funciones": "Videollamada remota y audio bidireccional",
+      "Pantalla": "Frontal a color",
+      "Visión nocturna": "Automática"
+    },
+    "notes": [
+      "Se omite resolución: 4K y sensor 5 MP no son equivalentes."
+    ]
+  },
+  {
+    "code": "N2131",
+    "specs": {
+      "Alimentación": "Panel solar",
+      "Lentes": "2",
+      "Movimiento": "PTZ de 360°",
+      "Visión nocturna": "A color",
+      "Funciones": "Detección de movimiento con alertas y audio bidireccional"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2133",
+    "specs": {
+      "Longitud": "5 m",
+      "Voltaje": "12 V",
+      "Potencia por metro": "14,4 W/m",
+      "Conectividad": "Bluetooth",
+      "Iluminación": "RGB con sincronización musical",
+      "Control": "Aplicación móvil y control remoto",
+      "Protección": "IP67"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2134",
+    "specs": {
+      "Longitud": "5 m",
+      "Alimentación": "USB, 5 V",
+      "Conectividad": "Bluetooth",
+      "Funciones": "Cambio de color al ritmo de la música",
+      "Control": "Aplicación móvil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2135",
+    "specs": {
+      "Longitud": "5 m",
+      "Alimentación": "USB, 5 V",
+      "Conectividad": "Bluetooth",
+      "Funciones": "Cambio de color al ritmo de la música",
+      "Control": "Aplicación móvil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2136",
+    "specs": {
+      "Potencia nominal": "3500 W",
+      "Baterías compatibles": "24 V",
+      "Controlador solar": "MPPT integrado",
+      "Entrada solar máxima": "500 V",
+      "Corriente máxima de carga": "100 A",
+      "Pantalla": "LCD"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2137",
+    "specs": {
+      "Tecnología": "MPPT",
+      "Corriente máxima": "30 A",
+      "Baterías compatibles": "12 V y 24 V",
+      "Pantalla": "LCD",
+      "Salida USB": "5 V / 2 A"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2138",
+    "specs": {
+      "Puerto": "USB",
+      "Protección": "Contra sobrecarga y cortocircuito"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2139",
+    "specs": {
+      "Potencia continua": "2000 W",
+      "Conversión": "DC a AC",
+      "Funciones": "Enfriamiento integrado y protección contra sobrecarga"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2145",
+    "specs": {
+      "Iluminación": "LED, varios modos",
+      "Puerto de carga": "USB-C",
+      "Pantalla": "Indicador digital de batería",
+      "Carcasa": "Aleación de aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2148",
+    "specs": {
+      "Aumento": "10x",
+      "Enfoque": "Ajuste central",
+      "Lentes": "Revestimiento multicapa"
+    },
+    "notes": [
+      "Se omite diámetro de lente: 40 y 42 mm en la misma imagen."
+    ]
+  },
+  {
+    "code": "N2150",
+    "specs": {
+      "Batería": "12 Ah",
+      "Conectividad": "Bluetooth",
+      "Iluminación": "Linterna LED y 4 focos LED incluidos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2152",
+    "specs": {
+      "Altura": "Ajustable de 70 a 170 cm",
+      "Estructura": "Metal",
+      "Plataforma": "Antideslizante",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2152-SQ",
+    "specs": {
+      "Altura": "Ajustable de 70 a 170 cm",
+      "Estructura": "Metal",
+      "Plataforma": "Antideslizante",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2157",
+    "specs": {
+      "Lentes": "4",
+      "Visión nocturna": "A color",
+      "Movimiento": "PTZ controlado a distancia",
+      "Funciones": "Alertas en tiempo real",
+      "Alimentación": "Doble panel solar"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2159",
+    "specs": {
+      "Sistema": "Hidráulico",
+      "Batería": "Recargable",
+      "Accesorio": "Cargador de batería",
+      "Base": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2164",
+    "specs": {
+      "Portavasos": "Doble",
+      "Diseño": "Plegable",
+      "Montaje": "Asiento de automóvil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2166",
+    "specs": {
+      "Baterías": "2 recargables de 48 V",
+      "Funcionamiento": "Inalámbrico",
+      "Carcasa": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2168",
+    "specs": {
+      "Video": "Full HD 1080p",
+      "Pantalla": "Táctil de 11,26 pulgadas",
+      "Ángulo de visión": "170°",
+      "Grabación": "En bucle",
+      "Visión nocturna": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2174",
+    "specs": {
+      "Función": "Convierte CarPlay con cable en inalámbrico",
+      "Requisito": "Vehículo con CarPlay por cable de fábrica",
+      "Conectividad": "Wi-Fi de 5 GHz",
+      "Actualizaciones": "OTA",
+      "Consumo": "Menos de 0,75 W",
+      "Material": "ABS y aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2175",
+    "specs": {
+      "Pantalla": "IPS a color de 1,3 pulgadas",
+      "Lente": "Giratorio, 180°",
+      "Almacenamiento": "Tarjeta microSD",
+      "Puerto de carga": "USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2176",
+    "specs": {
+      "Baterías": "2 recargables",
+      "Boquilla": "Ángulo ajustable de 0 a 40°",
+      "Accesorios": "Depósito de detergente, manguera, filtros, conectores y maletín"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2177",
+    "specs": {
+      "Batería": "Recargable",
+      "Manguera": "5 m",
+      "Transporte": "Maletín rígido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2179",
+    "specs": {
+      "Lentes": "4",
+      "Rotación": "355° horizontal y 90° vertical",
+      "Visión nocturna": "A color",
+      "Audio": "Bidireccional",
+      "Almacenamiento ampliable": "MicroSD de hasta 128 GB",
+      "Protección": "IP66",
+      "Compatibilidad": "Android, iOS y Windows"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2180",
+    "specs": {
+      "Lentes": "4",
+      "Visión nocturna": "Infrarrojos y luz blanca",
+      "Funciones": "Detección de movimiento y alertas al teléfono",
+      "Audio": "Bidireccional",
+      "Almacenamiento": "Tarjeta microSD",
+      "Control": "Aplicación móvil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2184",
+    "specs": {
+      "Lentes": "3",
+      "Resolución": "1080p",
+      "Conectividad": "Wi-Fi de 2,4 GHz",
+      "Rotación": "355° horizontal y 90° vertical",
+      "Visión nocturna": "A color",
+      "Detección": "Personas",
+      "Audio": "Bidireccional",
+      "Almacenamiento": "Tarjeta microSD",
+      "Alimentación": "Panel solar"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2186",
+    "specs": {
+      "Torque": "25 + 1 posiciones",
+      "Baterías": "2 recargables de litio"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2187",
+    "specs": {
+      "Batería": "Litio de 1200 mAh",
+      "Pantalla": "LCD"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2188",
+    "specs": {
+      "Cuchillas": "Dos de acero inoxidable",
+      "Sistema": "Reciprocante",
+      "Velocidad del motor": "Hasta 14000 rpm",
+      "Autonomía": "Hasta 45 minutos",
+      "Tiempo de carga": "8 horas",
+      "Funcionamiento": "Inalámbrico"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2189",
+    "specs": {
+      "Cuchillas": "Doble lámina de titanio",
+      "Batería": "1400 mAh",
+      "Autonomía": "Hasta 120 minutos",
+      "Pantalla": "LCD digital",
+      "Carga": "USB",
+      "Funciones": "Afeitadora y recortadora"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2190",
+    "specs": {
+      "Pantalla": "IPS de 3 pulgadas",
+      "Video": "Full HD 1080p",
+      "Grabación": "4 canales, en bucle",
+      "Ángulo de cámara frontal": "170°",
+      "Sensor G": "Bloqueo de video ante impactos",
+      "Audio": "Micrófono y altavoz",
+      "Almacenamiento ampliable": "MicroSD de hasta 128 GB",
+      "Voltaje": "12 a 24 V DC"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2191-DORADO",
+    "specs": {
+      "Cuchillas": "Cerámica con recubrimiento DLC",
+      "Motor": "Hasta 8000 rpm",
+      "Batería": "Litio de 1600 mAh",
+      "Autonomía": "Hasta 180 minutos",
+      "Tiempo de carga": "2 horas",
+      "Pantalla": "LED",
+      "Funcionamiento": "Con cable o batería",
+      "Accesorios": "Peines guía"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2191-VERDE",
+    "specs": {
+      "Cuchillas": "Cerámica con recubrimiento DLC",
+      "Motor": "Hasta 8000 rpm",
+      "Batería": "Litio de 1600 mAh",
+      "Autonomía": "Hasta 180 minutos",
+      "Tiempo de carga": "2 horas",
+      "Pantalla": "LED",
+      "Funcionamiento": "Con cable o batería",
+      "Accesorios": "Peines guía"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2192",
+    "specs": {
+      "Modos de masaje": "3",
+      "Niveles de intensidad": "9",
+      "Función de calor": "Integrada",
+      "Carga": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2193",
+    "specs": {
+      "Extensores": "4: 110, 160, 210 y 260 mm",
+      "Cuerpo": "Acero reforzado",
+      "Transporte": "Estuche rígido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2196",
+    "specs": {
+      "Video": "Full HD 1080p",
+      "Encendido": "Automático con el vehículo"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2198",
+    "specs": {
+      "Material": "90 % poliéster y 10 % spandex",
+      "Diseño": "Cintura alta",
+      "Tejido": "Elástico en 4 direcciones",
+      "Tallas": "M, L y XL",
+      "Color": "Negro"
+    },
+    "notes": []
+  },
+  {
+    "code": "N22",
+    "specs": {
+      "Potencia de salida": "150 W",
+      "Entrada": "12/24 V DC",
+      "Salida": "220 V AC",
+      "Puertos": "2 USB-C y 2 USB de 2,1 A",
+      "Toma eléctrica": "Universal"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2202",
+    "specs": {
+      "Resolución de video": "1080p",
+      "Modos": "Duplicación y extensión de pantalla",
+      "Contenido": "Transmisor TX y receptor RX"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2205",
+    "specs": {
+      "Control": "Velocidad variable y torque ajustable",
+      "Giro": "Adelante y reversa",
+      "Mandril": "Ajuste rápido",
+      "Accesorios": "Cargador, puntas y maletín"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2206",
+    "specs": {
+      "Pantalla": "Táctil HD",
+      "Llamadas": "Bluetooth",
+      "Funciones": "Notificaciones, modos deportivos y control de música",
+      "Correas": "Intercambiables",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2207",
+    "specs": {
+      "Sujeción": "Magnética",
+      "Iluminación": "LED blanco, 3 niveles de brillo",
+      "Puerto de carga": "USB-C",
+      "Material": "ABS y PC",
+      "Batería": "200 mAh por aro",
+      "Autonomía": "Hasta 2,5 horas",
+      "Compatibilidad": "Celulares con carcasa magnética o anillo metálico"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2208",
+    "specs": {
+      "Sujeción": "Magnética",
+      "Compatibilidad": "MagSafe y fundas magnéticas",
+      "Material": "ABS y silicona",
+      "Peso": "80 g aproximadamente"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2209",
+    "specs": {
+      "Alimentación": "Panel solar incluido",
+      "Control remoto": "Incluido",
+      "Protección": "IP67",
+      "Cuerpo": "ABS"
+    },
+    "notes": [
+      "Se omite potencia por cifras contradictorias en la imagen."
+    ]
+  },
+  {
+    "code": "N2211",
+    "specs": {
+      "Panel solar": "6 V / 10 W",
+      "Dimensiones de la lámpara": "22 × 27 cm",
+      "Dimensiones del panel": "23,5 × 35 cm",
+      "Control remoto": "Incluido",
+      "Encendido": "Automático de noche"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2212",
+    "specs": {
+      "Iluminación": "LED",
+      "Puerto de carga": "USB-C",
+      "Enfoque": "Zoom"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2217",
+    "specs": {
+      "Luces": "144 LED",
+      "Batería": "5400 mAh",
+      "Panel solar": "Policristalino",
+      "Protección": "IP66",
+      "Material": "ABS",
+      "Montaje": "Pared"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2218",
+    "specs": {
+      "Luces": "256 LED",
+      "Panel solar": "Policristalino",
+      "Modos de iluminación": "3",
+      "Material": "ABS",
+      "Montaje": "Pared"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2221",
+    "specs": {
+      "Resolución nativa": "1280 × 720 píxeles",
+      "Brillo": "300 lúmenes ANSI",
+      "Sistema operativo": "Android 14",
+      "Bluetooth": "5.0",
+      "Corrección de imagen": "Trapezoidal automática"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2226",
+    "specs": {
+      "Superficie": "Tela reflectiva blanca ALR",
+      "Montaje": "Ojales metálicos, cintas adhesivas y ganchos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2227",
+    "specs": {
+      "Superficie": "Tela reflectiva blanca ALR",
+      "Montaje": "Ojales metálicos, cintas adhesivas y ganchos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2228",
+    "specs": {
+      "Superficie": "Tela reflectiva gris ALR",
+      "Montaje": "Ojales metálicos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2229",
+    "specs": {
+      "Superficie": "Tela reflectiva gris ALR",
+      "Montaje": "Ojales metálicos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2234",
+    "specs": {
+      "Pantalla": "LED",
+      "Batería": "Recargable",
+      "Receptor inalámbrico": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2235",
+    "specs": {
+      "Micrófonos": "2 inalámbricos UHF",
+      "Alcance": "Hasta 20 m",
+      "Pantalla": "LED",
+      "Batería": "Recargable",
+      "Receptor": "Plug and play"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2236",
+    "specs": {
+      "Temperatura de color": "2700 a 7500 K",
+      "Brillo": "Ajustable del 5 al 100 %",
+      "Soporte": "Giratorio, 360°",
+      "Alimentación": "100 a 240 V AC",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2238",
+    "specs": {
+      "Tecnología de localización": "Bluetooth 5.0",
+      "Alcance Bluetooth": "Hasta 50 m",
+      "Alarma": "Sonora",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": [
+      "El título dice GPS, pero la imagen identifica un localizador Bluetooth; no se atribuye GPS autónomo."
+    ]
+  },
+  {
+    "code": "N2239",
+    "specs": {
+      "Temperatura de color": "3000, 4500 y 6500 K",
+      "Brillo": "Ajustable del 10 al 100 %",
+      "Alimentación": "USB",
+      "Altura": "36 a 65 cm aproximadamente",
+      "Material": "ABS y aluminio",
+      "Accesorio": "Soporte para celular"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2240",
+    "specs": {
+      "Diseño": "Plegable",
+      "Portavasos": "2 con malla elástica",
+      "Compartimentos": "Bolsillo central con tapa y bolsillos frontales",
+      "Montaje": "Correas ajustables con ganchos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2247",
+    "specs": {
+      "Iluminación": "LED, 5 modos de color",
+      "Efecto": "Medusas en agua"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2248",
+    "specs": {
+      "Temperatura": "Ajustable de 15 a 32 °C",
+      "Temporizador": "1 a 12 horas",
+      "Niveles de potencia": "2",
+      "Pantalla": "LED",
+      "Control remoto": "Incluido",
+      "Protección": "Contra sobrecalentamiento"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2249",
+    "specs": {
+      "Sistema": "Levitación magnética, 360°",
+      "Iluminación": "LED cálida",
+      "Niveles de brillo": "3",
+      "Control": "Táctil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2250",
+    "specs": {
+      "Sistema": "Levitación magnética, giro de 360°",
+      "Iluminación": "LED de colores",
+      "Control": "Táctil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2251",
+    "specs": {
+      "Pantalla": "Digital",
+      "Funciones": "Alarma y señal horaria"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2253",
+    "specs": {
+      "Iluminación": "LED con intensidad ajustable",
+      "Control": "Táctil",
+      "Giro": "180°",
+      "Base": "Bandeja para accesorios",
+      "Alimentación": "Pilas o USB"
+    },
+    "notes": [
+      "Se omiten número de LED y aumento por alternativas ambiguas."
+    ]
+  },
+  {
+    "code": "N2255",
+    "specs": {
+      "Batería": "Litio de 1500 mAh",
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2256-GOLD",
+    "specs": {
+      "Batería": "200 mAh",
+      "Pantalla": "TFT IPS de 2,01 pulgadas",
+      "Modos deportivos": "Más de 100",
+      "Carga": "Magnética",
+      "Funciones": "Asistente de voz y control de música"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2256-NEGRO",
+    "specs": {
+      "Batería": "200 mAh",
+      "Pantalla": "TFT IPS de 2,01 pulgadas",
+      "Modos deportivos": "Más de 100",
+      "Carga": "Magnética",
+      "Funciones": "Asistente de voz y control de música"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2257-BLUE",
+    "specs": {
+      "Pantalla": "AMOLED de 1,43 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Notificaciones": "Mensajes y redes sociales",
+      "Protección": "IP68",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2257-NEGRO",
+    "specs": {
+      "Pantalla": "AMOLED de 1,43 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Notificaciones": "Mensajes y redes sociales",
+      "Protección": "IP68",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2258-NEGRO",
+    "specs": {
+      "Pantalla": "TFT de 1,83 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Notificaciones": "Mensajes y redes sociales",
+      "Modos": "Deportivos",
+      "Protección": "IP68",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2258-PINK",
+    "specs": {
+      "Pantalla": "TFT de 1,83 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Notificaciones": "Mensajes y redes sociales",
+      "Modos": "Deportivos",
+      "Protección": "IP68",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2260-BLACK",
+    "specs": {
+      "Pantalla": "AMOLED de 1,45 pulgadas, 466 × 466 píxeles",
+      "Localización": "GPS integrado",
+      "Resistencia al agua": "5 ATM",
+      "Batería": "450 mAh",
+      "Autonomía": "Hasta 15 días de uso; hasta 45 días en espera",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2261",
+    "specs": {
+      "Velocidad inalámbrica": "Hasta 1200 Mbps",
+      "Bandas": "2,4 y 5 GHz",
+      "Antenas": "4 externas",
+      "Conector": "USB 2.0",
+      "Compatibilidad": "Windows, macOS y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2262",
+    "specs": {
+      "Alimentación": "Solar",
+      "Encendido": "Automático al anochecer",
+      "Protección": "IP67",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2263",
+    "specs": {
+      "Batería": "Litio, 3,2 V / 24000 mAh",
+      "Panel solar": "Silicio policristalino",
+      "Tiempo de carga": "6 a 8 horas",
+      "Autonomía": "10 a 12 horas",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Material": "ABS",
+      "Protección": "IP67"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2264",
+    "specs": {
+      "Alimentación": "Solar",
+      "Encendido": "Automático al anochecer",
+      "Protección": "IP66",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2265",
+    "specs": {
+      "Batería": "2000 mAh",
+      "Protección": "IP66",
+      "Alimentación": "Solar"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2267",
+    "specs": {
+      "Dimensiones": "586 × 259 × 67 mm",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2268",
+    "specs": {
+      "Encendido": "Automático ante un corte de energía",
+      "Batería": "Litio recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2269",
+    "specs": {
+      "Estándar Wi-Fi": "802.11 a/b/g/n/ac",
+      "Bandas": "2,4 y 5 GHz",
+      "Velocidad inalámbrica": "Hasta 2100 Mbps",
+      "Modos": "Repetidor, punto de acceso y router",
+      "Puertos": "1 WAN y 2 LAN",
+      "Antenas": "4 externas de 5 dBi"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2270",
+    "specs": {
+      "Modos": "Repetidor, punto de acceso y router"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2271",
+    "specs": {
+      "Modos": "Repetidor, punto de acceso y router",
+      "Bandas": "2,4 y 5 GHz",
+      "Velocidad inalámbrica": "Hasta 1200 Mbps"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2272",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2273",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2274",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2275",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2276",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento",
+      "Modos de iluminación": "3",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2278",
+    "specs": {
+      "Luces": "3 COB",
+      "Modos": "Luz blanca y roja intermitente",
+      "Batería": "Recargable por USB",
+      "Mango": "Plegable y ajustable, 180°",
+      "Base": "Magnética"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2279",
+    "specs": {
+      "Batería": "Litio recargable",
+      "Autonomía": "Hasta 6 horas aproximadamente",
+      "Carga": "Cable AC incluido",
+      "Cabezal": "Ajustable, 180°",
+      "Transporte": "Asa"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2281",
+    "specs": {
+      "Batería": "Litio recargable",
+      "Autonomía": "Hasta 6 horas aproximadamente",
+      "Carga": "Cable AC incluido",
+      "Cabezal": "Ajustable, 180°",
+      "Transporte": "Asa"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2282",
+    "specs": {
+      "Potencia de salida": "35 W",
+      "Alcance": "Hasta 800 m aproximadamente",
+      "Grabación de voz": "Hasta 300 segundos",
+      "Reproducción": "MP3 por USB o tarjeta TF",
+      "Control": "Volumen ajustable",
+      "Alimentación": "4 pilas D",
+      "Material": "ABS",
+      "Mango": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2283",
+    "specs": {
+      "Conexión": "Inalámbrica UHF",
+      "Conector del receptor": "6,35 mm",
+      "Alcance": "Hasta 30 m",
+      "Respuesta de frecuencia": "50 Hz a 15 kHz",
+      "Batería": "Recargable",
+      "Autonomía": "Hasta 6 horas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2284",
+    "specs": {
+      "Conexión": "Inalámbrica UHF",
+      "Conector del receptor": "6,35 mm",
+      "Alcance": "Hasta 30 m",
+      "Respuesta de frecuencia": "50 Hz a 15 kHz",
+      "Batería": "Recargable",
+      "Autonomía": "Hasta 6 horas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2285",
+    "specs": {
+      "Conexión": "Inalámbrica UHF",
+      "Conector del receptor": "6,35 mm",
+      "Alcance": "Hasta 30 m",
+      "Respuesta de frecuencia": "50 Hz a 15 kHz",
+      "Batería": "Recargable",
+      "Autonomía": "Hasta 6 horas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2287",
+    "specs": {
+      "Material": "Vinilo",
+      "Talla": "Única para adultos",
+      "Diseño": "Con capucha",
+      "Uso": "Reutilizable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2294",
+    "specs": {
+      "Pantalla": "IPS táctil de 9,66 pulgadas",
+      "Video": "1080p frontal y trasero",
+      "Ángulo de visión": "170° frontal y 140° trasero",
+      "Grabación": "En bucle",
+      "Sensor G": "Bloqueo de video ante impactos",
+      "Almacenamiento ampliable": "MicroSD de hasta 128 GB"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2296",
+    "specs": {
+      "Pantalla": "AMOLED de 1,9 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Modos deportivos": "Más de 100",
+      "Protección": "IP68",
+      "Compatibilidad": "Android 5.0 o posterior; iOS 10.0 o posterior"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2297",
+    "specs": {
+      "Pantalla": "HD de 2,02 pulgadas",
+      "Llamadas": "Bluetooth",
+      "Audio": "Micrófono y altavoz integrados",
+      "Modos deportivos": "Más de 100",
+      "Protección": "IP67",
+      "Autonomía": "5 a 7 días",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N230",
+    "specs": {
+      "Iluminación": "LED COB",
+      "Funciones": "Abridor de botellas y gancho para colgar",
+      "Base": "Magnética",
+      "Protección": "IPX4"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2306",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento PIR",
+      "Control remoto": "Incluido",
+      "Protección": "IP65"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2307",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento, ángulo de 120°",
+      "Modos": "Luz por movimiento y luz tenue con aumento de brillo",
+      "Protección": "IP65",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2308",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento, ángulo de 120°",
+      "Modos": "Luz por movimiento y luz tenue con aumento de brillo",
+      "Protección": "IP65",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2309",
+    "specs": {
+      "Alimentación": "Solar",
+      "Sensor": "Movimiento, ángulo de 120°",
+      "Modos": "Luz por movimiento y luz tenue con aumento de brillo",
+      "Protección": "IP65",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2310",
+    "specs": {
+      "Alimentación": "Solar",
+      "Encendido": "Automático al anochecer",
+      "Brillo": "100 %, 60 % o 30 %",
+      "Protección": "IP66",
+      "Material": "ABS",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2311",
+    "specs": {
+      "Alimentación": "Solar",
+      "Encendido": "Automático al anochecer",
+      "Brillo": "100 %, 60 % o 30 %",
+      "Protección": "IP66",
+      "Material": "ABS",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2312",
+    "specs": {
+      "Alimentación": "Solar",
+      "Encendido": "Automático al anochecer",
+      "Protección": "IP66",
+      "Material": "ABS",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2313",
+    "specs": {
+      "Alcance": "Hasta 100 m en espacio abierto",
+      "Melodías": "32",
+      "Niveles de volumen": "4"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2315",
+    "specs": {
+      "Pantalla": "HD de 32 pulgadas, 1366 × 768 píxeles",
+      "Interacción táctil": "Capacitiva, 10 puntos",
+      "Sistema operativo": "Android 15",
+      "Memoria RAM": "6 GB",
+      "Almacenamiento": "128 GB",
+      "Conectividad": "Wi-Fi de 2,4 y 5 GHz y Bluetooth 5.0",
+      "Autonomía": "Aproximadamente 5 horas",
+      "Transporte": "Ruedas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2317",
+    "specs": {
+      "Funciones": "Barrido y aspiración",
+      "Control": "Remoto"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2318",
+    "specs": {
+      "Funciones": "Barrido y aspiración",
+      "Control": "Remoto"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2321",
+    "specs": {
+      "Seguimiento": "Facial y de objetos",
+      "Control": "Gestos y control Bluetooth desmontable",
+      "Rotación": "360° horizontal y 180° vertical",
+      "Compatibilidad": "Android e iOS",
+      "Material": "Aleación de aluminio y ABS",
+      "Tamaño plegado": "34 cm"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2322",
+    "specs": {
+      "Resolución": "Full HD 1080p",
+      "Conectividad": "Wi-Fi",
+      "Visión nocturna": "A color",
+      "Audio": "Bidireccional",
+      "Control": "Aplicación móvil"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2323",
+    "specs": {
+      "Formato": "AAA",
+      "Voltaje": "1,5 V",
+      "Capacidad por pila": "480 mAh",
+      "Puerto de carga": "USB-C",
+      "Tiempo de carga": "Aproximadamente 1 hora",
+      "Cantidad": "4 pilas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2324",
+    "specs": {
+      "Formato": "AA",
+      "Voltaje": "1,5 V",
+      "Capacidad por pila": "1600 mAh",
+      "Puerto de carga": "USB-C",
+      "Tiempo de carga": "Aproximadamente 1,5 horas",
+      "Cantidad": "4 pilas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2327",
+    "specs": {
+      "Función": "Traducción de voz en tiempo real",
+      "Idiomas": "Más de 100"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2328",
+    "specs": {
+      "Conectividad": "Bluetooth",
+      "Funciones": "Música y llamadas manos libres",
+      "Audio": "Diseño abierto"
+    },
+    "notes": []
+  },
+  {
+    "code": "N2330",
+    "specs": {
+      "Carga": "USB",
+      "Autonomía": "Hasta 180 minutos",
+      "Cuchillas": "Acero"
+    },
+    "notes": []
+  },
+  {
+    "code": "N238",
+    "specs": {
+      "Base": "Magnética",
+      "Longitud del cable": "5 m",
+      "Uso": "Interiores"
+    },
+    "notes": []
+  },
+  {
+    "code": "N24",
+    "specs": {
+      "Base": "Goma antideslizante",
+      "Cabezal": "Giratorio",
+      "Altura": "Ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N254",
+    "specs": {
+      "LED": "2835",
+      "Control remoto": "Incluido",
+      "Uso": "Interiores"
+    },
+    "notes": []
+  },
+  {
+    "code": "N271",
+    "specs": {
+      "Audio": "Parlante integrado",
+      "Carga": "USB",
+      "Alcance Bluetooth": "Hasta 10 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "N276",
+    "specs": {
+      "Estabilización": "3 ejes",
+      "Seguimiento": "Automático",
+      "Iluminación": "LED de relleno",
+      "Batería": "3600 mAh",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "N299",
+    "specs": {
+      "Material": "PVC con superficie flocada",
+      "Carga máxima": "150 kg",
+      "Accesorios": "2 almohadas, soporte lateral y 3 boquillas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N314",
+    "specs": {
+      "Modos": "3 gestos",
+      "Control remoto": "Inalámbrico",
+      "Montaje": "Luna posterior"
+    },
+    "notes": []
+  },
+  {
+    "code": "N356",
+    "specs": {
+      "Alcance": "Hasta 20 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "N379",
+    "specs": {
+      "Pantalla": "AMOLED HD",
+      "Llamadas": "Bluetooth",
+      "Funciones": "Notificaciones, modos deportivos y control de música",
+      "Correas": "Intercambiables",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N38",
+    "specs": {
+      "Giro": "360°",
+      "Control": "Inalámbrico mediante teléfono",
+      "Compatibilidad": "Android e iOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "N401",
+    "specs": {
+      "Material": "Tejido de lana",
+      "Forro": "Peluche",
+      "Contenido": "Gorro y bufanda",
+      "Diseño": "Unisex"
+    },
+    "notes": []
+  },
+  {
+    "code": "N439",
+    "specs": {
+      "Accesorios": "Pedal y adaptador de corriente",
+      "Costura": "Adelante y atrás"
+    },
+    "notes": []
+  },
+  {
+    "code": "N451",
+    "specs": {
+      "Diámetro del aro": "45 cm",
+      "Iluminación": "RGB, más de 16 millones de colores",
+      "Brillo": "Ajustable del 1 al 100 %",
+      "Temperatura de color": "3000 a 6500 K",
+      "Altura máxima del trípode": "210 cm",
+      "Accesorios": "3 soportes para celular, control Bluetooth y adaptador"
+    },
+    "notes": []
+  },
+  {
+    "code": "N454",
+    "specs": {
+      "Cuchillas": "Acero inoxidable",
+      "Pantalla": "LCD",
+      "Batería": "600 mAh",
+      "Autonomía": "Hasta 100 minutos",
+      "Carga": "USB",
+      "Funcionamiento": "Con cable o batería"
+    },
+    "notes": []
+  },
+  {
+    "code": "N455",
+    "specs": {
+      "Cuchillas": "Acero inoxidable",
+      "Batería": "Litio de 1200 mAh",
+      "Autonomía": "Hasta 120 minutos",
+      "Tiempo de carga": "2 horas",
+      "Pantalla": "LED",
+      "Carga": "USB",
+      "Funcionamiento": "Con cable o batería"
+    },
+    "notes": []
+  },
+  {
+    "code": "N512",
+    "specs": {
+      "Altura máxima": "Aproximadamente 134 a 135 cm",
+      "Material": "Aluminio",
+      "Cabezal": "3 ejes, giro horizontal de 360°",
+      "Rosca": "1/4 de pulgada",
+      "Placa": "Liberación rápida",
+      "Estuche": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "N551",
+    "specs": {
+      "Formato": "AA",
+      "Cantidad": "4 pilas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N561",
+    "specs": {
+      "Cuchillas": "Acero inoxidable",
+      "Pantalla": "LCD",
+      "Batería": "2000 mAh",
+      "Autonomía": "Hasta 100 minutos",
+      "Carga": "USB",
+      "Funcionamiento": "Con cable o batería"
+    },
+    "notes": []
+  },
+  {
+    "code": "N564",
+    "specs": {
+      "Batería": "1400 mAh"
+    },
+    "notes": []
+  },
+  {
+    "code": "N636",
+    "specs": {
+      "Movimiento": "Cuarzo",
+      "Alarma": "Doble campana",
+      "Iluminación": "Luz nocturna",
+      "Alimentación": "1 pila AA"
+    },
+    "notes": []
+  },
+  {
+    "code": "N639",
+    "specs": {
+      "Material": "Silicona perforada"
+    },
+    "notes": []
+  },
+  {
+    "code": "N661-SQ",
+    "specs": {
+      "Funciones": "Arranque de vehículos, linterna LED y martillo de emergencia",
+      "Voltaje de batería compatible": "12 V",
+      "Dimensiones": "165 × 79 × 40 mm"
+    },
+    "notes": []
+  },
+  {
+    "code": "N662",
+    "specs": {
+      "Audio": "Bidireccional"
+    },
+    "notes": []
+  },
+  {
+    "code": "N665",
+    "specs": {
+      "Pantalla": "LCD"
+    },
+    "notes": []
+  },
+  {
+    "code": "N679",
+    "specs": {
+      "Voltaje": "12 V DC",
+      "Protección": "IP68",
+      "Longitud": "5 m",
+      "Control": "Aplicación móvil",
+      "Diseño": "Neón flexible"
+    },
+    "notes": []
+  },
+  {
+    "code": "N696",
+    "specs": {
+      "Disparo": "Automático",
+      "Alcance": "8 a 10 m",
+      "Material": "ABS",
+      "Batería": "Recargable por USB",
+      "Munición": "Bolitas de hidrogel"
+    },
+    "notes": []
+  },
+  {
+    "code": "N726",
+    "specs": {
+      "Material": "Tejido",
+      "Cierre": "Broche"
+    },
+    "notes": []
+  },
+  {
+    "code": "N745",
+    "specs": {
+      "Batería integrada": "2400 mAh",
+      "Puerto de salida": "USB",
+      "Diseño": "Plegable"
+    },
+    "notes": [
+      "Se omite potencia por discrepancia de 25 W frente a modelo de 20 W."
+    ]
+  },
+  {
+    "code": "N755",
+    "specs": {
+      "Pantalla": "HD de 3,5 pulgadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N755 - SQ",
+    "specs": {
+      "Pantalla": "HD de 3,5 pulgadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "N875",
+    "specs": {
+      "Mandos": "Inalámbricos recargables"
+    },
+    "notes": []
+  },
+  {
+    "code": "N886",
+    "specs": {
+      "Funciones": "Anuncio de hora por voz, alarma y repetición",
+      "Pantalla": "Digital"
+    },
+    "notes": []
+  },
+  {
+    "code": "N896",
+    "specs": {
+      "Funciones": "Humidificador y difusor de aromas",
+      "Iluminación": "LED nocturna",
+      "Apagado": "Automático al agotarse el agua"
+    },
+    "notes": []
+  },
+  {
+    "code": "N898",
+    "specs": {
+      "Cantidad": "10 parches"
+    },
+    "notes": [
+      "Se excluyen afirmaciones de desintoxicación y beneficios médicos sin evidencia."
+    ]
+  },
+  {
+    "code": "N916",
+    "specs": {
+      "Cuchillas": "Acero inoxidable",
+      "Pantalla": "LED",
+      "Batería": "Recargable",
+      "Autonomía": "Hasta 200 minutos"
+    },
+    "notes": []
+  },
+  {
+    "code": "N944",
+    "specs": {
+      "Almacenamiento ampliable": "Hasta 128 GB",
+      "Visión nocturna": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "O300",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "2 m",
+      "Potencia máxima": "240 W"
+    },
+    "notes": []
+  },
+  {
+    "code": "O368",
+    "specs": {
+      "Conector": "Lightning",
+      "Micrófono": "Integrado",
+      "Controles": "Reproducción y llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "O380-NEGRO",
+    "specs": {
+      "Bluetooth": "5.1",
+      "Transductores": "6 mm",
+      "Autonomía de los auriculares": "Hasta 8 h",
+      "Autonomía con estuche": "Hasta 30 h",
+      "Protección": "IPX5",
+      "Controles": "Táctiles"
+    },
+    "notes": []
+  },
+  {
+    "code": "O40",
+    "specs": {
+      "Capacidad": "20 000 mAh (74 Wh)",
+      "Carga rápida": "18 W",
+      "Salidas": "2 USB-A",
+      "Entradas": "Micro-USB y USB-C",
+      "Indicador": "LED de nivel de batería",
+      "Dimensiones": "154 × 73,6 × 27,3 mm"
+    },
+    "notes": []
+  },
+  {
+    "code": "O488",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Corriente máxima": "6 A",
+      "Potencia máxima": "120 W",
+      "Transferencia de datos": "Hasta 480 Mbps, USB 2.0",
+      "Longitud": "1 m",
+      "Material": "Nailon trenzado y aleación de aluminio"
+    },
+    "notes": []
+  },
+  {
+    "code": "O536",
+    "specs": {
+      "Pantalla": "LED de 32 pulgadas, HD",
+      "Sistema operativo": "Android TV",
+      "Memoria RAM": "1 GB",
+      "Almacenamiento": "8 GB",
+      "Audio": "Dolby Audio",
+      "Conectividad": "Ethernet RJ45"
+    },
+    "notes": []
+  },
+  {
+    "code": "O606-2M",
+    "specs": {
+      "Conectores": "USB-C a USB-C",
+      "Longitud": "2 m",
+      "Potencia máxima": "240 W, USB PD 3.1",
+      "Transferencia de datos": "Hasta 480 Mbps",
+      "Cable": "Trenzado, con chip E-Marker"
+    },
+    "notes": [
+      "Se omite la corriente por contradicción 3 A/5 A en la imagen."
+    ]
+  },
+  {
+    "code": "O676",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Compatibilidad": "Windows, iOS y Android",
+      "Panel táctil": "Integrado",
+      "Teclas": "Mecanismo de tijera",
+      "Batería": "Recargable",
+      "Tiempo de carga": "2–3 h",
+      "Autonomía": "Hasta 90 h",
+      "Dimensiones": "247 × 150 × 6,4 mm"
+    },
+    "notes": []
+  },
+  {
+    "code": "O691",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Micrófono": "Integrado",
+      "Controles": "Música y llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "O713",
+    "specs": {
+      "Potencia máxima": "30 W",
+      "Puerto": "USB-C PD",
+      "Tecnología": "GaN"
+    },
+    "notes": []
+  },
+  {
+    "code": "O917",
+    "specs": {
+      "Potencia máxima": "30 W",
+      "Puerto": "USB-C PD",
+      "Tecnología": "GaN"
+    },
+    "notes": []
+  },
+  {
+    "code": "O725",
+    "specs": {
+      "Pantalla": "40 pulgadas, Full HD",
+      "Sistema operativo": "Android 14",
+      "Conectividad": "Wi-Fi y Ethernet LAN",
+      "Sintonizador": "ISDB-T"
+    },
+    "notes": []
+  },
+  {
+    "code": "O832",
+    "specs": {
+      "Pantallas": "2 pantallas de 14 pulgadas",
+      "Resolución": "Full HD",
+      "Relación de aspecto": "16:9",
+      "Brillo": "250 cd/m²",
+      "Frecuencia de actualización": "60 Hz",
+      "Conexiones": "USB-C y HDMI",
+      "Ángulo de visión": "178°",
+      "Ajuste angular": "Hasta 180°"
+    },
+    "notes": []
+  },
+  {
+    "code": "O912",
+    "specs": {
+      "Conectores": "USB-C a Lightning",
+      "Longitud": "1 m",
+      "Material": "TPE",
+      "Funciones": "Carga y sincronización de datos"
+    },
+    "notes": []
+  },
+  {
+    "code": "O946",
+    "specs": {
+      "Potencia máxima": "50 W",
+      "Puertos": "2 USB-C",
+      "Carga rápida": "Super Fast Charging 2.0",
+      "Cable incluido": "USB-C, 5 A, de 1,8 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "O970",
+    "specs": {
+      "Pantalla": "15,3 pulgadas, Full HD",
+      "Altavoces": "Estéreo integrados",
+      "Soporte": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "O989",
+    "specs": {
+      "Potencia": "5 W",
+      "Conexión": "Bluetooth",
+      "Autonomía": "Hasta 10 h",
+      "Micrófono": "Integrado, para llamadas manos libres",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "O995",
+    "specs": {
+      "Capacidad": "5000 mAh",
+      "Carga inalámbrica": "Qi2, hasta 15 W",
+      "Soporte": "Plegable integrado",
+      "Entrada de carga": "USB-C",
+      "Indicador": "LED de nivel de batería"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1006",
+    "specs": {
+      "Potencia": "25 W",
+      "Funciones": "Grabación y reproducción de voz; radio FM",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Micrófono": "Con cable",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1010",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Micrófono": "Incluido",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1016",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Potencia": "3 W",
+      "Batería": "500 mAh, 3,7 V",
+      "Autonomía": "2–4 h",
+      "Tiempo de carga": "1–2 h",
+      "Reproducción": "Bluetooth, USB, tarjeta TF y radio FM",
+      "Altavoz": "2 pulgadas",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1026-GRIS",
+    "specs": {
+      "Potencia": "14 W",
+      "Protección": "IPX4",
+      "Conexiones": "Bluetooth, USB y AUX",
+      "Emparejamiento estéreo": "TWS",
+      "Radio": "FM"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1026-NEGRO",
+    "specs": {
+      "Potencia": "14 W",
+      "Protección": "IPX4",
+      "Conexiones": "Bluetooth, USB y AUX",
+      "Emparejamiento estéreo": "TWS",
+      "Radio": "FM"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1027",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Procesamiento de audio": "MaxxAudio DSP",
+      "Micrófonos": "2 inalámbricos",
+      "Reproducción": "USB, microSD y radio FM",
+      "Iluminación": "RGB",
+      "Batería": "3000 mAh, 14,8 V",
+      "Autonomía": "Hasta 12 h",
+      "Carga": "USB-C",
+      "Protección": "IPX6"
+    },
+    "notes": [
+      "No se publica 400 W RMS de la imagen sin corroboración adicional."
+    ]
+  },
+  {
+    "code": "P1028",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Potencia RMS": "10 W",
+      "Micrófono": "Inalámbrico incluido",
+      "Iluminación": "LED multicolor",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1029",
+    "specs": {
+      "Conexión": "Bluetooth y AUX",
+      "Emparejamiento estéreo": "TWS",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1030",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "LED multicolor",
+      "Batería": "Recargable por USB",
+      "Transporte": "Asa integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1031",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Emparejamiento estéreo": "TWS",
+      "Protección": "IPX5",
+      "Radio": "FM",
+      "Entrada de audio": "AUX",
+      "Batería": "3600 mAh, 7,4 V",
+      "Tiempo de carga": "5 h",
+      "Autonomía": "Hasta 2 h a volumen máximo",
+      "Dimensiones": "18,7 × 35,4 × 14,4 cm",
+      "Peso": "2,42 kg"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1032",
+    "specs": {
+      "Potencia": "120 W",
+      "Conexiones": "Bluetooth y USB",
+      "Iluminación": "RGB",
+      "Radio": "FM"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1037",
+    "specs": {
+      "Potencia RMS": "250 W",
+      "Potencia PMPO": "2500 W",
+      "Altavoces": "2 woofers de 10 pulgadas y 2 tweeters de 3 pulgadas",
+      "Conectividad": "Bluetooth, USB, SD y entrada de micrófono",
+      "Iluminación": "LED",
+      "Alimentación": "100–240 V CA",
+      "Dimensiones": "363 × 380 × 1069 mm"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1039",
+    "specs": {
+      "Altavoz": "4 pulgadas",
+      "Reproducción": "Bluetooth, USB y tarjeta TF",
+      "Carga": "Micro-USB",
+      "Funciones": "Llamadas manos libres"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1041",
+    "specs": {
+      "Conexión inalámbrica": "Versión 5.4",
+      "Autonomía": "Hasta 7 h",
+      "Funciones": "Llamadas manos libres"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1043",
+    "specs": {
+      "Altavoz": "4 pulgadas",
+      "Conexión": "Bluetooth",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Iluminación": "Linterna LED y lámpara LED incluida",
+      "Batería": "Recargable",
+      "Función adicional": "Power bank"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1045",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Iluminación": "Espejo con luz LED ajustable",
+      "Rotación": "360°",
+      "Controles": "Táctiles",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1047",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Micrófono": "Incluido",
+      "Batería": "Recargable",
+      "Transporte": "Asa integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1048",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Micrófono": "Incluido",
+      "Batería": "Recargable",
+      "Transporte": "Asa integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1049",
+    "specs": {
+      "Pantalla": "LED con emoticonos animados",
+      "Alarma": "Programable, con repetición",
+      "Iluminación": "Luz nocturna regulable",
+      "Alimentación": "USB, 5 V CC",
+      "Batería de respaldo": "1 CR2032, no incluida",
+      "Material": "ABS"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1051",
+    "specs": {
+      "Radio": "AM y FM",
+      "Antena": "Telescópica",
+      "Alimentación": "2 pilas AA, no incluidas",
+      "Salida de auriculares": "3,5 mm",
+      "Sintonización": "Manual"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1052",
+    "specs": {
+      "Radio": "AM y FM",
+      "Antena": "Telescópica giratoria",
+      "Alimentación": "220 V CA o 3 V CC con 2 pilas UM-1"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1054",
+    "specs": {
+      "Potencia RMS": "40 W",
+      "Iluminación": "LED RGB",
+      "Batería": "3600 mAh",
+      "Autonomía": "Hasta 20 h al 50 % de volumen",
+      "Emparejamiento estéreo": "TWS",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Dimensiones": "340 × 155 × 180 mm",
+      "Peso": "1,6 kg"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1055",
+    "specs": {
+      "Altavoz": "12 pulgadas",
+      "Conexión": "Bluetooth",
+      "Iluminación": "RGB",
+      "Batería": "6000 mAh, 7,4 V",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Micrófono": "Inalámbrico"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1056",
+    "specs": {
+      "Altavoz": "12 pulgadas",
+      "Conexión": "Bluetooth",
+      "Iluminación": "RGB",
+      "Batería": "6000 mAh, 7,4 V",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Micrófono": "Inalámbrico"
+    },
+    "notes": [
+      "Se omite 300 W RMS por requerir contraste adicional."
+    ]
+  },
+  {
+    "code": "P1057",
+    "specs": {
+      "Altavoces": "2",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Micrófono": "Integrado para llamadas",
+      "Autonomía": "4–6 h, según volumen y uso"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1058",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Iluminación": "RGB",
+      "Micrófono": "Inalámbrico",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Controles": "Botones integrados"
+    },
+    "notes": [
+      "Se omiten potencia y capacidad inusuales sin segunda fuente."
+    ]
+  },
+  {
+    "code": "P1059",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Iluminación": "RGB",
+      "Micrófono": "Inalámbrico",
+      "Entradas": "USB, TF, AUX y USB-C",
+      "Radio": "FM"
+    },
+    "notes": [
+      "Se omite potencia por contradicción entre 4×50 W y 450 W."
+    ]
+  },
+  {
+    "code": "P1061",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Altavoces": "2 de 10 W",
+      "Iluminación": "RGB",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Micrófono": "Integrado para llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1062",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Altavoces": "2",
+      "Iluminación": "LED",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1063",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Altavoces": "2",
+      "Iluminación": "LED",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1064",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Altavoces": "2",
+      "Iluminación": "LED",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1065",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Altavoces": "2 de 6,5 pulgadas",
+      "Iluminación": "RGB",
+      "Entradas": "USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Micrófono": "Integrado para llamadas"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1066",
+    "specs": {
+      "Capacidad": "10 000 mAh",
+      "Reproducción": "Bluetooth, tarjeta TF y AUX",
+      "Salidas de carga": "2 USB",
+      "Cable incluido": "USB-C a USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1067",
+    "specs": {
+      "Altavoz": "12 pulgadas",
+      "Micrófonos": "2",
+      "Iluminación": "RGB",
+      "Transporte": "Formato trolley con asa"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1069",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Radio": "3 bandas",
+      "Carga": "Panel solar integrado y batería recargable",
+      "Reproducción": "USB y tarjeta TF",
+      "Iluminación": "Linterna lateral"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1071",
+    "specs": {
+      "Radio": "FM, AM y SW",
+      "Panel solar": "Integrado",
+      "Iluminación": "Linterna LED",
+      "Reproducción": "USB y tarjeta TF",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1074",
+    "specs": {
+      "Radio": "FM, AM y SW",
+      "Panel solar": "Integrado",
+      "Iluminación": "Linterna LED",
+      "Reproducción": "USB y tarjeta TF",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1075",
+    "specs": {
+      "Radio": "FM, AM y SW",
+      "Reproducción": "USB y microSD",
+      "Batería": "1200 mAh, recargable",
+      "Carga": "USB y panel solar",
+      "Sintonización": "Manual"
+    },
+    "notes": []
+  },
+  {
+    "code": "P1076",
+    "specs": {
+      "Radio": "3 bandas",
+      "Reproducción": "USB, microSD y AUX",
+      "Batería": "1200 mAh, recargable",
+      "Alimentación": "110–220 V CA y CC"
+    },
+    "notes": []
+  },
+  {
+    "code": "P19",
+    "specs": {
+      "Altavoces": "3 de 10 pulgadas",
+      "Potencia PMPO": "1500 W",
+      "Conexiones": "Inalámbrica, USB y AUX",
+      "Iluminación": "LED"
+    },
+    "notes": []
+  },
+  {
+    "code": "P242",
+    "specs": {
+      "Potencia total": "32 W",
+      "Bluetooth": "5.0",
+      "Emparejamiento estéreo": "TWS",
+      "Radio": "FM",
+      "Carga": "USB-C"
+    },
+    "notes": [
+      "No se publica rango de batería 2000–4400 mAh, que no identifica capacidad exacta."
+    ]
+  },
+  {
+    "code": "P245",
+    "specs": {
+      "Potencia RMS": "25 W",
+      "Pantalla": "Digital integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "P255",
+    "specs": {
+      "Altavoces": "2 de 5 pulgadas",
+      "Iluminación": "RGB",
+      "Batería": "4000 mAh, 7,4 V",
+      "Alimentación": "110–230 V CA",
+      "Dimensiones": "24 × 24 × 46 cm"
+    },
+    "notes": []
+  },
+  {
+    "code": "P438",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Micrófonos": "2 inalámbricos",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable por USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "P442",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Micrófono": "1 inalámbrico",
+      "Iluminación": "RGB",
+      "Batería": "Recargable por USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "P442-SQ",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Micrófono": "1 inalámbrico",
+      "Iluminación": "RGB",
+      "Batería": "Recargable por USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "P465",
+    "specs": {
+      "Pantalla": "10,1 pulgadas",
+      "Sistema operativo": "Android",
+      "Batería": "4400 mAh, 12 V"
+    },
+    "notes": []
+  },
+  {
+    "code": "P695",
+    "specs": {
+      "Pantalla": "14,1 pulgadas",
+      "Sistema operativo": "Android"
+    },
+    "notes": []
+  },
+  {
+    "code": "P834",
+    "specs": {
+      "Altavoz": "6,5 pulgadas",
+      "Conexiones": "Bluetooth, USB, tarjeta TF y AUX",
+      "Radio": "FM",
+      "Emparejamiento estéreo": "TWS",
+      "Carga": "USB-C y 110–240 V CA",
+      "Dimensiones": "24 × 25 × 53 cm"
+    },
+    "notes": [
+      "Se omite capacidad ambigua 12000 (6000) mAh."
+    ]
+  },
+  {
+    "code": "P837",
+    "specs": {
+      "Altavoces": "2 de 8 pulgadas",
+      "Potencia PMPO": "10 000 W",
+      "Conectividad": "Bluetooth, USB, AUX y tarjeta TF",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "LED RGB"
+    },
+    "notes": []
+  },
+  {
+    "code": "P846",
+    "specs": {
+      "Conexiones": "Bluetooth, USB y tarjeta TF",
+      "Radio": "FM",
+      "Batería": "2 celdas 18650 de 2000 mAh",
+      "Alimentación": "Corriente alterna",
+      "Iluminación": "Integrada"
+    },
+    "notes": []
+  },
+  {
+    "code": "P852",
+    "specs": {
+      "Batería": "1200 mAh",
+      "Conexión": "Bluetooth",
+      "Emparejamiento estéreo": "TWS",
+      "Radio": "FM",
+      "Iluminación": "RGB"
+    },
+    "notes": []
+  },
+  {
+    "code": "P873",
+    "specs": {
+      "Altavoces": "2 de 102 mm y 30 W",
+      "Conectividad": "Bluetooth, USB, tarjeta TF y AUX",
+      "Emparejamiento estéreo": "TWS",
+      "Batería": "6000 mAh",
+      "Alimentación": "Corriente alterna",
+      "Dimensiones": "23,4 × 23 × 20,1 cm"
+    },
+    "notes": []
+  },
+  {
+    "code": "P874",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Micrófono": "Incluido",
+      "Batería": "Extraíble",
+      "Iluminación": "RGB"
+    },
+    "notes": [
+      "Se omiten potencia y capacidad inusuales sin segunda fuente."
+    ]
+  },
+  {
+    "code": "P901",
+    "specs": {
+      "Altavoz": "6,5 pulgadas",
+      "Conectividad": "Bluetooth, USB, tarjeta TF y AUX de 3,5 mm",
+      "Entrada de micrófono": "Integrada",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P915",
+    "specs": {
+      "Potencia": "5 W",
+      "Bluetooth": "5.3",
+      "Batería": "1200 mAh",
+      "Reproducción": "USB, tarjeta TF y radio FM",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Funciones": "Llamadas manos libres"
+    },
+    "notes": []
+  },
+  {
+    "code": "P923",
+    "specs": {
+      "Altavoz": "6,5 pulgadas",
+      "Reproducción": "USB y microSD",
+      "Micrófono": "Incluido",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "P948",
+    "specs": {
+      "Sistema de sonido": "Barra y subwoofer inalámbrico",
+      "Conectividad": "Bluetooth, HDMI ARC, óptica, USB y AUX"
+    },
+    "notes": []
+  },
+  {
+    "code": "P952",
+    "specs": {
+      "Bluetooth": "5.4",
+      "Potencia RMS": "40 W",
+      "Batería": "3600 mAh",
+      "Puertos": "USB, tarjeta TF y AUX",
+      "Emparejamiento estéreo": "TWS",
+      "Micrófono": "Integrado para llamadas",
+      "Dimensiones": "334 × 134 × 180 mm",
+      "Peso": "1,6 kg"
+    },
+    "notes": []
+  },
+  {
+    "code": "P956",
+    "specs": {
+      "Conexión": "Inalámbrica y USB",
+      "Micrófonos": "2",
+      "Control remoto": "Incluido",
+      "Función": "Karaoke"
+    },
+    "notes": []
+  },
+  {
+    "code": "P956-SQ",
+    "specs": {
+      "Conexión": "Inalámbrica y USB",
+      "Micrófonos": "2",
+      "Control remoto": "Incluido",
+      "Función": "Karaoke"
+    },
+    "notes": []
+  },
+  {
+    "code": "P958",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Iluminación": "LED multicolor",
+      "Batería": "Recargable",
+      "Reproducción": "USB, microSD y radio FM"
+    },
+    "notes": []
+  },
+  {
+    "code": "P960",
+    "specs": {
+      "Altavoz": "12 pulgadas",
+      "Potencia PMPO": "1300 W",
+      "Entrada": "USB",
+      "Micrófonos": "2",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "P961",
+    "specs": {
+      "Conexión inalámbrica": "Versión 5.3",
+      "Batería": "1200 mAh, recargable",
+      "Iluminación": "LED"
+    },
+    "notes": [
+      "Se omite integración Alexa sin documentación técnica verificable."
+    ]
+  },
+  {
+    "code": "P973",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Alimentación phantom": "48 V",
+      "Entradas": "Micrófono y línea balanceada; USB y tarjeta TF",
+      "Reproducción": "MP3",
+      "Pantalla": "LCD"
+    },
+    "notes": []
+  },
+  {
+    "code": "P974",
+    "specs": {
+      "Canales": "6",
+      "Conexión": "Bluetooth",
+      "Alimentación phantom": "48 V",
+      "Entradas": "Micrófono, línea y USB",
+      "Reproducción": "MP3",
+      "Salida": "Auriculares"
+    },
+    "notes": []
+  },
+  {
+    "code": "P978",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Micrófonos": "2 inalámbricos",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P979",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Reproducción": "USB y microSD",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P980",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Reproducción": "USB y microSD",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P981",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Reproducción": "USB y microSD",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P982",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Reproducción": "USB y microSD",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P985",
+    "specs": {
+      "Reproducción": "USB y microSD",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P989",
+    "specs": {
+      "Reproducción": "USB y microSD",
+      "Emparejamiento estéreo": "TWS",
+      "Iluminación": "RGB",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P992",
+    "specs": {
+      "Bluetooth": "5.1",
+      "Potencia RMS": "20 W",
+      "Batería": "1500 mAh, recargable",
+      "Autonomía": "Hasta 15 h",
+      "Emparejamiento estéreo": "TWS",
+      "Carga": "USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "P992-SQ",
+    "specs": {
+      "Bluetooth": "5.1",
+      "Potencia RMS": "20 W",
+      "Batería": "1500 mAh, recargable",
+      "Autonomía": "Hasta 15 h",
+      "Emparejamiento estéreo": "TWS",
+      "Carga": "USB-C"
+    },
+    "notes": []
+  },
+  {
+    "code": "P996",
+    "specs": {
+      "Bluetooth": "5.0",
+      "Entradas": "USB, tarjeta TF, AUX y micrófono",
+      "Radio": "FM",
+      "Iluminación": "LED",
+      "Micrófono": "Inalámbrico incluido",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P997",
+    "specs": {
+      "Entradas": "USB, tarjeta TF, AUX y micrófono",
+      "Iluminación": "LED",
+      "Micrófono": "Inalámbrico incluido",
+      "Batería": "Recargable"
+    },
+    "notes": []
+  },
+  {
+    "code": "P998",
+    "specs": {
+      "Potencia PMPO": "600 W",
+      "Pantalla": "Táctil de 14,1 pulgadas",
+      "Micrófonos": "2",
+      "Control remoto": "Incluido"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC025",
+    "specs": {
+      "Conexión": "Inalámbrica",
+      "Diseño": "Teclas con panel flotante"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC04",
+    "specs": {
+      "Conector": "USB",
+      "Cable": "Retráctil",
+      "Instalación": "Plug and Play"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC10",
+    "specs": {
+      "Conexión": "USB con cable",
+      "Resolución del sensor": "DPI ajustable",
+      "Iluminación": "RGB"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC11",
+    "specs": {
+      "Sensor": "Óptico",
+      "Conexión": "Por cable",
+      "Compatibilidad": "Windows y Mac"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC110",
+    "specs": {
+      "Material": "Aleación de aluminio",
+      "Ajuste de altura": "6 niveles",
+      "Compatibilidad": "Laptops de 10 a 17,3 pulgadas",
+      "Base": "Antideslizante, con almohadillas de silicona",
+      "Diseño": "Plegable"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC14",
+    "specs": {
+      "Conexión": "USB con cable",
+      "Compatibilidad": "Windows y Mac"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC141-AZUL",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Cable": "1,8 m",
+      "Micrófono": "Integrado",
+      "Diadema": "Ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC141-ROJO",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Cable": "1,8 m",
+      "Micrófono": "Integrado",
+      "Diadema": "Ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC16",
+    "specs": {
+      "Conexión": "USB con cable",
+      "Mouse": "4 botones",
+      "Iluminación": "RGB"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC189",
+    "specs": {
+      "Teclado": "Tamaño completo, con bloque numérico",
+      "Mouse": "Sensor óptico",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC19",
+    "specs": {
+      "Audio": "Estéreo",
+      "Iluminación": "RGB rítmica",
+      "Control": "Regulador de volumen"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC240",
+    "specs": {
+      "Sistema de audio": "2.1 con subwoofer",
+      "Iluminación": "LED RGB",
+      "Controles": "Volumen y bajos independientes",
+      "Entrada": "3,5 mm",
+      "Alimentación": "USB, 5 V",
+      "Altavoces": "Subwoofer de 3 pulgadas y satélites de 2 pulgadas"
+    },
+    "notes": [
+      "Se omite 30 W RMS por falta de respaldo para alimentación USB de 5 V."
+    ]
+  },
+  {
+    "code": "PC276",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Botones": "Clic silencioso"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC28",
+    "specs": {
+      "Apoyo de muñeca": "Almohadilla de gel",
+      "Base": "Antideslizante"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC307",
+    "specs": {
+      "Sensor": "Óptico de 1000 DPI",
+      "Conexión": "USB con cable retráctil",
+      "Botones": "3",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows y Mac"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC31-SQ",
+    "specs": {
+      "Iluminación": "RGB",
+      "Dimensiones": "21,5 × 29,8 cm"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC325",
+    "specs": {
+      "Mecanismo": "Mecánico",
+      "Conexión": "USB con cable",
+      "Teclas": "Anti-ghosting",
+      "Formato": "Completo, con teclado numérico",
+      "Compatibilidad": "Windows y Mac"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC33-SQ",
+    "specs": {
+      "Ventilador": "12,6 cm",
+      "Alimentación": "USB",
+      "Base": "Topes antideslizantes"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC34",
+    "specs": {
+      "Puertos": "4 USB 2.0",
+      "Interruptores": "Individuales por puerto",
+      "Transferencia de datos": "Hasta 480 Mbps",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows y macOS"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC346",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Micrófono": "Con reducción de ruido",
+      "Iluminación": "RGB",
+      "Diadema": "Ajustable",
+      "Control": "Volumen en el cable"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC347",
+    "specs": {
+      "Resolución del sensor": "Hasta 12 800 DPI",
+      "Iluminación": "RGB"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC351",
+    "specs": {
+      "Conexión": "USB con cable de 1,5 m",
+      "Compatibilidad": "PC, PS3 y Android TV",
+      "Funciones": "Turbo",
+      "Cruceta": "8 direcciones",
+      "Instalación": "Plug and Play"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC357",
+    "specs": {
+      "Sensor": "Óptico, hasta 8000 DPI",
+      "Botones": "6 programables",
+      "Iluminación": "RGB",
+      "Conexión": "USB con cable trenzado",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC367",
+    "specs": {
+      "Sensor": "Óptico",
+      "Conexión": "USB",
+      "Diseño": "Ambidiestro",
+      "Rueda": "Desplazamiento integrado",
+      "Instalación": "Plug and Play"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC372",
+    "specs": {
+      "Conector": "3,5 mm",
+      "Micrófono": "Con reducción de ruido",
+      "Diadema": "Ajustable",
+      "Cable": "1,8 m"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC378",
+    "specs": {
+      "Conexión": "Bluetooth",
+      "Batería": "Recargable",
+      "Funciones": "Turbo",
+      "Cruceta": "4 direcciones"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC385",
+    "specs": {
+      "Compatibilidad": "PlayStation 3",
+      "Conexión": "Bluetooth",
+      "Vibración": "Doble",
+      "Batería": "Litio recargable",
+      "Carga": "Por cable USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC386",
+    "specs": {
+      "Conexión": "2,4 GHz con receptor",
+      "Teclas": "104",
+      "Alimentación": "Pilas AAA"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC387",
+    "specs": {
+      "Conexión": "2,4 GHz con receptor",
+      "Teclas": "104",
+      "Mouse": "4 botones",
+      "Alimentación": "Pilas AAA"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC388",
+    "specs": {
+      "Puertos": "7 USB 2.0",
+      "Indicadores": "LED por puerto",
+      "Material": "ABS",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows y Mac"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC390",
+    "specs": {
+      "Mecanismo": "Mecánico",
+      "Iluminación": "RGB",
+      "Teclas": "Anti-ghosting y grabado láser"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC402",
+    "specs": {
+      "Pantalla": "14 pulgadas",
+      "Instalación": "Plug and Play"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC403",
+    "specs": {
+      "Ventiladores": "2 de 125 mm",
+      "Velocidad": "1000–1200 RPM",
+      "Compatibilidad": "Laptops de hasta 15,6 pulgadas",
+      "Puertos": "2 USB 2.0",
+      "Altura": "Ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC404",
+    "specs": {
+      "Ventiladores": "6",
+      "Alimentación": "USB, 5 V",
+      "Velocidad": "3400 RPM ± 10 %",
+      "Compatibilidad": "Laptops de 12 a 19 pulgadas",
+      "Altura": "Ajustable"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC406",
+    "specs": {
+      "Ventiladores": "1 de 12,5 cm y 2 de 7 cm",
+      "Compatibilidad": "Laptops de 10 a 17 pulgadas",
+      "Conexión": "USB",
+      "Base": "Ángulo ajustable",
+      "Material": "Metal con malla"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC407",
+    "specs": {
+      "Conexión": "USB con cable",
+      "Teclas": "19",
+      "Indicador": "LED Num Lock",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows y Mac"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC408",
+    "specs": {
+      "Conexión": "USB con cable",
+      "Teclado": "Completo, con bloque numérico",
+      "Mouse": "Sensor óptico",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC409-BLACK",
+    "specs": {
+      "Conexión": "2,4 GHz con receptor USB",
+      "Teclado": "Con bloque numérico",
+      "Mouse": "Sensor óptico",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC409-WHITE",
+    "specs": {
+      "Conexión": "2,4 GHz con receptor USB",
+      "Teclado": "Con bloque numérico",
+      "Mouse": "Sensor óptico",
+      "Instalación": "Plug and Play",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC411",
+    "specs": {
+      "Conexión": "USB con cable",
+      "Iluminación": "RGB Rainbow",
+      "Micrófono": "Flexible",
+      "Almohadillas": "Cuero sintético",
+      "Control": "Audio integrado",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC412",
+    "specs": {
+      "Conexión": "2,4 GHz y Bluetooth 5.0",
+      "Sensor": "Óptico",
+      "Resolución ajustable": "800, 1200 y 1600 DPI",
+      "Botones": "Clic silencioso",
+      "Alimentación": "1 pila AA, no incluida"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC413",
+    "specs": {
+      "Sensor": "Óptico, hasta 7200 DPI",
+      "Iluminación": "RGB",
+      "Conexión": "USB con cable trenzado",
+      "Compatibilidad": "Windows, Mac y Linux"
+    },
+    "notes": [
+      "Se omite número de botones: título 8, imagen 7."
+    ]
+  },
+  {
+    "code": "PC54",
+    "specs": {
+      "Ventiladores": "2",
+      "Altura": "Ajustable",
+      "Diseño": "Plegable",
+      "Material": "Metal",
+      "Compatibilidad": "Laptops de 10 a 17 pulgadas",
+      "Alimentación": "USB"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC78",
+    "specs": {
+      "Conexión": "2,4 GHz y Bluetooth",
+      "Resolución ajustable": "800, 1200 y 1600 DPI",
+      "Botones": "Silenciosos",
+      "Receptor": "USB",
+      "Ahorro de energía": "Apagado automático"
+    },
+    "notes": []
+  },
+  {
+    "code": "PC97",
+    "specs": {
+      "Teclas": "104",
+      "Interruptores": "OUTEMU Blue",
+      "Iluminación": "RGB",
+      "Funciones": "Anti-ghosting",
+      "Conexión": "USB con cable",
+      "Compatibilidad": "Windows y Linux"
+    },
+    "notes": []
+  }
+]

@@ -1,5 +1,35 @@
 # Especificaciones investigadas desde Codex
 
+## Criterio vigente: revisión editorial integral
+
+La revisión `refine-20260918` sustituye el criterio de redacción de los lotes históricos descritos más abajo. En las fichas públicas se muestran únicamente características concretas y concisas. Se eliminan textos como «pendiente de confirmar», «según la imagen» y «datos anunciados». Las discrepancias y la procedencia quedan en la auditoría interna. Una característica dudosa se omite; no se convierte en una afirmación al quitarle una advertencia.
+
+Se prioriza la fuente oficial del modelo y variante exactos. Si no hay información suficiente, se transcriben los detalles revisados de la imagen que ya pertenece a ese SKU. El OCR es material de revisión, nunca una autorización automática de publicación. No se generan ni reemplazan imágenes. Los datos del nombre constituyen información básica, no una investigación completa.
+
+Archivos de esta revisión:
+
+- `research-refine-2026-09-18.json`: modelos contrastados con documentación oficial.
+- `image-manual-refine-2026-09-18.json`: transcripciones editadas y revisadas por SKU.
+- `prepare-refine.cjs`: enlaza cada transcripción con la imagen exacta de la instantánea, prioriza fabricantes, omite conflictos y prepara el plan privado.
+- `apply-refine.cjs`: reemplaza exclusivamente especificaciones y contenido del perfil digital con respaldo, auditoría y restauración.
+
+```sh
+node --test scripts/catalog-enrichment/apply.test.cjs scripts/catalog-enrichment/catalog-all.test.cjs scripts/catalog-enrichment/refine.test.cjs
+node scripts/catalog-enrichment/prepare-refine.cjs /PRIVADO/fresh.json scripts/catalog-enrichment/research-refine-2026-09-18.json scripts/catalog-enrichment/image-manual-refine-2026-09-18.json /PRIVADO/ocr.json /PRIVADO/plan.json
+node scripts/catalog-enrichment/apply-refine.cjs --plan=/PRIVADO/plan.json
+node scripts/catalog-enrichment/apply-refine.cjs --apply --plan=/PRIVADO/plan.json --backup=/PRIVADO/applied-backup.json
+node scripts/catalog-enrichment/apply-refine.cjs --plan=/PRIVADO/plan.json
+node scripts/catalog-enrichment/apply-refine.cjs --rollback --backup=/PRIVADO/applied-backup.json
+```
+
+El importador permite actualizar fichas existentes, conserva sus estados anteriores completos y restaura los identificadores y fechas de atributos y perfiles. Rechaza cambios de identidad, imágenes o contenido técnico posteriores a la revisión. La aplicación y restauración usan transacciones de 40 productos; ante una interrupción se necesitan los respaldos de cada tramo aplicado. Los movimientos legítimos de stock o precios no se restauran desde una instantánea antigua. Dentro de cada transacción se verifica que ningún campo ajeno a la ficha técnica cambie.
+
+El plan, las instantáneas y los respaldos completos se guardan fuera de Git. La importación no consume una API de IA ni envía mensajes a clientes. Informe: [revisión editorial integral](../../docs/catalog-enrichment/2026-09-18-refinement.md).
+
+## Historial de lotes anteriores
+
+Las siguientes secciones documentan ejecuciones anteriores. Sus reglas sobre advertencias públicas y preservación absoluta de fichas existentes quedaron sustituidas por el criterio vigente anterior. Los scripts v1/v2 se conservan para reproducir y restaurar aquellos lotes.
+
 El lote `research-2026-09-18.json` contiene 44 modelos y 84 SKU: 75 SKU con fuentes de fabricante y 9 SUPER con las imágenes **ya existentes** en la tienda. La investigación se hizo en la conversación de Codex; el importador no llama a proveedores de IA ni necesita `OPENAI_API_KEY`.
 
 Solo se actualiza `Product.technicalSpecs`, se crean los atributos `ProductSpecification` y se publica un `DigitalProductProfile` sin modificar las descripciones comerciales existentes. Esto permite que la ficha pública y el BC consulten los atributos. Se registra cada investigación y su procedencia en `ProductResearchRun` / `ProductResearchSource`.
