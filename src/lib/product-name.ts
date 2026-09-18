@@ -1,6 +1,9 @@
 export function getPublicProductName(name: string) {
   const cleaned = name
-    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/_x000d_/gi, " ")
+    .replace(/^\s*\([^)]*\)\s*/, "")
+    .replace(/\bcod\.\s*(?=\(|$)/gi, "")
+    .replace(/\(([^)]+)\)/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
 

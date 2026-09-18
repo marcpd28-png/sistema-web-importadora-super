@@ -64,6 +64,7 @@ export function StoreSideActions({
         rel="noreferrer"
         target="_blank"
         aria-label="Abrir WhatsApp"
+        title="Consultar por WhatsApp"
       >
         <WhatsAppIcon />
       </a>
@@ -78,6 +79,7 @@ function WhatsAppIcon() {
       aria-hidden="true"
       focusable="false"
       viewBox="0 0 16 16"
+      preserveAspectRatio="xMidYMid meet"
     >
       <path
         fill="currentColor"

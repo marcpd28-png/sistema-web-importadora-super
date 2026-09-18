@@ -843,7 +843,7 @@ export function StoreAssistantPanel({
             <button className="button button-secondary button-chip" onClick={clearHistory} type="button">
               Limpiar chat
             </button>
-            <button className="icon-button icon-button-close" onClick={onClose} type="button">
+            <button aria-label="Cerrar ventana del asistente" className="icon-button icon-button-close" onClick={onClose} type="button">
               <X size={18} />
             </button>
           </div>
@@ -882,7 +882,7 @@ export function StoreAssistantPanel({
           onSend={(text) => {
             void sendMessage(text);
           }}
-          suggestedPrompts={suggestedPrompts}
+          suggestedPrompts={visibleMessages.some((message) => message.role === "user") || draft.trim() ? [] : suggestedPrompts}
         />
       </section>
     </>

@@ -303,31 +303,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
               <h1>{displayName}</h1>
             </div>
 
-            {product.description ? (
-              <div 
-                className="product-detail-description"
-                dangerouslySetInnerHTML={{ 
-                  __html: product.description
-                    .replace(/\n/g, "<br/>")
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                }} 
-              />
-            ) : null}
 
-            {/* CHANGE-CODE: CAT-002 */}
-            {product.technicalSpecs ? (
-              <section className="product-detail-specs-card">
-                <p className="eyebrow">Especificaciones técnicas</p>
-                <div 
-                  className="product-detail-specs"
-                  dangerouslySetInnerHTML={{ 
-                    __html: product.technicalSpecs
-                      .replace(/\n/g, "<br/>")
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                  }} 
-                />
-              </section>
-            ) : null}
           </div>
 
           <div className="product-detail-price-box">
@@ -359,6 +335,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
             <div className="product-detail-qty-row">
               <div className="product-detail-qty-control">
                 <button
+                  aria-label="Disminuir cantidad"
                   disabled={maxQuantity <= 0 || safeQuantity <= 1}
                   onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                   type="button"
@@ -367,6 +344,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
                 </button>
                 <strong>{safeQuantity}</strong>
                 <button
+                  aria-label="Aumentar cantidad"
                   disabled={maxQuantity <= 0 || safeQuantity >= maxQuantity}
                   onClick={() => setQuantity((value) => Math.min(Math.max(maxQuantity, 1), value + 1))}
                   type="button"
@@ -404,6 +382,36 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
               </Link>
             </div>
           </div>
+          {product.description || product.technicalSpecs ? (
+            <details className="product-detail-disclosure">
+              <summary>Detalles y especificaciones</summary>
+            {product.description ? (
+              <div
+                className="product-detail-description"
+                dangerouslySetInnerHTML={{
+                  __html: product.description
+                    .replace(/\n/g, "<br/>")
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                }}
+              />
+            ) : null}
+
+            {/* CHANGE-CODE: CAT-002 */}
+            {product.technicalSpecs ? (
+              <section className="product-detail-specs-card">
+                <p className="eyebrow">Especificaciones técnicas</p>
+                <div
+                  className="product-detail-specs"
+                  dangerouslySetInnerHTML={{
+                    __html: product.technicalSpecs
+                      .replace(/\n/g, "<br/>")
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }}
+                />
+              </section>
+            ) : null}
+            </details>
+          ) : null}
         </article>
       </div>
 

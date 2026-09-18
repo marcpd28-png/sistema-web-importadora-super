@@ -280,16 +280,17 @@ function ProductSection({
 
       {featured ? (
         <div className="catalog-featured-slider" ref={sliderRef}>
-          {sectionProducts.map((product) => (
-            <div className="catalog-featured-slide" key={product.id}>
+          {sectionProducts.map((product, index) => (
+            <div className={`catalog-featured-slide${index >= 4 ? " catalog-home-extra" : ""}`} key={product.id}>
               <ProductCard product={product} settings={settings} />
             </div>
           ))}
         </div>
       ) : (
         <div className="catalog-section-grid">
-          {sectionProducts.map((product) => (
+          {sectionProducts.map((product, index) => (
             <ProductCard
+              className={index >= 4 ? "catalog-home-extra" : undefined}
               key={product.id}
               product={product}
               settings={settings}
@@ -384,7 +385,7 @@ export function CatalogExperience({
             featured
             compact
             title={hasRealBestSellers ? "Productos más vendidos" : "Productos destacados"}
-            subtitle={hasRealBestSellers ? "Ventas ERP por producto y rotación por unidades." : undefined}
+            subtitle={hasRealBestSellers ? "Los favoritos de nuestros clientes." : undefined}
             href="/?collection=mas-vendidos"
             products={topProducts}
             settings={settings}

@@ -25,7 +25,7 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
       <section className="auth-layout auth-layout-single">
         <section className="auth-panel">
           <div className="stack-sm">
-            <p className="eyebrow">Cuenta usershop</p>
+            <p className="eyebrow">Mi cuenta · Importaciones Super</p>
             <h2>{mode === "register" ? "Crea tu cuenta" : "Inicia sesión"}</h2>
             <p className="muted">
               {mode === "register"
@@ -94,7 +94,7 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
               {status ? <p className="success-text auth-success">{status}</p> : null}
 
               <SubmitButton pendingLabel="Creando cuenta..." className="auth-submit">
-                Crear cuenta usershop
+                Crear mi cuenta
               </SubmitButton>
             </form>
           ) : (
@@ -116,15 +116,15 @@ export default async function AccessPage({ searchParams }: AccessPageProps) {
               {status ? <p className="success-text auth-success">{status}</p> : null}
 
               <SubmitButton pendingLabel="Ingresando..." className="auth-submit">
-                Entrar como comprador
+                Iniciar sesión
               </SubmitButton>
             </form>
           )}
 
           <div className="auth-footer">
             <div className="auth-note">
-              <span>Acceso para clientes</span>
-              <strong>La administración sigue separada y protegida.</strong>
+              <span>Tu cuenta de comprador</span>
+              <strong>Consulta tus pedidos y continúa tus compras.</strong>
             </div>
 
             <div className="auth-inline-actions">

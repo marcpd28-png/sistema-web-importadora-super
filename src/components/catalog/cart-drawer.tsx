@@ -136,7 +136,7 @@ function CartHeader({
         Vaciar carrito
       </button>
       <div className="cart-header-actions">
-        <button className="icon-button icon-button-close" onClick={onClose} type="button">
+        <button aria-label="Cerrar carrito" className="icon-button icon-button-close" onClick={onClose} type="button">
           ×
         </button>
       </div>
@@ -178,7 +178,7 @@ function CartList({
             <div className="stack-xs">
               <div className="cart-item-head">
                 <h3>{item.name}</h3>
-                <button className="icon-button" onClick={() => onRemove(item.key)} type="button">
+                <button aria-label={`Quitar ${item.name} del carrito`} className="icon-button" onClick={() => onRemove(item.key)} type="button">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -190,11 +190,11 @@ function CartList({
           </div>
 
           <div className="qty-control">
-            <button onClick={() => onSetQuantity(item.key, item.quantity - 1)} type="button">
+            <button aria-label={`Disminuir cantidad de ${item.name}`} onClick={() => onSetQuantity(item.key, item.quantity - 1)} type="button">
               <Minus size={16} />
             </button>
             <span>{item.quantity}</span>
-            <button onClick={() => onSetQuantity(item.key, item.quantity + 1)} type="button">
+            <button aria-label={`Aumentar cantidad de ${item.name}`} onClick={() => onSetQuantity(item.key, item.quantity + 1)} type="button">
               <Plus size={16} />
             </button>
           </div>
@@ -342,7 +342,7 @@ function QuoteForm({
             <h3>Elige cómo pagar</h3>
             <p className="checkout-step-copy">Selecciona una opción para terminar tu pedido.</p>
           </div>
-          <button className="icon-button icon-button-close" onClick={() => setPaymentStep("form")} type="button">
+          <button aria-label="Volver a los datos de envío" className="icon-button icon-button-close" onClick={() => setPaymentStep("form")} type="button">
             <X size={16} />
           </button>
         </div>
@@ -452,7 +452,7 @@ function QuoteForm({
           <h3>Datos de envío y contacto</h3>
           <p className="checkout-step-copy">Completa tus datos y dinos cómo quieres recibir tu pedido.</p>
         </div>
-        <button className="icon-button icon-button-close" onClick={onClose} type="button">
+        <button aria-label="Cerrar formulario de envío" className="icon-button icon-button-close" onClick={onClose} type="button">
           <X size={16} />
         </button>
       </div>

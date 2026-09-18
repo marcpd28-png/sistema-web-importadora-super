@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import "./globals.css";
+import "./storefront-responsive.css";
 
 const displayFont = Bricolage_Grotesque({
   variable: "--font-display",

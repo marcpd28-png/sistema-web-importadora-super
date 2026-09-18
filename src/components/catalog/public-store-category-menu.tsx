@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronLeft, Menu, Battery, Car, Headphones, House, Lightbulb, NotebookPen, PackageSearch, Smartphone } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, Menu, Battery, Car, Headphones, House, Lightbulb, NotebookPen, PackageSearch, Smartphone, X } from "lucide-react";
 import type { BrandOption, CategoryOption } from "@/lib/store";
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 
@@ -99,20 +99,58 @@ type PublicStoreCategoryMenuProps = {
 };
 
 export function PublicStoreCategoryMenu({ brands, categories }: PublicStoreCategoryMenuProps) {
-  const [panel, setPanel] = useState<"main" | "categories" | "brands" | "sites">("main");
+  const [panel, setPanel] = useState<"main" | "categories" | "brands" | "sites">("categories");
+  const menuRef = useRef<HTMLDetailsElement>(null);
+
+  const closeMenu = () => {
+    if (menuRef.current) menuRef.current.open = false;
+    setPanel("categories");
+  };
+
+  useEffect(() => {
+    const dismissOutside = (event: PointerEvent) => {
+      const menu = menuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.open = false;
+        setPanel("categories");
+      }
+    };
+    const dismissWithEscape = (event: KeyboardEvent) => {
+      const menu = menuRef.current;
+      if (event.key === "Escape" && menu?.open) {
+        menu.open = false;
+        menu.querySelector("summary")?.focus();
+        setPanel("categories");
+      }
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    document.addEventListener("keydown", dismissWithEscape);
+    return () => {
+      document.removeEventListener("pointerdown", dismissOutside);
+      document.removeEventListener("keydown", dismissWithEscape);
+    };
+  }, []);
 
   const closePanel = () => setPanel("main");
 
   return (
     <div className="public-store-shortcut-menu-shell">
-      <details className="public-store-shortcut-menu">
+      <details className="public-store-shortcut-menu" ref={menuRef}>
         <summary aria-label={`Abrir ${categories.length} categorías del catálogo`} className="public-store-shortcut is-lead">
           <span className="public-store-lead-icon">
             <Menu size={16} />
           </span>
           <span className="public-store-lead-label">Categorías</span>
         </summary>
-        <div className="public-store-shortcut-dropdown">
+        <div className="public-store-shortcut-dropdown" onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest("a[href]")) closeMenu();
+        }}>
+          <div className="public-store-category-toolbar">
+            <strong>Explorar la tienda</strong>
+            <button aria-label="Cerrar categorías" className="icon-button" onClick={closeMenu} type="button">
+              <X size={20} />
+            </button>
+          </div>
         {panel === "main" ? (
           <div className="public-store-shortcut-panel">
             <button className="public-store-shortcut-row" onClick={() => setPanel("categories")} type="button">
@@ -134,7 +172,7 @@ export function PublicStoreCategoryMenu({ brands, categories }: PublicStoreCateg
           <div className="public-store-shortcut-panel">
             <button className="public-store-shortcut-back" onClick={closePanel} type="button">
               <ChevronLeft size={18} />
-              <span>Categorías</span>
+              <span>Menú de la tienda</span>
             </button>
             <div className="public-store-shortcut-dropdown-section">
               <div className="public-store-shortcut-dropdown-grid is-categories">

@@ -15,11 +15,12 @@ import { ProductPriceRows } from "@/components/catalog/product-display";
 import { ProductMediaFrame } from "@/components/catalog/product-media-frame";
 
 type ProductCardProps = {
+  className?: string;
   product: CatalogProduct;
   settings: StoreSettingsView;
 };
 
-export function ProductCard({ product, settings }: ProductCardProps) {
+export function ProductCard({ product, settings, className = "" }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
   const displayName = getPublicProductName(product.name);
   const [quantity, setQuantity] = useState(1);
@@ -51,7 +52,7 @@ export function ProductCard({ product, settings }: ProductCardProps) {
   };
 
   return (
-    <article className="product-card">
+    <article className={`product-card ${className}`}>
       <ProductMediaFrame displayName={displayName} href={`/producto/${product.slug}`} product={product} />
 
       <div className="product-body">

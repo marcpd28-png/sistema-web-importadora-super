@@ -98,11 +98,11 @@ export function PublicStoreAccountSlot({ role }: { role?: AccountRole }) {
       />
     ) : (
       <AccountPopover
-        triggerLabel="Login"
+        triggerLabel="Cuenta"
         items={[
-          { label: "Login Administrador", href: "/login", icon: UserRound },
-          { label: "Login Cliente", href: "/acceso?mode=login", icon: UserRound },
+          { label: "Ingresar a mi cuenta", href: "/acceso?mode=login", icon: UserRound },
           { label: "Crear cuenta", href: "/acceso?mode=register", icon: UserRound },
+          { label: "Administración", href: "/login", icon: UserRound },
         ]}
       />
     );
