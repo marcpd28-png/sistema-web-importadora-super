@@ -8,7 +8,7 @@ import sharp from "sharp";
 import { generateRequestedCatalogPdf, generateRequestedProductImages, isProjectorCatalogRequest, prepareCatalogImage, renderScopedCatalogPdf, renderCatalogImagePdf } from "@/lib/catalog-pdf";
 import { createCommercialCatalog, type CommercialProduct } from "./commercial-catalog";
 
-test("el catálogo distribuye como máximo dos productos por hoja A4 horizontal", async () => {
+test("todos los catálogos distribuyen como máximo dos productos por página vertical para móvil", async () => {
   const image = await sharp({ create: { width: 400, height: 600, channels: 3, background: "#2320DA" } }).jpeg().toBuffer();
   for (const count of [1, 2, 3, 4, 5]) {
     const items = Array.from({ length: count }, (_, index) => ({
@@ -17,11 +17,11 @@ test("el catálogo distribuye como máximo dos productos por hoja A4 horizontal"
       code: `TEST-${index}`, brand: "JBL",
     }));
     for (const render of [renderScopedCatalogPdf, renderCatalogImagePdf]) {
-    const pdf = (await render(items, "Catálogo de parlantes JBL")).toString("latin1");
-    const expectedPages = Math.ceil(count / 2);
-    assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, expectedPages);
-    assert.equal((pdf.match(/\/MediaBox \[0 0 841\.89 595\.28\]/g) ?? []).length, expectedPages);
-    assert.equal((pdf.match(/\/Subtype \/Image\b/g) ?? []).length, count - (count >= 3 ? 1 : 0));
+      const pdf = (await render(items, "Catálogo de parlantes JBL")).toString("latin1");
+      const expectedPages = Math.ceil(count / 2);
+      assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, expectedPages);
+      assert.equal((pdf.match(/\/MediaBox \[0 0 595\.28 1683\.78\]/g) ?? []).length, expectedPages);
+      assert.equal((pdf.match(/\/Subtype \/Image\b/g) ?? []).length, count - (count >= 3 ? 1 : 0));
     }
   }
 });
