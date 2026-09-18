@@ -11,6 +11,7 @@ import { normalizeCommercialText, literalProductCodes } from "@/lib/commercial-q
 import { buildPublicUrl } from "@/lib/site-url";
 import { POST as persistBatch } from "../simulator-batch/route";
 import { customerMemoryEnabled } from "@/lib/bc-customer-memory-store";
+import { checkoutOwnsReply } from "@/lib/bc-checkout-routing";
 import { frequentCustomerFields, readCustomerMemory, recallCustomerProduct } from "@/lib/bc-customer-memory";
 
 export const runtime = "nodejs";
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     // Existing purchase and human-handoff flows retain ownership of side-effecting operations.
     if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|quiero comprar|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
       || /^(?:hola|buenos dias|buenas tardes|buenas noches|gracias|ok|si|no|comprar|lo quiero)$/.test(text)
-      || (conversation.salesState?.stage && /CUSTOMER|DOCUMENT|DELIVERY|ORDER|PAYMENT|COMPLETED/.test(conversation.salesState.stage) && !/[?¿]|\b(?:catalogo|precio|informacion|garantia|stock|envios|cuanto|horario)\b/.test(batch.content))) {
+      || checkoutOwnsReply(conversation.salesState?.stage, batch.content)) {
       return NextResponse.json({ ok: true, handled: false });
     }
     const inbound = await prisma.chatMessage.findMany({ where: { conversationId: input.conversationId, id: { in: batch.messageIds } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true } });

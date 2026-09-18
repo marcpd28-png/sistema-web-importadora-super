@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       await lockSimulatorConversation(tx, input.conversationId);
       const conversation = await tx.conversation.findUnique({ where: { id: input.conversationId }, select: {
         botEnabled: true, assignedUserId: true, status: true, contactId: true, contact: { select: { externalId: true } },
+        messages: { where: { direction: "OUTBOUND", senderType: { in: ["BOT", "AGENT"] }, OR: [{ status: null }, { status: { notIn: ["failed", "pending"] } }] }, select: { id: true }, take: 1 },
       } });
       if (!conversation?.contact.externalId?.startsWith("SIMULATOR:")) return { denied: true, messages: [] };
       if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return { skipped: true, messages: [] };
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
         const memory = await tx.customerConversationMemory.findUnique({ where: { contactId: conversation.contactId } });
         if ((memory?.revision ?? 0) !== input.customerMemoryRevision) return { skipped: true, reason: "CUSTOMER_MEMORY_CHANGED", messages: [] };
       }
-      const replies = greetChatResponse(input.messages, new Date(started));
+      const replies = conversation.messages?.length ? input.messages : greetChatResponse(input.messages, new Date(started));
       const data = replies.map((message,index) => ({
         conversationId: input.conversationId, senderType: "BOT" as const, direction: "OUTBOUND" as const,
         messageType: message.type, content: message.content, mediaUrl: message.mediaUrl ?? null, status: "sent",
