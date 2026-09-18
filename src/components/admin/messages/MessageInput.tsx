@@ -66,6 +66,7 @@ export function MessageInput({ onSendMessage, contact }: Props) {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", "documents");
+      formData.append("purpose", "message");
 
       const res = await fetch("/api/admin/uploads", {
         method: "POST",
@@ -86,7 +87,8 @@ export function MessageInput({ onSendMessage, contact }: Props) {
       else if (file.type === "application/pdf") type = "DOCUMENT";
       
       const textContent = message.trim() || `Archivo adjunto: ${file.name}`;
-      if (await onSendMessage(textContent, data.url, type, template)) { setMessage(""); setTemplate(undefined); }
+      const mediaUrl = new URL(data.url, window.location.origin).href;
+      if (await onSendMessage(textContent, mediaUrl, type, template)) { setMessage(""); setTemplate(undefined); }
       else setUploadError("No se pudo enviar el archivo. Conservamos tu borrador.");
     } catch (err) {
       console.error(err);

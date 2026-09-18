@@ -4,6 +4,8 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createNormalizedProductImage } from "@/lib/product-image-normalization";
+import { prepareMessageImage } from "@/lib/message-upload";
+import { buildPublicUrl } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 
@@ -127,6 +129,7 @@ export async function POST(request: Request) {
   const fileEntry = formData.get("file");
   const folderValue = String(formData.get("folder") ?? "products").trim();
   const folder = allowedFolders.has(folderValue) ? folderValue : "products";
+  const messaging = formData.get("purpose") === "message";
 
   if (!(fileEntry instanceof File)) {
     return NextResponse.json({ error: "Selecciona un archivo válido." }, { status: 400 });
@@ -166,6 +169,17 @@ export async function POST(request: Request) {
   await mkdir(uploadDir, { recursive: true });
 
   if (isImageFile(fileEntry)) {
+    if (messaging) {
+      try {
+        const image = await prepareMessageImage(buffer);
+        const fileName = `${fileBase}.jpg`;
+        await writeFile(path.join(/* turbopackIgnore: true */ uploadDir, fileName), image.data);
+        return NextResponse.json({ fileName, folder, url: buildPublicUrl(`/uploads/${folder}/${fileName}`),
+          mimeType: "image/jpeg", width: image.width, height: image.height });
+      } catch {
+        return NextResponse.json({ error: "No se pudo preparar la imagen. Prueba con una foto JPG, PNG o WebP válida." }, { status: 400 });
+      }
+    }
     const optimized = await writeOptimizedImageVariants(buffer, uploadDir, fileBase);
 
     return NextResponse.json({
@@ -189,6 +203,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     fileName,
     folder,
-    url: `/uploads/${folder}/${fileName}`,
+    url: messaging ? buildPublicUrl(`/uploads/${folder}/${fileName}`) : `/uploads/${folder}/${fileName}`,
   });
 }
