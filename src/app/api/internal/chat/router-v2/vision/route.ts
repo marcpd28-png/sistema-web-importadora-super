@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { analyzeRouterV2ProductImage } from "@/lib/router-v2-vision-analyzer";
+import { matchCatalogSourceImage } from "@/lib/router-v2-catalog-image-match";
+import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
   imageUrl: z.string().trim().min(1).max(25_000_000),
@@ -25,7 +27,10 @@ export async function POST(request: Request) {
     }
 
     const input = schema.parse(await request.json());
-    const analysis = await analyzeRouterV2ProductImage(input);
+    const catalogMatch = await matchCatalogSourceImage(input.imageUrl, hash => prisma.product.findMany({
+      where: { sourceImageContentHash: hash, isVisible: true }, select: { code: true }, take: 2,
+    }));
+    const analysis = catalogMatch ?? await analyzeRouterV2ProductImage(input);
 
     return NextResponse.json({
       ok: true,
