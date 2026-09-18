@@ -1,0 +1,132 @@
+{
+  "cleanup": {
+    "temporaryContactsDeleted": 2,
+    "remaining": 0
+  },
+  "passed": true,
+  "results": [
+    {
+      "answers": [
+        "¡Buenas tardes! 😊 (O1008) PARLANTE JBL PARTYBOX 330 BLACK 003757 (O1008)\nSí, identifiqué el producto que deseas comprar. ¿Cuántas unidades necesitas de este producto?",
+        "(O1001) DRON DJI AVATA 360 MOTION FLY MORE COMBO (DJI Goggles N3) (O1001): hay 1 unidades, insuficientes para las 2 solicitadas. No puedo confirmar esa cotización."
+      ],
+      "requests": [
+        {
+          "id": "cmu7cknjg0009kwnhmf1yw0gr:0:PRICE",
+          "kind": "PRICE",
+          "fields": [],
+          "status": "NEEDS_CLARIFICATION",
+          "topicId": "cmu7cknjg0009kwnhmf1yw0gr:topic:0",
+          "evidence": [
+            "Product:c545a737-61f6-4f38-95c4-c43b2bbf18e7:2026-09-18T04:22:48.674Z"
+          ],
+          "quantity": null,
+          "question": "me interesa este producto PARLANTE JBL PARTYBOX 330 BLACK lo deseo comprar",
+          "answeredBy": null,
+          "sourceMessageIds": [
+            "cmu7cknjg0009kwnhmf1yw0gr"
+          ],
+          "purchaseRequested": true
+        },
+        {
+          "id": "cmu7cknjg0009kwnhmf1yw0gr:1:PRICE",
+          "kind": "PRICE",
+          "fields": [],
+          "status": "NEEDS_CLARIFICATION",
+          "topicId": "cmu7cknjg0009kwnhmf1yw0gr:topic:1",
+          "evidence": [
+            "Product:8fb46098-e08c-4c96-ba50-490a947e103b:2026-09-18T04:22:48.629Z"
+          ],
+          "quantity": 2,
+          "question": "DRON DJI AVATA 360 MOTION FLY MORE COMBO este quiero 2 unidades de este",
+          "answeredBy": null,
+          "sourceMessageIds": [
+            "cmu7cknjg0009kwnhmf1yw0gr"
+          ],
+          "purchaseRequested": true
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "id": "reported-purchase"
+    },
+    {
+      "answers": [
+        "¡Buenas tardes! 😊 (O1008) PARLANTE JBL PARTYBOX 330 BLACK 003757 (O1008)\nSí, identifiqué el producto que deseas comprar. ¿Cuántas unidades necesitas de este producto?",
+        "(O1001) DRON DJI AVATA 360 MOTION FLY MORE COMBO (DJI Goggles N3) (O1001): hay 1 unidades, insuficientes para las 2 solicitadas. No puedo confirmar esa cotización.",
+        "Métodos de pago: Yape, Plin, transferencia bancaria.",
+        "Modalidades de entrega: DELIVERY, SHALOM, RECOJO. Para confirmar cobertura, costo y plazo necesitamos el destino y la agencia o dirección; no tengo una cotización de transporte registrada."
+      ],
+      "requests": [
+        {
+          "id": "cmu7cknkb000bkwnhlr8iqwkb:0:PRICE",
+          "kind": "PRICE",
+          "fields": [],
+          "status": "NEEDS_CLARIFICATION",
+          "topicId": "cmu7cknkb000bkwnhlr8iqwkb:topic:0",
+          "evidence": [
+            "Product:c545a737-61f6-4f38-95c4-c43b2bbf18e7:2026-09-18T04:22:48.674Z"
+          ],
+          "quantity": null,
+          "question": "me interesa este producto PARLANTE JBL PARTYBOX 330 BLACK lo deseo comprar",
+          "answeredBy": null,
+          "sourceMessageIds": [
+            "cmu7cknkb000bkwnhlr8iqwkb"
+          ],
+          "purchaseRequested": true
+        },
+        {
+          "id": "cmu7ckno9000ekwnh98qgqrmm:1:PRICE",
+          "kind": "PRICE",
+          "fields": [],
+          "status": "NEEDS_CLARIFICATION",
+          "topicId": "cmu7ckno9000ekwnh98qgqrmm:topic:1",
+          "evidence": [
+            "Product:8fb46098-e08c-4c96-ba50-490a947e103b:2026-09-18T04:22:48.629Z"
+          ],
+          "quantity": 2,
+          "question": "y tambien DRON DJI AVATA 360 MOTION FLY MORE COMBO; dos unidades",
+          "answeredBy": null,
+          "sourceMessageIds": [
+            "cmu7ckno9000ekwnh98qgqrmm",
+            "cmu7ckntd000hkwnh8onk75za"
+          ],
+          "purchaseRequested": true
+        },
+        {
+          "id": "cmu7cknww000kkwnhnfrieqkp:2:PAYMENT",
+          "kind": "PAYMENT",
+          "fields": [],
+          "status": "ANSWERED",
+          "topicId": null,
+          "evidence": [
+            "business:paymentMethods"
+          ],
+          "quantity": null,
+          "question": "aceptan yape",
+          "answeredBy": "cmu7cko16000nkwnhf32075du",
+          "sourceMessageIds": [
+            "cmu7cknww000kkwnhnfrieqkp"
+          ]
+        },
+        {
+          "id": "cmu7cko16000nkwnhf32075du:3:SHIPPING",
+          "kind": "SHIPPING",
+          "fields": [],
+          "status": "NEEDS_CLARIFICATION",
+          "topicId": null,
+          "evidence": [
+            "business:deliveryMethods"
+          ],
+          "quantity": null,
+          "question": "envíos a Arequipa",
+          "answeredBy": null,
+          "sourceMessageIds": [
+            "cmu7cko16000nkwnhf32075du"
+          ]
+        }
+      ],
+      "lateOrExtraReplies": 0,
+      "id": "fragmented-purchase"
+    }
+  ]
+}
