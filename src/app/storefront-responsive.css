@@ -87,6 +87,14 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
   padding-top: 12px;
 }
 
+.product-detail-qty-control {
+  grid-template-columns: 44px minmax(20px, auto) 44px;
+}
+
+.product-detail-buy-actions .button {
+  min-height: 44px;
+}
+
 .product-detail-disclosure summary {
   padding: 12px 0;
   cursor: pointer;
@@ -211,6 +219,11 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
 }
 
 @media (max-width: 767px) {
+  .hero .hero-panel-fixed {
+    min-height: 0;
+    height: auto;
+  }
+
   .hero .hero-banner-carousel,
   .hero .hero-banner-visual {
     min-height: 160px;
@@ -249,6 +262,18 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
     padding: 16px;
     gap: 16px;
   }
+
+  .product-detail-layout .product-detail-qty-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .product-detail-layout .product-detail-total {
+    width: auto;
+    text-align: right;
+  }
 }
 
 @media (max-width: 640px) {
@@ -267,8 +292,27 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
     display: none;
   }
 
-  .catalog-section-compact .catalog-featured-controls {
+  .catalog-section-compact .catalog-slider-controls {
     display: none;
+  }
+
+  .catalog-section-compact .catalog-section-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .catalog-section-compact .catalog-section-header h2 {
+    font-size: 18px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .catalog-section-compact .catalog-section-link {
+    min-height: 44px;
+    padding: 8px 12px;
+    white-space: nowrap;
   }
 
   .catalog-section .product-body {
@@ -284,11 +328,12 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
   .catalog-section .product-card-qty-row {
     display: flex;
     justify-content: space-between;
-    gap: 4px;
+    gap: 0;
+    padding: 0;
   }
 
   .catalog-section .product-card-qty-value {
-    min-width: 18px;
+    min-width: 12px;
   }
 
   .catalog-section .product-copy-shell,
