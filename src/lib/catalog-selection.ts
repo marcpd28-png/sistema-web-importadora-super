@@ -54,8 +54,8 @@ function nearWord(a: string, b: string) {
 function matchesCategory(product: CatalogCandidate, category: typeof categories[number]) {
   const name=normalizeCatalogText(product.name.replace(/^\([^)]*\)\s*/, ""));
   // A case/cable for headphones or a microphone for a speaker is not the device itself.
-  const primaryType = name.match(/\b(?:audifonos?|auriculares?|headphones?|parlantes?|speakers?|proyectores?|fundas?|estuches?|soportes?|cables?|adaptadores?|microfonos?|baterias?|cargador(?:es)?|chargers?|pilas?)\b/)?.[0] || "";
-  if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria|cargador|charger)/.test(primaryType)) return false;
+  const primaryType = name.match(/\b(?:audifonos?|auriculares?|headphones?|parlantes?|speakers?|proyectores?|fundas?|estuches?|soportes?|cables?|adaptadores?|microfonos?|baterias?|cargador(?:es)?|chargers?|pilas?|ecran(?:es)?|pantallas?)\b/)?.[0] || "";
+  if (["AURICULARES", "PARLANTES", "PROYECTORES"].includes(category.stored) && /^(?:funda|estuche|soporte|cable|adaptador|microfono|bateria|cargador|charger|ecran|pantalla)/.test(primaryType)) return false;
   if (category.stored === "AURICULARES" && /^(parlante|speaker|proyector)/.test(primaryType)) return false;
   if (category.stored === "PARLANTES" && /^(audifono|auricular|headphone|proyector)/.test(primaryType)) return false;
   if (category.stored === "BATERIAS" && /^(?:funda|estuche|soporte|cable|adaptador|microfono|cargador|charger)/.test(primaryType)

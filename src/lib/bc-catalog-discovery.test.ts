@@ -88,3 +88,13 @@ test("battery discovery excludes battery chargers while retaining portable power
   assert.deepEqual(inventory.select("Estoy buscando productos de baterías. ¿Qué tienen disponibles?").products.map(product => product.code).sort(), ["AA", "BT", "PW"]);
   assert.deepEqual(inventory.select("cargadores de batería").products.map(product => product.code), ["CH"]);
 });
+
+test("projector discovery excludes projection screens and retains the actual device", () => {
+  const inventory = createCatalogIndex([
+    { code: "PR", name: "HAVIT PROYECTOR PJ209A PLUS", brand: "HAVIT", category: "ENTRETENIMIENTO Y MULTIMEDIA" },
+    { code: "EC", name: 'ECRAN PARA PROYECTOR 100" HAVIT PA302', brand: "HAVIT", category: "ENTRETENIMIENTO Y MULTIMEDIA" },
+    { code: "SC", name: "PANTALLA PARA PROYECTOR", brand: null, category: "PROYECTORES" },
+  ]);
+  assert.deepEqual(inventory.select("Estoy buscando productos de proyectores. ¿Qué tienen disponibles?").products.map(product => product.code), ["PR"]);
+  assert.deepEqual(inventory.select("ecran HAVIT PA302").products.map(product => product.code), ["EC"]);
+});
