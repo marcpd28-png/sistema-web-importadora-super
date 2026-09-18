@@ -46,7 +46,8 @@ export function answerBusinessRequest(request: AgendaRequest, business: Business
   return null;
 }
 
-export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean; scopes?: ProductScope[] } = {}): RequestAnswer {
+export function answerUnresolvedReference(request: AgendaRequest, topic: AgendaTopic | undefined): RequestAnswer | null {
+  if (["SHIPPING", "PAYMENT", "STORE"].includes(request.kind) || topic?.selectedCode) return null;
   if (topic?.imageReference && !topic.selectedCode) return {
     content: `Recibí ${topic.imageReference}, pero aún no pude identificar el producto con certeza. Dime su marca, modelo o código para continuar con esta consulta.`,
     status: "NEEDS_CLARIFICATION", evidence: [],
@@ -56,6 +57,12 @@ export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic 
     content: `Recibí tu referencia de ${platforms.join(" y ")}. Aún no he podido ver el contenido del enlace para identificar el producto. Envíame una captura donde se vea, o su marca, modelo o código, y continúo con esta consulta.`,
     status: "NEEDS_CLARIFICATION", evidence: [],
   };
+  return null;
+}
+
+export function answerProductRequest(request: AgendaRequest, topic: AgendaTopic | undefined, products: CommercialProduct[], options: { photoUnavailable?: boolean; scopes?: ProductScope[] } = {}): RequestAnswer {
+  const reference = answerUnresolvedReference(request, topic);
+  if (reference) return reference;
   products = products.filter(product => product.isVisible);
   if (topic) { topic.selectedCode = null; topic.shownCodes = []; topic.shownGroups = []; }
   if (topic && options.scopes && options.scopes.length > 1) {

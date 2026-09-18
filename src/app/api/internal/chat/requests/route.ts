@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { readSimulatorInputBatch } from "@/lib/simulator-input-batch";
 import { agendaSchema, emptyAgenda, planRequests } from "@/lib/bc-request-agenda";
-import { answerBusinessRequest, answerCatalogSelection, answerProductRequest, splitAnswerText } from "@/lib/bc-request-answers";
+import { answerBusinessRequest, answerCatalogSelection, answerProductRequest, answerUnresolvedReference, splitAnswerText } from "@/lib/bc-request-answers";
 import { loadCommercialCatalog } from "@/lib/commercial-catalog";
 import { generateRequestedCatalogPdf, generateRequestedProductImages } from "@/lib/catalog-pdf";
 import { isScreenExtenderQuery } from "@/lib/catalog-selection";
@@ -107,8 +107,9 @@ export async function POST(request: Request) {
           memoryNotices.delete(topic.id);
         }
         try {
-          if (topic?.imageReference && !topic.selectedCode) {
-            const answer = answerProductRequest(job, topic, []);
+          const unresolvedReference = answerUnresolvedReference(job, topic);
+          if (unresolvedReference) {
+            const answer = unresolvedReference;
             if (!answered.has(answer.content)) replies.push({ type: "TEXT", content: answer.content });
             answered.add(answer.content);
             job.status = answer.status; job.evidence = [];

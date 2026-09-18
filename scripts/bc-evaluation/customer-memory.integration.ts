@@ -66,6 +66,22 @@ async function main() {
     const socialAgenda = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: social.id } });
     assert.deepEqual((socialAgenda.state as { requests: { kind: string }[] }).requests.map(job => job.kind), ["PAYMENT", "PRICE", "SHIPPING"]);
     assert.match(await send(social.id, `me refiero a ${product.code}`), /6 unidad\(es\): S\/ 37\.00/);
+    for (const reference of [
+      { request: "catálogo de este https://www.instagram.com/p/prueba/", platform: "Instagram", kind: "CATALOG" },
+      { request: "fotos de este https://fb.watch/prueba/", platform: "Facebook", kind: "SEARCH" },
+    ]) {
+      const pending = await conversation(await customer());
+      const answers = await send(pending.id, ["aceptan yape", reference.request, "envíos a Arequipa"]);
+      assert(answers.indexOf("Métodos de pago:") < answers.indexOf(`referencia de ${reference.platform}`));
+      assert(answers.indexOf(`referencia de ${reference.platform}`) < answers.indexOf("Modalidades de entrega:"));
+      assert.doesNotMatch(answers, /Catálogo completo:|sin stock|productos con stock/);
+      assert.equal(await prisma.chatMessage.count({ where: { conversationId: pending.id, direction: "OUTBOUND", messageType: { in: ["IMAGE", "DOCUMENT"] } } }), 0);
+      const saved = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: pending.id } });
+      const jobs = (saved.state as { requests: { kind: string; status: string; evidence: string[] }[] }).requests;
+      assert.deepEqual(jobs.map(job => job.kind), ["PAYMENT", reference.kind, "SHIPPING"]);
+      assert.equal(jobs[1].status, "NEEDS_CLARIFICATION");
+      assert.deepEqual(jobs[1].evidence, []);
+    }
     const grouped = await conversation(await customer());
     const ordered = await send(grouped.id, [`precio ${product.code}`, "seis unidades", `stock ${product.code}`, "aceptan yape", "envíos a Arequipa"]);
     assert.match(ordered, /6 unidad\(es\): S\/ 37\.00/);
