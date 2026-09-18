@@ -131,6 +131,12 @@ function detectDocumentNumber(text: string, type: string | null) {
   return unique.length === 1 ? unique[0] : null;
 }
 
+export function isRouterV2DocumentCorrection(text: string) {
+  const value = normalize(text);
+  if (/[?¿]/.test(value)) return false;
+  return /^(?:me equivoque[,.:]?\s*|mejor\s+|cambia(?:lo)?\s+a\s+|corrige\s+)?(?:mi\s+)?(?:dni|ruc|boleta|factura)(?:\s+(?:con\s+)?(?:dni|ruc))?(?:\s*(?:es|:)?\s*\d{1,15})?[.!]?$/.test(value);
+}
+
 function paymentAllowed(method: string, allowed: string[]) {
   if (allowed.length === 0) return false;
   const normalizedAllowed = allowed.map(normalizeToken);
@@ -205,6 +211,22 @@ export function resolveRouterV2CheckoutFlow(input: {
   const documentData = asRecord(state.documentData);
   const deliveryData = asRecord(state.deliveryData);
   const paymentData = asRecord(state.paymentData);
+  const afterDocument = () => {
+    const method = readString(deliveryData, "method");
+    const complete = method && deliveryAllowed(method, input.allowedDeliveryMethods ?? []) &&
+      (method === "RECOJO" || readString(deliveryData, "details"));
+    patch.stage = complete ? "AWAITING_ORDER_CONFIRMATION" : "AWAITING_DELIVERY_METHOD";
+    return result(complete ? "ASK_ORDER_CONFIRMATION" : "ASK_DELIVERY_METHOD", true);
+  };
+
+  if (state.stage === "AWAITING_ORDER_CONFIRMATION" && !state.orderNumber && isRouterV2DocumentCorrection(text)) {
+    const type = detectDocumentType(text) ?? (/\bruc\b/.test(normalize(text)) ? "FACTURA" : /\bdni\b/.test(normalize(text)) ? "BOLETA" : readString(documentData, "type"));
+    const number = detectDocumentNumber(text, type);
+    patch.documentData = { ...documentData, type, number };
+    if (number) return afterDocument();
+    patch.stage = "AWAITING_DOCUMENT_DATA";
+    return result("ASK_DOCUMENT_DATA", true);
+  }
 
   if (state.stage === "AWAITING_PURCHASE_CONFIRMATION") {
     if (negative(text)) {
@@ -336,12 +358,13 @@ export function resolveRouterV2CheckoutFlow(input: {
       type,
       number,
     };
-    patch.stage = number ? "AWAITING_DELIVERY_METHOD" : "AWAITING_DOCUMENT_DATA";
-    return result(number ? "ASK_DELIVERY_METHOD" : "ASK_DOCUMENT_DATA", true);
+    if (number) return afterDocument();
+    patch.stage = "AWAITING_DOCUMENT_DATA";
+    return result("ASK_DOCUMENT_DATA", true);
   }
 
   if (state.stage === "AWAITING_DOCUMENT_DATA") {
-    const type = readString(documentData, "type");
+    const type = detectDocumentType(text) ?? readString(documentData, "type");
     const normalizedText = normalize(text);
 
     if (
@@ -350,21 +373,24 @@ export function resolveRouterV2CheckoutFlow(input: {
     ) {
       patch.documentData = {
         ...documentData,
+        type,
         number: null,
       };
-      patch.stage = "AWAITING_DELIVERY_METHOD";
-      return result("ASK_DELIVERY_METHOD", true);
+      return afterDocument();
     }
 
     const number = detectDocumentNumber(text, type);
-    if (!number) return result("ASK_DOCUMENT_DATA");
+    if (!number) {
+      if (type !== readString(documentData, "type")) patch.documentData = { ...documentData, type, number: null };
+      return result("ASK_DOCUMENT_DATA", Boolean(detectDocumentType(text)));
+    }
 
     patch.documentData = {
       ...documentData,
+      type,
       number,
     };
-    patch.stage = "AWAITING_DELIVERY_METHOD";
-    return result("ASK_DELIVERY_METHOD", true);
+    return afterDocument();
   }
 
   if (state.stage === "AWAITING_DELIVERY_METHOD") {

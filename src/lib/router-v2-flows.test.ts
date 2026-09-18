@@ -292,3 +292,24 @@ test("vision parser rejects malformed or out-of-range hints", () => {
     null,
   );
 });
+
+test("document correction preserves delivery and requires final confirmation", () => {
+  const state = { stage: "AWAITING_ORDER_CONFIRMATION", documentData: { type: "BOLETA", number: "12345678" }, deliveryData: { method: "RECOJO" } };
+  const changed = resolveRouterV2CheckoutFlow({ content: "mejor factura", state, allowedDeliveryMethods: ["Recojo"] });
+  assert.equal(changed.patch.stage, "AWAITING_DOCUMENT_DATA");
+  assert.equal(changed.createPendingOrder, false);
+  const resumed = resolveRouterV2CheckoutFlow({ content: "20123456789", state: { ...state, ...changed.patch }, allowedDeliveryMethods: ["Recojo"] });
+  assert.equal(resumed.patch.stage, "AWAITING_ORDER_CONFIRMATION");
+  assert.deepEqual(resumed.patch.documentData, { type: "FACTURA", number: "20123456789" });
+  assert.equal(resumed.createPendingOrder, false);
+  for (const content of ["¿factura?", "factura incluye IGV", "12345678"]) {
+    assert.equal(resolveRouterV2CheckoutFlow({ content, state }).patch.documentData, undefined);
+  }
+  assert.equal(resolveRouterV2CheckoutFlow({ content: "mi DNI es 87654321", state: { ...state, orderNumber: "SIM-1" } }).patch.documentData, undefined);
+});
+
+test("document collection accepts switching type without truncating the new number", () => {
+  const changed = resolveRouterV2CheckoutFlow({ content: "factura RUC 20123456789", state: { stage: "AWAITING_DOCUMENT_DATA", documentData: { type: "BOLETA" } } });
+  assert.deepEqual(changed.patch.documentData, { type: "FACTURA", number: "20123456789" });
+  assert.equal(changed.patch.stage, "AWAITING_DELIVERY_METHOD");
+});

@@ -48,6 +48,16 @@ async function main() {
     assert.match(correctedQuantity.body.draftText, /María Pérez/);
     assert.match(correctedQuantity.body.draftText, /12345678/);
     assert.match(correctedQuantity.body.draftText, /RECOJO/);
+    await send("mejor factura", "AWAITING_DOCUMENT_DATA");
+    const correctedDocument = await send("20123456789", "AWAITING_ORDER_CONFIRMATION");
+    assert.match(correctedDocument.body.draftText, /20123456789/);
+    assert.match(correctedDocument.body.draftText, /FACTURA/i);
+    assert.match(correctedDocument.body.draftText, /RECOJO/);
+    assert.equal(correctedDocument.state?.quantity, 4);
+    assert.equal(correctedDocument.state?.orderNumber, null);
+    const correctedDni = await send("mi DNI es 87654321", "AWAITING_ORDER_CONFIRMATION");
+    assert.match(correctedDni.body.draftText, /87654321/);
+    assert.doesNotMatch(correctedDni.body.draftText, /20123456789/);
     await prisma.product.update({ where: { id: product.id }, data: { wholesalePrice: 45 } });
     const changed = await send("confirmo", "AWAITING_ORDER_CONFIRMATION");
     assert.equal(changed.state?.orderNumber, null);

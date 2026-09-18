@@ -9,7 +9,7 @@ import { evaluateRouterV2AutomationPolicy } from "@/lib/router-v2-automation-pol
 import { getRouterV2BusinessKnowledge } from "@/lib/router-v2-business-knowledge";
 import { resolveRouterV2CatalogFlow } from "@/lib/router-v2-catalog-flow";
 import { buildRouterV2OutboundMessages } from "@/lib/router-v2-channel-response";
-import { resolveRouterV2CheckoutFlow } from "@/lib/router-v2-checkout-flow";
+import { isRouterV2DocumentCorrection, resolveRouterV2CheckoutFlow } from "@/lib/router-v2-checkout-flow";
 import { resolveCommercialPrice } from "@/lib/router-v2-commercial-price";
 import { applyRouterV2ContextualSlots } from "@/lib/router-v2-contextual-slots";
 import { applyRouterV2DeliverySelection } from "@/lib/router-v2-delivery-selection";
@@ -116,6 +116,8 @@ function shouldAttemptCheckout(input: {
   const stage = input.stage;
   if (!stage) return false;
   if (input.catalogAction !== "NONE" || input.hasProductQuestion) return false;
+  if ((stage === "AWAITING_ORDER_CONFIRMATION" || stage === "AWAITING_DOCUMENT_DATA") &&
+      input.analysisNextAction !== "HUMAN_HANDOFF" && isRouterV2DocumentCorrection(input.content)) return true;
 
   if (stage === "AWAITING_DELIVERY_METHOD") {
     return (
