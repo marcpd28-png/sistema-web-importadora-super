@@ -1,6 +1,6 @@
 # Despachador de imágenes de ManyChat
 
-Versión desplegada en VPS: `fdc80a7`, HTTP 200 tras reinicio con respaldo. Flujo `content20260919025706_215753`. Ruta nueva desactivada hasta publicar la edición del flujo con callback.
+Versión desplegada en VPS: `fdc80a7`, HTTP 200 tras reinicio con respaldo. Flujo `content20260919025706_215753`. Ruta nueva habilitada el 2026-09-19 tras la confirmación del usuario y su captura del flujo guardado con callback. La captura muestra STOPPED; no se ha verificado una ejecución real por API.
 
 ## Comportamiento
 
@@ -18,8 +18,10 @@ El callback firmado `image-ack` registra el procesamiento final del flujo. Las a
 - Prueba de PostgreSQL real en transacción revertida: crear registros temporales, reservar un contacto, bloquear una segunda imagen, aplicar confirmación y permitir siguiente envío. Transporte simulado; cero mensajes a clientes y cero registros permanentes de prueba.
 - ESLint en el checkout de despliegue y compilación de producción.
 
-## Activación pendiente
+## Activación y validación pendiente
 
-La configuración del servidor queda en `MANYCHAT_IMAGE_FLOW_ENABLED=false` hasta que el usuario publique la edición del flujo que incluye la solicitud externa. Publicar la primera versión sin callback no basta: dejaría la primera imagen pendiente de confirmación y bloquearía la siguiente.
+`MANYCHAT_IMAGE_FLOW_ENABLED=true` configurado en `.env` y en el entorno efectivo de PM2. Reinicio controlado completado; web (4000) y motor (4001) respondieron HTTP 200. Configuración PM2 persistida. Respaldo previo: `/home/IMPORTADORA-backups/manychat-image-enable-fMj5Ssbs`.
 
-Después: activar el indicador con respaldo y reinicio controlado, comprobar configuración efectiva y solicitar al usuario un envío real desde su bandeja. No afirmar entrega hasta observar ManyChat/WhatsApp y la confirmación final. La sincronización de todos los envíos manuales originados en ManyChat sigue siendo un trabajo independiente.
+No se enviaron mensajes de prueba. Falta un envío elegido por el usuario desde el Centro de Mensajes para observar ejecución, callback y entrega real. Guardado y la presencia del flujo en getFlows no demuestran por sí solos su ejecución: la captura de ManyChat aún muestra STOPPED y no se ha confirmado su significado para este flujo sin disparadores.
+
+La solicitud externa acredita procesamiento del flujo, no entrega a WhatsApp. La sincronización de todos los envíos manuales originados en ManyChat sigue siendo un trabajo independiente.
