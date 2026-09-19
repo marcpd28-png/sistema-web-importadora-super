@@ -7,6 +7,7 @@ import { getMessageMedia, safeMessageMediaUrl } from "@/lib/message-media";
 import { templateSelectionSchema } from "@/lib/message-templates";
 import { prepareTemplateSnapshot } from "@/lib/message-templates-service";
 import { lockSimulatorConversation } from "@/lib/simulator-input-batch";
+import { sendManychatImageFromInbox } from "@/lib/manychat-image-dispatch";
 import {
   N8nOutboundError,
   sendN8nOutboundMessage,
@@ -496,6 +497,25 @@ export async function sendInternalMessage(
   }
 
   const outboundType = parsed.type.toLowerCase() as N8nOutboundMessageType;
+  if (parsed.type === "IMAGE" && process.env.MANYCHAT_IMAGE_FLOW_ENABLED === "true") {
+    const subscriberId = requireRealManychatSubscriber(conversation.contact);
+    const apiKey = process.env.MANYCHAT_IMAGE_API_KEY?.trim();
+    const signingSecret = process.env.N8N_INTERNAL_API_KEY?.trim();
+    if (!apiKey || !signingSecret) throw new N8nOutboundError("Falta configurar el envío de imágenes por ManyChat.", { code: "MANYCHAT_IMAGE_NOT_CONFIGURED", statusCode: 503 });
+    try {
+      const sent = await sendManychatImageFromInbox(prisma, {
+        conversationId, subscriberId, requestId: parsed.requestId, mediaUrl: parsed.mediaUrl!, content: parsed.content, agentId,
+      }, { apiKey, signingSecret });
+      triggerPusherEvent(`chat-${conversationId}`, "new-message", sent);
+      return sent;
+    } catch (error) {
+      if (error instanceof N8nOutboundError && error.messageId) {
+        const failed = await prisma.chatMessage.findUnique({ where: { id: error.messageId } });
+        if (failed) triggerPusherEvent(`chat-${conversationId}`, "new-message", failed);
+      }
+      throw error;
+    }
+  }
   const template = parsed.template ? await prepareTemplateSnapshot(parsed.template, parsed.content) : undefined;
   const metadata = { requestId: parsed.requestId, ...(template ? { template } : {}) };
   const message = await prisma.chatMessage.create({

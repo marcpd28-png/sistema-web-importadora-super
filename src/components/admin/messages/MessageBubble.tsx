@@ -40,6 +40,10 @@ function MessageMedia({ type, src, content }: { type: string; src: string | null
 }
 
 export function MessageBubble({ message, onRetry }: Props) {
+  const isExternalSync = Boolean(message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
+    && (message.metadata as Record<string, unknown>).externalSync === true);
+  const retryBlocked = Boolean(message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
+    && (message.metadata as Record<string, unknown>).retryBlocked === true);
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
   const isAgent = message.senderType === "AGENT";
@@ -54,7 +58,8 @@ export function MessageBubble({ message, onRetry }: Props) {
   if (isBot) bubbleClass = "message-bot";
   if (isAgent) bubbleClass = "message-agent";
 
-  const senderName = isCustomer ? "Cliente" : isBot ? "Bot" : "Asesor";
+  const senderName = isExternalSync ? (isBot ? "ManyChat · Automatización" : "ManyChat · Asesor")
+    : isCustomer ? "Cliente" : isBot ? "Bot" : "Asesor";
 
   const dateObj = new Date(message.createdAt);
   const timeStr = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
@@ -82,7 +87,7 @@ export function MessageBubble({ message, onRetry }: Props) {
       gap: '2px',
     }}>
       <div style={{ fontSize: '11px', fontWeight: 600, color: isCustomer ? '#6b7280' : '#166534', marginBottom: '2px' }}>
-        {senderName} {isBot && <span style={{ marginLeft: "4px", background: "#dcfce7", color: "#15803d", padding: "2px 4px", borderRadius: "4px", fontSize: "9px" }}>🤖 n8n Auto</span>}
+        {senderName} {isBot && !isExternalSync && <span style={{ marginLeft: "4px", background: "#dcfce7", color: "#15803d", padding: "2px 4px", borderRadius: "4px", fontSize: "9px" }}>🤖 n8n Auto</span>}
       </div>
       
       <div className="message-content" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
@@ -95,7 +100,7 @@ export function MessageBubble({ message, onRetry }: Props) {
       {isAcceptedForDelivery && <span style={{ fontSize: '10px', color: '#667781' }}>Aceptado; entrega no confirmada.</span>}
       {isSending && <span style={{ fontSize: '10px', color: '#92400e' }}>Enviando...</span>}
       {isFailed && <span style={{ fontSize: '10px', color: '#b91c1c' }}>{failureReason}</span>}
-      {isFailed && onRetry && (
+      {isFailed && onRetry && !isExternalSync && !retryBlocked && (
         <button type="button" onClick={() => onRetry(message)} style={{ alignSelf: "flex-end", color: "#b91c1c", fontSize: "11px", fontWeight: 700 }}>
           Reintentar
         </button>
