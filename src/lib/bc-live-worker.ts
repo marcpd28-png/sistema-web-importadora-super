@@ -29,7 +29,7 @@ export async function processBcLivePilot(db: PrismaClient) {
     if (stale || await db.chatMessage.count({ where: { conversationId: conversation.id, senderType: "BOT", status: { in: ["uncertain", "failed"] }, createdAt: { gte: started } } })) {
       await db.conversation.update({ where: { id: conversation.id }, data: { botEnabled: false, status: "ATENDIENDO" } }); continue;
     }
-    const pending = await db.chatMessage.findFirst({ where: { conversationId: conversation.id, status: { in: ["bc_queued", "bc_sending", "queued", "pending", "accepted"] }, direction: "OUTBOUND" }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+    const pending = await db.chatMessage.findFirst({ where: { conversationId: conversation.id, status: { in: ["bc_queued", "bc_sending", "queued", "pending", "accepted"] }, direction: "OUTBOUND", createdAt: { gte: started } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
     if (pending) {
       if (pending.status !== "bc_queued") continue;
       const data = meta(pending.metadata);

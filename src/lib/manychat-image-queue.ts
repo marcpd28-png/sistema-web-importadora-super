@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { N8nOutboundError } from "./n8n-outbound";
 import { MANYCHAT_IMAGE_FLOW, ProviderError, runManychatImageFlow, validateImageInput, type ImageInput, type ImageConfig } from "./manychat-image-dispatch";
+import { isBcLiveContact } from "./bc-live-policy";
 
 function meta(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -63,6 +64,14 @@ export async function processQueuedImages(db: PrismaClient, config: ImageConfig,
       if (busy.length) return null;
       const message = await tx.chatMessage.findFirst({ where: { status: "queued", metadata: { path: ["manychatImageSubscriber"], equals: subscriber } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
       if (!message) return null;
+      if (message.senderType === "BOT") {
+        const conversation = await tx.conversation.findUnique({ where: { id: message.conversationId }, include: { contact: true } });
+        const master = await tx.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } });
+        if (!conversation || !isBcLiveContact(conversation.contact) || !conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO" || master?.botMasterSwitch === false) {
+          await tx.chatMessage.update({ where: { id: message.id }, data: { status: "cancelled", metadata: { ...meta(message.metadata), manychatImageDispatch: "cancelled", cancelledAt: now.toISOString(), reason: "BOT_NO_LONGER_OWNS_CONVERSATION" } } });
+          return null;
+        }
+      }
       const patch = JSON.stringify({ manychatImageDispatch: "reserved", dispatchStartedAt: now.toISOString(), retryBlocked: true });
       const changed = await tx.$executeRaw`UPDATE "ChatMessage" SET "status" = 'pending', "metadata" = COALESCE("metadata", '{}'::jsonb) || ${patch}::jsonb
         WHERE "id" = ${message.id} AND "status" = 'queued' AND "metadata"->>'manychatImageDispatch' = 'queued'`;

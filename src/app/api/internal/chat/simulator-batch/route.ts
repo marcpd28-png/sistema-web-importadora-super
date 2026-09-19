@@ -121,6 +121,7 @@ export async function POST(request: Request) {
     for (const message of result.messages) triggerPusherEvent(`chat-${input.conversationId}`, "new-message", message);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
+    if (error instanceof Error && error.message === "BC_ORDER_INVENTORY_CHANGED") return NextResponse.json({ ok: true, skipped: true, reason: "INVENTORY_CHANGED", messages: [] });
     if (error instanceof z.ZodError) return NextResponse.json({ ok: false, error: "Invalid request payload" }, { status: 400 });
     console.error("[simulator-batch] failed", error instanceof Error ? error.name : "UnknownError", error && typeof error === "object" && "code" in error ? String(error.code) : "");
     return NextResponse.json({ ok: false, error: "SIMULATOR_BATCH_FAILED" }, { status: 500 });
