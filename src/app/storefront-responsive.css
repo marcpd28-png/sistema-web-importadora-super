@@ -21,8 +21,10 @@
 
   .catalog-featured-slide .product-body {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: subgrid;
     grid-row: 2 / span 4;
+    justify-content: stretch;
     row-gap: 0.8rem;
   }
 
