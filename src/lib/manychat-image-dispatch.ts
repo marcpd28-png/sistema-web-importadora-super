@@ -10,11 +10,16 @@ class ProviderError extends Error {
   constructor(readonly uncertain: boolean, message: string) { super(message); }
 }
 
-export async function runManychatImageFlow(input: ImageInput, config: ImageConfig) {
+function validateImageInput(input: ImageInput) {
   const subscriberId = Number(input.subscriberId);
   if (!/^\d+$/.test(input.subscriberId) || !Number.isSafeInteger(subscriberId) || subscriberId <= 0) throw new Error("Invalid ManyChat subscriber");
   const media = new URL(input.mediaUrl);
   if (media.protocol !== "https:" || media.username || media.password) throw new Error("Invalid public image URL");
+  return { subscriberId, media };
+}
+
+export async function runManychatImageFlow(input: ImageInput, config: ImageConfig) {
+  const { subscriberId, media } = validateImageInput(input);
   const token = createManychatImageAckToken(input.requestId, input.subscriberId, config.signingSecret);
   const requests = [
     { path: "subscriber/setCustomFields", body: { subscriber_id: subscriberId, fields: [
@@ -46,6 +51,9 @@ export async function runManychatImageFlow(input: ImageInput, config: ImageConfi
 }
 
 export async function sendManychatImageFromInbox(db: PrismaClient, input: ImageInput, config: ImageConfig) {
+  try { validateImageInput(input); } catch {
+    throw new N8nOutboundError("El contacto de ManyChat o la URL de imagen no son válidos.", { code: "INVALID_MANYCHAT_IMAGE", statusCode: 400 });
+  }
   // A durable per-contact reservation remains held after process restart or timeout.
   // Only the signed final-flow callback or an explicit rejection permits the next image.
   const reserved = await db.$transaction(async tx => {

@@ -7,6 +7,10 @@ import { verifyManychatImageAckToken } from "./manychat-image-ack";
 const input = { conversationId: "conversation-1", subscriberId: "12345", requestId: "request-1", mediaUrl: "https://example.test/photo.jpg", content: "Foto", agentId: "agent-1" };
 const config = { apiKey: "test-key", signingSecret: "test-secret" };
 
+test("invalid input is rejected before reserving a contact", async () => {
+  await assert.rejects(sendManychatImageFromInbox({} as PrismaClient, { ...input, subscriberId: "9007199254740993" }, config), /no son válidos/);
+});
+
 test("writes all four fields before starting the exact flow; acknowledgement is scoped to request and contact", async () => {
   const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
   await runManychatImageFlow(input, { ...config, fetchImpl: async (url, options) => {
