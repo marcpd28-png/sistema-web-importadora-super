@@ -13,6 +13,7 @@ import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogProduct, StoreSettingsView } from "@/lib/store";
 import { ProductPriceRows } from "@/components/catalog/product-display";
 import { ProductMediaFrame } from "@/components/catalog/product-media-frame";
+import { formatCurrency } from "@/lib/utils";
 
 type ProductCardProps = {
   className?: string;
@@ -24,19 +25,19 @@ export function ProductCard({ product, settings, className = "" }: ProductCardPr
   const addItem = useCartStore((state) => state.addItem);
   const displayName = getPublicProductName(product.name);
   const [quantity, setQuantity] = useState(1);
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (requestedQuantity = quantity) => {
     if (!isCartStoreHydrated()) {
       await rehydrateCartStore();
     }
 
-    addItem(product, "unit", quantity);
+    addItem(product, "unit", requestedQuantity);
     trackAddToCart({
       item_id: product.code,
       item_name: displayName,
       item_brand: product.brand ?? undefined,
       item_category: product.category ?? undefined,
       price: product.unitPrice,
-      quantity,
+      quantity: requestedQuantity,
     });
     setQuantity(1);
   };
@@ -107,6 +108,29 @@ export function ProductCard({ product, settings, className = "" }: ProductCardPr
           <button className="button button-secondary" onClick={openAssistantForProduct} type="button">
             <Bot size={16} />
             <span className="product-card-action-label">Consultar</span>
+          </button>
+        </div>
+
+        <div className="product-card-mobile-summary">
+          <div className="product-card-mobile-prices">
+            <div aria-label={`Precio unitario: ${formatCurrency(product.unitPrice, settings.currencySymbol)}`}>
+              <span>Un.</span>
+              <strong>{formatCurrency(product.unitPrice, settings.currencySymbol)}</strong>
+            </div>
+            <div className="is-wholesale" aria-label={`Precio mayorista desde ${product.wholesaleMinQty} unidades: ${formatCurrency(product.wholesalePrice ?? product.unitPrice, settings.currencySymbol)}`}>
+              <span>{product.wholesaleMinQty}+</span>
+              <strong>{formatCurrency(product.wholesalePrice ?? product.unitPrice, settings.currencySymbol)}</strong>
+            </div>
+          </div>
+          <button
+            className="button button-primary product-card-mobile-add"
+            disabled={product.stockUnits <= 0}
+            onClick={() => void handleAddToCart(1)}
+            aria-label={product.stockUnits <= 0 ? `${displayName}: sin stock` : `Añadir una unidad de ${displayName} al carrito`}
+            title={product.stockUnits <= 0 ? "Sin stock" : "Añadir una unidad al carrito"}
+            type="button"
+          >
+            <ShoppingCart size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
