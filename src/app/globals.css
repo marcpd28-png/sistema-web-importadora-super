@@ -2140,10 +2140,11 @@ body {
 .public-store-search-submit {
   position: absolute;
   right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   width: 2rem;
   height: 2rem;
   padding: 0;
@@ -2155,6 +2156,11 @@ body {
 
 .public-store-search-submit:hover {
   background: rgba(var(--brand-primary-rgb), 0.08);
+}
+
+.public-store-search-submit .search-field-spinner {
+  position: static;
+  color: inherit;
 }
 
 .public-store-logo-lockup {

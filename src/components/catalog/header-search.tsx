@@ -256,9 +256,8 @@ export function HeaderSearch({ autoFocus = false }: HeaderSearchProps) {
           ref={inputRef}
           value={query}
         />
-        {loading ? <LoaderCircle className="search-field-spinner" size={16} /> : null}
         <button aria-label="Buscar" className="public-store-search-submit" type="submit">
-          <Search size={16} />
+          {loading ? <LoaderCircle aria-hidden="true" className="search-field-spinner" size={16} /> : <Search aria-hidden="true" size={16} />}
         </button>
 
         {open && query.trim().length >= 2 ? (
