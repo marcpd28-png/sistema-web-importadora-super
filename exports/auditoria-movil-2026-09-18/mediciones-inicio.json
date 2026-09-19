@@ -1,0 +1,242 @@
+[
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 113.75
+    },
+    "cardW": 127.25,
+    "client": 305,
+    "firstCardY": 593.453125,
+    "h": 568,
+    "headerH": 116.90625,
+    "heroH": 293.1875,
+    "pageH": 29567,
+    "scroll": 305,
+    "searchFont": "12.48px",
+    "searchW": 121.546875,
+    "titleFont": "10.88px",
+    "w": 320,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 133.75
+    },
+    "cardW": 147.25,
+    "client": 345,
+    "firstCardY": 593.453125,
+    "h": 800,
+    "headerH": 116.90625,
+    "heroH": 293.1875,
+    "pageH": 29521,
+    "scroll": 345,
+    "searchFont": "12.48px",
+    "searchW": 160.265625,
+    "titleFont": "10.88px",
+    "w": 360,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 141.25
+    },
+    "cardW": 154.75,
+    "client": 360,
+    "firstCardY": 593.453125,
+    "h": 667,
+    "headerH": 116.90625,
+    "heroH": 293.1875,
+    "pageH": 29511,
+    "scroll": 360,
+    "searchFont": "12.48px",
+    "searchW": 174.9375,
+    "titleFont": "10.88px",
+    "w": 375,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 148.75
+    },
+    "cardW": 162.25,
+    "client": 375,
+    "firstCardY": 593.453125,
+    "h": 844,
+    "headerH": 116.90625,
+    "heroH": 293.1875,
+    "pageH": 29524,
+    "scroll": 375,
+    "searchFont": "12.48px",
+    "searchW": 189.65625,
+    "titleFont": "10.88px",
+    "w": 390,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 150.25
+    },
+    "cardW": 163.75,
+    "client": 378,
+    "firstCardY": 593.796875,
+    "h": 852,
+    "headerH": 116.90625,
+    "heroH": 293.53125,
+    "pageH": 29527,
+    "scroll": 378,
+    "searchFont": "12.48px",
+    "searchW": 192.609375,
+    "titleFont": "10.88px",
+    "w": 393,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 159.75
+    },
+    "cardW": 173.25,
+    "client": 397,
+    "firstCardY": 608.765625,
+    "h": 915,
+    "headerH": 116.90625,
+    "heroH": 308.5,
+    "pageH": 29510,
+    "scroll": 397,
+    "searchFont": "12.48px",
+    "searchW": 211.328125,
+    "titleFont": "10.88px",
+    "w": 412,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 160.75
+    },
+    "cardW": 174.25,
+    "client": 399,
+    "firstCardY": 610.328125,
+    "h": 896,
+    "headerH": 116.90625,
+    "heroH": 310.0625,
+    "pageH": 29514,
+    "scroll": 399,
+    "searchFont": "12.48px",
+    "searchW": 213.296875,
+    "titleFont": "10.88px",
+    "w": 414,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 168.75
+    },
+    "cardW": 182.25,
+    "client": 415,
+    "firstCardY": 622.9375,
+    "h": 932,
+    "headerH": 116.90625,
+    "heroH": 322.671875,
+    "pageH": 29540,
+    "scroll": 415,
+    "searchFont": "12.48px",
+    "searchW": 229.109375,
+    "titleFont": "10.88px",
+    "w": 430,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 173.75
+    },
+    "cardW": 187.25,
+    "client": 425,
+    "firstCardY": 630.8125,
+    "h": 956,
+    "headerH": 116.90625,
+    "heroH": 330.546875,
+    "pageH": 29545,
+    "scroll": 425,
+    "searchFont": "12.48px",
+    "searchW": 239,
+    "titleFont": "10.88px",
+    "w": 440,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "9.28px",
+      "h": 27,
+      "w": 193.75
+    },
+    "cardW": 207.25,
+    "client": 465,
+    "firstCardY": 662.3125,
+    "h": 960,
+    "headerH": 116.90625,
+    "heroH": 362.046875,
+    "pageH": 29585,
+    "scroll": 465,
+    "searchFont": "12.48px",
+    "searchW": 278.640625,
+    "titleFont": "10.88px",
+    "w": 480,
+    "wholesale": "none"
+  },
+  {
+    "button": {
+      "font": "12.8px",
+      "h": 42,
+      "w": 64
+    },
+    "cardW": 105.6875,
+    "client": 753,
+    "firstCardY": 673.46875,
+    "h": 1024,
+    "headerH": 116.90625,
+    "heroH": 410.78125,
+    "pageH": 22836,
+    "scroll": 753,
+    "searchFont": "12.48px",
+    "searchW": 565.5625,
+    "titleFont": "16.64px",
+    "w": 768,
+    "wholesale": "grid"
+  },
+  {
+    "button": {
+      "font": "12.8px",
+      "h": 42,
+      "w": 64
+    },
+    "cardW": 118.359375,
+    "client": 829,
+    "firstCardY": 673.46875,
+    "h": 390,
+    "headerH": 116.90625,
+    "heroH": 410.78125,
+    "pageH": 22812,
+    "scroll": 829,
+    "searchFont": "12.48px",
+    "searchW": 641.453125,
+    "titleFont": "16.64px",
+    "w": 844,
+    "wholesale": "grid"
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "buttonW": 270.953125,
+    "cardClient": 282,
+    "cardScroll": 282,
+    "cardW": 284.453125,
+    "titleFont": "10.88px",
+    "w": 640
+  },
+  {
+    "buttonW": 56.3125,
+    "cardClient": 83,
+    "cardScroll": 113,
+    "cardW": 84.53125,
+    "titleFont": "15.68px",
+    "w": 641
+  },
+  {
+    "buttonW": 76.140625,
+    "cardClient": 102,
+    "cardScroll": 113,
+    "cardW": 104.359375,
+    "titleFont": "15.68px",
+    "w": 760
+  },
+  {
+    "buttonW": 64,
+    "cardClient": 103,
+    "cardScroll": 119,
+    "cardW": 104.53125,
+    "titleFont": "16.64px",
+    "w": 761
+  },
+  {
+    "buttonW": 64,
+    "cardClient": 129,
+    "cardScroll": 132,
+    "cardW": 131.03125,
+    "titleFont": "16.64px",
+    "w": 920
+  },
+  {
+    "buttonW": 64,
+    "cardClient": 130,
+    "cardScroll": 132,
+    "cardW": 131.59375,
+    "titleFont": "16.64px",
+    "w": 921
+  }
+]
