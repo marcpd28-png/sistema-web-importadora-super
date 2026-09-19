@@ -63,6 +63,12 @@ async function main() {
     const denied = await prisma.conversation.create({ data: { contactId: other.id } });
     const response = await batch(new Request("http://localhost/api/internal/chat/simulator-batch", { method: "POST", headers: { "content-type": "application/json", "x-internal-api-key": process.env.N8N_INTERNAL_API_KEY! }, body: JSON.stringify({ conversationId: denied.id, requestId: "unauthorized", messages: [{ type: "TEXT", content: "must not send" }] }) }));
     assert.equal(response.status, 403);
+    const selected = await prisma.conversation.create({ data: { contactId: contact.id, salesState: { create: { stage: "AWAITING_PURCHASE_CONFIRMATION", selectedProductCode: "C300", quantity: 1 } } } });
+    const purchase = await prisma.chatMessage.create({ data: { conversationId: selected.id, direction: "INBOUND", senderType: "CUSTOMER", messageType: "TEXT", content: "quiero comprar C300 1 unidad", createdAt: new Date(Date.now() - 15_000) } });
+    const single = await POST(new Request("http://localhost/api/internal/chat/requests", { method: "POST", headers: { "content-type": "application/json", "x-internal-api-key": process.env.N8N_INTERNAL_API_KEY! }, body: JSON.stringify({ conversationId: selected.id, triggerMessageId: purchase.id }) }));
+    assert.equal((await single.json()).handled, true, "Existing single-product selection must not divert live pilot purchases to simulator checkout");
+    const selectedAgenda = await prisma.conversationRequestAgenda.findUniqueOrThrow({ where: { conversationId: selected.id } });
+    assert.equal((selectedAgenda.state as unknown as { cart: MultiCart }).cart.lines.length, 1);
     console.log("PASS: authorized pilot creates one pending multi-line order, rejects changed stock/prices, records unverified voucher, retains ERP stock, atomically queues replies, sends once, pauses uncertain transport, rejects non-allowlisted contact.");
   } finally { globalThis.fetch = savedFetch; await prisma.$disconnect(); }
 }
