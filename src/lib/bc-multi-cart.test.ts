@@ -35,6 +35,9 @@ test("new prices require another review and unavailable stock prevents confirmat
 });
 test("cancellation, exact-code removal and handoff never invent an order", () => {
   assert.equal(step(initial(), "asesor"), null);
+  assert.equal(step({ ...initial(), stage: "NAME" }, "no me escribas"), null);
+  assert.equal(step({ ...initial(), stage: "NAME" }, "precio A100"), null);
+  assert.equal(step({ ...initial(), stage: "NAME" }, "no quiero comprar")!.cart.stage, "CANCELLED");
   assert.equal(step(initial(), "cancelar pedido")!.cart.stage, "CANCELLED");
   const one = step(initial(), "quitar B200")!.cart;
   assert.equal(one.lines.length, 1); assert.equal(one.total, 100);

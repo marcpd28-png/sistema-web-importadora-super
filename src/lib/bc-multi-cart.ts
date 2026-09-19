@@ -54,8 +54,8 @@ export function advanceMultiCart(input: { cart: MultiCart; content: string; prod
   const text = normalizeCommercialText(input.content).replace(/[.!]+$/g, "").trim();
   const result = (reply: string) => ({ cart: multiCartSchema.parse(cart), reply });
   // Never intercept opt-out, human handoff or unrelated questions.
-  if (/\b(?:asesor|humano|reclamo|stop|no me escrib|no me respond|no quiero mensajes)\b/.test(text)) return null;
-  if (text === "cancelar pedido" || text === "cancelar carrito") {
+  if (/\b(?:asesor|humano|reclamo|queja|devolucion|stop|unsubscribe|no quiero mensajes)\b|\b(?:no me|deja de|dejen de)\s+(?:escrib\w*|respond\w*|contact\w*)/.test(text)) return null;
+  if (text === "cancelar pedido" || text === "cancelar carrito" || text === "no quiero comprar") {
     if (cart.orderNumber) return result("La referencia de simulación ya fue confirmada. Solicita revisión al asesor para cancelarla.");
     cart.stage = "CANCELLED";
     return result("Carrito cancelado. No se creó ningún pedido.");
@@ -88,7 +88,7 @@ export function advanceMultiCart(input: { cart: MultiCart; content: string; prod
   }
   if (text === "ver carrito" || text === "resumen") return result(multiCartSummary(cart));
   if (cart.stage === "COMPLETE") return result(`La referencia ${cart.orderNumber} ya está registrada en esta simulación. El comprobante sigue pendiente de validación; no se creó un pedido real.`);
-  if (/[?¿]|\b(?:catalogo|garantia|horario|informacion)\b/.test(text)) return null;
+  if (/[?¿]|\b(?:catalogo|garantia|horario|informacion|precios?|stock|envios?|aceptan)\b/.test(text)) return null;
   if (cart.stage === "REVIEW") {
     if (!/^(?:continuar compra|continuar|si|confirmo carrito)$/.test(text)) return null;
     cart.stage = cart.name ? "DOCUMENT" : "NAME";
