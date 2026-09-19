@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts",
     "test:automations": "node --import tsx --test src/lib/automations/*.test.ts",
-    "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts",
+    "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts src/lib/facturador/description-preservation.test.ts src/lib/facturador/editorial-write.test.ts",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

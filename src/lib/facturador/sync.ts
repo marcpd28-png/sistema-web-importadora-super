@@ -1179,7 +1179,6 @@ async function upsertProductsByCode(
           : Prisma.sql`
               "slug" = EXCLUDED."slug",
               "name" = EXCLUDED."name",
-              "description" = EXCLUDED."description",
               "brand" = EXCLUDED."brand",
               "category" = EXCLUDED."category",
               "categoryId" = EXCLUDED."categoryId",
@@ -1357,6 +1356,9 @@ function buildPrismaProductUpdateData(
 
   return {
     ...buildPrismaProductCreateData(product),
+    // Editorial content belongs to the store after creation. Omitting this
+    // update also preserves edits saved while an ERP sync is running.
+    description: undefined,
     sourceImageUrl: product.sourceImageUrl ?? product.imageUrl ?? null,
     localImageUrl: product.localImageUrl ?? null,
     syncStockHash: product.syncStockHash,

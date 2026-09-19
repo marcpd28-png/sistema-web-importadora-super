@@ -200,6 +200,7 @@ model Product {
   qr                     ProductQr?
   qrAnalyticsLogs        QrAnalyticsLog[]
   researchRuns           ProductResearchRun[]
+  erpEditorialWrites     ErpEditorialWrite[]
 
   @@index([name])
   @@index([code])
@@ -247,6 +248,22 @@ model Category {
   products  Product[] @relation("CategoryToProduct")
 
   @@index([name])
+}
+
+model ErpEditorialWrite {
+  id              String   @id @db.VarChar(36)
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  status          String   @default("PREPARING") @db.VarChar(24)
+  actorEmail      String
+  reviewedByEmail String?
+  message         String   @db.Text
+  beforeData      Json?
+  requestData     Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId, createdAt])
 }
 
 model StoreSettings {

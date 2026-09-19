@@ -176,7 +176,7 @@ export async function processSyncQueue() {
           },
           update: {
             name: mapped.product.name,
-            description: mapped.product.description,
+            // Preserve the store's editorial description on ERP updates.
             brand: mapped.product.brand,
             category: mapped.product.category,
             categoryId: mapped.product.categoryId,

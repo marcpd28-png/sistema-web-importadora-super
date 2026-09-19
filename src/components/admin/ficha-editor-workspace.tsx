@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { ErpEditorialStatus } from "./erp-editorial-status";
+import type { EditorialWriteSummary } from "@/lib/facturador/editorial-write";
 import {
   ChevronLeft,
   ChevronDown,
@@ -30,6 +32,8 @@ type ProductWithFichaDetails = {
   id: string;
   name: string;
   code: string;
+  externalId?: string | null;
+  erpEditorialWrites?: EditorialWriteSummary[];
   unitPrice: number | string | { toString(): string };
   wholesalePrice: number | string | { toString(): string } | null;
   wholesaleMinQty: number;
@@ -121,6 +125,16 @@ type FichaEditorWorkspaceProps = {
 export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspaceProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [erpWrites, setErpWrites] = useState(product.erpEditorialWrites ?? []);
+  const [saveMessage, setSaveMessage] = useState("");
+  const uncertainRequestId = useRef<string | null>(null);
+  const erpBlocked = erpWrites.some((write) => ["PREPARING", "SENDING", "UNCERTAIN"].includes(write.status));
+  function updateErpWrites(writes: EditorialWriteSummary[]) {
+    if (writes.some((write) => write.id === uncertainRequestId.current && !["PREPARING", "SENDING", "UNCERTAIN"].includes(write.status))) {
+      uncertainRequestId.current = null;
+    }
+    setErpWrites(writes);
+  }
 
   // Accordion active sections
   const [activeTab, setActiveTab] = useState<"general" | "specs" | "variants" | "videos" | "docs" | null>("general");
@@ -461,7 +475,10 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
   // Save changes action handler
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const sendToErp = (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value") === "erp";
     startTransition(async () => {
+      let savedLocally = false;
+      setSaveMessage("");
       try {
         const formData = new FormData();
         formData.append("productId", product.id);
@@ -481,12 +498,30 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
         if (!res.ok) {
           throw new Error("Save failed");
         }
-
-        router.push(`/admin/fichas/${product.id}?status=updated`);
+        savedLocally = true;
+        const saved = await res.json();
+        if (sendToErp) {
+          // Keep this id after a lost browser response, so a subsequent click
+          // cannot unknowingly repeat the same external write.
+          const requestId = uncertainRequestId.current ?? crypto.randomUUID();
+          uncertainRequestId.current = requestId;
+          const response = await fetch(`/api/admin/fichas/${product.id}/erp`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "send", requestId, expectedProfileUpdatedAt: saved.profile.updatedAt }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.message || "No se pudo enviar la ficha al ERP.");
+          uncertainRequestId.current = null;
+          setErpWrites((previous) => [result.write, ...previous.filter((write) => write.id !== result.write.id)].slice(0, 5));
+          setSaveMessage(`Ficha guardada en la web. ${result.write.message}`);
+        } else {
+          setSaveMessage("Ficha guardada en la web.");
+        }
         router.refresh();
       } catch (error) {
-        console.error(error);
-        alert("Hubo un error al guardar los cambios.");
+        setSaveMessage(savedLocally
+          ? `La ficha quedó guardada en la web. ${error instanceof Error ? error.message : "No se pudo confirmar el envío al ERP."} Consulta el estado antes de volver a enviar.`
+          : "No se pudo guardar la ficha. No se enviaron cambios al ERP.");
       }
     });
   }
@@ -1104,7 +1139,7 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
           </div>
 
           {/* Action Bar */}
-          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "8px" }}>
             <button
               type="submit"
               disabled={isPending}
@@ -1114,7 +1149,14 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
               <Save size={18} />
               {isPending ? "Guardando..." : "Guardar Cambios de Ficha"}
             </button>
+            <button type="submit" name="destination" value="erp" className="button button-neutral"
+              disabled={isPending || erpBlocked || !product.externalId}>
+              {isPending ? "Procesando..." : "Guardar y enviar al ERP"}
+            </button>
           </div>
+          {saveMessage && <p role="status" style={{ fontSize: 14 }}>{saveMessage}</p>}
+          {!product.externalId && <p style={{ fontSize: 13 }}>Vincula este producto con el ERP para poder enviar su ficha.</p>}
+          <ErpEditorialStatus productId={product.id} writes={erpWrites} setWrites={updateErpWrites} />
 
         </form>
 
