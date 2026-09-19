@@ -20,6 +20,7 @@ test("records one acknowledgement without asserting delivery and rejects forged 
   global.prismaGlobal = {
     chatMessage: { findMany: async (args: { where: Record<string, unknown> }) => {
       lookups++; assert.equal(args.where.direction, "OUTBOUND"); assert.equal(args.where.messageType, "IMAGE");
+      assert.deepEqual(args.where.senderType, { in: ["AGENT", "BOT"] });
       return exists ? [{ id: "message-1" }] : [];
     } },
     $executeRaw: async (strings: TemplateStringsArray, ...values: unknown[]) => {

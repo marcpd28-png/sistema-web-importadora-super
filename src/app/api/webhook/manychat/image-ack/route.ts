@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     const messages = await prisma.chatMessage.findMany({
       where: {
-        direction: "OUTBOUND", messageType: "IMAGE", senderType: "AGENT",
+        direction: "OUTBOUND", messageType: "IMAGE", senderType: { in: ["AGENT", "BOT"] },
         metadata: { path: ["requestId"], equals: requestId },
         conversation: { channel: "WHATSAPP", contact: { manychatSubscriberId: subscriberId } },
       },
