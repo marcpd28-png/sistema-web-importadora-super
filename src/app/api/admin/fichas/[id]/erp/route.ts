@@ -25,7 +25,14 @@ export async function POST(request: Request, context: Context) {
   if (session?.role !== "ADMIN" || session.requirePasswordChange) return NextResponse.json({ message: "Acceso no autorizado." }, { status: 403 });
   const origin = request.headers.get("origin");
   let sameOrigin = false;
-  try { sameOrigin = Boolean(origin && new URL(origin).host === new URL(request.url).host); } catch { /* invalid origin */ }
+  try {
+    // Standalone Next uses its internal hostname in request.url. The incoming
+    // Host is preserved by our reverse proxy and cannot be set by browser JS.
+    const incomingHost = request.headers.get("host");
+    const originUrl = origin ? new URL(origin) : null;
+    sameOrigin = Boolean(originUrl && ["https:", "http:"].includes(originUrl.protocol) &&
+      incomingHost && originUrl.host === incomingHost.toLowerCase());
+  } catch { /* invalid origin */ }
   if (!sameOrigin) {
     return NextResponse.json({ message: "Origen de solicitud no permitido." }, { status: 403 });
   }
