@@ -2,7 +2,7 @@
 
 ## Alcance y estado
 
-Se solicita ver en el Centro de Mensajes los envíos nuevos de ManyChat, automáticos y manuales, desde la activación. No se solicita recuperar el historial. No publicado ni activado; no se realizaron envíos de prueba. El receptor preparado NO proporciona por sí solo acceso a los envíos de ManyChat.
+Se solicita ver en el Centro de Mensajes los envíos nuevos de ManyChat, automáticos y manuales, desde la activación. No se solicita recuperar el historial. Código publicado; sincronización no activada y sin captura real verificada. No se realizaron envíos de prueba. El receptor preparado NO proporciona por sí solo acceso a los envíos de ManyChat.
 
 ## Evidencia de la conexión
 

@@ -17,3 +17,11 @@ Carrito persistido en la agenda de la conversación, exclusivamente para contact
 Pruebas unitarias y de regresión, TypeScript, ESLint y build. Integración por el endpoint requests en una base PostgreSQL nueva y desechable: dos productos, cambio de cantidad, quitar/agregar, consulta lateral, checkout, modificación de tarifa antes de confirmar, nueva revisión, confirmación y comprobante. Cero pedidos reales y stock de pruebas sin cambios. Se verifica idempotencia del trigger en cada paso.
 
 No acredita comprensión universal, reconocimiento visual por apariencia ni una venta real completa. Los comandos de edición son explícitos por código; quedan pendientes mayor cobertura de formulaciones abiertas, correcciones de datos durante checkout y el paso de simulación a pedidos reales bajo sus reglas comerciales.
+
+## Despliegue y prueba por n8n
+
+Web `01be077` desplegada con respaldo y `BC_MULTI_CART_ENABLED=true`, únicamente aplicable a simulaciones. Regresión de 133 pruebas aprobada antes de la corrección final de opt-out; las cuatro pruebas del carrito se repitieron después, junto con la compilación de producción.
+
+Recorrido publicado por API administrativa → n8n → agenda: N1321 + O1008, una unidad de cada uno; N1321 cambiado a dos unidades; nombre, boleta/DNI, recojo, confirmación, Yape y comprobante de prueba. Dos líneas conservadas y total de productos S/ 2457 en ese inventario. Referencia SIM-CART sin Order asociado, comprobante no verificado. Contacto temporal eliminado al terminar.
+
+Evidencia privada: `.cache/bc-evaluation/multi-cart-live.json` en el servidor; respaldo y logs en `/home/IMPORTADORA-backups/bc-multi-cart-20260919`. No se modificaron workflows de atención real ni se enviaron mensajes a clientes.

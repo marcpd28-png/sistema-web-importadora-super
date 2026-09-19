@@ -29,3 +29,11 @@ La ampliación del carrito del bot y el reconocimiento general de imágenes/fras
 Código `c01cc9c` publicado en Git y activado en VPS. Respaldo de PostgreSQL y compilación previa en `/home/IMPORTADORA-backups/inbox-reliability-20260919`. Migración aditiva aplicada; worker supervisado iniciado. Web pública, login y robots respondieron 200. Cola y estados siguen deshabilitados; endpoints internos respondieron 503 autenticados y la tabla de recibos permanece vacía.
 
 Se inspeccionó el workflow real `01 - Incoming Messages`: sus nodos no procesan `statuses` ni los reenvían al nuevo receptor. No se cambió este flujo: su conexión y autenticación deben verificarse antes de activar la recepción de estados. Esto es independiente de la captura de contenido de mensajes manuales de ManyChat, aún no demostrada.
+
+## Activación final de la cola
+
+`MANYCHAT_IMAGE_QUEUE_ENABLED=true` habilitado tras comprobar tres envíos existentes no simulados con callback firmado y correlación exacta de requestId/subscriberId. Los registros van del 19/09/2026 07:41 al 09:01 UTC. Acreditan ejecución del flujo y callback, NO recepción o lectura en WhatsApp.
+
+Antes de activar se comprobó que no había imágenes pendientes de procesar. Reinicio y persistencia PM2 correctos, web HTTP 200 y worker supervisado. No se dispararon mensajes reales durante esta tarea. La prueba de dos imágenes consecutivas con recepción en un destinatario autorizado sigue pendiente.
+
+`WHATSAPP_STATUS_SYNC_ENABLED` y `MANYCHAT_OUTGOING_SYNC_ENABLED` continúan deshabilitados. La tabla de recibos y sus adaptadores están instalados, pero falta la fuente autenticada. La captura universal de mensajes manuales de ManyChat no se presenta como disponible.

@@ -25,3 +25,7 @@ El callback firmado `image-ack` registra el procesamiento final del flujo. Las a
 No se enviaron mensajes de prueba. Falta un envío elegido por el usuario desde el Centro de Mensajes para observar ejecución, callback y entrega real. Guardado y la presencia del flujo en getFlows no demuestran por sí solos su ejecución: la captura de ManyChat aún muestra STOPPED y no se ha confirmado su significado para este flujo sin disparadores.
 
 La solicitud externa acredita procesamiento del flujo, no entrega a WhatsApp. La sincronización de todos los envíos manuales originados en ManyChat sigue siendo un trabajo independiente.
+
+## Evidencia posterior — 19 de septiembre de 2026
+
+La auditoría de registros encontró tres despachos aceptados de contactos no simulados, los tres con callback firmado cuyo requestId y subscriberId coinciden con la solicitud. Esto confirma ejecuciones y callbacks reales posteriores a la preparación inicial. No demuestra recepción/lectura en el dispositivo ni envío de la descripción opcional. La cola persistente se habilitó después de las pruebas descritas en `2026-09-19-inbox-reliability.md`.
