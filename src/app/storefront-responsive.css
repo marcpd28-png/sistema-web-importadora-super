@@ -1,6 +1,31 @@
 /* Public storefront: readable cards and usable controls across viewport sizes. */
 /* Desktop artwork fills the card width at its natural ratio, without cropping text. */
 @media (min-width: 1024px) {
+  /* Share row sizes across the carousel, including artwork with different ratios. */
+  .catalog-featured-slider {
+    grid-template-rows: repeat(5, auto);
+    row-gap: 0;
+  }
+
+  .catalog-featured-slide,
+  .catalog-featured-slide .product-card {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 5;
+    row-gap: 0;
+  }
+
+  .catalog-featured-slide .product-media {
+    align-self: start;
+  }
+
+  .catalog-featured-slide .product-body {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: 2 / span 4;
+    row-gap: 0.8rem;
+  }
+
   .catalog-section .product-card .product-media-preview:has(> img) {
     height: auto;
     min-height: 0;
