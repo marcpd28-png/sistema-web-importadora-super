@@ -2,6 +2,8 @@ import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { incomingMessageSchema, processIncomingMessage } from "@/lib/messages-service";
 import { dispatchAutomation } from "@/lib/automations/execution-service";
+import { isBcLiveContact } from "@/lib/bc-live-policy";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +25,11 @@ export async function POST(request: Request) {
 
     // 3. Process the message
     const result = await processIncomingMessage(parsedData);
+    const pilotConversation = await prisma.conversation.findUnique({ where: { id: result.conversationId }, select: { contact: { select: { externalId: true, phoneNormalized: true } } } });
+    // The durable pilot worker owns these contacts. Prevent a second response from legacy n8n/automations.
+    if (pilotConversation && isBcLiveContact(pilotConversation.contact)) {
+      return NextResponse.json({ ...result, bcPilot: true, conversation: { ...("conversation" in result ? result.conversation : {}), botEnabled: false } }, { status: result.duplicate ? 200 : 201 });
+    }
     if (process.env.AUTOMATIONS_WHATSAPP_ENABLED === "true" && !result.duplicate && !result.simulation) after(() => dispatchAutomation(result.messageId));
 
     // 4. Return result for n8n to make automated decisions

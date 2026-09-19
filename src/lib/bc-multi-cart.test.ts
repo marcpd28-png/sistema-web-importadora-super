@@ -60,3 +60,26 @@ test("ambiguous or unpriced requests cannot silently enter the cart", () => {
   agenda.requests[1].status = "NEEDS_CLARIFICATION";
   assert.equal(cartFromAgenda(agenda, products), null);
 });
+
+test("natural cart references preserve other lines and ambiguous or negated requests never mutate", () => {
+  assert.equal(step(initial(), "por favor cambia el primero a 3 unidades")!.cart.total, 470);
+  assert.equal(step(initial(), "quita el dron")!.cart.lines.length, 1);
+  assert.equal(step(initial(), "del parlante quiero 2")!.cart.lines[0].quantity, 2);
+  assert.deepEqual(step(initial(), "cambia ese a 2")!.cart.lines, initial().lines);
+  assert.equal(step(initial(), "no cambies A100 a 2"), null);
+  assert.equal(step(initial(), "ya no quiero el dron")!.cart.lines[0].code, "A100");
+  assert.equal(step({ ...initial(), stage: "NAME" }, "foto", products, "photo"), null);
+});
+
+test("customer corrections require review, preserve other fields, and cannot modify a confirmed order", () => {
+  const ready: MultiCart = { ...initial(), mode: "LIVE", stage: "CONFIRM", name: "Cliente", documentType: "BOLETA", documentNumber: "12345678", delivery: "RECOJO" };
+  const corrected = step(ready, "corrige mi nombre a Carlos Perez");
+  assert.equal(corrected?.cart.name, "carlos perez");
+  const changed = step(ready, "cambiar dni a 87654321")!;
+  assert.equal(changed.cart.stage, "REVIEW"); assert.equal(changed.cart.documentNumber, "87654321"); assert.equal(changed.cart.name, "Cliente");
+  assert.equal(step(changed.cart, "sigamos")!.cart.stage, "DELIVERY");
+  const confirmed = step(ready, "confirmar pedido")!;
+  assert.match(confirmed.cart.orderNumber!, /^BC-/); assert.match(confirmed.reply, /stock no está reservado/);
+  assert.equal(step(confirmed.cart, "cambiar nombre a Otro Cliente")!.cart.name, "Cliente");
+  assert.equal(step(ready, "cambiar dni a 12")!.cart.stage, "CONFIRM");
+});

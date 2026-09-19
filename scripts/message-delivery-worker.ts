@@ -5,11 +5,13 @@ async function main() {
   const { prisma } = await import("../src/lib/prisma");
   const { processQueuedImages } = await import("../src/lib/manychat-image-queue");
   const { reconcileDeliveryEvents } = await import("../src/lib/message-delivery");
+  const { processBcLivePilot } = await import("../src/lib/bc-live-worker");
   let stopped = false;
   process.once("SIGTERM", () => { stopped = true; });
   process.once("SIGINT", () => { stopped = true; });
   while (!stopped) {
     try {
+      await processBcLivePilot(prisma);
       if (process.env.WHATSAPP_STATUS_SYNC_ENABLED === "true") await reconcileDeliveryEvents(prisma);
       if (process.env.MANYCHAT_IMAGE_QUEUE_ENABLED === "true" && process.env.MANYCHAT_IMAGE_FLOW_ENABLED === "true") {
         const apiKey = process.env.MANYCHAT_IMAGE_API_KEY?.trim();

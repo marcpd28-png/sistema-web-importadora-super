@@ -18,6 +18,8 @@ import type { CommercialMessage } from "@/lib/commercial-language";
 import { hasPurchaseIntent, splitPurchaseAdditions } from "@/lib/commercial-purchase-language";
 import { frequentCustomerFields, readCustomerMemory, recallCustomerProduct } from "@/lib/bc-customer-memory";
 import { advanceMultiCart, cartFromAgenda, multiCartSummary } from "@/lib/bc-multi-cart";
+import { isBcLiveContact } from "@/lib/bc-live-policy";
+import { answerBcPhoto } from "@/lib/bc-visual-search";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,11 +33,13 @@ export async function POST(request: Request) {
   try {
     const input = inputSchema.parse(await request.json());
     const conversation = await prisma.conversation.findUnique({ where: { id: input.conversationId }, select: {
-      status: true, botEnabled: true, assignedUserId: true, contactId: true, contact: { select: { externalId: true } },
+      status: true, botEnabled: true, assignedUserId: true, contactId: true, contact: { select: { externalId: true, phoneNormalized: true } },
       requestAgenda: true, salesState: { select: { stage: true } },
     } });
-    if (!conversation?.contact.externalId?.startsWith("SIMULATOR:")) return NextResponse.json({ error: "Simulator conversation required" }, { status: 403 });
+    const live = Boolean(conversation && isBcLiveContact(conversation.contact));
+    if (!conversation || !live && !conversation.contact.externalId?.startsWith("SIMULATOR:")) return NextResponse.json({ error: "Simulator or authorized pilot conversation required" }, { status: 403 });
     if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return NextResponse.json({ ok: true, handled: true, skipped: "HUMAN_OWNS_CONVERSATION" });
+    if ((await prisma.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }))?.botMasterSwitch === false) return NextResponse.json({ ok: true, handled: true, skipped: "BOT_DISABLED" });
     const batch = await readSimulatorInputBatch(prisma, input.conversationId, input.triggerMessageId);
     if (batch.status !== "READY") return NextResponse.json({ ok: true, handled: true, skipped: batch.status });
     const previous = conversation.requestAgenda ? agendaSchema.parse(conversation.requestAgenda.state) : emptyAgenda();
@@ -87,6 +91,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ ...result, handled: true, multiCart: true }, { status: response.status });
       }
     }
+    if (process.env.BC_VISUAL_SEARCH_ENABLED === "true" && batch.fragments.length === 1 && !previous.cart?.orderNumber && (!conversation.salesState || !conversation.salesState.stage.startsWith("AWAITING_") || ["AWAITING_PRODUCT_QUERY", "AWAITING_PURCHASE_CONFIRMATION"].includes(conversation.salesState.stage))) {
+      const photo = await prisma.chatMessage.findFirst({ where: { id: input.triggerMessageId, conversationId: input.conversationId, messageType: "IMAGE" } });
+      if (photo) {
+        const reply = await answerBcPhoto(photo, await loadCommercialCatalog());
+        const response = await persistBatch(new Request(new URL("../simulator-batch", request.url), { method: "POST", headers: { "content-type": "application/json", "x-internal-api-key": key }, body: JSON.stringify({ ...input, requestId: `bc:${input.triggerMessageId}`, messages: splitAnswerText(reply).map(content => ({ type: "TEXT", content })) }) }));
+        return NextResponse.json({ ...await response.json(), handled: true, visualSearch: true }, { status: response.status });
+      }
+    }
     // Single attachments and checkout evidence retain the existing media flow.
     if (batch.media.length && (batch.fragments.length < 2 || batch.media.some(media => media.messageType !== "IMAGE") ||
         conversation.salesState?.stage?.startsWith("AWAITING_") && !["AWAITING_PRODUCT_QUERY", "AWAITING_PURCHASE_CONFIRMATION"].includes(conversation.salesState.stage))) return NextResponse.json({ ok: true, handled: false });
@@ -94,7 +106,7 @@ export async function POST(request: Request) {
     const multiPurchase = hasPurchaseIntent(batch.content) && splitPurchaseAdditions(batch.content).length > 1;
     // Existing purchase and human-handoff flows retain ownership of side-effecting operations.
     if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
-      || !multiPurchase && /\bquiero comprar\b/.test(text)
+      || !live && !multiPurchase && /\bquiero comprar\b/.test(text)
       || /^(?:hola|buenos dias|buenas tardes|buenas noches|gracias|ok|si|no|comprar|lo quiero)$/.test(text)
       || checkoutOwnsReply(conversation.salesState?.stage, batch.content)) {
       return NextResponse.json({ ok: true, handled: false });
@@ -231,8 +243,9 @@ export async function POST(request: Request) {
         }
       }
       if (process.env.BC_MULTI_CART_ENABLED === "true" && !agenda.cart?.orderNumber) {
-        const cart = cartFromAgenda(agenda, catalog.products);
+        const cart = cartFromAgenda(agenda, catalog.products, live ? 1 : 2);
         if (cart && JSON.stringify(cart.lines) !== JSON.stringify(agenda.cart?.lines)) {
+          if (live) cart.mode = "LIVE";
           agenda.cart = cart;
           replies.push(...splitAnswerText(multiCartSummary(cart)).map(content => ({ type: "TEXT" as const, content })));
           cart.lines.forEach(line => { const product = catalog.products.find(p => p.code === line.code); if (product) checked.add(product.id); });

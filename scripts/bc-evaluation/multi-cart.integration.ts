@@ -42,7 +42,7 @@ async function main() {
     assert.equal(cart.stage, "CONFIRM");
     await prisma.product.update({ where: { code: "B200" }, data: { unitPrice: 210 } });
     cart = await send("confirmar pedido"); assert.equal(cart.stage, "REVIEW"); assert.equal(cart.orderNumber, undefined); assert.equal(cart.total, 480);
-    for (const message of ["continuar compra", "boleta", "12345678", "recojo", "confirmar pedido", "Yape"]) cart = await send(message);
+    for (const message of ["continuar compra", "recojo", "confirmar pedido", "Yape"]) cart = await send(message);
     assert.equal(cart.stage, "VOUCHER");
     cart = await send("Comprobante de prueba", true);
     assert.equal(cart.stage, "COMPLETE"); assert.equal(cart.total, 480);

@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +7,8 @@ import { greetChatResponse } from "@/lib/chat-greeting";
 import { lockSimulatorConversation, readSimulatorInputBatch } from "@/lib/simulator-input-batch";
 import { agendaSchema, emptyAgenda } from "@/lib/bc-request-agenda";
 import { customerMemoryEnabled, lockCustomerMemory, persistCustomerLearning } from "@/lib/bc-customer-memory-store";
+import { isBcLiveContact } from "@/lib/bc-live-policy";
+import { persistBcCartOrder } from "@/lib/bc-cart-order";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,12 +38,16 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async tx => {
       await lockSimulatorConversation(tx, input.conversationId);
       const conversation = await tx.conversation.findUnique({ where: { id: input.conversationId }, select: {
-        botEnabled: true, assignedUserId: true, status: true, contactId: true, contact: { select: { externalId: true } },
+        botEnabled: true, assignedUserId: true, status: true, contactId: true, contact: { select: { externalId: true, phoneNormalized: true } },
         messages: { where: { direction: "OUTBOUND", senderType: { in: ["BOT", "AGENT"] }, OR: [{ status: null }, { status: { notIn: ["failed", "pending"] } }] }, select: { id: true }, take: 1 },
       } });
-      if (!conversation?.contact.externalId?.startsWith("SIMULATOR:")) return { denied: true, messages: [] };
+      const live = Boolean(conversation && isBcLiveContact(conversation.contact));
+      if (!conversation || !live && !conversation.contact.externalId?.startsWith("SIMULATOR:")) return { denied: true, messages: [] };
+      if (live && (await tx.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }))?.botMasterSwitch === false) return { skipped: true, messages: [] };
       if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return { skipped: true, messages: [] };
-      const existing = await tx.chatMessage.findUnique({ where: { externalMessageId: `simulated:${batchId}:0` } });
+      const existing = live
+        ? await tx.chatMessage.findFirst({ where: { conversationId: input.conversationId, metadata: { path: ["batchId"], equals: batchId } } })
+        : await tx.chatMessage.findUnique({ where: { externalMessageId: `simulated:${batchId}:0` } });
       if (existing) return { duplicate: true, messages: [] };
       const inputBatch = input.triggerMessageId
         ? await readSimulatorInputBatch(tx, input.conversationId, input.triggerMessageId) : null;
@@ -63,6 +69,9 @@ export async function POST(request: Request) {
         }
       }
       const started = Date.now();
+      if (live && input.agenda?.state.cart) await persistBcCartOrder(tx, {
+        previous: previousAgenda.cart, cart: input.agenda.state.cart, conversationId: input.conversationId, phone: conversation.contact.phoneNormalized!,
+      });
       if (customerMemoryEnabled() && input.customerMemoryRevision !== undefined) {
         await lockCustomerMemory(tx, conversation.contactId);
         const memory = await tx.customerConversationMemory.findUnique({ where: { contactId: conversation.contactId } });
@@ -71,9 +80,9 @@ export async function POST(request: Request) {
       const replies = conversation.messages?.length ? input.messages : greetChatResponse(input.messages, new Date(started));
       const data = replies.map((message,index) => ({
         conversationId: input.conversationId, senderType: "BOT" as const, direction: "OUTBOUND" as const,
-        messageType: message.type, content: message.content, mediaUrl: message.mediaUrl ?? null, status: "sent",
-        externalMessageId: `simulated:${batchId}:${index}`, createdAt: new Date(started + index),
-        metadata: { agentId: "bc-simulator", requestId: input.requestId, batchId, batchSize: replies.length, batchIndex: index,
+        messageType: message.type, content: message.content, mediaUrl: message.mediaUrl ?? null, status: live ? "bc_queued" : "sent",
+        externalMessageId: `${live ? "bc-outbox" : "simulated"}:${batchId}:${index}`, createdAt: new Date(started + index),
+        metadata: { agentId: live ? "bc-live-pilot" : "bc-simulator", requestId: live ? randomUUID() : input.requestId, bcRequestId: input.requestId, batchId, batchSize: replies.length, batchIndex: index,
           ...(input.triggerMessageId ? { triggerMessageId: input.triggerMessageId } : {}),
           ...(inputBatch && "messageIds" in inputBatch ? { sourceMessageIds: inputBatch.messageIds } : {}) },
       }));
