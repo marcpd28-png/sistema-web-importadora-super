@@ -23,3 +23,9 @@ No se ha probado ni habilitado la captura general de los mensajes manuales del I
 Pruebas locales, TypeScript y ESLint. Compilación aislada en VPS y pruebas en una base PostgreSQL nueva y temporal, eliminada al terminar: concurrencia, orden, idempotencia, cancelación, confirmación temprana, timeout, reserva interrumpida, confirmación tardía, aislamiento de contactos, recibos previos al mensaje y estados fuera de orden. Transporte simulado; no se enviaron mensajes a clientes.
 
 La ampliación del carrito del bot y el reconocimiento general de imágenes/frases son una fase separada y no quedan acreditados por esta entrega.
+
+## Despliegue y comprobación
+
+Código `c01cc9c` publicado en Git y activado en VPS. Respaldo de PostgreSQL y compilación previa en `/home/IMPORTADORA-backups/inbox-reliability-20260919`. Migración aditiva aplicada; worker supervisado iniciado. Web pública, login y robots respondieron 200. Cola y estados siguen deshabilitados; endpoints internos respondieron 503 autenticados y la tabla de recibos permanece vacía.
+
+Se inspeccionó el workflow real `01 - Incoming Messages`: sus nodos no procesan `statuses` ni los reenvían al nuevo receptor. No se cambió este flujo: su conexión y autenticación deben verificarse antes de activar la recepción de estados. Esto es independiente de la captura de contenido de mensajes manuales de ManyChat, aún no demostrada.

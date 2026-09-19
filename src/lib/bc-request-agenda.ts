@@ -2,6 +2,7 @@ import { z } from "zod";
 import { describeCommercialConstraints, normalizeCommercialText, parseCommercialQuery } from "./commercial-query";
 import { commercialClauses, groupCommercialFragments, type CommercialLexicon, type CommercialMessage } from "./commercial-language";
 import { hasPurchaseIntent, purchaseSubject, splitPurchaseAdditions } from "./commercial-purchase-language";
+import { multiCartSchema } from "./bc-multi-cart";
 
 export const agendaRequestSchema = z.object({
   id: z.string(), kind: z.enum(["CATALOG", "SEARCH", "INFORMATION", "PRICE", "STOCK", "SHIPPING", "PAYMENT", "STORE"]),
@@ -12,6 +13,7 @@ export const agendaRequestSchema = z.object({
 });
 export const agendaSchema = z.object({
   version: z.literal(1), lastTopicId: z.string().nullable(),
+  cart: multiCartSchema.optional(),
   topics: z.array(z.object({ id: z.string(), query: z.string(), selectedCode: z.string().nullable(), shownCodes: z.array(z.string()),
     imageReference: z.string().optional(),
     shownGroups: z.array(z.object({ query: z.string(), codes: z.array(z.string()) })).optional() })).max(100),
@@ -47,7 +49,7 @@ export function requestedSpecificationFields(question: string) {
 const NUMBERS: Record<string, number> = { dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, doce: 12 };
 export function requestedQuantity(content: string) {
   const text = normalizeCommercialText(content.replace(/https?:\/\/[^\s<>"']+/gi, " "));
-  const match = text.match(/\b(?:por|para|quiero|necesito|salen|cuestan|cotiza|cotizar|mejor)\s+(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/) || text.match(/\b(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s+(?:unidades|unds|piezas)\b/);
+  const match = text.match(/\b(?:por|para|quiero|necesito|salen|cuestan|cotiza|cotizar|mejor)\s+(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\b/) || text.match(/\b(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|doce)\s+(?:unidad(?:es)?|unds?|piezas?)\b/);
   if (match && /^(?:w|watts?|v|voltios?|gb|tb|mb|mah|cm|mm|kg|rpm|pulgadas?|soles?)\b/.test(text.slice(match.index! + match[0].length).trim())) return null;
   const value = match ? NUMBERS[match[1]] ?? Number(match[1]) : null;
   return value && value <= 100000 ? value : null;
@@ -223,4 +225,3 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
   agenda.topics = agenda.topics.filter(topic => retainedTopics.has(topic.id) || topic.id === agenda.lastTopicId);
   return { agenda, touched: [...touched], recognized, unsupported };
 }
-
