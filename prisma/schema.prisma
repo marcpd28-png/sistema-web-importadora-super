@@ -867,6 +867,23 @@ model ChatMessage {
   @@index([createdAt(sort: Asc)])
 }
 
+// Provider receipts may arrive before the outbound message is committed.
+model MessageDeliveryEvent {
+  id                String   @id @db.VarChar(64)
+  externalMessageId String   @db.VarChar(120)
+  phoneNumberId     String   @db.VarChar(120)
+  recipientId       String   @db.VarChar(40)
+  status            String   @db.VarChar(32)
+  occurredAt        DateTime
+  receivedAt        DateTime @default(now())
+  reconciledAt      DateTime?
+  nextAttemptAt     DateTime @default(now())
+  errorCode         String?  @db.VarChar(40)
+
+  @@index([reconciledAt, nextAttemptAt])
+  @@index([externalMessageId])
+}
+
 model PromoCode {
   id              String    @id @default(cuid())
   code            String    @unique @db.VarChar(20)

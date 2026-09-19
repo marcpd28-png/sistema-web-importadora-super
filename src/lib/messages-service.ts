@@ -8,6 +8,7 @@ import { templateSelectionSchema } from "@/lib/message-templates";
 import { prepareTemplateSnapshot } from "@/lib/message-templates-service";
 import { lockSimulatorConversation } from "@/lib/simulator-input-batch";
 import { sendManychatImageFromInbox } from "@/lib/manychat-image-dispatch";
+import { enqueueManychatImage } from "@/lib/manychat-image-queue";
 import {
   N8nOutboundError,
   sendN8nOutboundMessage,
@@ -503,9 +504,12 @@ export async function sendInternalMessage(
     const signingSecret = process.env.N8N_INTERNAL_API_KEY?.trim();
     if (!apiKey || !signingSecret) throw new N8nOutboundError("Falta configurar el envío de imágenes por ManyChat.", { code: "MANYCHAT_IMAGE_NOT_CONFIGURED", statusCode: 503 });
     try {
-      const sent = await sendManychatImageFromInbox(prisma, {
+      const imageInput = {
         conversationId, subscriberId, requestId: parsed.requestId, mediaUrl: parsed.mediaUrl!, content: parsed.content, agentId,
-      }, { apiKey, signingSecret });
+      };
+      const sent = process.env.MANYCHAT_IMAGE_QUEUE_ENABLED === "true"
+        ? await enqueueManychatImage(prisma, imageInput)
+        : await sendManychatImageFromInbox(prisma, imageInput, { apiKey, signingSecret });
       triggerPusherEvent(`chat-${conversationId}`, "new-message", sent);
       return sent;
     } catch (error) {

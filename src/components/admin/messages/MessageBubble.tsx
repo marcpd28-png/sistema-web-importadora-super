@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ChatMessage } from "@/types/messages";
 import { getMessageMedia, getMessageMediaSrc } from "@/lib/message-media";
 import { MessageImageViewer } from "./MessageImageViewer";
+import { messageStatusLabel } from "@/lib/message-status-label";
 
 interface Props {
   message: ChatMessage;
@@ -40,23 +41,29 @@ function MessageMedia({ type, src, content }: { type: string; src: string | null
 }
 
 export function MessageBubble({ message, onRetry }: Props) {
+  const [cancelState, setCancelState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  async function cancelQueued() {
+    setCancelState("busy");
+    try {
+      const response = await fetch(`/api/admin/messages/${encodeURIComponent(message.id)}/cancel`, { method: "POST" });
+      setCancelState(response.ok ? "done" : "error");
+    } catch { setCancelState("error"); }
+  }
   const isExternalSync = Boolean(message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
     && (message.metadata as Record<string, unknown>).externalSync === true);
   const retryBlocked = Boolean(message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
     && (message.metadata as Record<string, unknown>).retryBlocked === true);
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
-  const isAgent = message.senderType === "AGENT";
-  const isSending = message.status === "sending" || message.status === "pending";
-  const isFailed = message.status === "failed";
-  const isAcceptedForDelivery = isAgent && message.status === "sent";
+  const statusLabel = message.direction === "OUTBOUND" ? messageStatusLabel(message.status, message.metadata) : null;
+  const isFailed = message.status === "failed" && !statusLabel;
   const failureReason = isFailed && message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
     ? String((message.metadata as Record<string, unknown>).error || "No se pudo enviar el mensaje.")
     : null;
   
   let bubbleClass = "message-customer";
   if (isBot) bubbleClass = "message-bot";
-  if (isAgent) bubbleClass = "message-agent";
+  if (message.senderType === "AGENT") bubbleClass = "message-agent";
 
   const senderName = isExternalSync ? (isBot ? "ManyChat · Automatización" : "ManyChat · Asesor")
     : isCustomer ? "Cliente" : isBot ? "Bot" : "Asesor";
@@ -97,8 +104,11 @@ export function MessageBubble({ message, onRetry }: Props) {
       <span style={{ fontSize: '10px', color: '#667781', textAlign: 'right', marginTop: '4px' }}>
         {timeStr}
       </span>
-      {isAcceptedForDelivery && <span style={{ fontSize: '10px', color: '#667781' }}>Aceptado; entrega no confirmada.</span>}
-      {isSending && <span style={{ fontSize: '10px', color: '#92400e' }}>Enviando...</span>}
+      {statusLabel && <span role="status" style={{ fontSize: '10px', color: '#667781' }}>{statusLabel}</span>}
+      {message.status === "queued" && <button type="button" disabled={cancelState === "busy" || cancelState === "done"} onClick={cancelQueued} style={{ alignSelf: "flex-end", fontSize: "11px", textDecoration: "underline" }}>
+        {cancelState === "done" ? "Cancelado" : cancelState === "busy" ? "Cancelando..." : "Cancelar envío en cola"}
+      </button>}
+      {cancelState === "error" && <span role="alert" style={{ fontSize: "11px" }}>No se pudo cancelar; el envío puede haber comenzado. Revisa su estado.</span>}
       {isFailed && <span style={{ fontSize: '10px', color: '#b91c1c' }}>{failureReason}</span>}
       {isFailed && onRetry && !isExternalSync && !retryBlocked && (
         <button type="button" onClick={() => onRetry(message)} style={{ alignSelf: "flex-end", color: "#b91c1c", fontSize: "11px", fontWeight: 700 }}>

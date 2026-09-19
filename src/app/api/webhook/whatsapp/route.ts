@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { after, NextRequest, NextResponse } from "next/server";
 import { processIncomingMessage } from "@/lib/messages-service";
 import { dispatchAutomation } from "@/lib/automations/execution-service";
+import { prisma } from "@/lib/prisma";
+import { extractDeliveryEvents, persistDeliveryEvents } from "@/lib/message-delivery";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -152,7 +154,7 @@ function verifyMetaSignature(request: NextRequest, rawBody: string) {
   const appSecret = process.env.WHATSAPP_APP_SECRET?.trim() || process.env.META_APP_SECRET?.trim();
 
   if (!appSecret) {
-    return true;
+    return false;
   }
 
   const signature = request.headers.get("x-hub-signature-256")?.replace(/^sha256=/, "");
@@ -197,6 +199,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
   }
 
+  if (process.env.WHATSAPP_STATUS_SYNC_ENABLED === "true") {
+    const allowed = new Set((process.env.WHATSAPP_STATUS_PHONE_NUMBER_IDS ?? "").split(",").map(s => s.trim()).filter(Boolean));
+    await persistDeliveryEvents(prisma, extractDeliveryEvents(payload, allowed));
+  }
   const messages = extractMessages(payload);
   const results = [];
 

@@ -327,7 +327,10 @@ export function MessagesWorkspace() {
     }
 
     const filtersSnapshot = messageFilters;
+    const controller = new AbortController();
+    let polling = false;
     const interval = window.setInterval(async () => {
+      if (polling) return;
       const latestMessage = activeMessagesRef.current.at(-1);
 
       if (!latestMessage) {
@@ -335,10 +338,21 @@ export function MessagesWorkspace() {
       }
 
       try {
+        polling = true;
         const data = await fetchMessagesPage(activeId, filtersSnapshot, {
           afterId: latestMessage.id,
           after: new Date(latestMessage.createdAt).toISOString(),
+        }, controller.signal);
+        const ids = activeMessagesRef.current.filter(m => m.direction === "OUTBOUND").slice(-200).map(m => m.id);
+        const statusResponse = await fetch("/api/admin/messages/statuses", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId: activeId, ids }), signal: controller.signal,
         });
+        if (!statusResponse.ok) throw new Error("No se pudieron actualizar los estados.");
+        const statusData = await statusResponse.json() as { items: Array<Pick<ChatMessage, "id" | "status" | "metadata" | "externalMessageId">> };
+        if (controller.signal.aborted) return;
+        const updates = new Map(statusData.items.map(m => [m.id, m]));
+        setActiveMessages(current => current.map(m => updates.has(m.id) ? { ...m, ...updates.get(m.id)! } : m));
 
         const knownIds = new Set(activeMessagesRef.current.map((message) => message.id));
         const newItems = data.items.filter((message) => !knownIds.has(message.id));
@@ -355,11 +369,13 @@ export function MessagesWorkspace() {
           window.requestAnimationFrame(() => scrollToBottom("smooth"));
         }
       } catch (error) {
-        console.error("Failed to poll messages", error);
+        if (!controller.signal.aborted) console.error("Failed to poll messages", error);
+      } finally {
+        polling = false;
       }
     }, MESSAGE_POLL_MS);
 
-    return () => window.clearInterval(interval);
+    return () => { controller.abort(); window.clearInterval(interval); };
   }, [activeId, messageFilters, scrollToBottom]);
 
   const handleFiltersChange = useCallback((nextFilters: Partial<ConversationFilters>) => {

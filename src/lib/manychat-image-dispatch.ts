@@ -3,14 +3,14 @@ import { createManychatImageAckToken } from "@/lib/manychat-image-ack";
 import { N8nOutboundError } from "@/lib/n8n-outbound";
 
 export const MANYCHAT_IMAGE_FLOW = "content20260919025706_215753";
-type ImageInput = { conversationId: string; subscriberId: string; requestId: string; mediaUrl: string; content: string; agentId: string };
-type ImageConfig = { apiKey: string; signingSecret: string; fetchImpl?: typeof fetch };
+export type ImageInput = { conversationId: string; subscriberId: string; requestId: string; mediaUrl: string; content: string; agentId: string };
+export type ImageConfig = { apiKey: string; signingSecret: string; fetchImpl?: typeof fetch };
 
-class ProviderError extends Error {
+export class ProviderError extends Error {
   constructor(readonly uncertain: boolean, message: string) { super(message); }
 }
 
-function validateImageInput(input: ImageInput) {
+export function validateImageInput(input: ImageInput) {
   const subscriberId = Number(input.subscriberId);
   if (!/^\d+$/.test(input.subscriberId) || !Number.isSafeInteger(subscriberId) || subscriberId <= 0) throw new Error("Invalid ManyChat subscriber");
   const media = new URL(input.mediaUrl);
