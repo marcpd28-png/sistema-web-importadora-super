@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     if (/\b(?:asesor|humano|reclamo|queja|devolucion|comprobante|estado de mi pedido|confirmo|confirmar pedido|comprar ahora|realizar pedido|no me escribas|no me respondas|deja de responder|deja de escribir|no quiero mensajes|no quiero comprar|no me escriban|no me contacten|dejen de escribirme|no me interesa|cancelar conversacion|detener bot|stop|unsubscribe)\b/.test(text)
       || !live && !multiPurchase && /\bquiero comprar\b/.test(text)
       || /^(?:hola|buenos dias|buenas tardes|buenas noches|gracias|ok|si|no|comprar|lo quiero)$/.test(text)
-      || checkoutOwnsReply(conversation.salesState?.stage, batch.content)) {
+      || !live && checkoutOwnsReply(conversation.salesState?.stage, batch.content)) {
       return NextResponse.json({ ok: true, handled: false });
     }
     const inbound: CommercialMessage[] = await prisma.chatMessage.findMany({ where: { conversationId: input.conversationId, id: { in: batch.messageIds } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, content: true } });
