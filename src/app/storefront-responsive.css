@@ -1,4 +1,26 @@
 /* Public storefront: readable cards and usable controls across viewport sizes. */
+/* Desktop artwork fills the card width at its natural ratio, without cropping text. */
+@media (min-width: 1024px) {
+  .catalog-section .product-card .product-media-preview:has(> img) {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    padding: 0;
+    display: block;
+  }
+
+  .catalog-section .product-card .product-media-preview > img {
+    position: static;
+    inset: auto;
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    object-fit: contain;
+  }
+}
+
 .product-card-mobile-summary {
   display: none;
 }
