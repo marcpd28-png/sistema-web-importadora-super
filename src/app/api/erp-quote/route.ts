@@ -1,6 +1,7 @@
+import { confirmQuotationResponse } from "@/lib/facturador/quotation-confirmation";
 import { after, NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
-import { FacturadorClient } from "@/lib/facturador/client";
+import { Prisma } from "@prisma/client";
+import { FacturadorClient, getFacturadorConfig } from "@/lib/facturador/client";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { downloadAndSaveQuotePdf } from "@/lib/pdf-sync";
@@ -26,10 +27,13 @@ type QuoteCustomerPayload = {
   address?: string | null;
 };
 
+export const maxDuration = 120;
+
 const DELIVERY_TYPES = new Set(["DELIVERY", "PICKUP", "PROVINCE"]);
 
 export async function POST(request: Request) {
   let localQuoteId: string | null = null;
+  let requestId: string | undefined;
   try {
     const session = await getSession();
     const shopper = session
@@ -39,12 +43,23 @@ export async function POST(request: Request) {
         })
       : null;
     const payload = (await request.json()) as {
+      requestId?: string;
+      address?: string;
       items?: unknown;
       note?: string;
       deliveryType?: string;
       customer?: QuoteCustomerPayload;
     };
 
+    if (payload.requestId && !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.requestId)) {
+      return NextResponse.json({ message: "Referencia de solicitud inválida." }, { status: 400 });
+    }
+    requestId = payload.requestId;
+    if (payload.requestId) {
+      const existing = await prisma.quote.findUnique({ where: { id: payload.requestId } });
+      if (existing) return existingQuoteResponse(existing);
+    }
+    const customerAddress = payload.customer?.address?.trim() || payload.address?.trim() || null;
     let requestedItems: QuoteRequestItem[];
 
     try {
@@ -66,7 +81,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Selecciona cómo recibirás tu pedido." }, { status: 400 });
     }
 
-    if (deliveryType !== "PICKUP" && !payload.customer?.address?.trim()) {
+    if (deliveryType !== "PICKUP" && !customerAddress) {
       return NextResponse.json({ message: "Ingresa la dirección o ciudad de entrega." }, { status: 400 });
     }
 
@@ -75,7 +90,6 @@ export async function POST(request: Request) {
     const customerEmail = payload.customer?.email?.trim() || session?.email?.trim() || null;
     const documentType = payload.customer?.documentType?.trim() || null;
     const documentNumber = payload.customer?.documentNumber?.trim() || null;
-    const customerAddress = payload.customer?.address?.trim() || null;
 
     if (customerName.length < 3) {
       return NextResponse.json(
@@ -124,7 +138,7 @@ export async function POST(request: Request) {
 
     // Real-time stock check against the ERP to prevent overselling
     try {
-      const client = new FacturadorClient();
+      const client = new FacturadorClient({ ...getFacturadorConfig(), maxRetries: 0, timeoutMs: 10000 });
       await Promise.all(
         catalogProducts.map(async (product) => {
           const erpProduct = await client.getProductRealTime(product.code, product.externalId);
@@ -163,6 +177,7 @@ export async function POST(request: Request) {
     const total = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
     const localQuote = await prisma.quote.create({
       data: {
+        id: payload.requestId,
         currencySymbol: settings.currencySymbol,
         customerAddress,
         deliveryType,
@@ -191,137 +206,87 @@ export async function POST(request: Request) {
     });
     localQuoteId = localQuote.id;
     const quoteWhatsappNumber = cleanWhatsappNumber(PUBLIC_WHATSAPP_NUMBER);
-    const queuedWhatsappHref = buildAdvisorWhatsappHref({
+    const client = new FacturadorClient({ ...getFacturadorConfig(), maxRetries: 0, timeoutMs: 10000 });
+    const result = await client.createQuotation({
+      customer: {
+        address: customerAddress,
+        documentNumber,
+        documentType,
+        email: customerEmail,
+        name: customerName,
+        phone: customerPhone,
+      },
+      items,
+      note,
+    });
+
+    const { quoteNumber, externalId: quoteExternalId } = confirmQuotationResponse(result.response);
+    const whatsappHref = buildAdvisorWhatsappHref({
       businessName: settings.businessName,
       currencySymbol: settings.currencySymbol,
       customerName,
-      quoteNumber: null,
+      quoteNumber,
       advisorPhone: quoteWhatsappNumber,
       total,
       items,
     });
-
-    const queuedStatusSteps = [
+    const warnings = result.warnings.filter(Boolean);
+    const messageBase = quoteNumber
+      ? `Cotización ${quoteNumber} registrada en el ERP.`
+      : "Cotización registrada en el ERP.";
+    const customerModeLabel =
+      result.customerMode === "created"
+        ? "Cliente creado en ERP."
+        : result.customerMode === "existing"
+          ? "Cliente vinculado al registro existente."
+          : "Se usó el cliente genérico del ERP.";
+    const statusSteps = [
       {
         status: "success" as const,
-        text: "Cotización recibida. Se registrará en el ERP en segundo plano.",
+        text: messageBase,
       },
       {
-        status: "success" as const,
-        text: "Te contactaremos vía WhatsApp.",
+        status: result.customerMode === "default" ? ("warning" as const) : ("success" as const),
+        text: customerModeLabel,
       },
+      ...warnings.map(
+        (warning) =>
+          ({
+            status: "warning" as const,
+            text: warning,
+          }),
+      ),
     ];
 
-    after(async () => {
-      try {
-        const client = new FacturadorClient();
-        const result = await client.createQuotation({
-          customer: {
-            address: customerAddress,
-            documentNumber,
-            documentType,
-            email: customerEmail,
-            name: customerName,
-            phone: customerPhone,
-          },
-          items,
-          note,
-        });
+    await prisma.quote.update({
+      where: { id: localQuote.id },
+      data: {
+        erpCustomerId: result.customerId,
+        erpCustomerMode: result.customerMode,
+        erpExternalId: quoteExternalId,
+        quoteNumber,
+        status: "ERP_REGISTERED",
+        statusSteps: toJson(statusSteps),
+        whatsappHref,
 
-        const quoteNumber = getQuoteNumber(result.response);
-        const quoteExternalId = getQuoteExternalId(result.response);
-        const whatsappHref = buildAdvisorWhatsappHref({
-          businessName: settings.businessName,
-          currencySymbol: settings.currencySymbol,
-          customerName,
-          quoteNumber,
-          advisorPhone: quoteWhatsappNumber,
-          total,
-          items,
-        });
-        const warnings = result.warnings.filter(Boolean);
-        const messageBase = quoteNumber
-          ? `Cotización ${quoteNumber} registrada en el ERP.`
-          : "Cotización registrada en el ERP.";
-        const customerModeLabel =
-          result.customerMode === "created"
-            ? "Cliente creado en ERP."
-            : result.customerMode === "existing"
-              ? "Cliente vinculado al registro existente."
-              : "Se usó el cliente genérico del ERP.";
-        const statusSteps = [
-          {
-            status: "success" as const,
-            text: messageBase,
-          },
-          {
-            status: result.customerMode === "default" ? ("warning" as const) : ("success" as const),
-            text: customerModeLabel,
-          },
-          ...warnings.map(
-            (warning) =>
-              ({
-                status: "warning" as const,
-                text: warning,
-              }),
-          ),
-        ];
-
-        let pdfUrl: string | null = null;
-        if (quoteExternalId && quoteNumber) {
-          pdfUrl = await downloadAndSaveQuotePdf(quoteExternalId, quoteNumber);
-        }
-
-        await prisma.quote.update({
-          where: { id: localQuote.id },
-          data: {
-            erpCustomerId: result.customerId,
-            erpCustomerMode: result.customerMode,
-            erpExternalId: quoteExternalId,
-            quoteNumber,
-            status: "ERP_REGISTERED",
-            statusSteps: toJson(statusSteps),
-            whatsappHref,
-            pdfUrl,
-          },
-        });
-      } catch (error) {
-        if (localQuoteId) {
-          await prisma.quote
-            .update({
-              where: { id: localQuoteId },
-              data: {
-                errorMessage:
-                  error instanceof Error
-                    ? error.message
-                    : "No se pudo registrar la cotización en el ERP.",
-                status: "ERROR",
-                statusSteps: toJson([
-                  {
-                    status: "error",
-                    text:
-                      error instanceof Error
-                        ? error.message
-                        : "No se pudo registrar la cotización en el ERP.",
-                  },
-                ]),
-              },
-            })
-            .catch(() => null);
-        }
-      }
+      },
     });
-
+    // PDF retrieval must never change an already-confirmed ERP registration.
+    if (quoteExternalId && quoteNumber) after(async () => {
+      try {
+        const pdfUrl = await downloadAndSaveQuotePdf(quoteExternalId, quoteNumber);
+        if (pdfUrl) await prisma.quote.update({ where: { id: localQuote.id }, data: { pdfUrl } });
+      } catch { console.warn("[erp-quote] PDF retrieval failed after confirmed registration"); }
+    });
     return NextResponse.json({
-      localQuoteId: localQuote.id,
-      message: "Cotización recibida. La estamos registrando en el ERP.",
-      quoteNumber: null,
-      response: null,
-      statusSteps: queuedStatusSteps,
-      whatsappHref: queuedWhatsappHref,
-      warnings: [],
+      localQuoteId: localQuote.id, message: messageBase, quoteNumber,
+      statusSteps, whatsappHref, warnings,
     });
   } catch (error) {
+    if (requestId && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existing = await prisma.quote.findUnique({ where: { id: requestId } });
+      if (existing) return existingQuoteResponse(existing);
+    }
     if (localQuoteId) {
       await prisma.quote
         .update({
@@ -347,46 +312,6 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-}
-
-function getQuoteNumber(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const record = payload as Record<string, unknown>;
-
-  for (const candidate of [record.number_full, record.number, record.identifier]) {
-    if (typeof candidate === "string" && candidate.trim()) {
-      return candidate.trim();
-    }
-  }
-
-  if (record.data && typeof record.data === "object") {
-    return getQuoteNumber(record.data);
-  }
-
-  return null;
-}
-
-function getQuoteExternalId(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const record = payload as Record<string, unknown>;
-
-  for (const candidate of [record.external_id, record.externalId]) {
-    if (typeof candidate === "string" && candidate.trim()) {
-      return candidate.trim();
-    }
-  }
-
-  if (record.data && typeof record.data === "object") {
-    return getQuoteExternalId(record.data);
-  }
-
-  return null;
 }
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -445,3 +370,12 @@ type PreparedCustomerWhatsappItem = QuoteRequestItem & {
   unitPrice: number;
 };
 import { buildSellableProductWhere } from "@/lib/store-shared";
+
+function existingQuoteResponse(quote: { id: string; status: string; quoteNumber: string | null; erpExternalId: string | null; whatsappHref: string | null; statusSteps: unknown }) {
+  if (quote.status === "ERP_REGISTERED" && quote.quoteNumber && quote.erpExternalId) {
+    return NextResponse.json({ localQuoteId: quote.id, quoteNumber: quote.quoteNumber,
+      message: `Cotización ${quote.quoteNumber} registrada en el ERP.`, whatsappHref: quote.whatsappHref, statusSteps: quote.statusSteps });
+  }
+  return NextResponse.json({ localQuoteId: quote.id,
+    message: "Esta solicitud ya fue recibida. Su registro no está confirmado; consulta con un asesor antes de repetirla." }, { status: 409 });
+}

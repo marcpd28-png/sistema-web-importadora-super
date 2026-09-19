@@ -694,6 +694,7 @@ export function CartDrawer({
   const [quoteWhatsappHref, setQuoteWhatsappHref] = useState<string | null>(null);
   const [culqiOpen, setCulqiOpen] = useState(false);
   const quoteSubmitPendingRef = useRef(false);
+  const quoteRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(() => buildInitialQuoteDraft(settings, quoteDefaults));
 
   // Promociones
@@ -833,17 +834,21 @@ export function CartDrawer({
     setQuoteWhatsappHref(null);
 
     try {
+      const fingerprint = JSON.stringify({ draft: quoteDraft, items: orderLines.map(({ item }) => ({ code: item.code, quantity: item.quantity })) });
+      if (quoteRequestRef.current?.fingerprint !== fingerprint) quoteRequestRef.current = { fingerprint, id: crypto.randomUUID() };
       const response = await fetch("/api/erp-quote", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          requestId: quoteRequestRef.current.id,
           customer: {
             documentNumber: quoteDraft.documentNumber,
             documentType: quoteDraft.documentType,
             name: quoteDraft.name,
             phone: quoteDraft.phone,
+            address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(", ") || undefined,
           },
           items: orderLines.map(({ item }) => ({
             code: item.code,
