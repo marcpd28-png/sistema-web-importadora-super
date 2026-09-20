@@ -44,6 +44,7 @@ export function normalizeCatalogText(value: string) {
 }
 
 const OVERRIDES: Record<string, string> = {
+  N33: "soportes-celular", O07: "cargadores", P1073: "radios", P920: "parlantes",
   N917: "afeitadoras", L500: "cabello", N299: "autos-motos", N439: "hogar",
   N2325: "accesorios-pc", HPM32: "memorias", N2255: "iluminacion", N2098: "herramientas",
   N2176: "herramientas", N495: "redes", N927: "radios", N419: "autos-motos",

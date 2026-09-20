@@ -1,6 +1,6 @@
 # Organización de la tienda y campañas
 
-Cambios implementados en el proyecto local a partir de la auditoría del 19 de septiembre. No se publicaron ni se modificó el inventario de producción.
+Cambios implementados a partir de la auditoría del 19 de septiembre y publicados en Git y VPS el 20 de septiembre por solicitud del usuario. La clasificación comercial no modifica el inventario del ERP.
 
 ## Navegación y productos
 
@@ -35,11 +35,11 @@ El ranking utiliza unidades vendidas. Primero intenta el reporte configurado con
 
 No se usa stock, precio ni orden de respuesta como sustituto de ventas. Se suman líneas por código, se excluyen anulaciones reconocidas y se respetan las fechas del reporte. Sin datos válidos, el ranking muestra su indisponibilidad; el inicio puede mostrar productos destacados identificados como tales.
 
-**Pendiente de validación real:** este entorno no contiene el token del ERP. Antes de publicar, comprobar el reporte y sus campos con las credenciales del servidor y contrastar los primeros códigos con las unidades del ERP. No se ha confirmado aquí la disponibilidad ni el formato de ese reporte en la instalación real.
+**Verificación real en el VPS:** las credenciales funcionan, pero `/reports/general-sale` devuelve totales y gráficos generales, sin líneas de productos. `/items/records-sale` devuelve productos con stock y cantidad de formulario, sin contadores explícitos de unidades vendidas. Por eso Más vendidos informa que el ranking no está disponible. Hace falta configurar un reporte que entregue unidades vendidas por código; no se interpreta stock como ventas.
 
 ## Validación local
 
-- 31 pruebas de clasificación, variantes y procesamiento de ventas.
+- 35 pruebas de clasificación, variantes y procesamiento de ventas, incluidos cuatro casos adicionales detectados con el catálogo real (N33, O07, P1073 y P920).
 - 3 pruebas existentes de reconciliación del carrito: precio, stock, fotografías y retirada de productos no disponibles.
 - ESLint de todos los archivos TypeScript modificados y nuevos.
 - `npm run build` completado: compilación, TypeScript y generación de páginas. Persiste una advertencia previa de trazado de archivos en `catalog-pdf.ts` / `next.config.ts`.
@@ -48,6 +48,8 @@ No se usa stock, precio ni orden de respuesta como sustituto de ventas. Se suman
 - Revisión visual móvil a 390 × 844. Las imágenes de prueba son marcadores locales; no sustituyen fotografías del catálogo real.
 
 ## Publicación
+
+La versión inicial `5b3e2e2` se compiló en una carpeta separada del VPS y se activó después de pasar las 34 pruebas y la verificación HTTP de inicio, colecciones, categorías antiguas y protección administrativa. Migración aplicada; ambas campañas desactivadas. Respaldo de base, entorno y compilación anterior en `/home/IMPORTADORA-backups/storefront-5b3e2e2`. La revisión del navegador público detectó cuatro casos adicionales, corregidos por código y cubiertos con pruebas en la siguiente revisión.
 
 Aplicar `prisma/migrations/20260920000000_storefront_campaigns/migration.sql` mediante el flujo habitual `prisma migrate deploy` sobre la base existente, generar Prisma y compilar con el entorno de producción. El comando `npm start` del proyecto ya ejecuta las migraciones pendientes. La nueva tabla debe existir antes de servir las páginas que consultan campañas.
 

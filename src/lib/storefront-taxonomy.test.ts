@@ -3,6 +3,10 @@ import test from "node:test";
 import { categoryMatches, getStorefrontCategorySlug, groupColorVariants, variantColor } from "./storefront-taxonomy";
 
 const cases = [
+  ["N33", "GANCHO BRAZO FLEXIBLE PARA CELULAR", "soportes-celular"],
+  ["O07", "DADO IPHONE DE 20W DADO IP ORIGINAL", "cargadores"],
+  ["P1073", "RADIO PARLANTE BT AM/FM/SW CON PANEL SOLAR KTF-1481", "radios"],
+  ["P920", "PARLANTE 15PULGADAS CON MICROFONO GTS-1883", "parlantes"],
   ["N2220", "SQ PROYECTOR HY400 PRO MARCA SUPER", "proyectores"],
   ["O589", "HAVIT PROYECTOR PJ209A PLUS", "proyectores"],
   ["N2078", "SQ TELA PARA PROJECTOR 120 PULGADAS", "pantallas-proyeccion"],
