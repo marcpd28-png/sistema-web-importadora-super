@@ -37,7 +37,7 @@ import { buildRealProductPhotoWhere } from "@/lib/product-photo-policy";
 export { buildRealProductPhotoWhere, buildMissingProductPhotoWhere } from "@/lib/product-photo-policy";
 export { hasRealProductPhoto, hasRealProductPhoto as hasProductPhoto } from "@/lib/product-media";
 
-export const PUBLIC_PAGE_SIZE = 24;
+export const PUBLIC_PAGE_SIZE = 28;
 export const ADMIN_PAGE_SIZE = 10;
 
 const BRAND_BLUE = "#2320DA";
