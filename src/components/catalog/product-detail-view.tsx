@@ -362,8 +362,8 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
             <div className="product-detail-buy-note">
               <span>
                 {wholesaleApplies
-                  ? `Ya aplica el precio mayorista desde ${product.wholesaleMinQty} unidades.`
-                  : `Compra ${product.wholesaleMinQty} o más para activar el precio mayorista.`}
+                  ? `Precio mayorista aplicado desde ${product.wholesaleMinQty} unidades.`
+                  : `Precio mayorista desde ${product.wholesaleMinQty} unidades.`}
               </span>
             </div>
 
