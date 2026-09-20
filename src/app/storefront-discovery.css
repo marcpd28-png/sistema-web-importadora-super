@@ -70,7 +70,9 @@
   .catalog-experience-shell { padding: 8px 0; }
   .catalog-sections-layout .catalog-section { padding: 10px 6px; border-radius: 14px; }
   .catalog-sections-layout .catalog-section-header { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; padding-inline: 4px; }
-  .catalog-sections-layout .catalog-section-header > div:first-child { min-width: 0; }
+  .catalog-sections-layout .catalog-section-header > div:first-child { min-width: 0; flex: 1 1 auto; }
+  .catalog-sections-layout .catalog-section-actions { width: auto; flex: 0 0 auto; }
+  .catalog-sections-layout .catalog-slider-controls { display: none; }
   .catalog-sections-layout .catalog-section-header h2 { font-size: 17px; line-height: 1.2; }
   .catalog-section-eyebrow { display: none; }
   .catalog-sections-layout .catalog-section-link { padding: 6px 10px; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
