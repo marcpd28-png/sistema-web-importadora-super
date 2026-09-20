@@ -26,7 +26,6 @@
 .storefront-campaign-description { padding: 16px; white-space: pre-line; background: #f4f3ff; border-radius: 12px; }
 .storefront-color-selector { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 8px 0; }
 .storefront-color-selector select { min-width: 0; max-width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 6px; background: white; }
-.storefront-mobile-hero { display: none; }
 /* Fixed card widths keep the final row centered without stretching its cards. */
 .catalog-grid, .catalog-section-grid {
   display: flex;
@@ -81,7 +80,6 @@
   .hero .hero-banner-carousel, .hero .hero-banner-visual { min-height: 0; height: clamp(120px, 32vw, 160px); aspect-ratio: auto; border-radius: 10px; }
   .hero .hero-banner-visual-media { padding: 0; }
   .hero .hero-banner-visual-media img { object-fit: contain; }
-  .hero .hero-banner-carousel:has(.storefront-mobile-hero) { height: auto; }
   .storefront-visual-categories, .storefront-filter-panel { padding: 14px; margin: 12px 0; }
   .storefront-visual-categories { padding: 10px; margin: 8px 0; border-radius: 14px; }
   .storefront-visual-categories .category-desktop-label { display: none; }
@@ -102,10 +100,5 @@
   .storefront-visual-categories .catalog-section-header { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 4px 10px; margin-bottom: 2px; }
   .storefront-visual-categories h2 { font-size: 17px; margin: 0; }
   .storefront-visual-categories .catalog-section-header a { font-size: 11px; }
-  .storefront-mobile-hero { display: flex; flex-direction: column; align-items: start; gap: 4px; padding: 12px; background: #252090; color: white; border-radius: 10px; }
-  .storefront-mobile-hero h2 { font-size: 19px; line-height: 1.15; margin: 0; color: white; }
-  .storefront-mobile-hero p, .storefront-mobile-hero span { margin: 0; font-size: 12px; line-height: 1.3; }
-  .storefront-mobile-hero .button { background: white; color: #252090; margin-top: 2px; padding: 6px 10px; min-height: 44px; font-size: 12px; }
-  .hero-banner-carousel .storefront-desktop-banner { display: none; }
   .storefront-color-selector { margin: 3px 0; font-size: 11px; }
 }
