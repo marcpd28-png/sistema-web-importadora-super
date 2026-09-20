@@ -66,6 +66,8 @@
 }
 @media (max-width: 767px) {
   .product-detail-layout .product-detail-gallery-card { width: 100%; max-width: none; min-width: 0; justify-self: center; margin-inline: auto; padding: 8px; }
+  .product-detail-layout .product-detail-gallery-card .product-detail-stage { width: 100%; min-width: 0; justify-self: stretch; margin-inline: auto; }
+  .product-detail-layout .product-detail-stage .product-detail-stage-media { width: 100%; justify-self: stretch; }
   .product-detail-layout .product-detail-stage-media { display: flex; align-items: center; justify-content: center; padding: 0; }
   .product-detail-layout .product-detail-stage img, .product-detail-layout .product-detail-stage video { object-fit: contain; object-position: center center; margin-inline: auto; }
   .product-detail-layout .product-detail-copy-card { padding: 12px; gap: 10px; }
