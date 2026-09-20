@@ -1,0 +1,31 @@
+import Link from "next/link";
+import type { BrandOption, CategoryOption } from "@/lib/store-types";
+
+type Props = { categories: CategoryOption[]; brands: BrandOption[]; category: string; collection: string;
+  query: string; brand: string; sort: string; minPrice?: number; maxPrice?: number; inStock: boolean; count: number; featuredOnly: boolean };
+export function CatalogFilters(props: Props) {
+  return <section className="storefront-filter-panel" aria-label="Filtros de productos">
+    <p role="status">{props.count} {props.count === 1 ? "modelo encontrado" : "modelos encontrados"}</p>
+    <form action="/" className="storefront-filters">
+      {props.collection ? <input type="hidden" name="collection" value={props.collection} /> : null}
+      {props.query ? <input type="hidden" name="q" value={props.query} /> : null}
+      {props.featuredOnly ? <input type="hidden" name="featured" value="1" /> : null}
+      <label>Categoría<select name="category" defaultValue={props.category}><option value="all">Todas</option>
+        {props.categories.map(c => <option key={c.slug} value={c.slug}>{c.parentName ? `${c.parentName} · ` : ""}{c.name}</option>)}
+      </select></label>
+      <label>Marca<select name="brand" defaultValue={props.brand}><option value="all">Todas</option>
+        {props.brands.map(b => <option key={b.name} value={b.name}>{b.name}</option>)}
+      </select></label>
+      <label>Desde S/<input name="minPrice" type="number" min="0" step="0.01" defaultValue={props.minPrice} inputMode="decimal" /></label>
+      <label>Hasta S/<input name="maxPrice" type="number" min="0" step="0.01" defaultValue={props.maxPrice} inputMode="decimal" /></label>
+      <label>Ordenar<select name="sort" defaultValue={props.collection === "mas-vendidos" ? "featured" : props.sort} disabled={props.collection === "mas-vendidos"}>
+        <option value="featured">{props.collection === "mas-vendidos" ? "Ventas del ERP" : "Recomendados"}</option><option value="price-asc">Menor precio</option><option value="price-desc">Mayor precio</option><option value="newest">Actualizados recientemente</option>
+      </select></label>
+      <label className="storefront-stock-filter"><input name="inStock" type="checkbox" value="1" defaultChecked={props.inStock} /> Con stock</label>
+      <button className="button button-primary" type="submit">Aplicar</button>
+      <Link className="button button-secondary" href={props.collection ? `/?collection=${encodeURIComponent(props.collection)}` : "/?view=all"}>Limpiar</Link>
+      <input type="hidden" name="view" value="all" />
+    </form>
+    {props.collection === "mas-vendidos" ? <p className="muted">El orden de esta selección corresponde a las unidades vendidas en el ERP.</p> : null}
+  </section>;
+}

@@ -1,3 +1,6 @@
+import { getStorefrontIndex, getStorefrontCategories, getStorefrontFamilies } from "@/lib/storefront-index";
+import { categoryMatches, canonicalCategorySlug, groupColorVariants, getStorefrontCategorySlug, variantGroupKey } from "@/lib/storefront-taxonomy";
+import { getStorefrontCampaigns } from "@/lib/storefront-campaigns";
 import { getErpBestSellerSnapshot } from "@/lib/erp-sales";
 import { Prisma } from "@prisma/client";
 import { buildRealProductPhotoSql } from "@/lib/product-photo-policy";
@@ -17,7 +20,6 @@ import {
 } from "@/lib/store-shared";
 import type {
   BrandOption,
-  CatalogCategorySection,
   CatalogSalesSummary,
   CatalogSuggestion,
 } from "@/lib/store-types";
@@ -67,101 +69,70 @@ type CatalogSuggestionRow = {
 };
 
 export async function getCatalogPageData(input: {
-  query?: string;
-  category?: string;
-  brand?: string;
-  page?: number;
-  featuredOnly?: boolean;
-  collection?: string;
-  sort?: string;
+  query?: string; category?: string; brand?: string; page?: number;
+  featuredOnly?: boolean; collection?: string; sort?: string;
+  minPrice?: number; maxPrice?: number; inStock?: boolean; viewAll?: boolean;
 }) {
-  const page = Math.max(1, input.page ?? 1);
   const collection = input.collection?.trim().toLowerCase() ?? "";
-  const needsBestSellerSnapshot = shouldLoadBestSellerSnapshot(input, page, collection);
-  const bestSellerSnapshot = needsBestSellerSnapshot
-    ? await getErpBestSellerSnapshot(PUBLIC_PAGE_SIZE * 8)
-    : {
-        codes: [],
-        summary: EMPTY_SALES_SUMMARY,
-      };
-  const bestSellerCodes = bestSellerSnapshot.codes;
-  const shouldRankBestSellers = collection === "mas-vendidos" && bestSellerCodes.length > 0;
-  const where = buildCatalogWhere(input, shouldRankBestSellers ? bestSellerCodes : []);
-  const [queriedProducts, bestSellerRows, totalResults, categoryRows, brandRows, visibleCount, featuredCount, settings, heroBanners, homeCategorySections] =
-    await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          media: {
-            orderBy: { sortOrder: "asc" },
-          },
-        },
-        orderBy:
-          collection === "mas-vendidos"
-            ? [{ updatedAt: "desc" as const }, { id: "desc" as const }]
-            : getCatalogOrderBy(input.sort),
-        skip: shouldRankBestSellers ? undefined : (page - 1) * PUBLIC_PAGE_SIZE,
-        take: shouldRankBestSellers ? undefined : PUBLIC_PAGE_SIZE,
-      }),
-      bestSellerCodes.length
-        ? prisma.product.findMany({
-            where: buildBestSellerProductsWhere(bestSellerCodes),
-            include: {
-              media: {
-                orderBy: { sortOrder: "asc" },
-              },
-            },
-          })
-        : [],
-      prisma.product.count({ where }),
-      getActiveCategories(),
-      getBrandOptions(),
-      prisma.product.count({ where: buildSellableProductWhere() }),
-      prisma.product.count({
-        where: { AND: [buildSellableProductWhere(), { isFeatured: true }] },
-      }),
-      getStoreSettings(),
-      getHeroBannerViews({ slot: "HERO" }),
-      buildHomeCategorySections({
-        isHomeView:
-          page === 1 &&
-          !input.query?.trim() &&
-          (input.category?.trim() || "all") === "all" &&
-          (input.brand?.trim() || "all") === "all" &&
-          !collection &&
-          !input.featuredOnly,
-      }),
-    ]);
-  const orderedProducts =
-    shouldRankBestSellers ? rankProductsByCode(queriedProducts, bestSellerCodes) : queriedProducts;
-  const products = shouldRankBestSellers
-    ? orderedProducts.slice((page - 1) * PUBLIC_PAGE_SIZE, page * PUBLIC_PAGE_SIZE)
-    : orderedProducts;
-  const bestSellerProducts = bestSellerCodes.length
-    ? rankProductsByCode(bestSellerRows, bestSellerCodes)
-        .slice(0, 12)
-        .map(mapProduct)
-    : [];
-
+  const category = canonicalCategorySlug(input.category?.trim() || "all");
+  const isHomeView = !input.query?.trim() && category === "all" &&
+    (!input.brand || input.brand === "all") && !collection && !input.featuredOnly &&
+    (!input.sort || input.sort === "featured") && !input.viewAll && input.minPrice === undefined && input.maxPrice === undefined && !input.inStock && (input.page ?? 1) === 1;
+  const [index, categories, campaigns, settings, heroBanners, snapshot, searchRows] = await Promise.all([
+    getStorefrontIndex(), getStorefrontCategories(), getStorefrontCampaigns(), getStoreSettings(),
+    getHeroBannerViews({ slot: "HERO" }),
+    isHomeView || collection === "mas-vendidos" ? getErpBestSellerSnapshot(1000) : Promise.resolve({ codes: [] as string[], summary: EMPTY_SALES_SUMMARY }),
+    input.query?.trim() ? prisma.product.findMany({ where: buildWhere(input.query), select: { id: true } }) : null,
+  ]);
+  const families = getStorefrontFamilies(categories);
+  const searchIds = searchRows ? new Set(searchRows.map(row => row.id)) : null;
+  const ranked = rankProductsByCode(index.filter(p => [p.code, p.externalCode, p.externalId].some(code => code && snapshot.codes.includes(code))), snapshot.codes);
+  const campaign = campaigns.find(item => item.slug === collection);
+  const collectionCategory = ["proyectores", "pantallas-proyeccion", "drones", "alexas", "consolas", "mandos", "hogar-inteligente"].includes(collection) ? collection : null;
+  let candidates = index.filter(p =>
+    categoryMatches(p.storefrontCategory, category) &&
+    (!collectionCategory || p.storefrontCategory === collectionCategory) &&
+    (!input.brand || input.brand === "all" || p.brand?.toLowerCase() === input.brand.toLowerCase()) &&
+    (!searchIds || searchIds.has(p.id)) && (!input.featuredOnly || p.isFeatured) &&
+    (input.minPrice === undefined || p.unitPrice >= input.minPrice) &&
+    (input.maxPrice === undefined || p.unitPrice <= input.maxPrice) && (!input.inStock || p.stockUnits > 0) &&
+    (collection !== "mas-vendidos" || ranked.some(row => row.id === p.id)) &&
+    (!campaign || (campaign.visible && campaign.productIds.includes(p.id))) &&
+    (collection !== "destacados" || p.isFeatured));
+  if (collection === "mas-vendidos") candidates = rankProductsByCode(candidates, snapshot.codes);
+  else if (input.sort === "price-asc") candidates.sort((a, b) => a.unitPrice - b.unitPrice || a.id.localeCompare(b.id));
+  else if (input.sort === "price-desc") candidates.sort((a, b) => b.unitPrice - a.unitPrice || a.id.localeCompare(b.id));
+  else if (input.sort === "newest") candidates.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id));
+  else if (campaign) candidates.sort((a, b) => campaign.productCodes.indexOf(a.code) - campaign.productCodes.indexOf(b.code));
+  else candidates.sort((a, b) => {
+    return Number(b.stockUnits > 0) - Number(a.stockUnits > 0) || Number(b.isFeatured) - Number(a.isFeatured) || b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id);
+  });
+  const groups = groupColorVariants(candidates);
+  const totalPages = Math.max(1, Math.ceil(groups.length / PUBLIC_PAGE_SIZE));
+  const page = Math.min(totalPages, Math.max(1, Math.floor(Number.isFinite(input.page) ? input.page! : 1)));
+  const pageGroups = groups.slice((page - 1) * PUBLIC_PAGE_SIZE, page * PUBLIC_PAGE_SIZE);
+  const bestGroups = groupColorVariants(ranked.filter(p => p.storefrontCategory !== "bienestar-intimo")).slice(0, 8);
+  const sectionGroups = isHomeView ? families.filter(f => f.slug !== "familia-intimo").slice(0, 6).map(family => ({
+    family, groups: groupColorVariants(index.filter(p => categoryMatches(p.storefrontCategory, family.slug))
+      .sort((a,b) => Number(b.stockUnits > 0) - Number(a.stockUnits > 0))).slice(0, 8),
+  })) : [];
+  const ids = [...new Set([...pageGroups.flat(), ...bestGroups.flat(), ...sectionGroups.flatMap(section => section.groups.flat())].map(p => p.id))];
+  const rows = ids.length ? await prisma.product.findMany({ where: { AND: [buildSellableProductWhere(), { id: { in: ids } }] }, include: { media: { orderBy: { sortOrder: "asc" } } } }) : [];
+  const byId = new Map(rows.map(row => [row.id, mapProduct(row)]));
+  const hydrate = (items: typeof groups) => items.flatMap(group => {
+    const variants = group.flatMap(row => byId.has(row.id) ? [byId.get(row.id)!] : []);
+    return variants.length ? [{ ...variants[0], colorVariants: variants.length > 1 ? variants : undefined }] : [];
+  });
   return {
-    bestSellerProducts,
-    products: products.map(mapProduct),
-    salesSummary: bestSellerSnapshot.summary,
-    totalResults,
-    totalPages: Math.max(1, Math.ceil(totalResults / PUBLIC_PAGE_SIZE)),
-    page,
-    featuredOnly: Boolean(input.featuredOnly),
-    selectedBrand: input.brand?.trim() || "all",
-    selectedSort: input.sort?.trim() || "featured",
-    categories: categoryRows.map(mapCategory),
-    brands: brandRows,
-    stats: {
-      visibleCount,
-      featuredCount,
-    },
-    settings,
-    heroBanners,
-    homeCategorySections,
+    products: hydrate(pageGroups), bestSellerProducts: hydrate(bestGroups), salesSummary: snapshot.summary,
+    totalResults: groups.length, totalSkuResults: candidates.length, totalPages, page, isHomeView,
+    featuredOnly: Boolean(input.featuredOnly), selectedBrand: input.brand?.trim() || "all", selectedSort: input.sort || "featured",
+    categories, families, selectedCategory: [...families, ...categories].find(c => c.slug === (collectionCategory ?? category)),
+    brands: [...new Set(index.filter(p => categoryMatches(p.storefrontCategory, collectionCategory ?? category)).map(p => p.brand).filter((b): b is string => Boolean(b)))].sort().map(name => ({ name })),
+    campaignDescription: campaign?.visible ? campaign.description : "",
+    stats: { visibleCount: index.length, featuredCount: index.filter(p => p.isFeatured).length },
+    settings, heroBanners,
+    homeCategorySections: sectionGroups.map(section => ({ category: section.family, productCount: section.family.productCount ?? 0, products: hydrate(section.groups) })),
   };
 }
 
@@ -286,6 +257,11 @@ export async function getCatalogSearchDestination(query: string): Promise<Catalo
 
   const normalizedQuery = normalizeCatalogSearchText(trimmedQuery);
   const singularQuery = singularizeCatalogSearchText(normalizedQuery);
+  const commercialCategories = await getStorefrontCategories();
+  const exactCollection = COLLECTION_SEARCH_ALIASES.find(item => item.terms.some(term => normalizeCatalogSearchText(term) === normalizedQuery));
+  if (exactCollection) return { href: exactCollection.href, kind: "collection" };
+  const exactCategory = commercialCategories.find(item => normalizeCatalogSearchText(item.name) === normalizedQuery || item.slug === normalizedQuery);
+  if (exactCategory) return { href: '/?category=' + encodeURIComponent(exactCategory.slug), kind: "category" };
   const matchingProductCount = await prisma.product.count({
     where: buildWhere(trimmedQuery),
   });
@@ -309,10 +285,7 @@ export async function getCatalogSearchDestination(query: string): Promise<Catalo
     return brandMatch;
   }
 
-  const categories = await prisma.category.findMany({
-    select: { name: true, slug: true },
-    orderBy: [{ name: "asc" }, { id: "asc" }],
-  });
+  const categories = commercialCategories;
 
   const categoryMatch = categories.find((category) => {
     const normalizedName = normalizeCatalogSearchText(category.name);
@@ -409,224 +382,6 @@ async function getBrandSearchDestination(
   return {
     href: `/?brand=${encodeURIComponent(normalizedMatches[0])}`,
     kind: "brand",
-  };
-}
-
-async function buildHomeCategorySections(input: { isHomeView: boolean }) {
-  if (!input.isHomeView) {
-    return [] satisfies CatalogCategorySection[];
-  }
-
-  const categoriesByCount = await prisma.product.groupBy({
-    by: ["categoryId"],
-    where: {
-      categoryId: { not: null },
-      ...buildSellableProductWhere(),
-    },
-    _count: {
-      _all: true,
-    },
-    orderBy: {
-      _count: {
-        categoryId: "desc",
-      },
-    },
-    take: 12,
-  });
-
-  const categoryIds = categoriesByCount
-    .map((item) => item.categoryId)
-    .filter((value): value is string => Boolean(value));
-
-  if (!categoryIds.length) {
-    return [] satisfies CatalogCategorySection[];
-  }
-
-  const [categories, products] = await Promise.all([
-    prisma.category.findMany({
-      where: { id: { in: categoryIds } },
-      orderBy: [{ name: "asc" }, { id: "asc" }],
-    }),
-    prisma.product.findMany({
-      where: {
-        categoryId: { in: categoryIds },
-        ...buildSellableProductWhere(),
-      },
-      include: {
-        media: {
-          orderBy: { sortOrder: "asc" },
-        },
-      },
-      orderBy: [
-        { isFeatured: "desc" as const },
-        { updatedAt: "desc" as const },
-        { id: "asc" as const },
-      ],
-    }),
-  ]);
-
-  const productsByCategoryId = new Map<string, typeof products>();
-  for (const product of products) {
-    if (!product.categoryId) {
-      continue;
-    }
-
-    const bucket = productsByCategoryId.get(product.categoryId) ?? [];
-    bucket.push(product);
-    productsByCategoryId.set(product.categoryId, bucket);
-  }
-
-  const orderByCount = new Map(categoryIds.map((id, index) => [id, index]));
-
-  return categories
-    .map((category) => {
-      const categoryProducts = productsByCategoryId.get(category.id) ?? [];
-      return {
-        category: mapCategory(category),
-        productCount: categoryProducts.length,
-        products: categoryProducts.slice(0, 8).map(mapProduct),
-        sortIndex: orderByCount.get(category.id) ?? Number.MAX_SAFE_INTEGER,
-      };
-    })
-    .filter((item) => item.productCount >= 6)
-    .sort((left, right) => left.sortIndex - right.sortIndex)
-    .slice(0, 12)
-    .map((item) => ({
-      category: item.category,
-      productCount: item.productCount,
-      products: item.products,
-    }));
-}
-
-function shouldLoadBestSellerSnapshot(
-  input: {
-    query?: string;
-    category?: string;
-    brand?: string;
-    featuredOnly?: boolean;
-  },
-  page: number,
-  collection: string,
-) {
-  if (collection === "mas-vendidos") {
-    return true;
-  }
-
-  return (
-    page === 1 &&
-    !input.query?.trim() &&
-    (input.category?.trim() || "all") === "all" &&
-    (input.brand?.trim() || "all") === "all" &&
-    !collection &&
-    !input.featuredOnly
-  );
-}
-
-function getCatalogOrderBy(sort?: string) {
-  switch (sort) {
-    case "price-asc":
-      return [{ unitPrice: "asc" as const }, { updatedAt: "desc" as const }, { id: "asc" as const }];
-    case "price-desc":
-      return [{ unitPrice: "desc" as const }, { updatedAt: "desc" as const }, { id: "asc" as const }];
-    case "newest":
-      return [{ updatedAt: "desc" as const }, { id: "desc" as const }];
-    case "featured":
-    default:
-      return [
-        { isFeatured: "desc" as const },
-        { updatedAt: "desc" as const },
-        { id: "asc" as const },
-      ];
-  }
-}
-
-function buildCatalogWhere(
-  input: {
-    query?: string;
-    category?: string;
-    brand?: string;
-    collection?: string;
-    featuredOnly?: boolean;
-  },
-  bestSellerCodes: string[],
-) {
-  const where = buildWhere(input.query, input.category, input.brand, true, input.featuredOnly);
-  const collectionWhere = getCollectionWhere(input.collection);
-  const conditions: Prisma.ProductWhereInput[] = [where];
-
-  if (collectionWhere) {
-    conditions.push(collectionWhere);
-  }
-
-  if (bestSellerCodes.length) {
-    conditions.push({
-      OR: [
-        { code: { in: bestSellerCodes } },
-        { externalCode: { in: bestSellerCodes } },
-        { externalId: { in: bestSellerCodes } },
-      ],
-    });
-  }
-
-  return { AND: conditions };
-}
-
-function getCollectionWhere(collection?: string): Prisma.ProductWhereInput | null {
-  switch (collection) {
-    case "drones":
-      return {
-        OR: [
-          { name: { contains: "dron", mode: "insensitive" } },
-          { code: { contains: "dron", mode: "insensitive" } },
-          { name: { contains: "dji mini", mode: "insensitive" } },
-          { name: { contains: "dji avata", mode: "insensitive" } },
-          { name: { contains: "dji neo", mode: "insensitive" } },
-        ],
-      };
-    case "consolas":
-      return {
-        AND: [
-          {
-            OR: [
-              { name: { contains: "consola", mode: "insensitive" } },
-              { name: { contains: "videojuego", mode: "insensitive" } },
-              { name: { contains: "video juego", mode: "insensitive" } },
-              { name: { contains: "gamestick", mode: "insensitive" } },
-              { name: { contains: "game stick", mode: "insensitive" } },
-              { name: { contains: "game player", mode: "insensitive" } },
-              { name: { contains: "r36s", mode: "insensitive" } },
-            ],
-          },
-          {
-            NOT: [
-              { name: { contains: "consolador", mode: "insensitive" } },
-            ],
-          },
-        ],
-      };
-    default:
-      return null;
-  }
-}
-
-function buildBestSellerProductsWhere(bestSellerCodes: string[]) {
-  return {
-    AND: [
-      {
-        NOT: {
-          code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
-        },
-      },
-      { isVisible: true },
-      buildRealProductPhotoWhere(),
-      {
-        OR: [
-          { code: { in: bestSellerCodes } },
-          { externalCode: { in: bestSellerCodes } },
-          { externalId: { in: bestSellerCodes } },
-        ],
-      },
-    ],
   };
 }
 
@@ -869,35 +624,24 @@ export async function getCatalogProductBySlug(slug: string) {
     return null;
   }
 
-  const [settings, relatedProducts] = await Promise.all([
-    getStoreSettings(),
-    prisma.product.findMany({
-      where: {
-        NOT: {
-          code: { in: BLOCKED_PUBLIC_PRODUCT_CODES },
-        },
-        id: { not: product.id },
-        isVisible: true,
-        ...(product.categoryId
-          ? { categoryId: product.categoryId }
-          : product.category
-            ? { category: product.category }
-            : {}),
-        AND: [buildRealProductPhotoWhere()],
-      },
-      include: {
-        media: {
-          orderBy: { sortOrder: "asc" },
-        },
-      },
-      orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
-      take: 8,
-    }),
-  ]);
+  const [settings, index] = await Promise.all([getStoreSettings(), getStorefrontIndex()]);
+  const leaf = getStorefrontCategorySlug(product);
+  const relatedGroups = groupColorVariants(index.filter(item => item.storefrontCategory === leaf &&
+    variantGroupKey(item) !== variantGroupKey(product)).sort((a, b) => Number(b.stockUnits > 0) - Number(a.stockUnits > 0))).slice(0, 8);
+  const relatedIds = relatedGroups.flat().map(item => item.id);
+  const relatedRows = relatedIds.length ? await prisma.product.findMany({
+    where: { AND: [buildSellableProductWhere(), { id: { in: relatedIds } }] },
+    include: { media: { orderBy: { sortOrder: "asc" } } },
+  }) : [];
+  const relatedById = new Map(relatedRows.map(row => [row.id, mapProduct(row)]));
+  const relatedProducts = relatedGroups.flatMap(group => {
+    const variants = group.flatMap(item => relatedById.has(item.id) ? [relatedById.get(item.id)!] : []);
+    return variants.length ? [{ ...variants[0], colorVariants: variants.length > 1 ? variants : undefined }] : [];
+  });
 
   return {
     product: mapProduct(product),
-    relatedProducts: relatedProducts.map(mapProduct),
+    relatedProducts,
     settings,
   };
 }

@@ -361,13 +361,13 @@ export function CatalogExperience({
 
   const hasRealBestSellers =
     Boolean(salesSummary?.hasRealSales) && storefrontBestSellerProducts.length > 0;
-  const topProducts = fillSectionProducts(
+  const topProducts = hasRealBestSellers ? storefrontBestSellerProducts.slice(0, FEATURED_SECTION_LIMIT) : fillSectionProducts(
     hasRealBestSellers
       ? storefrontBestSellerProducts
       : featuredProducts.length
         ? sortProductsByImageQuality(featuredProducts)
         : sortProductsByImageQuality(storefrontProducts),
-    storefrontProducts,
+    featuredProducts.length ? featuredProducts : storefrontProducts,
     0,
     FEATURED_SECTION_LIMIT,
   );
@@ -384,9 +384,9 @@ export function CatalogExperience({
           <ProductSection
             featured
             compact
-            title={hasRealBestSellers ? "Productos más vendidos" : "Productos destacados"}
-            subtitle={hasRealBestSellers ? "Los favoritos de nuestros clientes." : undefined}
-            href="/?collection=mas-vendidos"
+            title={hasRealBestSellers ? "Productos más vendidos" : featuredProducts.length ? "Productos destacados" : "Explora nuestros productos"}
+            subtitle={hasRealBestSellers ? (salesSummary?.hasDatedSales ? "Los más vendidos de los últimos 15 días." : "Los más vendidos según las unidades acumuladas en el ERP.") : undefined}
+            href={hasRealBestSellers ? "/?collection=mas-vendidos" : featuredProducts.length ? "/?collection=destacados" : "/?view=all"}
             products={topProducts}
             settings={settings}
           />

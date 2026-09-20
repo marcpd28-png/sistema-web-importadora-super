@@ -10,11 +10,12 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getSession } from "@/lib/auth";
-import { getBrandOptions, getCategoryOptions } from "@/lib/store";
+import { getBrandOptions } from "@/lib/store";
 import type { BrandOption, CategoryOption } from "@/lib/store";
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { HeaderSearch } from "@/components/catalog/header-search";
-import { ScrollingShortcutsMarquee } from "@/components/catalog/scrolling-shortcuts-marquee";
+import { getStorefrontCategories } from "@/lib/storefront-index";
+import { getStorefrontCampaigns } from "@/lib/storefront-campaigns";
 import { PublicStoreHeaderShell } from "@/components/catalog/public-store-header-shell";
 import { PublicStoreAccountSlot } from "@/components/catalog/public-store-account-slot";
 import { PublicStoreCategoryMenu } from "@/components/catalog/public-store-category-menu";
@@ -33,15 +34,15 @@ const SHORTCUTS: Shortcut[] = [
   { label: "Preventa", href: "/?collection=preventa", icon: Sparkles },
   { label: "Proyectores", href: "/?collection=proyectores", icon: MonitorPlay },
   { label: "Drones", href: "/?collection=drones", icon: Plane },
-  { label: "Alexas", href: "/?collection=alexas", icon: Bot },
-  { label: "Consolas de videojuego", href: "/?collection=consolas", icon: Gamepad2 },
+  { label: "Amazon Echo y Alexa", href: "/?collection=alexas", icon: Bot },
+  { label: "Consolas de videojuegos", href: "/?collection=consolas", icon: Gamepad2 },
 ];
 
-function CategoryShortcutMarquee({ repeatCount = 2 }: { repeatCount?: number }) {
-  const items = SHORTCUTS.slice(1);
+function CategoryShortcutMarquee({ active }: { active: string[] }) {
+  const items = SHORTCUTS.slice(1).filter(item => !["/?collection=ofertas", "/?collection=preventa"].includes(item.href) || active.includes(item.href.split("=")[1]));
 
   return (
-    <ScrollingShortcutsMarquee repeatCount={repeatCount}>
+    <nav className="storefront-shortcuts-static" aria-label="Accesos del catálogo">
       <div aria-label="Atajos de catálogo">
         <div className="public-store-shortcuts-marquee-group">
           {items.map((shortcut) => (
@@ -52,7 +53,7 @@ function CategoryShortcutMarquee({ repeatCount = 2 }: { repeatCount?: number }) 
           ))}
         </div>
       </div>
-    </ScrollingShortcutsMarquee>
+    </nav>
   );
 }
 
@@ -68,9 +69,10 @@ export async function PublicStoreHeader({
   focusSearch = false,
 }: PublicStoreHeaderProps) {
   const session = await getSession();
-  const [resolvedCategories, resolvedBrands] = await Promise.all([
-    categories ? Promise.resolve(categories) : getCategoryOptions(),
+  const [resolvedCategories, resolvedBrands, campaigns] = await Promise.all([
+    categories ? Promise.resolve(categories) : getStorefrontCategories(),
     brands ? Promise.resolve(brands) : getBrandOptions(),
+    getStorefrontCampaigns(),
   ]);
 
   return (
@@ -94,11 +96,11 @@ export async function PublicStoreHeader({
 
         <div className="public-store-desktop-shortcuts">
         <div className="public-store-topline">
-            <CategoryShortcutMarquee repeatCount={3} />
+            <CategoryShortcutMarquee active={campaigns.filter(c => c.visible).map(c => c.slug)} />
           </div>
         </div>
         <div className="public-store-mobile-marquee">
-          <CategoryShortcutMarquee repeatCount={2} />
+          <CategoryShortcutMarquee active={campaigns.filter(c => c.visible).map(c => c.slug)} />
         </div>
       </header>
     </PublicStoreHeaderShell>

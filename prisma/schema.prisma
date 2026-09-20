@@ -266,6 +266,14 @@ model ErpEditorialWrite {
   @@index([productId, createdAt])
 }
 
+model StorefrontCampaign {
+  slug         String   @id @db.VarChar(40)
+  enabled      Boolean  @default(false)
+  description  String   @default("") @db.Text
+  productCodes String[] @default([])
+  updatedAt    DateTime @updatedAt
+}
+
 model StoreSettings {
   id                  Int      @id @default(1)
   businessName        String   @default("Importaciones Super")

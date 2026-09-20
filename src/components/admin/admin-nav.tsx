@@ -67,6 +67,7 @@ const sections: AdminNavSection[] = [
       { href: "/admin/quotes", label: "Cotizaciones", icon: FileText, badgeKey: "pendingQuotesCount" },
       { href: "/admin/cupones", label: "Cupones de Descuento", icon: Tag },
       { href: "/admin/banners", label: "Banners y campañas", icon: ImagePlus },
+      { href: "/admin/collections", label: "Ofertas y preventa", icon: Tag },
     ],
   },
   {

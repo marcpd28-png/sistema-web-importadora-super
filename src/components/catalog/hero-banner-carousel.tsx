@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { HeroBannerVisual, type HeroBannerVisualData } from "@/components/catalog/hero-banner-visual";
@@ -41,8 +42,12 @@ export function HeroBannerCarousel({ banners, intervalSeconds }: HeroBannerCarou
 
   return (
     <div className="hero-banner-carousel" aria-roledescription="carousel">
+      {!slides[currentIndex]?.mobileImageUrl ? <div className="storefront-mobile-hero">
+        <p>Importaciones Super</p><h2>Encuentra lo que necesitas</h2><span>Tecnología, hogar y accesorios. Compra por unidad o al por mayor.</span>
+        <Link className="button button-primary" href="#visual-categories-title">Explorar categorías</Link>
+      </div> : null}
       <div
-        className="hero-banner-carousel-track"
+        className={"hero-banner-carousel-track" + (!slides[currentIndex]?.mobileImageUrl ? " storefront-desktop-banner" : "")}
         style={{
           transform: `translate3d(-${activeIndex * 100}%, 0, 0)`,
         }}

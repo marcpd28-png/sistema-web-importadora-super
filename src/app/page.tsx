@@ -1,3 +1,6 @@
+import { CatalogFilters } from "@/components/catalog/catalog-filters";
+import { VisualCategories } from "@/components/catalog/visual-categories";
+import { canonicalCategorySlug } from "@/lib/storefront-taxonomy";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -34,13 +37,15 @@ function buildCatalogPageHref(input: {
 
 function getCollectionTitle(collection: string) {
   const titles: Record<string, string> = {
-    alexas: "Alexas",
-    consolas: "Consolas de videojuego",
+    alexas: "Amazon Echo y Alexa",
+    consolas: "Consolas de videojuegos",
     drones: "Drones",
     "mas-vendidos": "Productos más vendidos",
     ofertas: "Ofertas",
     preventa: "Preventa",
     proyectores: "Proyectores",
+    "pantallas-proyeccion": "Pantallas y accesorios de proyección",
+    destacados: "Productos destacados",
   };
 
   return titles[collection];
@@ -105,6 +110,7 @@ function CatalogPagination({
   q,
   sort,
   totalPages,
+  filters = "",
 }: {
   brand: string;
   category: string;
@@ -114,13 +120,14 @@ function CatalogPagination({
   q: string;
   sort: string;
   totalPages: number;
+  filters?: string;
 }) {
   return (
     <section className="pagination-row">
       {page > 1 ? (
         <Link
           className="button button-secondary"
-          href={buildCatalogPageHref({ brand, category, collection, featuredOnly, page: page - 1, q, sort })}
+          href={buildCatalogPageHref({ brand, category, collection, featuredOnly, page: page - 1, q, sort }) + filters}
         >
           Página anterior
         </Link>
@@ -130,7 +137,7 @@ function CatalogPagination({
       {page < totalPages ? (
         <Link
           className="button button-secondary"
-          href={buildCatalogPageHref({ brand, category, collection, featuredOnly, page: page + 1, q, sort })}
+          href={buildCatalogPageHref({ brand, category, collection, featuredOnly, page: page + 1, q, sort }) + filters}
         >
           Siguiente página
         </Link>
@@ -144,41 +151,41 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ searchParams }: HomeProps): Promise<Metadata> {
   const queryParams = searchParams ? await searchParams : undefined;
 
-  const hasFilters = queryParams?.q || queryParams?.sort || queryParams?.collection || queryParams?.page;
+  const hasFilters = queryParams?.q || queryParams?.sort || queryParams?.collection || queryParams?.page || queryParams?.brand || queryParams?.minPrice || queryParams?.maxPrice || queryParams?.inStock || queryParams?.view;
 
   if (hasFilters) {
     return {
-      robots: { index: false, follow: false },
+      robots: { index: false, follow: true },
     };
   }
 
-  return {
-    alternates: {
-      canonical: "/",
-    },
-  };
+  return { alternates: { canonical: typeof queryParams?.category === "string" && queryParams.category !== "all" ? `/?category=${encodeURIComponent(canonicalCategorySlug(queryParams.category))}` : "/" } };
 }
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = searchParams ? await searchParams : undefined;
   const q = typeof params?.q === "string" ? params.q : "";
-  const category = typeof params?.category === "string" ? params.category : "all";
+  const category = canonicalCategorySlug(typeof params?.category === "string" ? params.category : "all");
   const brand = typeof params?.brand === "string" ? params.brand : "all";
   const collection = typeof params?.collection === "string" ? params.collection : "";
   const sort = typeof params?.sort === "string" ? params.sort : "featured";
   const page = Number(typeof params?.page === "string" ? params.page : "1");
   const normalizedCollection = collection.toLowerCase();
-  const collectionQueryMap: Record<string, string> = {
-    preventa: "preventa",
-    proyectores: "proyector",
-    alexas: "alexa",
-  };
-  const resolvedQuery = q || collectionQueryMap[normalizedCollection] || "";
-  const featuredOnly =
-    params?.featured === "1" || normalizedCollection === "ofertas";
+  const resolvedQuery = q;
+  const featuredOnly = params?.featured === "1";
+  const price = (value: unknown) => typeof value === "string" && value.trim() && Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : undefined;
+  const minPrice = price(params?.minPrice);
+  const maxPrice = price(params?.maxPrice);
+  const inStock = params?.inStock === "1";
+  const viewAll = params?.view === "all";
+  const paginationFilters = new URLSearchParams();
+  if (minPrice !== undefined) paginationFilters.set("minPrice", String(minPrice));
+  if (maxPrice !== undefined) paginationFilters.set("maxPrice", String(maxPrice));
+  if (inStock) paginationFilters.set("inStock", "1");
+  if (viewAll) paginationFilters.set("view", "all");
   const initialCartOpen = params?.drawer === "cart";
   const focusSearch = params?.focus === "search";
-  if (q) {
+  if (q && category === "all" && brand === "all" && !collection && !params?.sort && minPrice === undefined && maxPrice === undefined && !inStock && !viewAll) {
     const exactDestination = await getCatalogSearchDestination(q);
 
     if (exactDestination) {
@@ -188,6 +195,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const [data, quoteDefaults] = await Promise.all([
     getCatalogPageData({
       query: resolvedQuery,
+      minPrice, maxPrice, inStock, viewAll,
       category,
       brand,
       collection: normalizedCollection,
@@ -201,16 +209,8 @@ export default async function Home({ searchParams }: HomeProps) {
     "--brand-primary": data.settings.primaryColor,
     "--brand-accent": data.settings.accentColor,
   } as CSSProperties & Record<"--brand-primary" | "--brand-accent", string>;
-  const isSectionedView =
-    !resolvedQuery &&
-    category === "all" &&
-    brand === "all" &&
-    !normalizedCollection &&
-    !featuredOnly &&
-    data.page === 1;
-  const selectedCategory = data.categories.find(
-    (item) => item.slug === category || item.name === category,
-  );
+  const isSectionedView = data.isHomeView;
+  const selectedCategory = data.selectedCategory;
   const categoryTitle =
     category !== "all" ? selectedCategory?.name ?? formatSlugTitle(category) : undefined;
   const catalogTitle =
@@ -284,6 +284,13 @@ export default async function Home({ searchParams }: HomeProps) {
         </section>
       ) : null}
 
+      {isSectionedView ? <VisualCategories families={data.families} /> : <>
+        <CatalogFilters categories={[...data.families, ...data.categories]} brands={data.brands} category={category} collection={normalizedCollection}
+          query={q} brand={brand} sort={sort} minPrice={minPrice} maxPrice={maxPrice} inStock={inStock} count={data.totalResults} featuredOnly={featuredOnly} />
+        {selectedCategory?.slug.startsWith("familia-") ? <nav className="storefront-subcategories" aria-label="Subcategorías">{data.categories.filter(c => c.parentSlug === selectedCategory.slug).map(c => <Link key={c.slug} href={'/?category=' + c.slug}>{c.name}</Link>)}</nav> : null}
+        {data.campaignDescription ? <p className="storefront-campaign-description">{data.campaignDescription}</p> : null}
+        {normalizedCollection === "mas-vendidos" ? <p className="storefront-campaign-description">{data.salesSummary.hasRealSales ? (data.salesSummary.hasDatedSales ? "Ordenados por unidades vendidas en los últimos 15 días." : "Ordenados por unidades vendidas acumuladas en el ERP.") : "El ranking de ventas no está disponible en este momento. Puedes explorar las categorías."}</p> : null}
+      </>}
       <section className="catalog-experience-shell" id="catalogo">
         <CatalogExperience
           bestSellerProducts={data.bestSellerProducts}
@@ -304,7 +311,7 @@ export default async function Home({ searchParams }: HomeProps) {
         showHomeShortcut={data.totalResults === 0 || data.products.length === 0}
       />
 
-      <CatalogPagination
+      {!isSectionedView ? <CatalogPagination
         brand={brand}
         category={category}
         collection={normalizedCollection}
@@ -313,7 +320,8 @@ export default async function Home({ searchParams }: HomeProps) {
         q={resolvedQuery}
         sort={data.selectedSort}
         totalPages={data.totalPages}
-      />
+        filters={paginationFilters.size ? "&" + paginationFilters.toString() : ""}
+      /> : <Link className="button button-secondary" href="/?view=all">Ver todos los productos</Link>}
 
       <StoreFooter />
     </main>

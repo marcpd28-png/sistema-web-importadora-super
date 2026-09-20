@@ -22,7 +22,7 @@ type ErpBestSellerSnapshot = {
 const SALES_LOOKBACK_DAYS = 15;
 const SNAPSHOT_TTL_MS = 10 * 60 * 1000;
 const SNAPSHOT_ERROR_TTL_MS = 30 * 1000;
-const SNAPSHOT_WAIT_BUDGET_MS = 450;
+const SNAPSHOT_WAIT_BUDGET_MS = 4000;
 
 const CODE_KEYS = [
   "internal_id",
@@ -35,10 +35,12 @@ const CODE_KEYS = [
   "item_code_erp",
   "product_code",
   "sku",
-  "id",
 ];
 
 const UNIT_KEYS = [
+  "total_sold",
+  "total_sales_quantity",
+  "sale_quantity",
   "quantity",
   "qty",
   "quantity_sold",
@@ -52,9 +54,6 @@ const UNIT_KEYS = [
 
 const DATE_KEYS = [
   "date",
-  "created_at",
-  "createdAt",
-  "updated_at",
   "date_of_issue",
   "sale_date",
   "fecha",
@@ -147,8 +146,8 @@ function refreshBestSellerSnapshot(limit: number) {
 async function loadBestSellerSnapshot(limit: number) {
   try {
     const client = new FacturadorClient();
-    const records = await getProductSalesRecords(client, SALES_LOOKBACK_DAYS);
-    return buildBestSellerSnapshot(records, limit);
+    const result = await getProductSalesRecords(client, SALES_LOOKBACK_DAYS);
+    return buildBestSellerSnapshot(result.records, limit, new Date(), result.periodBound);
   } catch {
     return emptySnapshot;
   }
@@ -184,27 +183,35 @@ async function getProductSalesRecords(client: FacturadorClient, days: number) {
           period: "date",
         },
         method: "POST",
+        retry: false,
       });
       const reportRecords = extractProductSaleRecords(payload);
 
       if (reportRecords.length) {
-        return reportRecords;
+        const snapshot = buildBestSellerSnapshot(reportRecords, 1, new Date(), true);
+        if (snapshot.hasRealSales) return { records: reportRecords, periodBound: true };
       }
     } catch {
       // Continue with the next configured ERP report source.
     }
   }
 
-  return client.getSalesProducts();
+  // This endpoint also exposes inventory. Only explicit sales counters may be used,
+  // never stock, a default cart quantity, price, or the endpoint's row order.
+  const products = await client.getSalesProducts();
+  const records = products.flatMap(record => {
+    const sold = getFirstNumber(record, ["total_sold", "total_sales_quantity", "sale_quantity", "quantity_sold", "sold_quantity", "units_sold", "cantidad_vendida"]);
+    return sold !== null ? [{ ...record, quantity: sold, date: undefined, date_of_issue: undefined, sale_date: undefined }] : [];
+  });
+  return { records, periodBound: false };
 }
 
-function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number): ErpBestSellerSnapshot {
-  const now = new Date();
+export function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number, now = new Date(), periodBound = false): ErpBestSellerSnapshot {
   const lookbackStart = new Date(now);
   lookbackStart.setDate(lookbackStart.getDate() - SALES_LOOKBACK_DAYS);
 
   const metricsByCode = new Map<string, ErpBestSellerMetric>();
-  let hasDatedSales = false;
+  let hasDatedSales = periodBound;
   let hasUnitSales = false;
 
   records.forEach((record, index) => {
@@ -216,7 +223,8 @@ function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number): Er
 
     const units = getFirstNumber(record, UNIT_KEYS);
     const saleDate = getFirstDate(record, DATE_KEYS);
-    const safeUnits = units === null ? 0 : Math.max(0, Math.floor(units));
+    const safeUnits = units === null ? 0 : Math.max(0, units);
+    if (isCancelledSale(record)) return;
 
     if (units !== null) {
       hasUnitSales = true;
@@ -236,14 +244,14 @@ function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number): Er
     metric.firstRank = Math.min(metric.firstRank, index);
     metric.rotationUnits += safeUnits;
 
-    if (saleDate && saleDate >= lookbackStart) {
+    if ((saleDate && saleDate >= lookbackStart && saleDate <= now) || (!saleDate && periodBound)) {
       metric.units15 += safeUnits;
     }
 
     metricsByCode.set(code, metric);
   });
 
-  const metrics = Array.from(metricsByCode.values()).sort((left, right) => {
+  const metrics = Array.from(metricsByCode.values()).filter(metric => hasDatedSales ? metric.units15 > 0 : metric.rotationUnits > 0).sort((left, right) => {
     if (hasDatedSales && hasUnitSales) {
       return (
         right.units15 - left.units15 ||
@@ -263,7 +271,7 @@ function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number): Er
   const generatedAt = now.toISOString();
   const totalUnits15 = metrics.reduce((sum, metric) => sum + metric.units15, 0);
   const topRotationUnits = metrics[0]?.rotationUnits ?? 0;
-  const hasRealSales = hasDatedSales && hasUnitSales && totalUnits15 > 0;
+  const hasRealSales = hasUnitSales && metrics.length > 0;
 
   return {
     codes: hasRealSales ? codes : [],
@@ -279,8 +287,8 @@ function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number): Er
       hasUnitSales,
       insights: [
         {
-          label: "15 días",
-          value: hasRealSales ? `${formatCompactUnits(totalUnits15)} und.` : "Sin ventas ERP",
+          label: hasDatedSales ? "15 días" : "Acumulado ERP",
+          value: hasRealSales ? `${formatCompactUnits(hasDatedSales ? totalUnits15 : metrics.reduce((sum, metric) => sum + metric.rotationUnits, 0))} und.` : "Sin ventas ERP",
         },
         {
           label: "Rotación",
@@ -292,7 +300,7 @@ function buildBestSellerSnapshot(records: FacturadorRecord[], limit: number): Er
   };
 }
 
-function extractProductSaleRecords(payload: unknown) {
+export function extractProductSaleRecords(payload: unknown) {
   const records: FacturadorRecord[] = [];
   collectProductSaleRecords(payload, records, null);
   return records;
@@ -312,10 +320,19 @@ function collectProductSaleRecords(value: unknown, records: FacturadorRecord[], 
   }
 
   const record = value as FacturadorRecord;
+  if (isCancelledSale(record)) return;
   const recordDate = getFirstDate(record, DATE_KEYS) ?? inheritedDate;
+  // A document code/total must not mask its individual product lines.
+  const lines = record.items ?? record.details;
+  if (Array.isArray(lines)) {
+    collectProductSaleRecords(lines, records, recordDate);
+    return;
+  }
+  const nestedItem = record.item && typeof record.item === "object" && !Array.isArray(record.item) ? record.item as FacturadorRecord : null;
+  const saleRecord = nestedItem ? { ...nestedItem, ...record, internal_id: nestedItem.internal_id ?? nestedItem.code, item_id: record.item_id ?? nestedItem.id } : record;
 
-  if (hasProductSaleShape(record)) {
-    records.push(recordDate ? { ...record, date_of_issue: recordDate.toISOString() } : record);
+  if (hasProductSaleShape(saleRecord)) {
+    records.push(recordDate ? { ...saleRecord, date_of_issue: recordDate.toISOString() } : saleRecord);
     return;
   }
 
@@ -326,6 +343,11 @@ function collectProductSaleRecords(value: unknown, records: FacturadorRecord[], 
 
 function hasProductSaleShape(record: FacturadorRecord) {
   return Boolean(getFirstString(record, CODE_KEYS) && getFirstNumber(record, UNIT_KEYS));
+}
+
+function isCancelledSale(record: FacturadorRecord) {
+  const flag = (value: unknown) => value === true || value === 1 || value === "1" || value === "true";
+  return flag(record.is_cancelled) || flag(record.is_annulled) || /cancel|anulad|void/i.test(String(record.status ?? ""));
 }
 
 function getFirstString(record: FacturadorRecord, keys: string[]) {
@@ -354,6 +376,7 @@ function getFirstNumber(record: FacturadorRecord, keys: string[]) {
 
     if (typeof value === "string") {
       const normalized = value.replace(",", ".").trim();
+      if (!normalized) continue;
       const parsed = Number(normalized);
 
       if (Number.isFinite(parsed)) {

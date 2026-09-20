@@ -1,4 +1,5 @@
 "use client";
+import { variantColor } from "@/lib/storefront-taxonomy";
 
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { useState } from "react";
@@ -21,7 +22,9 @@ type ProductCardProps = {
   settings: StoreSettingsView;
 };
 
-export function ProductCard({ product, settings, className = "" }: ProductCardProps) {
+export function ProductCard({ product: initialProduct, settings, className = "" }: ProductCardProps) {
+  const [selectedId, setSelectedId] = useState(initialProduct.id);
+  const product = initialProduct.colorVariants?.find(item => item.id === selectedId) ?? initialProduct;
   const addItem = useCartStore((state) => state.addItem);
   const displayName = getPublicProductName(product.name);
   const [quantity, setQuantity] = useState(1);
@@ -67,6 +70,11 @@ export function ProductCard({ product, settings, className = "" }: ProductCardPr
           </div>
         </div>
 
+        {initialProduct.colorVariants && initialProduct.colorVariants.length > 1 ? <label className="storefront-color-selector">
+          <span>Color</span><select aria-label={'Color de ' + displayName} value={product.id} onChange={event => { setSelectedId(event.target.value); setQuantity(1); }}>
+            {initialProduct.colorVariants.map(variant => <option key={variant.id} value={variant.id}>{variantColor(variant) ?? variant.code}{variant.stockUnits <= 0 ? " · Agotado" : ""}</option>)}
+          </select>
+        </label> : null}
         <div className="price-box product-price-box">
           <ProductPriceRows currencySymbol={settings.currencySymbol} product={product} />
         </div>
