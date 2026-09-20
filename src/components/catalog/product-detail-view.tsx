@@ -333,7 +333,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
 
           <div className="product-detail-buybox">
             <div className="product-detail-qty-row">
-              <div className="product-detail-qty-control">
+              <div className="product-detail-qty-control" role="group" aria-label="Cantidad de unidades">
                 <button
                   aria-label="Disminuir cantidad"
                   disabled={maxQuantity <= 0 || safeQuantity <= 1}

@@ -71,17 +71,21 @@
   .product-detail-layout .product-detail-stage-media { display: flex; align-items: center; justify-content: center; padding: 0; }
   .product-detail-layout .product-detail-stage img, .product-detail-layout .product-detail-stage video { object-fit: contain; object-position: center center; margin-inline: auto; }
   .product-detail-layout .product-detail-copy-card { padding: 12px; gap: 10px; }
-  .product-detail-layout .product-detail-buybox { padding: 10px; gap: 6px; border-radius: 14px; }
-  .product-detail-layout .product-detail-qty-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-between; align-items: center; gap: 8px; }
-  .product-detail-layout .product-detail-qty-control { display: inline-grid; grid-template-columns: 44px minmax(20px, auto) 44px; gap: 2px; padding: 0; margin: 0; border: 0; border-radius: 10px; box-shadow: none; flex-shrink: 0; }
-  .product-detail-layout .product-detail-qty-control button { width: 44px; height: 44px; border-radius: 8px; }
-  .product-detail-layout .product-detail-total { width: auto; min-width: 0; text-align: right; justify-items: end; gap: 2px; }
-  .product-detail-layout .product-detail-total.is-total span { font-size: 11px; letter-spacing: 0; text-transform: none; }
-  .product-detail-layout .product-detail-total.is-total strong { font-size: 19px; line-height: 1.2; }
-  .product-detail-layout .product-detail-buy-note { font-size: 12px; line-height: 1.3; text-align: left; }
-  .product-detail-layout .product-detail-buy-actions { grid-template-columns: 1fr; gap: 2px; }
-  .product-detail-layout .product-detail-buy-actions .button-primary { min-height: 46px; padding: 8px 12px; border-radius: 10px; }
-  .product-detail-layout .product-detail-buy-actions .button-secondary { width: fit-content; justify-self: center; min-height: 44px; padding: 4px 8px; border: 0; border-radius: 6px; background: transparent; box-shadow: none; color: var(--brand-primary); text-decoration: underline; font-size: 12px; }
+  .product-detail-layout .product-detail-buybox { display: grid; grid-template-columns: 112px minmax(0, 1fr); padding: 12px; gap: 8px; border: 1px solid #e4e7ee; border-radius: 14px; background: #fff; }
+  .product-detail-layout .product-detail-qty-row, .product-detail-layout .product-detail-buy-actions { display: contents; }
+  .product-detail-layout .product-detail-total { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; }
+  .product-detail-layout .product-detail-total.is-total span { font-size: 13px; font-weight: 500; color: #526078; letter-spacing: 0; text-transform: none; }
+  .product-detail-layout .product-detail-total.is-total strong { font-size: 24px; line-height: 1.2; color: #111b35; }
+  .product-detail-layout .product-detail-buy-note { grid-column: 1 / -1; grid-row: 2; font-size: 11px; line-height: 1.3; text-align: left; color: #526078; padding-bottom: 4px; }
+  .product-detail-layout .product-detail-qty-control { grid-column: 1; grid-row: 3; display: inline-grid; grid-template-columns: 40px minmax(20px, 1fr) 40px; gap: 0; padding: 0; margin: 0; height: 48px; border: 1px solid #dce1eb; border-radius: 10px; background: #f8f9fc; box-shadow: none; overflow: hidden; }
+  .product-detail-layout .product-detail-qty-control button { width: 40px; min-width: 40px; height: 46px; min-height: 46px; border-radius: 0; background: transparent; color: #25334c; }
+  .product-detail-layout .product-detail-qty-control button:disabled { opacity: 0.35; }
+  .product-detail-layout .product-detail-qty-control strong { font-size: 14px; min-width: 0; color: #111b35; }
+  .product-detail-layout .product-detail-buy-actions .button-primary { grid-column: 2; grid-row: 3; width: 100%; min-width: 0; min-height: 48px; padding: 6px 8px; gap: 6px; border: 0; border-radius: 10px; background: #2820cf; color: white; font-size: 12px; line-height: 1.2; box-shadow: none; }
+  .product-detail-layout .product-detail-buy-actions .button-primary svg { flex-shrink: 0; }
+  .product-detail-layout .product-detail-buy-actions .button-secondary { grid-column: 1 / -1; grid-row: 4; width: fit-content; justify-self: center; min-height: 44px; padding: 4px 10px; border: 0; border-radius: 6px; background: transparent; box-shadow: none; color: #526078; text-decoration: none; font-size: 12px; font-weight: 500; }
+  .product-detail-layout .product-detail-buybox button:focus:not(:focus-visible), .product-detail-layout .product-detail-buybox a:focus:not(:focus-visible) { outline: none; }
+  .product-detail-layout .product-detail-buybox button:focus-visible, .product-detail-layout .product-detail-buybox a:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
   .catalog-sections-layout { gap: 12px; }
   .catalog-experience-shell { padding: 8px 0; }
   .catalog-sections-layout .catalog-section { padding: 10px 6px; border-radius: 14px; }
