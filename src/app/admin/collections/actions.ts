@@ -7,6 +7,23 @@ import { prisma } from "@/lib/prisma";
 import { CAMPAIGN_SLUGS, parseCampaignCodes } from "@/lib/storefront-campaigns";
 import { buildSellableProductWhere } from "@/lib/store-shared";
 
+export async function searchCampaignProducts(query: string, page = 0) {
+  await requireAdmin();
+  const search = query.trim().slice(0, 120);
+  const currentPage = Number.isSafeInteger(page) ? Math.max(0, Math.min(page, 10000)) : 0;
+  const products = await prisma.product.findMany({
+    where: search ? { OR: [
+      { code: { contains: search, mode: "insensitive" } },
+      { name: { contains: search, mode: "insensitive" } },
+    ] } : {},
+    select: { code: true, name: true, stockUnits: true, isVisible: true },
+    orderBy: [{ name: "asc" }, { code: "asc" }],
+    skip: currentPage * 20,
+    take: 21,
+  });
+  return { products: products.slice(0, 20), hasMore: products.length > 20 };
+}
+
 export async function saveCampaignAction(_previous: { error: string }, formData: FormData) {
   await requireAdmin();
   const slug = String(formData.get("slug") ?? "");

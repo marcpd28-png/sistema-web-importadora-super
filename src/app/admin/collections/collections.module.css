@@ -32,6 +32,22 @@
 .field textarea:focus { outline: 2px solid #8a80ee; outline-offset: 1px; }
 .field textarea.codes { font-family: ui-monospace, monospace; }
 .counter { text-align: right; }
+.productPicker { display: grid; gap: 10px; }
+.searchButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; padding: 9px 12px; min-height: 40px; border: 1px solid var(--campaign-line); border-radius: 9px; background: var(--campaign-soft); color: var(--campaign-text); font: inherit; font-size: 13px; cursor: pointer; }
+.searchButton:disabled { opacity: .45; cursor: not-allowed; }
+.searchButton:focus-visible, .productOption input:focus-visible { outline: 2px solid #8a80ee; outline-offset: 2px; }
+.pickerPanel { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--campaign-line); border-radius: 10px; }
+.pickerPanel p { margin: 0; }
+.searchInput { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--campaign-line); border-radius: 8px; color: var(--campaign-muted); }
+.searchInput:focus-within { outline: 2px solid #8a80ee; }
+.searchInput input { width: 100%; min-width: 0; padding: 10px 0; border: 0; outline: none; background: transparent; color: var(--campaign-text); font: inherit; font-size: 14px; }
+.productResults { max-height: 310px; overflow-y: auto; }
+.productOption { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--campaign-line); cursor: pointer; }
+.productOption input { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; accent-color: #5142c7; }
+.productOption span { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.productOption strong { font-size: 13px; }
+.productOption small { color: var(--campaign-muted); font-size: 12px; }
+.pickerPagination { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .notice { padding: 12px 14px; border-left: 3px solid #8a80ee; background: var(--campaign-soft); border-radius: 0 8px 8px 0; font-size: 12px; }
 .notice p { margin: 4px 0 0; line-height: 1.5; color: var(--campaign-muted); }
 .footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--campaign-line); padding-top: 16px; }
