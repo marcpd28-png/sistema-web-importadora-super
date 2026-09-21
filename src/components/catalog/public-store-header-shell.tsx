@@ -37,7 +37,7 @@ export function PublicStoreHeaderShell({ children }: PublicStoreHeaderShellProps
     const updateScrollState = () => {
       updateCollapsedState();
       const currentY = Math.max(0, Math.min(window.scrollY, document.documentElement.scrollHeight - window.innerHeight));
-      if (!media.matches || currentY <= 24) {
+      if (currentY <= 24) {
         setShortcutsHidden(false);
         previousY = currentY;
       } else if (Math.abs(currentY - previousY) >= 8) {
