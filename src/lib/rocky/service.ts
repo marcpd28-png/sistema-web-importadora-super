@@ -1,5 +1,5 @@
 import { matchCatalogSourceImage } from "../router-v2-catalog-image-match";
-import { matchCatalogImageText } from "../router-v2-local-ocr";
+import { identifyCatalogImageCodes, type ImageCodeMatch } from "./image-codes";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { memorySchema, type RockyResult, type RockyMode } from "./contracts";
@@ -49,22 +49,35 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
   const history = await prisma.chatMessage.findMany({ where: { conversationId: conversation.id, createdAt: { lt: trigger.createdAt }, messageType: "TEXT" }, orderBy: { createdAt: "desc" }, take: 4, select: { content: true } });
   const orchestrator = new RockyAIOrchestrator(createToolBackend(rockyKnowledge()), rockyProvider());
   let image: string | undefined;
-  let photoMatch: Awaited<ReturnType<typeof matchCatalogSourceImage>> | Awaited<ReturnType<typeof matchCatalogImageText>> = null;
+  let photoMatch: ImageCodeMatch | null = null;
   if (trigger.messageType === "IMAGE" && trigger.mediaUrl?.startsWith("data:image/")) {
-    photoMatch = await matchCatalogSourceImage(trigger.mediaUrl, hash => prisma.product.findMany({ where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2 }))
-      ?? await matchCatalogImageText(trigger.mediaUrl, code => prisma.product.findMany({ where: { isVisible: true, code: { equals: code, mode: "insensitive" } }, select: { code: true }, take: 2 }));
-    if (photoMatch) { resolvedProductCode = photoMatch.hints.code; memory.productCodes = [resolvedProductCode]; }
+    memory.productCodes = [];
+    resolvedProductCode = undefined;
+    const exactImage = await matchCatalogSourceImage(trigger.mediaUrl, hash => prisma.product.findMany({ where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2 }));
+    if (exactImage) photoMatch = { ...exactImage, codes: [exactImage.hints.code] };
+    else {
+      const visible = await prisma.product.findMany({ where: { isVisible: true }, select: { code: true, name: true } });
+      photoMatch = await identifyCatalogImageCodes(trigger.mediaUrl, visible);
+    }
+    if (photoMatch?.status === "READY") { resolvedProductCode = photoMatch.codes[0]; memory.productCodes = [resolvedProductCode]; }
     try { if (!photoMatch) image = (await sharp(Buffer.from(trigger.mediaUrl.split(",")[1], "base64"), { limitInputPixels: 16000000 }).resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 75 }).toBuffer()).toString("base64"); }
     catch { /* Invalid images are handled by clarification, never downloaded remotely. */ }
   }
   const result = await orchestrator.chat({ text: redactSensitiveText(trigger.content).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
-    resolvedProductCode,
+    resolvedProductCode, ...(photoMatch && photoMatch.status !== "READY" ? { resolvedProductCodes: photoMatch.codes.slice(0, 6) } : {}),
     ...(image ? { image } : {}) });
   if (trigger.messageType === "IMAGE") {
-    if (photoMatch) {
+    if (photoMatch && !result.requiresHuman) {
       result.reply = `${photoMatch.model === "catalog-source-image-sha256" ? "📸 La foto coincide con una imagen de nuestro catálogo." : `📸 Leí el código ${photoMatch.hints.code} en tu imagen.`} ¡Gracias por enviarla! 😊\n${result.reply}\n\nPrecio y stock consultados ahora; pueden diferir de los impresos en la foto.`;
       result.confidenceEvidence.push(photoMatch.model);
-      if (photoMatch.model === "local-tesseract-cropped-code") {
+      if (photoMatch.status === "MULTIPLE") {
+        result.reply = `📸 Identifiqué estos códigos en tu imagen 😊\n\n${result.products.map(product => `🛍️ ${product.name}\nCódigo: ${product.code}\n💰 S/ ${product.unitPrice.toFixed(2)} · 📦 Stock: ${product.stockUnits}`).join("\n\n")}\n\nPrecio y stock consultados ahora. ${photoMatch.codes.length > 6 ? "Te muestro los primeros 6; envía las demás etiquetas por separado para continuar." : "¿De cuáles necesitas más información?"}`;
+      }
+      if (photoMatch.status === "CHOICES") {
+        result.reply = `📸 Leí ${photoMatch.hints.code} en tu imagen 😊 Ese código corresponde a varias referencias o variantes del catálogo:\n${result.products.map(product => `• ${product.code} — ${product.name}`).join("\n")}\n\n¿Cuál es la tuya? Confírmame el color, la versión o el código completo para darte su precio y stock exactos.`;
+        result.memory.productCodes = [];
+      }
+      if (photoMatch.hints.confidence < 0.85) {
         result.confidence = Math.min(result.confidence, photoMatch.hints.confidence);
         result.reply += "\n¿Me confirmas que este es el producto de tu foto?";
       }

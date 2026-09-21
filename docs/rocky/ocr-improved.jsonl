@@ -1,0 +1,25 @@
+{"sourceProductCode":"05703","actual":"Q28, N1123","sourceCodeEqualsRead":false,"category":"ACCESORIOS PARA AUTO","status":"READY","candidates":["05703"],"elapsedMs":4841}
+{"sourceProductCode":"05737","actual":null,"sourceCodeEqualsRead":false,"category":"ACCESORIOS PARA AUTO","elapsedMs":6566}
+{"sourceProductCode":"06778","actual":null,"sourceCodeEqualsRead":false,"category":"PARLANTES","elapsedMs":7084}
+{"sourceProductCode":"07337","actual":"BT23","sourceCodeEqualsRead":false,"category":"ACCESORIOS PARA CELULARES","status":"CHOICES","candidates":["BT23","07337"],"elapsedMs":3766}
+{"sourceProductCode":"07434","actual":"BT28","sourceCodeEqualsRead":false,"category":"NOVEDADES","status":"CHOICES","candidates":["07434","BT28"],"elapsedMs":3724}
+{"sourceProductCode":"101-16","actual":null,"sourceCodeEqualsRead":false,"category":"DISPOSITIVOS DE ALMACENAMIENTO","elapsedMs":3241}
+{"sourceProductCode":"AU147-BLANCO","actual":"AU147","sourceCodeEqualsRead":false,"category":"AURICULARES","status":"CHOICES","candidates":["AU147-BLANCO"],"elapsedMs":3544}
+{"sourceProductCode":"AU206","actual":"AU206","sourceCodeEqualsRead":true,"category":"AURICULARES","status":"READY","candidates":["AU206"],"elapsedMs":4228}
+{"sourceProductCode":"B7","actual":"B7","sourceCodeEqualsRead":true,"category":"ACCESORIOS PARA CELULARES","status":"READY","candidates":["B7"],"elapsedMs":4192}
+{"sourceProductCode":"CB08","actual":null,"sourceCodeEqualsRead":false,"category":"DISPOSITIVOS PORTATILES","elapsedMs":8546}
+{"sourceProductCode":"(CE103-BLUE)","actual":"CE103","sourceCodeEqualsRead":false,"category":"DISPOSITIVOS PORTATILES","status":"CHOICES","candidates":["(CE103-GREEN)","(CE103-BLUE)"],"elapsedMs":4337}
+{"sourceProductCode":"CP151","actual":null,"sourceCodeEqualsRead":false,"category":"BATERIAS","elapsedMs":7972}
+{"sourceProductCode":"CP588","actual":"CP588","sourceCodeEqualsRead":true,"category":"NOVEDADES","status":"READY","candidates":["CP588"],"elapsedMs":4719}
+{"sourceProductCode":"CP592","actual":"CP592","sourceCodeEqualsRead":true,"category":"BATERIAS","status":"READY","candidates":["CP592"],"elapsedMs":5337}
+{"sourceProductCode":"DS7016-32","actual":"DS7016-32","sourceCodeEqualsRead":true,"category":"DISPOSITIVOS DE ALMACENAMIENTO","status":"READY","candidates":["DS7016-32"],"elapsedMs":3601}
+{"sourceProductCode":"G15E","actual":"N1382","sourceCodeEqualsRead":false,"category":"ENTRETENIMIENTO Y MULTIMEDIA","status":"READY","candidates":["G15E"],"elapsedMs":3526}
+{"sourceProductCode":"JUGT369","actual":"JUGT369","sourceCodeEqualsRead":true,"category":"JUGUETES/NIÑOS","status":"READY","candidates":["JUGT369"],"elapsedMs":4618}
+{"sourceProductCode":"JUGT370","actual":"JUGT370","sourceCodeEqualsRead":true,"category":"JUGUETES/UTILES ESCOLARES","status":"READY","candidates":["JUGT370"],"elapsedMs":4430}
+{"sourceProductCode":"Kaperh 220","actual":null,"sourceCodeEqualsRead":false,"category":"PARLANTES","elapsedMs":6584}
+{"sourceProductCode":"L02","actual":null,"sourceCodeEqualsRead":false,"category":"UTENCILLOS DE COCINA Y ACCESORIOS DE USO DOMESTICO","elapsedMs":9070}
+{"sourceProductCode":"L05","actual":null,"sourceCodeEqualsRead":false,"category":"UTENCILLOS DE COCINA Y ACCESORIOS DE USO DOMESTICO","elapsedMs":7235}
+{"sourceProductCode":"L103","actual":"L103","sourceCodeEqualsRead":true,"category":"ARTICULOS PARA EL HOGAR","status":"READY","candidates":["L103"],"elapsedMs":3448}
+{"sourceProductCode":"L133","actual":"L133","sourceCodeEqualsRead":true,"category":"ACCESORIOS DE CUIDADO PERSONAL","status":"READY","candidates":["L133"],"elapsedMs":5155}
+{"sourceProductCode":"L186","actual":"L186","sourceCodeEqualsRead":true,"category":"ACCESORIOS DE CUIDADO PERSONAL","status":"READY","candidates":["L186"],"elapsedMs":4109}
+{"total":24,"sourceCodeEqualsRead":10,"readDifferentFromSourceCode":6,"unresolved":8,"note":"Source ERP codes are not OCR ground truth; inspect printed labels and aliases."}

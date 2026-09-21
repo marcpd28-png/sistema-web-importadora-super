@@ -28,7 +28,7 @@ try {
    const signature=Buffer.from(await pdf.arrayBuffer()).subarray(0,4).toString();assert.equal(signature,'%PDF');
    assert.equal((await fetch(catalog.url)).status,200);
   }
-  if(item.kind==='photo'){assert.ok(result.rocky.confidenceEvidence.some(e=>e.startsWith('local-tesseract')||e==='catalog-source-image-sha256'));if(process.env.ROCKY_EXPECTED_PHOTO_CODE)assert.deepEqual(result.rocky.products.map(p=>p.code),[process.env.ROCKY_EXPECTED_PHOTO_CODE]);}
+  if(item.kind==='photo'){assert.ok(result.rocky.confidenceEvidence.some(e=>e.startsWith('local-tesseract')||e==='local-catalog-code-multipass'||e==='catalog-source-image-sha256'));if(process.env.ROCKY_EXPECTED_PHOTO_CODE)assert.deepEqual(result.rocky.products.map(p=>p.code),[process.env.ROCKY_EXPECTED_PHOTO_CODE]);}
   console.log(JSON.stringify({kind:item.kind,ok:true,elapsedMs:Date.now()-started,catalog:result.rocky.catalog,codes:result.rocky.products.map(p=>p.code),reply:result.rocky.reply}));
  }
 } finally { await db.$disconnect(); }

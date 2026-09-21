@@ -184,3 +184,18 @@ test("código visual resuelto evita inferencia y consulta el producto exacto", a
   const result = await new RockyAIOrchestrator(backend).chat({ text: "hola estoy buscando este producto", resolvedProductCode: "LK618" });
   assert.equal(result.intent, "PRODUCT_DETAILS"); assert.deepEqual(result.products.map(p => p.code), ["LK618"]);
 });
+
+
+test("varios códigos visuales consultan cada producto sin inferencia", async () => {
+  const provider = { model: "unused", plan: async () => { throw new Error("MUST_NOT_INFER"); } } as unknown as LLMProvider;
+  const result = await new RockyAIOrchestrator(backend, provider).chat({ text: "productos de la foto", resolvedProductCodes: products.map(p => p.code) });
+  assert.deepEqual(result.products.map(p => p.code), products.map(p => p.code));
+  assert.equal(result.model, "rules-and-tools");
+});
+
+
+test("una foto con varios códigos no impide solicitar un asesor", async () => {
+  const result = await new RockyAIOrchestrator(backend).chat({ text: "quiero hablar con un asesor humano", resolvedProductCodes: products.map(p => p.code) });
+  assert.equal(result.requiresHuman, true);
+  assert.equal(result.intent, "HUMAN_REQUEST");
+});

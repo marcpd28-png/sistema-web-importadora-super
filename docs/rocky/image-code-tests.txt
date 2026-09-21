@@ -1,0 +1,46 @@
+✔ catalog formatting preserves digits, numeric SKUs, short codes and punctuation (1.4401ms)
+✔ printed base codes require a variant choice including when only one variant is visible (0.1381ms)
+✔ explicit product aliases resolve ERP codes and preserve collisions (0.1697ms)
+✔ confirmation needs two distinct OCR views with sufficient confidence (0.1725ms)
+✔ caso 1: Samsung, carga rápida, presupuesto y búsqueda (12.3393ms)
+✔ caso 2: objeción conserva el producto y no inventa descuentos (0.6472ms)
+✔ caso 3: stock exacto desde backend (0.7155ms)
+✔ caso 4: compara ambos y pide uso (0.7192ms)
+✔ caso 5: mayorista conserva producto, consulta stock precio promociones (0.452ms)
+✔ caso 6: humano prevalece sobre modelo (0.357ms)
+✔ caso 7: garantía con fuente, sin dato deriva (0.5277ms)
+✔ caso 8: fallback semántico obtiene producto pero precio se recarga (0.4248ms)
+✔ no stock inventado si falla herramienta (0.2962ms)
+✔ no ejecutar herramientas o workflows no autorizados (1.0256ms)
+✔ localhost obligatorio y una inferencia compartida (0.2457ms)
+✔ control humano domina AUTO y COPILOT (0.0937ms)
+✔ RAG chunking y validación de dimensión (0.3807ms)
+✔ autenticación fail closed y body acotado sin content-length (2.0807ms)
+✔ URLs externas no se descargan ni se usan como producto (0.1628ms)
+✔ sin selección implícita entre varios resultados (0.1908ms)
+✔ credenciales comunes no pasan al contexto (0.1734ms)
+✔ salida LLM no inventa códigos ni presupuesto y no puede ejecutar acciones (0.2906ms)
+✔ vocabulario inicial proporcionado conserva otros calificadores (0.1191ms)
+✔ stock por código no compite con una inferencia ni pierde precisión (0.1352ms)
+✔ precio mayorista cero conserva el precio unitario como BC (0.1769ms)
+✔ horarios consulta configuración actual sin modelo ni catálogo (0.7197ms)
+✔ AirPods consulta catálogo sin inferencia y conserva las doce unidades (0.2855ms)
+✔ AirPods 4 no sustituye a Pro 2 aunque búsqueda o RAG lo sugieran (0.2441ms)
+✔ catálogo completo responde enlace oficial sin lista de códigos (0.2969ms)
+✔ catálogo por marca devuelve PDF y enlace filtrado, incluso pidiendo stock (0.1358ms)
+✔ si PDF falla no afirma adjuntarlo y conserva enlace (0.1123ms)
+✔ código visual resuelto evita inferencia y consulta el producto exacto (0.1782ms)
+✔ varios códigos visuales consultan cada producto sin inferencia (0.2096ms)
+✔ una foto con varios códigos no impide solicitar un asesor (0.1042ms)
+✔ local OCR needs an explicit label and matching, confident readings (1.2521ms)
+✔ local OCR does not download URLs or query catalog for malformed media (0.1684ms)
+✔ código debajo de etiqueta en tarjeta conserva coincidencia y rechaza ambigüedad (0.1194ms)
+✔ recortes deben coincidir sin reparar caracteres ni aceptar lectura débil (0.1659ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 766.2484

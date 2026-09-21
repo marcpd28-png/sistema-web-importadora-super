@@ -8,13 +8,17 @@ import { compareFacts } from "./sales";
 
 export class RockyAIOrchestrator {
   constructor(private backend: ToolBackend, private provider?: LLMProvider) {}
-  async chat(input: { text: string; memory?: RockyMemory; history?: string[]; image?: string; resolvedProductCode?: string }): Promise<RockyResult> {
+  async chat(input: { text: string; memory?: RockyMemory; history?: string[]; image?: string; resolvedProductCode?: string; resolvedProductCodes?: string[] }): Promise<RockyResult> {
     const started = Date.now();
     const memory = input.memory || memorySchema.parse({});
     let plan = detectPlan(input.text, memory);
     if (input.resolvedProductCode && !plan.codes.length && ["UNKNOWN", "PRODUCT_SEARCH", "PRODUCT_DETAILS", "FOLLOW_UP"].includes(plan.intent)) {
       plan.codes = [input.resolvedProductCode];
       if (["UNKNOWN", "FOLLOW_UP", "PRODUCT_SEARCH"].includes(plan.intent)) plan.intent = "PRODUCT_DETAILS";
+    }
+    if (input.resolvedProductCodes?.length && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS"].includes(plan.intent)) {
+      plan.codes = input.resolvedProductCodes.slice(0, 6);
+      plan.intent = "PRODUCT_DETAILS";
     }
     let tokens: RockyResult["tokens"] = null;
     let model = "rules-and-tools";

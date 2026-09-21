@@ -17,7 +17,7 @@ flowchart TD
   UI[Centro de Mensajes / Simulador] --> SELECT{Motor elegido}
   SELECT -->|BC| N8N[n8n: simulador existente]
   N8N --> BC[Backend conversacional actual :4000 / router :4001]
-  SELECT -->|ROCKY| API[Instancia ROCKY :4002 localhost]
+  SELECT -->|ROCKY| API[Instancia ROCKY :4003 localhost]
   API --> ORCH[RockyAIOrchestrator]
   ORCH --> PLAN[LLMProvider / Ollama localhost:11434]
   ORCH --> SK[19 Skills versionadas]
@@ -33,7 +33,9 @@ flowchart TD
   BC --> OUT[n8n / ManyChat / WhatsApp]
 ```
 
-Release activo: `/home/IMPORTADORA-releases/rocky-20260921`, proceso PM2 `importadora-rocky-web`, puerto localhost 4002. La instancia anterior `importadora-rocky-web-v2` queda detenida.
+Release activo: `/home/IMPORTADORA-releases/rocky-20260921-r2`, proceso PM2 `importadora-rocky-web-v2`, puerto localhost 4003. La instancia anterior `importadora-rocky-web` queda detenida.
+
+Lectura ampliada de códigos en fotos: [comportamiento, pruebas y límites](lectura-codigos-fotos.md).
 
 La instancia separada sirve las rutas nuevas, el simulador y `/api/internal/chat/requests` de BC con el detector de horarios corregido. La tienda permanece en su proceso original para conservar las actualizaciones de otras tareas. No se activa otro scheduler ERP ni otro worker de mensajería.
 

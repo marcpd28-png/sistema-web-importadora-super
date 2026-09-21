@@ -1,0 +1,25 @@
+{"actual": null, "category": "ACCESORIOS PARA AUTO", "elapsedMs": 1960, "sourceProductCode": "05703", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "ACCESORIOS PARA AUTO", "elapsedMs": 1691, "sourceProductCode": "05737", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "PARLANTES", "elapsedMs": 1387, "sourceProductCode": "06778", "sourceCodeEqualsRead": false}
+{"actual": "BT23", "category": "ACCESORIOS PARA CELULARES", "elapsedMs": 1808, "sourceProductCode": "07337", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "NOVEDADES", "elapsedMs": 1788, "sourceProductCode": "07434", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "DISPOSITIVOS DE ALMACENAMIENTO", "elapsedMs": 500, "sourceProductCode": "101-16", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "AURICULARES", "elapsedMs": 1787, "sourceProductCode": "AU147-BLANCO", "sourceCodeEqualsRead": false}
+{"actual": "AU206", "category": "AURICULARES", "elapsedMs": 2171, "sourceProductCode": "AU206", "sourceCodeEqualsRead": true}
+{"actual": null, "category": "ACCESORIOS PARA CELULARES", "elapsedMs": 1194, "sourceProductCode": "B7", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "DISPOSITIVOS PORTATILES", "elapsedMs": 1751, "sourceProductCode": "CB08", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "DISPOSITIVOS PORTATILES", "elapsedMs": 1347, "sourceProductCode": "(CE103-BLUE)", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "BATERIAS", "elapsedMs": 1551, "sourceProductCode": "CP151", "sourceCodeEqualsRead": false}
+{"actual": "CP588", "category": "NOVEDADES", "elapsedMs": 2383, "sourceProductCode": "CP588", "sourceCodeEqualsRead": true}
+{"actual": null, "category": "BATERIAS", "elapsedMs": 1974, "sourceProductCode": "CP592", "sourceCodeEqualsRead": false}
+{"actual": "DS7016-32", "category": "DISPOSITIVOS DE ALMACENAMIENTO", "elapsedMs": 2051, "sourceProductCode": "DS7016-32", "sourceCodeEqualsRead": true}
+{"actual": null, "category": "ENTRETENIMIENTO Y MULTIMEDIA", "elapsedMs": 1367, "sourceProductCode": "G15E", "sourceCodeEqualsRead": false}
+{"actual": "JUGT369", "category": "JUGUETES/NIÑOS", "elapsedMs": 2252, "sourceProductCode": "JUGT369", "sourceCodeEqualsRead": true}
+{"actual": "JUGT370", "category": "JUGUETES/UTILES ESCOLARES", "elapsedMs": 2126, "sourceProductCode": "JUGT370", "sourceCodeEqualsRead": true}
+{"actual": null, "category": "PARLANTES", "elapsedMs": 1091, "sourceProductCode": "Kaperh 220", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "UTENCILLOS DE COCINA Y ACCESORIOS DE USO DOMESTICO", "elapsedMs": 1919, "sourceProductCode": "L02", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "UTENCILLOS DE COCINA Y ACCESORIOS DE USO DOMESTICO", "elapsedMs": 1220, "sourceProductCode": "L05", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "ARTICULOS PARA EL HOGAR", "elapsedMs": 996, "sourceProductCode": "L103", "sourceCodeEqualsRead": false}
+{"actual": null, "category": "ACCESORIOS DE CUIDADO PERSONAL", "elapsedMs": 2122, "sourceProductCode": "L133", "sourceCodeEqualsRead": false}
+{"actual": "L186", "category": "ACCESORIOS DE CUIDADO PERSONAL", "elapsedMs": 2079, "sourceProductCode": "L186", "sourceCodeEqualsRead": true}
+{"total": 24, "unresolved": 17, "sourceCodeEqualsRead": 6, "readDifferentFromSourceCode": 1, "note": "ERP source codes are not OCR ground truth; printed BT23 belongs to a source row with code 07337."}
