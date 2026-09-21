@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { StoreHomeLink } from "@/components/catalog/store-home-link";
 import {
   House,
   ShoppingCart,
@@ -46,14 +46,12 @@ export function StoreSideActions({
       </button>
 
       {showHomeShortcut ? (
-        <Link
-          aria-label="Volver al inicio"
+        <StoreHomeLink
           className="store-side-action store-side-action-home"
-          href="/"
         >
           <House size={24} />
           <span>Inicio</span>
-        </Link>
+        </StoreHomeLink>
       ) : null}
 
       <StoreAssistantLauncher businessName={settings.businessName} />

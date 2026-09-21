@@ -6,6 +6,7 @@ import { House, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import { shopperLogoutAction } from "@/app/acceso/actions";
 import type { SessionUser } from "@/lib/auth";
 import { usePublicStoreHeaderState } from "@/components/catalog/public-store-header-shell";
+import { StoreHomeLink } from "@/components/catalog/store-home-link";
 
 type AccountRole = SessionUser["role"] | undefined;
 
@@ -17,14 +18,12 @@ type AccountLinkItem = {
 
 function AccountHomeLink() {
   return (
-    <Link
+    <StoreHomeLink
       className="public-store-quick-link public-store-home-link public-store-account-switch-link public-store-account-switch-home-link"
-      href="/"
-      aria-label="Volver al inicio"
     >
       <House size={16} />
       <span>Inicio</span>
-    </Link>
+    </StoreHomeLink>
   );
 }
 
