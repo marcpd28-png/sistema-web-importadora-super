@@ -16534,6 +16534,8 @@ main,
 
   .public-store-header-shell .public-store-bar,
   .public-store-header-shell.is-collapsed .public-store-bar {
+    width: 100%;
+    margin-inline: 0;
     grid-template-columns: minmax(2.75rem, auto) minmax(0, 1fr) max-content !important;
     grid-template-areas: "lead search account" !important;
     align-items: center !important;
