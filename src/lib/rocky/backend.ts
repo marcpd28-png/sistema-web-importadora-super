@@ -1,3 +1,4 @@
+import { matchesRequestedModel } from "./model-match";
 import { businessQuestion } from "../business-question";
 import { prisma } from "@/lib/prisma";
 import { searchInternalProducts } from "@/lib/internal-product-search";
@@ -21,7 +22,7 @@ export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
     async search(query, budget) {
       query = expandInitialVocabulary(query);
       const aliases = await prisma.rockySynonym.findMany({ where: { phrase: { equals: query, mode: "insensitive" }, status: "APPROVED" }, take: 3 });
-      const candidates = await searchInternalProducts({ query, limit: 8 });
+      const candidates = (await searchInternalProducts({ query, limit: 8 })).filter(p => matchesRequestedModel(query, p));
       if (!candidates.length) {
         const catalog = await loadCommercialCatalog();
         const matches = catalog.search(query, false).products;

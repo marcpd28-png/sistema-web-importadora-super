@@ -21,7 +21,7 @@ export class OllamaLocalProvider implements LLMProvider {
     const response = await fetch(`${localOllamaUrl()}/api/${path}`, {
       method: body ? "POST" : "GET", headers: { "content-type": "application/json" },
       body: body ? JSON.stringify(body) : undefined, redirect: "error", cache: "no-store",
-      signal: AbortSignal.timeout(path === "tags" ? 3000 : 90000),
+      signal: AbortSignal.timeout(path === "tags" ? 3000 : path === "embed" ? 10000 : 30000),
     });
     if (!response.ok) throw new Error("OLLAMA_UNAVAILABLE");
     return response.json();

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Bug, FileDown, RefreshCw, Send, UserRound } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
 import { SIMULATOR_MEDIA_ACCEPT, SIMULATOR_MEDIA_MAX_BYTES } from "@/lib/simulator-message";
+import { sendSimulatorRequest } from "@/lib/simulator-request";
 import type { RockyResult } from "@/lib/rocky/contracts";
 
 type SimulatorResponse = {
@@ -58,10 +59,20 @@ export function MessageSimulator() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [pendingCustomerMessageId, setPendingCustomerMessageId] = useState<string | null>(null);
   const [pendingSince, setPendingSince] = useState<string | null>(null);
+  const activeRequest = useRef<AbortController | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const [busy, setBusy] = useState(false);
   const [waitingForN8n, setWaitingForN8n] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => () => activeRequest.current?.abort(), []);
+  useEffect(() => {
+    if (!busy) return;
+    const started = Date.now();
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, [busy]);
 
   const canSend = Boolean(content.trim() || attachment) && !busy && !readingFile;
   const conversationLabel = useMemo(() => phone.trim() || "sin telefono", [phone]);
@@ -139,32 +150,24 @@ export function MessageSimulator() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canSend) {
+    if (!canSend || activeRequest.current) {
       return;
     }
 
     const message = content.trim();
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setElapsed(0);
     setBusy(true);
     setNotice(null);
 
     try {
-      const response = await fetch("/api/admin/conversations/simulate", {
-        body: JSON.stringify({
-          engine,
-          content: message,
-          name,
-          phone,
-          sessionKey,
-          attachment: attachment ? { type: attachment.type, dataUrl: attachment.dataUrl } : undefined,
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-
-      const payload = (await response.json()) as Partial<SimulatorResponse> & { error?: string };
-      if (!response.ok || !payload.messages) {
-        throw new Error(payload.error || "No se pudo simular el mensaje.");
-      }
+      const payload = await sendSimulatorRequest<Partial<SimulatorResponse>>({
+        engine, content: message, name, phone, sessionKey,
+        attachment: attachment ? { type: attachment.type, dataUrl: attachment.dataUrl } : undefined,
+      }, controller);
+      if (controller.signal.aborted) return;
+      if (!payload.messages) throw new Error("No se pudo simular el mensaje.");
 
       setMessages(payload.messages);
       setConversationId(payload.conversationId ?? null);
@@ -183,8 +186,9 @@ export function MessageSimulator() {
         setNotice(payload.rocky ? payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación." : "Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "No se pudo simular el mensaje.");
+      setNotice(controller.signal.aborted ? "Terminó la espera. El mensaje puede haberse guardado en el servidor; inicia una nueva sesión si quieres repetir la prueba." : error instanceof Error ? error.message : "No se pudo simular el mensaje.");
     } finally {
+      activeRequest.current = null;
       setBusy(false);
     }
   }
@@ -318,7 +322,12 @@ export function MessageSimulator() {
           <div ref={endRef} />
         </div>
 
-        {notice ? <div className="message-simulator-notice">{notice}</div> : null}
+        {busy && <div className="message-simulator-notice" role="status">
+          {engine === "ROCKY" ? "Rocky está consultando tu mensaje" : "Enviando el mensaje al simulador"} · {elapsed} s.
+          {elapsed >= 15 && " Está tardando más de lo habitual. La espera termina como máximo en 65 segundos."}
+          <button type="button" className="btn btn-outline" onClick={() => activeRequest.current?.abort()}>Dejar de esperar</button>
+        </div>}
+        {notice ? <div className="message-simulator-notice" role="status">{notice}</div> : null}
 
         <label className="simulator-field">
           <span>Adjuntar foto, captura de redes o audio (hasta 4 MB)</span>
@@ -369,7 +378,7 @@ export function MessageSimulator() {
           />
           <button className="btn btn-primary" disabled={!canSend} type="submit">
             <Send size={15} />
-            {busy ? "Disparando" : "Enviar a n8n"}
+            {busy ? `Procesando · ${elapsed} s` : engine === "ROCKY" ? "Enviar a Rocky" : "Enviar a BC"}
           </button>
         </form>
       </section>

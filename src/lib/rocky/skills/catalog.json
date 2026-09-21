@@ -41,7 +41,10 @@
     "tools": [
       "getProductByCode",
       "getStock",
-      "getPrice"
+      "getPrice",
+      "searchProducts",
+      "searchKnowledge",
+      "getProduct"
     ],
     "requiredInformation": [
       "necesidad explícita",

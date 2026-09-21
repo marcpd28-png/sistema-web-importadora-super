@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "elapsedMs": 2442,
+  "conversationId": "cmub4b8zk0002kwzuukmg1vb7",
+  "requestId": "e14287a8-b3e4-4fea-906e-e9f51fdf09fe",
+  "intent": "STOCK_QUERY",
+  "model": "rules-and-tools",
+  "tools": [
+    "searchProducts",
+    "searchKnowledge",
+    "getProduct",
+    "getProduct",
+    "getProduct"
+  ],
+  "reason": null,
+  "messages": 2,
+  "reply": "BT57 — (BT57) AUDIFONO BT PRO 2 2DA GENERACION sin anc  USA\nPrecio por unidad: S/ 29.00 para 12 unidades. Stock: 3880 unidades.\n\nBT284 — (BT284) SEGUNDA GENERACION PRO 2 PRO2  TIPO C CON ANC USA\nPrecio por unidad: S/ 49.00 para 12 unidades. Stock: 20 unidades.\n\n¿Qué código te interesa?"
+}

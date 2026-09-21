@@ -123,3 +123,5 @@ Para actualizar el catálogo, ejecutar `node --env-file=.env --import tsx script
 ## Reversión
 
 Apagar ROCKY mediante `ROCKY_SIMULATOR_ENABLED=false` y reiniciar solo `importadora-rocky-web-v2`, o retirar las rutas Nginx de ROCKY y recargar Nginx tras `nginx -t`. La tienda/BC originales permanecen en :4000/:4001. No revertir borrando tablas: conservar trazas y feedback. Restaurar la configuración previa de Ollama únicamente si se desea retirar sus límites, evaluando antes el riesgo de memoria.
+
+Actualización de espera y búsqueda directa: [correccion-espera.md](correccion-espera.md).

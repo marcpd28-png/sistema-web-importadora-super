@@ -11,7 +11,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
     if (memory.shownCodes[index]) codes = [memory.shownCodes[index]];
   }
   const budget = t.match(/(?:maximo|hasta|presupuesto(?: de)?|menos de)\s*(?:s\/\.?\s*)?(\d+(?:\.\d+)?)/);
-  const quantity = t.match(/(?:quiero|necesito|llevo)\s+(\d+)\b(?!\s*(?:soles|watts|w\b))/);
+  const quantity = t.match(/(?:quiero|necesito|llevo|deseo)\s+(\d+)\b(?!\s*(?:soles|watts|w\b))/);
   const rules: [RockyPlan["intent"], RegExp][] = [
     ["HUMAN_REQUEST", /hablar con (?:una )?persona|humano|asesor|deja de responder|no me escrib/],
     ["COMPLAINT", /reclamo|denuncia|estafa|cobro indebido|problema (?:de|con el) pago/],
@@ -26,7 +26,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
     ["CATALOG_REQUEST", /catalogo/], ["PRODUCT_DETAILS", /caracteristicas|ficha|detalle|especificaciones/],
     ["PRODUCT_RECOMMENDATION", /recomienda|que me sugieres/], ["SALES_OBJECTION", /no estoy seguro|lo voy a pensar/],
     ["GREETING", /^(?:hola|buenos dias|buenas tardes|buenas noches)[!. ]*$/],
-    ["PRODUCT_SEARCH", /quiero|busco|necesito|tienen|cargador|arrancador|booster/],
+    ["PRODUCT_SEARCH", /quiero|busco|necesito|tienes|tienen|cargador|arrancador|booster/],
     ["FOLLOW_UP", /^(?:si|ok|ese|el primero|el segundo|gracias)[!. ]*$/],
   ];
   let intent = rules.find(([, rule]) => rule.test(t))?.[0] || (codes.length ? "PRODUCT_DETAILS" : "UNKNOWN");
@@ -34,7 +34,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
   if (ordinal && codes.length) intent = "PRODUCT_DETAILS";
   if (quantity && Number(quantity[1]) >= 3 && memory.productCodes.length && !codes.length && !["HUMAN_REQUEST", "COMPLAINT", "BUSINESS_QUERY"].includes(intent)) intent = "WHOLESALE_QUERY";
   const follow = ["PRICE_OBJECTION", "WHOLESALE_QUERY", "FOLLOW_UP", "STOCK_QUERY", "PRICE_QUERY", "PRODUCT_COMPARISON", "PRODUCT_DETAILS", "PRODUCT_COMPATIBILITY", "WARRANTY_QUERY"].includes(intent);
-  const query = text.replace(/(?:máximo|maximo|hasta|presupuesto(?: de)?)\s*\d+(?:\.\d+)?\s*(?:soles)?/gi, "").replace(/\b(?:quiero|un|una|para|tienen|busco|necesito)\b/gi, " ").replace(/[¿?!,]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+  const query = text.replace(/(?:quiero|necesito|llevo|deseo)\s+\d+\s*(?:unidades|uds|piezas)\b/gi, " ").replace(/(?:máximo|maximo|hasta|presupuesto(?: de)?)\s*\d+(?:\.\d+)?\s*(?:soles)?/gi, "").replace(/\b(?:hola|quiero|un|una|para|tienes|tienen|busco|necesito|disponibles?|stock)\b/gi, " ").replace(/[¿?!,]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
   return { intent, codes: codes.length ? codes : follow ? memory.productCodes : [], query: follow && !codes.length ? memory.query || query : query,
     budget: budget ? Number(budget[1]) : follow ? memory.budget : null,
     quantity: quantity ? Math.min(100000, Math.max(1, Number(quantity[1]))) : follow ? memory.quantity : 1,

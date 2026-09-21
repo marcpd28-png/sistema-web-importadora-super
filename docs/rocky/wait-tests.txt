@@ -1,0 +1,35 @@
+✔ caso 1: Samsung, carga rápida, presupuesto y búsqueda (11.6389ms)
+✔ caso 2: objeción conserva el producto y no inventa descuentos (0.5576ms)
+✔ caso 3: stock exacto desde backend (0.4521ms)
+✔ caso 4: compara ambos y pide uso (0.5167ms)
+✔ caso 5: mayorista conserva producto, consulta stock precio promociones (0.3825ms)
+✔ caso 6: humano prevalece sobre modelo (0.2882ms)
+✔ caso 7: garantía con fuente, sin dato deriva (0.4828ms)
+✔ caso 8: fallback semántico obtiene producto pero precio se recarga (0.4543ms)
+✔ no stock inventado si falla herramienta (0.2683ms)
+✔ no ejecutar herramientas o workflows no autorizados (1.0367ms)
+✔ localhost obligatorio y una inferencia compartida (0.2411ms)
+✔ control humano domina AUTO y COPILOT (0.077ms)
+✔ RAG chunking y validación de dimensión (0.4086ms)
+✔ autenticación fail closed y body acotado sin content-length (1.9269ms)
+✔ URLs externas no se descargan ni se usan como producto (0.1631ms)
+✔ sin selección implícita entre varios resultados (0.2122ms)
+✔ credenciales comunes no pasan al contexto (0.1651ms)
+✔ salida LLM no inventa códigos ni presupuesto y no puede ejecutar acciones (0.2956ms)
+✔ vocabulario inicial proporcionado conserva otros calificadores (0.1188ms)
+✔ stock por código no compite con una inferencia ni pierde precisión (0.1695ms)
+✔ precio mayorista cero conserva el precio unitario como BC (2.7486ms)
+✔ horarios consulta configuración actual sin modelo ni catálogo (1.1391ms)
+✔ AirPods consulta catálogo sin inferencia y conserva las doce unidades (0.3233ms)
+✔ AirPods 4 no sustituye a Pro 2 aunque búsqueda o RAG lo sugieran (0.237ms)
+✔ envío lento termina y permite una siguiente petición (28.1668ms)
+✔ dejar de esperar cancela la petición pendiente (0.7123ms)
+✔ errores HTML del proxy y errores JSON no quedan como una espera (0.4334ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 699.5807

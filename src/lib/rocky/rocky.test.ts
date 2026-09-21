@@ -111,8 +111,8 @@ test("credenciales comunes no pasan al contexto", () => {
 });
 test("salida LLM no inventa códigos ni presupuesto y no puede ejecutar acciones", async () => {
   const provider = { model: "fake", plan: async () => ({ plan: { intent: "PRODUCT_SEARCH", query: "cargador", codes: ["INVENTADO99"], budget: 1, quantity: 100, needs: [] }, tokens: { input: 1, output: 1 } }) } as unknown as LLMProvider;
-  const result = await new RockyAIOrchestrator(backend, provider).chat({ text: "Busco cargador máximo 60 soles" });
-  assert.equal(result.memory.budget, 60); assert.equal(result.memory.quantity, 1); assert.doesNotMatch(JSON.stringify(result), /INVENTADO99/);
+  const result = await new RockyAIOrchestrator(backend, provider).chat({ text: "Algo para mi teléfono máximo 60 soles" });
+  assert.equal(result.model, "fake"); assert.equal(result.memory.budget, 60); assert.equal(result.memory.quantity, 1); assert.doesNotMatch(JSON.stringify(result), /INVENTADO99/);
 });
 test("vocabulario inicial proporcionado conserva otros calificadores", () => {
   assert.equal(expandInitialVocabulary("aparato para prender el carro"), "arrancador");
@@ -146,4 +146,23 @@ test("horarios consulta configuración actual sin modelo ni catálogo", async ()
   assert.equal(missing.requiresHuman, true); assert.equal(missing.reasonCode, "BUSINESS_INFO_NOT_CONFIGURED");
   assert.doesNotMatch(missing.reply, /marca|modelo|código/);
   assert.notEqual(detectPlan("cuántas horas dura la batería LK618").intent, "BUSINESS_QUERY");
+});
+
+test("AirPods consulta catálogo sin inferencia y conserva las doce unidades", async () => {
+  let query = "";
+  const provider = { model: "slow", plan: async () => { throw new Error("MUST_NOT_INFER"); } } as unknown as LLMProvider;
+  const catalog = { ...backend, search: async (value: string) => { query = value; return products.map(p => ({ ...p, name: "AirPods Pro 2" })); } };
+  for (const text of ["tienes airpods pro 2?", "hola tienes disponibles airpods pro 2 ? deseo 12 unidades"]) {
+    const result = await new RockyAIOrchestrator(catalog, provider).chat({ text });
+    assert.equal(query, "airpods pro 2"); assert.equal(result.model, "rules-and-tools");
+    assert.equal(result.reasonCode, null); assert.ok(result.toolsRequested.includes("searchProducts"));
+    assert.equal(result.products.length, 2);
+    if (text.includes("12")) { assert.equal(result.memory.quantity, 12); assert.match(result.reply, /para 12 unidades/); }
+  }
+});
+
+test("AirPods 4 no sustituye a Pro 2 aunque búsqueda o RAG lo sugieran", async () => {
+  const wrong = { ...products[0], name: "AirPods Apple 4-AME 002687", code: "O454" };
+  const result = await new RockyAIOrchestrator({ ...backend, search: async () => [wrong], product: async () => wrong, knowledge: async () => [{ id: "bad", sourceId: "O454", sourceType: "PRODUCT", productId: "O454", title: "AirPods", text: "AirPods", score: 0.5 }] }).chat({ text: "tienes airpods pro 2?" });
+  assert.equal(result.products.length, 0); assert.doesNotMatch(result.reply, /O454|50.00/);
 });

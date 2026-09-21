@@ -1,3 +1,4 @@
+import { matchesRequestedModel } from "./model-match";
 import { randomUUID } from "node:crypto";
 import { memorySchema, type LLMProvider, type ProductFact, type RockyMemory, type RockyResult } from "./contracts";
 import { detectPlan, SYSTEM_PROMPT } from "./planning";
@@ -20,7 +21,7 @@ export class RockyAIOrchestrator {
     let reasonCode: string | null = null;
     // High risk requests are decided before consulting the model.
     const exactToolRequest = plan.codes.length > 0 && ["STOCK_QUERY", "PRICE_QUERY", "PRODUCT_COMPARISON", "WHOLESALE_QUERY", "PRODUCT_DETAILS"].includes(plan.intent);
-    if (this.provider && !exactToolRequest && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "GREETING", "BUSINESS_QUERY"].includes(plan.intent)) {
+    if (this.provider && !exactToolRequest && (plan.intent === "UNKNOWN" || Boolean(input.image)) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "BUSINESS_QUERY"].includes(plan.intent)) {
       try {
         const generated = await this.provider.plan([
           { role: "system", content: SYSTEM_PROMPT },
@@ -40,7 +41,7 @@ export class RockyAIOrchestrator {
     let requiresHuman = ["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS"].includes(plan.intent);
     const call = async (name: ToolName, args: unknown) => {
       const result = await executor.execute(name, args);
-      for (const product of result.products) if (!products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
+      for (const product of result.products) if ((!(["searchProducts", "getProduct"].includes(name)) || matchesRequestedModel(plan.query, product)) && !products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
       sources.push(...result.sources);
     };
     try {
