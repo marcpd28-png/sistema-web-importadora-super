@@ -2,6 +2,8 @@
 .storefront-shortcuts-static .public-store-shortcuts-marquee-group { display: flex; width: max-content; gap: 20px; padding: 10px 16px; }
 .storefront-shortcuts-static a { white-space: nowrap; flex-shrink: 0; }
 @media (max-width: 920px) {
+  .site-shell:has(> .public-store-header-shell) { overflow-anchor: none; }
+  .public-store-header-shell.shortcuts-hidden .public-store-mobile-marquee { display: none; }
   .public-store-header-shell .public-store-mobile-marquee { width: 100%; margin: 0; padding: 0; }
   .storefront-shortcuts-static { scrollbar-width: none; }
   .storefront-shortcuts-static::-webkit-scrollbar { display: none; }
