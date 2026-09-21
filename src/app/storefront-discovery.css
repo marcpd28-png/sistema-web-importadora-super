@@ -115,10 +115,15 @@
   .hero .hero-banner-visual-media { padding: 0; }
   .hero .hero-banner-visual-media img { object-fit: contain; }
   .storefront-visual-categories, .storefront-filter-panel { padding: 14px; margin: 12px 0; }
-  .storefront-filter-panel { padding: 10px 12px; border-radius: 14px; }
+  .public-store-header-shell:has(+ .storefront-filter-panel) { margin-bottom: 6px; }
+  .storefront-filter-panel { padding: 4px 10px; margin: 6px 0; border-radius: 12px; }
+  .storefront-subcategories { flex-wrap: nowrap; gap: 6px; margin: 6px 0; padding: 2px 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .storefront-subcategories::-webkit-scrollbar { display: none; }
+  .storefront-subcategories a { display: inline-flex; align-items: center; flex: 0 0 auto; min-height: 32px; padding: 6px 10px; font-size: 12px; line-height: 1.2; white-space: nowrap; border-radius: 16px; scroll-snap-align: start; }
+  .storefront-subcategories a:focus-visible { outline: 2px solid #4f46e5; outline-offset: -2px; }
   .storefront-filter-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .storefront-filter-header p { margin: 0; min-width: 0; font-size: 13px; line-height: 1.35; }
-  .storefront-filter-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-height: 44px; padding: 8px 10px; border: 1px solid #dedbf9; border-radius: 10px; background: #f3f1ff; color: #2820cf; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .storefront-filter-header p { margin: 0; min-width: 0; font-size: 12px; line-height: 1.35; }
+  .storefront-filter-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; min-height: 36px; padding: 6px 8px; border: 1px solid #dedbf9; border-radius: 8px; background: #f3f1ff; color: #2820cf; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
   .storefront-filter-toggle:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
   .storefront-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #2820cf; color: white; font-size: 11px; }
   .storefront-filter-toggle[aria-expanded="true"] .storefront-filter-chevron { transform: rotate(180deg); }
