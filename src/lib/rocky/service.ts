@@ -83,14 +83,14 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
         result.reply = `📸 ${photoMatch.model === "local-catalog-name-multipass" ? "El nombre que leo en tu foto tiene estas posibles coincidencias" : `Leí ${photoMatch.hints.code} en tu imagen. Encontré estas referencias o variantes`} 😊\n${result.products.map(product => `• ${product.code} — ${product.name}`).join("\n")}\n\n¿Cuál es la tuya? Confírmame el color, la versión o el código completo para darte su precio y stock exactos.`;
         result.memory.productCodes = [];
       }
-      if (photoMatch.hints.confidence < 0.85) {
-        result.confidence = Math.min(result.confidence, photoMatch.hints.confidence);
+      result.confidence = Math.min(result.confidence, photoMatch.hints.confidence);
+      if (photoMatch.status === "READY" && photoMatch.hints.confidence < 0.85) {
         result.reply += "\n¿Me confirmas que este es el producto de tu foto?";
       }
     } else if (!result.requiresHuman && result.intent !== "CATALOG_REQUEST") {
       result.reply = result.products.length
         ? `📸 Gracias por la foto 😊 Estas opciones parecen relacionadas, pero aún no confirmo el modelo exacto.\n${result.reply}\n\n¿Reconoces el tuyo? Si puedes, envíame una foto más cercana de la etiqueta o del código.`
-        : "📸 ¡Gracias por la foto! 😊 Todavía no puedo confirmar el modelo exacto. Envíame una foto más cercana de la etiqueta o escribe la marca y el código para ayudarte a encontrarlo 🔎";
+        : "📸 ¡Gracias por la foto! 😊 Todavía no puedo confirmar el producto exacto. Envíame una foto más cercana del nombre o escribe el nombre completo y la marca para ayudarte a encontrarlo 🔎";
     }
   }
   if (trigger.messageType === "AUDIO" || trigger.messageType === "VIDEO") {

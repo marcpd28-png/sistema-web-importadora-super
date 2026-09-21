@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -10,6 +10,22 @@ import { runRocky } from "@/lib/rocky/service";
 export const dynamic = "force-dynamic";
 
 const SIMULATOR_WEBHOOK_PATH = "bc-simulator";
+
+export async function GET(request: Request) {
+  await requireAdmin();
+  const query = new URL(request.url).searchParams;
+  const trigger = await prisma.chatMessage.findFirst({
+    where: { id: query.get("messageId") || "", conversationId: query.get("conversationId") || "",
+      senderType: "CUSTOMER", direction: "INBOUND", conversation: { contact: { externalId: { startsWith: "SIMULATOR:" } } } },
+    select: { id: true, conversationId: true, metadata: true },
+  });
+  if (!trigger) return NextResponse.json({ error: "Consulta simulada no encontrada." }, { status: 404 });
+  const run = await prisma.rockyRun.findUnique({ where: { triggerMessageId: trigger.id }, select: { result: true } });
+  const metadata = trigger.metadata as Record<string, unknown> | null;
+  if (metadata?.simulationError) return NextResponse.json({ error: "Rocky no pudo completar la consulta. Inicia una nueva sesión e inténtalo otra vez." }, { status: 503 });
+  const messages = await prisma.chatMessage.findMany({ where: { conversationId: trigger.conversationId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 });
+  return NextResponse.json({ messages: messages.reverse(), rocky: run?.result ?? null }, { headers: { "Cache-Control": "no-store" } });
+}
 
 function buildSimulatorExternalId(sessionKey: string) {
   const letters = Array.from(sessionKey)
@@ -110,6 +126,21 @@ export async function POST(request: Request) {
         content: input.content, mediaUrl: input.attachment?.dataUrl, externalMessageId,
         metadata: { source: "rocky-simulator", simulation: true },
       } });
+      if (input.background) {
+        const conversationId = conversation.id;
+        after(async () => {
+          try { await runRocky({ conversationId, triggerMessageId: customerMessage.id, simulate: true }); }
+          catch (error) {
+            console.error("[rocky-simulator] failed", error instanceof Error ? error.message : "UnknownError");
+            await prisma.chatMessage.update({ where: { id: customerMessage.id }, data: {
+              metadata: { source: "rocky-simulator", simulation: true, simulationError: true },
+            } });
+          }
+        });
+        const messages = await prisma.chatMessage.findMany({ where: { conversationId }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 });
+        return NextResponse.json({ automationError: null, automationExecutionId: null, automationName: "ROCKY", automationTriggered: true,
+          conversationId, customerMessageId: customerMessage.id, pendingSince: now.toISOString(), messages: messages.reverse() }, { status: 202 });
+      }
       try {
         const rocky = await runRocky({ conversationId: conversation.id, triggerMessageId: customerMessage.id, simulate: true });
         const messages = await prisma.chatMessage.findMany({ where: { conversationId: conversation.id }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 });

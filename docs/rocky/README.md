@@ -17,7 +17,7 @@ flowchart TD
   UI[Centro de Mensajes / Simulador] --> SELECT{Motor elegido}
   SELECT -->|BC| N8N[n8n: simulador existente]
   N8N --> BC[Backend conversacional actual :4000 / router :4001]
-  SELECT -->|ROCKY| API[Instancia ROCKY :4003 localhost]
+  SELECT -->|ROCKY| API[Instancia ROCKY :4005 localhost]
   API --> ORCH[RockyAIOrchestrator]
   ORCH --> PLAN[LLMProvider / Ollama localhost:11434]
   ORCH --> SK[19 Skills versionadas]
@@ -33,7 +33,7 @@ flowchart TD
   BC --> OUT[n8n / ManyChat / WhatsApp]
 ```
 
-Release activo: `/home/IMPORTADORA-releases/rocky-20260921-r2`, proceso PM2 `importadora-rocky-web-v2`, puerto localhost 4003. El slot anterior `rocky-20260921` / `importadora-rocky-web` se conserva para reversión. Nginx dirige también `/admin/atencion` y `/api/admin/catalog-image-audit` al release activo.
+Release activo: `/home/IMPORTADORA-releases/rocky-20260921-image-names`, proceso PM2 `importadora-rocky-image-names`, puerto localhost 4005. Las siete rutas HTTP ROCKY usan esta versión, incluido el simulador asíncrono y la auditoría de fotos. El fallback estático sirve la unión de recursos desde `rocky-20260921-r2/.next/static`. Los releases anteriores se conservan para reversión. Detalles: [reconocimiento por nombre](image-name-deployment.md) y [respuesta asíncrona del simulador](simulator-background-fix.md).
 
 Lectura ampliada de códigos en fotos: [comportamiento, pruebas y límites](lectura-codigos-fotos.md).
 

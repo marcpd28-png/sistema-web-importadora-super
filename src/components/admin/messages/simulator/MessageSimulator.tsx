@@ -80,7 +80,7 @@ export function MessageSimulator() {
     return () => window.clearInterval(timer);
   }, [busy]);
 
-  const canSend = Boolean(content.trim() || attachment) && !busy && !readingFile;
+  const canSend = Boolean(content.trim() || attachment) && !busy && !readingFile && !(engine === "ROCKY" && waitingForN8n);
   const conversationLabel = useMemo(() => phone.trim() || "sin telefono", [phone]);
 
   useEffect(() => {
@@ -94,11 +94,32 @@ export function MessageSimulator() {
 
     let stopped = false;
     let attempts = 0;
+    let refreshing = false;
 
     async function refreshMessages() {
+      if (refreshing) return;
+      refreshing = true;
       attempts += 1;
 
       try {
+        if (engine === "ROCKY" && pendingCustomerMessageId) {
+          const params = new URLSearchParams({ conversationId: conversationId!, messageId: pendingCustomerMessageId });
+          const response = await fetch(`/api/admin/conversations/simulate?${params}`, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+          const payload = await response.json();
+          if (stopped) return;
+          if (!response.ok) throw new Error(payload.error || "No se pudo consultar la respuesta de Rocky.");
+          setMessages(payload.messages);
+          if (payload.rocky) {
+            setRocky(payload.rocky);
+            setFeedback(payload.rocky.reply);
+            setWaitingForN8n(false);
+            setNotice(payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación.");
+          } else if (attempts >= 300) {
+            setWaitingForN8n(false);
+            setNotice("Rocky no completó la consulta en 10 minutos. Inicia una nueva sesión para volver a probar.");
+          }
+          return;
+        }
         const response = await fetch(
           `/api/admin/conversations/${conversationId}/messages?limit=100&t=${Date.now()}`,
           { cache: "no-store" },
@@ -139,7 +160,7 @@ export function MessageSimulator() {
           setWaitingForN8n(false);
           setNotice(error instanceof Error ? error.message : "No se pudo refrescar la conversación.");
         }
-      }
+      } finally { refreshing = false; }
     }
 
     const interval = window.setInterval(() => {
@@ -152,7 +173,7 @@ export function MessageSimulator() {
       stopped = true;
       window.clearInterval(interval);
     };
-  }, [conversationId, pendingCustomerMessageId, pendingSince, waitingForN8n]);
+  }, [conversationId, pendingCustomerMessageId, pendingSince, waitingForN8n, engine]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -169,7 +190,7 @@ export function MessageSimulator() {
 
     try {
       const payload = await sendSimulatorRequest<Partial<SimulatorResponse>>({
-        engine, content: message, name, phone, sessionKey,
+        engine, background: engine === "ROCKY", content: message, name, phone, sessionKey,
         attachment: attachment ? { type: attachment.type, dataUrl: attachment.dataUrl } : undefined,
       }, controller);
       if (controller.signal.aborted) return;
@@ -189,7 +210,7 @@ export function MessageSimulator() {
         setContent("");
         setAttachment(null);
         setWaitingForN8n(!payload.rocky);
-        setNotice(payload.rocky ? payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación." : "Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
+        setNotice(payload.rocky ? payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación." : engine === "ROCKY" ? "Rocky está preparando la respuesta. Los catálogos con muchas fotos pueden tardar varios minutos; aparecerán aquí cuando estén listos." : "Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
       }
     } catch (error) {
       setNotice(controller.signal.aborted ? "Terminó la espera. El mensaje puede haberse guardado en el servidor; inicia una nueva sesión si quieres repetir la prueba." : error instanceof Error ? error.message : "No se pudo simular el mensaje.");

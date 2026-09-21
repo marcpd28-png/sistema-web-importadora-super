@@ -12,7 +12,7 @@ export class RockyAIOrchestrator {
     const started = Date.now();
     const memory = input.memory || memorySchema.parse({});
     let plan = detectPlan(input.text, memory);
-    if (input.resolvedProductCode && !plan.codes.length && ["UNKNOWN", "PRODUCT_SEARCH", "PRODUCT_DETAILS", "FOLLOW_UP"].includes(plan.intent)) {
+    if (input.resolvedProductCode && !plan.codes.length && ["UNKNOWN", "PRODUCT_SEARCH", "PRODUCT_DETAILS", "FOLLOW_UP", "PRICE_QUERY", "STOCK_QUERY", "WHOLESALE_QUERY"].includes(plan.intent)) {
       plan.codes = [input.resolvedProductCode];
       if (["UNKNOWN", "FOLLOW_UP", "PRODUCT_SEARCH"].includes(plan.intent)) plan.intent = "PRODUCT_DETAILS";
     }
@@ -35,7 +35,7 @@ export class RockyAIOrchestrator {
         // An uncertain model cannot override safety or explicit deterministic product/budget extraction.
         const proposed = generated.plan;
         plan = { ...plan, ...(plan.intent === "UNKNOWN" ? { intent: proposed.intent, query: proposed.query } : {}),
-          ...(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION", "CATALOG_REQUEST"].includes(plan.intent) && proposed.query.trim() ? { query: proposed.query.replace(/\b\d+(?:\.\d+)?\s*(?:soles|PEN)\b/gi, "").trim() } : {}),
+          ...((["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION", "CATALOG_REQUEST"].includes(plan.intent) || input.image && ["PRICE_QUERY", "STOCK_QUERY", "PRODUCT_DETAILS", "WHOLESALE_QUERY"].includes(plan.intent)) && proposed.query.trim() ? { query: proposed.query.replace(/\b\d+(?:\.\d+)?\s*(?:soles|PEN)\b/gi, "").trim() } : {}),
           codes: plan.codes.length ? plan.codes : proposed.codes.filter(code => input.text.toUpperCase().includes(code.toUpperCase()) || memory.productCodes.includes(code)) };
       } catch { reasonCode = "MODEL_UNAVAILABLE_OR_INVALID"; model = "deterministic-safe-fallback"; }
     }
