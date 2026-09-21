@@ -1,3 +1,5 @@
+import { matchCatalogSourceImage } from "../router-v2-catalog-image-match";
+import { matchCatalogImageText } from "../router-v2-local-ocr";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { memorySchema, type RockyResult, type RockyMode } from "./contracts";
@@ -47,13 +49,31 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
   const history = await prisma.chatMessage.findMany({ where: { conversationId: conversation.id, createdAt: { lt: trigger.createdAt }, messageType: "TEXT" }, orderBy: { createdAt: "desc" }, take: 4, select: { content: true } });
   const orchestrator = new RockyAIOrchestrator(createToolBackend(rockyKnowledge()), rockyProvider());
   let image: string | undefined;
+  let photoMatch: Awaited<ReturnType<typeof matchCatalogSourceImage>> | Awaited<ReturnType<typeof matchCatalogImageText>> = null;
   if (trigger.messageType === "IMAGE" && trigger.mediaUrl?.startsWith("data:image/")) {
-    try { image = (await sharp(Buffer.from(trigger.mediaUrl.split(",")[1], "base64"), { limitInputPixels: 16000000 }).resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 75 }).toBuffer()).toString("base64"); }
+    photoMatch = await matchCatalogSourceImage(trigger.mediaUrl, hash => prisma.product.findMany({ where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2 }))
+      ?? await matchCatalogImageText(trigger.mediaUrl, code => prisma.product.findMany({ where: { isVisible: true, code: { equals: code, mode: "insensitive" } }, select: { code: true }, take: 2 }));
+    if (photoMatch) { resolvedProductCode = photoMatch.hints.code; memory.productCodes = [resolvedProductCode]; }
+    try { if (!photoMatch) image = (await sharp(Buffer.from(trigger.mediaUrl.split(",")[1], "base64"), { limitInputPixels: 16000000 }).resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 75 }).toBuffer()).toString("base64"); }
     catch { /* Invalid images are handled by clarification, never downloaded remotely. */ }
   }
   const result = await orchestrator.chat({ text: redactSensitiveText(trigger.content).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
     resolvedProductCode,
     ...(image ? { image } : {}) });
+  if (trigger.messageType === "IMAGE") {
+    if (photoMatch) {
+      result.reply = `${photoMatch.model === "catalog-source-image-sha256" ? "📸 La foto coincide con una imagen de nuestro catálogo." : `📸 Leí el código ${photoMatch.hints.code} en tu imagen.`} ¡Gracias por enviarla! 😊\n${result.reply}\n\nPrecio y stock consultados ahora; pueden diferir de los impresos en la foto.`;
+      result.confidenceEvidence.push(photoMatch.model);
+      if (photoMatch.model === "local-tesseract-cropped-code") {
+        result.confidence = Math.min(result.confidence, photoMatch.hints.confidence);
+        result.reply += "\n¿Me confirmas que este es el producto de tu foto?";
+      }
+    } else if (!result.requiresHuman && result.intent !== "CATALOG_REQUEST") {
+      result.reply = result.products.length
+        ? `📸 Gracias por la foto 😊 Estas opciones parecen relacionadas, pero aún no confirmo el modelo exacto.\n${result.reply}\n\n¿Reconoces el tuyo? Si puedes, envíame una foto más cercana de la etiqueta o del código.`
+        : "📸 ¡Gracias por la foto! 😊 Todavía no puedo confirmar el modelo exacto. Envíame una foto más cercana de la etiqueta o escribe la marca y el código para ayudarte a encontrarlo 🔎";
+    }
+  }
   if (trigger.messageType === "AUDIO" || trigger.messageType === "VIDEO") {
     result.reply = "Para ayudarte con este archivo necesito una descripción escrita o la revisión de un asesor.";
     result.requiresHuman = true; result.reasonCode = "MEDIA_ADAPTER_UNAVAILABLE";
@@ -84,6 +104,8 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     // This service never calls an outbound provider. Simulator messages are records only.
     if (canSimulate) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT", content: result.reply,
       externalMessageId: `rocky-sim:${trigger.id}`, status: "sent", metadata: { agentId: "rocky-simulator", rockyRequestId: result.rockyRequestId } } });
+    if (canSimulate && result.catalog?.document) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "DOCUMENT", content: result.catalog.document.name, mediaUrl: result.catalog.document.url,
+      externalMessageId: `rocky-catalog:${trigger.id}`, status: "sent", metadata: { agentId: "rocky-simulator", rockyRequestId: result.rockyRequestId } } });
     if (canQueue && !result.requiresHuman) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT", content: result.reply,
       externalMessageId: `rocky-outbox:${trigger.id}`, status: "bc_queued", metadata: { agentId: "rocky", requestId: result.rockyRequestId, rockyRequestId: result.rockyRequestId, triggerMessageId: trigger.id } } });
     if (result.requiresHuman && (canSimulate || canQueue)) await tx.conversation.update({ where: { id: conversation.id }, data: { botEnabled: false, status: "ATENDIENDO" } });

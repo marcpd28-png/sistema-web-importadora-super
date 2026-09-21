@@ -30,6 +30,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
     ["FOLLOW_UP", /^(?:si|ok|ese|el primero|el segundo|gracias)[!. ]*$/],
   ];
   let intent = rules.find(([, rule]) => rule.test(t))?.[0] || (codes.length ? "PRODUCT_DETAILS" : "UNKNOWN");
+  if (/\b(?:catalogos?|catalgoo)\b/.test(t) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY"].includes(intent)) intent = "CATALOG_REQUEST";
   if (businessQuestion(text) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY"].includes(intent)) intent = "BUSINESS_QUERY";
   if (ordinal && codes.length) intent = "PRODUCT_DETAILS";
   if (quantity && Number(quantity[1]) >= 3 && memory.productCodes.length && !codes.length && !["HUMAN_REQUEST", "COMPLAINT", "BUSINESS_QUERY"].includes(intent)) intent = "WHOLESALE_QUERY";

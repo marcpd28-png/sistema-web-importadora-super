@@ -362,17 +362,15 @@
     ],
     "objective": "Buscar opciones de catálogo",
     "tools": [
-      "searchProducts",
-      "sendCatalog"
+      "getCatalog"
     ],
     "requiredInformation": [
       "necesidad explícita",
       "referencia de producto cuando corresponda"
     ],
     "rules": [
-      "Datos comerciales exclusivamente de herramientas",
-      "Pedir aclaración si hay ambigüedad",
-      "Respetar control humano"
+      "Catálogo completo: enlace oficial",
+      "Catálogo específico: PDF disponible y enlace filtrado; no sustituir por códigos escritos"
     ],
     "restrictions": [
       "Sin descuentos inventados",

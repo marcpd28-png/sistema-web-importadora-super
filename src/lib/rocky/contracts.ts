@@ -29,7 +29,10 @@ export type ProductFact = {
 };
 export type KnowledgeHit = { id: string; sourceId: string; sourceType: string; text: string; score: number; productId: string | null; title: string };
 export type ToolCall = { name: string; ok: boolean; latencyMs: number; resultCount: number; reasonCode?: string };
+export type CatalogDelivery = { scope: "FULL" | "FILTERED"; label: string; url: string; count: number;
+  document?: { url: string; name: string }; reason?: string };
 export type RockyResult = {
+  catalog?: CatalogDelivery;
   rockyRequestId: string; intent: RockyPlan["intent"]; skill: string; confidence: number;
   confidenceEvidence: string[]; toolsRequested: string[]; toolCalls: ToolCall[];
   products: ProductFact[]; sources: KnowledgeHit[]; reply: string; requiresHuman: boolean;

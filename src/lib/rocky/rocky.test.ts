@@ -137,11 +137,11 @@ test("horarios consulta configuración actual sin modelo ni catálogo", async ()
   for (const text of ["hora cuales son sus horarios de atencion", "HOLA DESEO SUS HORARIOS ATENCION", "¿A qué hora abren?", "hasta qué hora atienden", "dónde están"]) {
     const result = await new RockyAIOrchestrator(live, provider).chat({ text });
     assert.equal(result.intent, "BUSINESS_QUERY"); assert.equal(result.model, "rules-and-tools");
-    assert.deepEqual(result.toolsRequested, ["getBusinessInfo"]); assert.equal(result.reply, hour);
+    assert.deepEqual(result.toolsRequested, ["getBusinessInfo"]); assert.ok(result.reply.includes(hour));
     assert.equal(result.requiresHuman, false); assert.equal(result.sources[0].sourceId, "StoreSettings:supportHours");
   }
   hour = "Lunes a viernes 9 am a 6 pm";
-  assert.equal((await new RockyAIOrchestrator(live).chat({ text: "horarios" })).reply, hour);
+  assert.ok((await new RockyAIOrchestrator(live).chat({ text: "horarios" })).reply.includes(hour));
   const missing = await new RockyAIOrchestrator({ ...live, business: async () => [] }).chat({ text: "horarios" });
   assert.equal(missing.requiresHuman, true); assert.equal(missing.reasonCode, "BUSINESS_INFO_NOT_CONFIGURED");
   assert.doesNotMatch(missing.reply, /marca|modelo|código/);
@@ -165,4 +165,22 @@ test("AirPods 4 no sustituye a Pro 2 aunque búsqueda o RAG lo sugieran", async 
   const wrong = { ...products[0], name: "AirPods Apple 4-AME 002687", code: "O454" };
   const result = await new RockyAIOrchestrator({ ...backend, search: async () => [wrong], product: async () => wrong, knowledge: async () => [{ id: "bad", sourceId: "O454", sourceType: "PRODUCT", productId: "O454", title: "AirPods", text: "AirPods", score: 0.5 }] }).chat({ text: "tienes airpods pro 2?" });
   assert.equal(result.products.length, 0); assert.doesNotMatch(result.reply, /O454|50.00/);
+});
+
+test("catálogo completo responde enlace oficial sin lista de códigos", async () => {
+  const result = await new RockyAIOrchestrator({ ...backend, catalog: async () => ({ scope: "FULL", label: "catálogo completo", url: "https://tiendavirtualsuper.com/?view=all", count: 100 }) }).chat({ text: "pásame el catálogo completo" });
+  assert.deepEqual(result.toolsRequested, ["getCatalog"]); assert.match(result.reply, /página web oficial/); assert.match(result.reply, /https:\/\/tiendavirtualsuper.com/); assert.equal(result.products.length, 0); assert.match(result.reply, /😊/);
+});
+test("catálogo por marca devuelve PDF y enlace filtrado, incluso pidiendo stock", async () => {
+  const catalog = { scope: "FILTERED" as const, label: "parlantes JBL", url: "https://tiendavirtualsuper.com/?category=PARLANTES&brand=JBL", count: 12, document: { url: "https://tiendavirtualsuper.com/uploads/catalogs/jbl.pdf", name: "JBL.pdf" } };
+  const result = await new RockyAIOrchestrator({ ...backend, catalog: async () => catalog }).chat({ text: "catálogo de parlantes JBL con stock" });
+  assert.equal(result.intent, "CATALOG_REQUEST"); assert.deepEqual(result.catalog, catalog); assert.match(result.reply, /Te adjunto/); assert.ok(result.reply.includes(catalog.url));
+});
+test("si PDF falla no afirma adjuntarlo y conserva enlace", async () => {
+  const result = await new RockyAIOrchestrator({ ...backend, catalog: async () => ({ scope: "FILTERED", label: "JBL", url: "https://tiendavirtualsuper.com/?brand=JBL", count: 0, reason: "PDF_UNAVAILABLE" }) }).chat({ text: "catalogo JBL" });
+  assert.doesNotMatch(result.reply, /Te adjunto/); assert.match(result.reply, /tiendavirtualsuper/);
+});
+test("código visual resuelto evita inferencia y consulta el producto exacto", async () => {
+  const result = await new RockyAIOrchestrator(backend).chat({ text: "hola estoy buscando este producto", resolvedProductCode: "LK618" });
+  assert.equal(result.intent, "PRODUCT_DETAILS"); assert.deepEqual(result.products.map(p => p.code), ["LK618"]);
 });

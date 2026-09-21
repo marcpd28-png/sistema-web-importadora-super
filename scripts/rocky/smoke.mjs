@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { SignJWT } from 'jose';
 import { randomUUID } from 'node:crypto';
 const db = new PrismaClient();
-const base = process.env.ROCKY_TEST_BASE || 'http://127.0.0.1:4003';
+const base = process.env.ROCKY_TEST_BASE || 'http://127.0.0.1:4002';
 if (!['127.0.0.1', 'localhost'].includes(new URL(base).hostname) || !process.argv.includes('--execute')) throw new Error('LOCAL_SIMULATOR_ONLY');
 for (let attempt = 0; attempt < 10; attempt++) {
   try { await fetch(`${base}/api/internal/rocky/health`, { signal: AbortSignal.timeout(1000) }); break; }

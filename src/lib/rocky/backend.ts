@@ -1,3 +1,5 @@
+import { generateRequestedCatalogPdf } from "../catalog-pdf";
+import { buildPublicUrl } from "../site-url";
 import { matchesRequestedModel } from "./model-match";
 import { businessQuestion } from "../business-question";
 import { prisma } from "@/lib/prisma";
@@ -10,6 +12,23 @@ import { expandInitialVocabulary } from "./vocabulary";
 
 export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
   return {
+    async catalog(query) {
+      const snapshot = await loadCommercialCatalog();
+      const selection = snapshot.search(query, false);
+      if (!selection.scoped) return { scope: "FULL", label: "catálogo completo", url: buildPublicUrl("/?view=all"), count: snapshot.products.length };
+      const params = new URLSearchParams({ view: "all" });
+      if (selection.categories.length === 1) params.set("category", selection.categories[0]);
+      if (selection.brands.length === 1) params.set("brand", selection.brands[0]);
+      const terms = [...selection.types, ...selection.terms].join(" ").trim();
+      if (terms) params.set("q", terms);
+      else if (!selection.categories.length && !selection.brands.length) params.set("q", selection.label);
+      const url = buildPublicUrl(`/?${params}`);
+      try {
+        const generated = await generateRequestedCatalogPdf(query, false, snapshot, selection);
+        return { scope: "FILTERED", label: selection.label, url, count: generated.catalog?.productCount || 0,
+          ...(generated.catalog ? { document: { url: generated.catalog.absoluteUrl, name: `Catálogo de ${selection.label}.pdf` } } : { reason: "NO_AVAILABLE_CATALOG_IMAGES" }) };
+      } catch { return { scope: "FILTERED", label: selection.label, url, count: 0, reason: "PDF_UNAVAILABLE" }; }
+    },
     async business(query) {
       const settings = await prisma.storeSettings.findUnique({ where: { id: 1 }, select: { supportHours: true, storeAddress: true } });
       const hours = businessQuestion(query) === "HOURS";

@@ -44,6 +44,12 @@ function formatTime(value: Date | string) {
   });
 }
 
+function linkedMessage(text: string) {
+  return text.split(/(https?:\/\/[^\s<>]+)/g).map((part, index) => /^https?:\/\//.test(part)
+    ? <a key={index} href={part} target="_blank" rel="noreferrer" style={{ textDecoration: "underline", overflowWrap: "anywhere" }}>{part}</a>
+    : part);
+}
+
 export function MessageSimulator() {
   const [engine, setEngine] = useState<"BC" | "ROCKY">("ROCKY");
   const [rocky, setRocky] = useState<RockyResult | null>(null);
@@ -302,7 +308,7 @@ export function MessageSimulator() {
                       <a href={message.mediaUrl} target="_blank" rel="noreferrer" title="Ver imagen completa">
                         <img alt={message.content || "Imagen enviada"} src={message.mediaUrl} />
                       </a>
-                      {message.content ? <p>{message.content}</p> : null}
+                      {message.content ? <p>{linkedMessage(message.content)}</p> : null}
                     </div>
                   ) : message.messageType === "DOCUMENT" && message.mediaUrl ? (
                     <a className="simulator-document-message" href={message.mediaUrl} rel="noreferrer" target="_blank">
@@ -310,9 +316,9 @@ export function MessageSimulator() {
                       <span><strong>{message.content || "Documento generado"}</strong><small>Abrir documento de prueba</small></span>
                     </a>
                   ) : message.messageType === "AUDIO" && message.mediaUrl ? (
-                    <div><audio controls preload="none" src={message.mediaUrl} />{message.content ? <p>{message.content}</p> : null}</div>
+                    <div><audio controls preload="none" src={message.mediaUrl} />{message.content ? <p>{linkedMessage(message.content)}</p> : null}</div>
                   ) : (
-                    <p>{message.content}</p>
+                    <p>{linkedMessage(message.content)}</p>
                   )}
                   <time>{formatTime(message.createdAt)}</time>
                 </div>

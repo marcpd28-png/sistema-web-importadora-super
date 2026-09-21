@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "simulator": 200,
+  "assetsChecked": 17,
+  "unauthorized": 401,
+  "storefront": 200,
+  "health": {
+    "service": "ROCKY",
+    "ollama": {
+      "ready": true,
+      "models": [
+        "qwen3.5:2b",
+        "qwen3-embedding:0.6b",
+        "qwen3.5:4b",
+        "qwen3.5:9b",
+        "qwen2.5:7b"
+      ]
+    },
+    "llmEnabled": true,
+    "vectorEnabled": true,
+    "pgvector": true,
+    "documents": 1679,
+    "simulatorEnabled": true,
+    "liveSending": false
+  }
+}
