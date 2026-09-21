@@ -743,6 +743,7 @@ enum OrderStatus {
 
 model Order {
   id          String      @id @default(cuid())
+  isTest      Boolean     @default(false)
   userId      String?
   user        User?       @relation("UserOrders", fields: [userId], references: [id], onDelete: SetNull)
   status      OrderStatus @default(PENDING)
@@ -782,11 +783,26 @@ model Order {
   updatedAt DateTime @updatedAt
 
   items OrderItem[]
+  reviews OrderReview[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
   @@index([orderNumber])
   @@index([culqiChargeId])
+}
+
+model OrderReview {
+  id             String      @id @default(cuid())
+  orderId        String
+  order          Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actorId        String
+  action         String      @db.VarChar(30)
+  previousStatus OrderStatus
+  nextStatus     OrderStatus
+  note           String      @db.Text
+  createdAt      DateTime    @default(now())
+
+  @@index([orderId, createdAt])
 }
 
 model OrderItem {

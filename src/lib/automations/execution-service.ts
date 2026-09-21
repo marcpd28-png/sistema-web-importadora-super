@@ -10,6 +10,7 @@ import { workflowPath } from "./FlowCompiler";
 import { N8nAutomationProvider } from "./n8n-provider";
 import { AutomationError } from "./http";
 import { lockAutomation } from "./service";
+import { isBcLiveContact } from "../bc-live-policy";
 
 class ExecutionStopped extends Error {}
 
@@ -23,7 +24,7 @@ async function liveContext(executionId: string) {
     !execution || execution.automation.status !== "ACTIVE" || execution.status !== "RUNNING" ||
     execution.automation.currentPublishedVersionId !== execution.automationVersionId ||
     !conversation?.botEnabled || conversation.status !== "AUTOMATICO" || conversation.assignedUserId ||
-    conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+    conversation.contact.externalId?.startsWith("SIMULATOR:") || isBcLiveContact(conversation.contact)) {
     throw new ExecutionStopped("La atención automática está pausada o la conversación pasó a un asesor.");
   }
   return { execution, conversation };
@@ -100,7 +101,7 @@ export async function dispatchAutomation(messageId: string) {
       await lockAutomation(tx, `message-${messageId}`);
       const message = await tx.chatMessage.findUnique({ where: { id: messageId }, include: { conversation: { include: { contact: true } } } });
       const conversation = message?.conversation;
-      if (!message || message.direction !== "INBOUND" || message.messageType !== "TEXT" || !conversation?.botEnabled || conversation.channel !== "WHATSAPP" || conversation.status !== "AUTOMATICO" || conversation.assignedUserId || conversation.contact.externalId?.startsWith("SIMULATOR:")) return null;
+      if (!message || message.direction !== "INBOUND" || message.messageType !== "TEXT" || !conversation?.botEnabled || conversation.channel !== "WHATSAPP" || conversation.status !== "AUTOMATICO" || conversation.assignedUserId || conversation.contact.externalId?.startsWith("SIMULATOR:") || isBcLiveContact(conversation.contact)) return null;
       const settings = await tx.storeSettings.findFirst({ select: { botMasterSwitch: true } });
       if (settings?.botMasterSwitch === false) return null;
       const automation = await tx.automation.findFirst({ where: { channel: "WHATSAPP", status: "ACTIVE" }, orderBy: { updatedAt: "desc" } });

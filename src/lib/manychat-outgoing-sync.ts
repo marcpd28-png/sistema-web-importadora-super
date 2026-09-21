@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { MessageType, type PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { lockSimulatorConversation } from "./simulator-input-batch";
 
 // Adapter contract for a verified source event, not a ManyChat webhook specification.
 export const manychatOutgoingEventSchema = z.object({
@@ -43,6 +44,9 @@ export async function recordManychatOutgoing(
   }
   try {
     const message = await db.$transaction(async tx => {
+      // Share the BC publication lock: an advisor's imported reply transfers
+      // ownership before any later bot batch can commit.
+      await lockSimulatorConversation(tx, conversation.id);
       const created = await tx.chatMessage.create({ data: {
         conversationId: conversation.id, externalMessageId,
         direction: "OUTBOUND", senderType: event.source === "agent" ? "AGENT" : "BOT",
@@ -54,6 +58,9 @@ export async function recordManychatOutgoing(
       await tx.conversation.updateMany({
         where: { id: conversation.id, lastMessageAt: { lt: occurredAt } },
         data: { lastMessageAt: occurredAt },
+      });
+      if (event.source === "agent") await tx.conversation.updateMany({
+        where: { id: conversation.id }, data: { botEnabled: false, status: "ATENDIENDO" },
       });
       return created;
     });

@@ -182,6 +182,19 @@ test("servicio de automatizaciones: borradores, publicación, aislamiento y ejec
     const forged = await callback.POST(new Request("https://app.example.test", { method: "POST", body: JSON.stringify({ ...signed, signature: "0".repeat(64) }) }));
     assert.equal(forged.status, 401); assert.equal((await retiredCallback.POST()).status, 410); assert.equal(outboundCalls, 1);
   });
+  await t.test("BC owns its production contacts without a competing automation reply", async () => {
+    const config = { BC_LIVE_ENABLED: "true", BC_LIVE_SCOPE: "ALL", BC_LIVE_STARTED_AT: "2026-01-01T00:00:00Z" };
+    const previous = new Map(Object.keys(config).map(key => [key, process.env[key]]));
+    try {
+      Object.assign(process.env, config);
+      const before = remote.length;
+      inbound("bc-owned"); await executionService.dispatchAutomation("bc-owned");
+      assert.equal(remote.length, before);
+      assert.equal(db.executions.some(row => row.messageId === "bc-owned"), false);
+    } finally {
+      for (const [key, value] of previous) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+    }
+  });
   await t.test("simulaciones, bot apagado y atención humana no disparan flujos", async () => {
     const before = remote.length;
     inbound("simulation"); (db.conversations[0].contact as Row).externalId = "SIMULATOR:test";

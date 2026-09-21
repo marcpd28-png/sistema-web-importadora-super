@@ -48,10 +48,12 @@ function catalogProductBrand(product: CatalogCandidate) {
 }
 function singular(value: string) { return value.length > 4 && value.endsWith("s") ? value.slice(0, -1) : value; }
 function nearWord(a: string, b: string) {
-  if (a.length < 6 || b.length < 6 || Math.abs(a.length-b.length)>2) return false;
+  if (!/^[a-z]{6,}$/.test(a) || !/^[a-z]{6,}$/.test(b)) return false;
+  const limit = 2;
+  if (Math.abs(a.length-b.length)>limit) return false;
   let row=Array.from({length:b.length+1},(_,i)=>i);
   for(let i=1;i<=a.length;i++) { const next=[i]; for(let j=1;j<=b.length;j++) next[j]=Math.min(next[j-1]+1,row[j]+1,row[j-1]+(a[i-1]===b[j-1]?0:1)); row=next; }
-  return row[b.length]<=2;
+  return row[b.length]<=limit;
 }
 
 function matchesCategory(product: CatalogCandidate, category: typeof categories[number]) {
@@ -135,6 +137,31 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
   const types = [...new Set(rows.map(r => r.type).filter(Boolean))];
   const inventoryCodes = rows.map(row => row.product.code);
   const vocabulary = new Set(rows.flatMap(row => row.words));
+  // Complete only a product family, never a brand, SKU, numeric model or attribute.
+  // Multiple spellings within one family are safe; competing families stay unresolved.
+  const familyWords = [...new Set([...types, ...categories.flatMap(category => category.aliases)])];
+  const familyKey = (word: string) => categories.find(category => category.aliases.some(alias => wordMatches(alias, word)))?.stored ?? singular(word);
+  const familyCompletionCache = new Map<string, string | null>();
+  const completeFamily = (word: string) => {
+    if (familyCompletionCache.has(word)) return familyCompletionCache.get(word);
+    let completion: string | null = null;
+    if (/^[a-z]{4,}$/.test(word) && !vocabulary.has(word) && !knownBrands.has(word)
+      && !familyWords.some(candidate => wordMatches(candidate, word))) {
+      const prefixes = familyWords.filter(candidate => candidate.startsWith(word));
+      const alternatives = prefixes.length ? prefixes : familyWords.filter(candidate => nearWord(word, candidate));
+      if (new Set(alternatives.map(familyKey)).size === 1) completion = alternatives[0];
+    }
+    familyCompletionCache.set(word, completion);
+    return completion;
+  };
+  const normalizeFamily = (content: string) => {
+    const words = normalizeCatalogText(content).split(" ");
+    // Explicit identity requests must retain their literal meaning.
+    const first = words.findIndex(word => word && !ignored.has(word));
+    if (words.slice(0, first).some(word => /^(?:marca|marcas|codigo|codigos)$/.test(word))) return words.join(" ");
+    if (first >= 0) words[first] = completeFamily(words[first]) ?? words[first];
+    return words.join(" ");
+  };
   const entityPhrases = [...categoryNames.keys(), ...knownBrands.keys()];
   const entityCache = new Map<string, boolean>();
   const isEntity = (word: string) => {
@@ -142,7 +169,7 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
       categories.some(category => category.aliases.some(alias => wordMatches(alias, word) || !vocabulary.has(word) && nearWord(word, alias))));
     return entityCache.get(word)!;
   };
-  const subject = (content: string) => extractCommercialSubject(normalizeCatalogText(content), isEntity, entityPhrases);
+  const subject = (content: string) => extractCommercialSubject(normalizeFamily(content), isEntity, entityPhrases);
 
   function selectSingle(content: string) {
     const parsed = parseCommercialQuery(content);
@@ -183,8 +210,10 @@ export function createCatalogIndex<T extends CatalogCandidate>(products: T[], re
     }
     const tokens = remainder.trim().split(/\s+/).filter(t => t && !ignored.has(t));
     // A real inventory type takes precedence over fuzzy spelling corrections (casacas ≠ cámaras).
-    const aliasMatches = (t: string, c: typeof categories[number]) => !(c.stored === "TELEVISORES" && hasPhrase(text, "tv box")) && (c.aliases.includes(t) ||
-      (!types.some(kind => wordMatches(kind,t)) && c.aliases.some(a => nearWord(t,a))));
+    // normalizeFamily already resolves unambiguous spelling corrections across ALL
+    // inventory families. A second fuzzy pass here could turn "lamara" into camera
+    // even though lamp is an equally plausible family.
+    const aliasMatches = (t: string, c: typeof categories[number]) => !(c.stored === "TELEVISORES" && hasPhrase(text, "tv box")) && c.aliases.some(a => wordMatches(t, a));
     // Lists are already separated by splitScopes. Within one scope the first type
     // is the item: "cargador de batería" must not mean chargers OR batteries.
     const firstTypeAt = tokens.findIndex(token => types.some(type => wordMatches(token, type)));

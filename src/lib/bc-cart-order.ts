@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { priceMultiCart, type MultiCart } from "./bc-multi-cart";
 import type { CommercialProduct } from "./commercial-catalog";
+import { getBcLivePolicy } from "./bc-live-policy";
 
 /** Pending orders do not own ERP inventory. Fulfilment/payment approval remains manual. */
 export async function persistBcCartOrder(tx: Prisma.TransactionClient, input: {
@@ -18,11 +19,12 @@ export async function persistBcCartOrder(tx: Prisma.TransactionClient, input: {
     const fresh = priceMultiCart(cart.lines, products as unknown as CommercialProduct[]).cart;
     if (!fresh || fresh.total !== cart.total || JSON.stringify(fresh.lines) !== JSON.stringify(cart.lines)) throw new Error("BC_ORDER_INVENTORY_CHANGED");
     await tx.order.create({ data: {
+      isTest: getBcLivePolicy().testMode,
       orderNumber: cart.orderNumber, status: "PENDING", customerName: cart.name, customerPhone: input.phone,
       customerDocumentType: cart.documentType === "BOLETA" ? "DNI" : "RUC", customerDocumentNumber: cart.documentNumber,
       customerAddress: cart.address, deliveryType: cart.delivery.toUpperCase() === "RECOJO" ? "PICKUP" : cart.delivery.toUpperCase() === "SHALOM" ? "PROVINCE" : "DELIVERY",
       total: cart.total, currencySymbol: "PEN", paymentMethod: "MANUAL",
-      adminNotes: `${process.env.BC_LIVE_PILOT_TEST_MODE === "true" ? "PRUEBA BC AUTORIZADA - NO COBRAR NI DESPACHAR. " : ""}BC conversación ${input.conversationId}. ${cart.documentType}. Stock NO reservado; revalidar inventario y cotizar flete antes de cobrar o despachar.`,
+      adminNotes: `${getBcLivePolicy().testMode ? "PRUEBA BC AUTORIZADA - NO COBRAR NI DESPACHAR. " : ""}BC conversación ${input.conversationId}. ${cart.documentType}. Stock NO reservado; revalidar inventario y cotizar flete antes de cobrar o despachar.`,
       items: { create: cart.lines.map(line => ({ ...line, productId: products.find(p => p.code === line.code)!.id, tierLabel: line.quantity >= products.find(p => p.code === line.code)!.wholesaleMinQty && products.find(p => p.code === line.code)!.wholesalePrice ? "Mayorista" : "Unitario" })) },
     } });
   } else {

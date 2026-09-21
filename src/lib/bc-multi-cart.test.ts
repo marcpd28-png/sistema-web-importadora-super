@@ -83,3 +83,27 @@ test("customer corrections require review, preserve other fields, and cannot mod
   assert.equal(step(confirmed.cart, "cambiar nombre a Otro Cliente")!.cart.name, "Cliente");
   assert.equal(step(ready, "cambiar dni a 12")!.cart.stage, "CONFIRM");
 });
+
+test("word quantities edit the selected line and keep pricing, stock and confirmation checks", () => {
+  for (const content of ["cambia el primero a tres unidades", "del parlante quiero tres", "déjame el parlante en tres uds", "cambiar A100 a tres piezas por favor"]) {
+    const result = step(initial(), content)!;
+    assert.equal(result.cart.lines[0].quantity, 3, content);
+    assert.equal(result.cart.total, 470, content);
+    assert.deepEqual(result.cart.lines[1], initial().lines[1], content);
+  }
+  assert.equal(step(initial(), "cambia el segundo a una unidad")!.cart.lines[1].quantity, 1);
+  assert.deepEqual(step(initial(), "cambia el segundo a tres")!.cart, initial());
+  const confirmed: MultiCart = { ...initial(), stage: "PAYMENT", orderNumber: "SIM-CART-existing" };
+  assert.deepEqual(step(confirmed, "cambia el primero a dos")!.cart, confirmed);
+});
+
+test("uncertain word quantities and references cannot change the reviewed cart", () => {
+  const cart = initial();
+  for (const content of ["cambia ese a dos", "cambia el primero a dos o tres", "no cambies el primero a dos", "cambia el primero a dos cajas", "cambia el primero a dos y el segundo a una", "si cambio el primero a dos cuánto cuesta"]) {
+    const result = step(cart, content);
+    assert.deepEqual(result?.cart ?? cart, initial(), content);
+  }
+  const repeatedName = { ...cart, lines: cart.lines.map(line => ({ ...line, name: "Parlante" })) };
+  const result = step(repeatedName, "del parlante quiero dos");
+  assert.deepEqual(result?.cart ?? repeatedName, repeatedName);
+});

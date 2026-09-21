@@ -33,10 +33,10 @@ export async function POST(request: Request) {
   try {
     const input = inputSchema.parse(await request.json());
     const conversation = await prisma.conversation.findUnique({ where: { id: input.conversationId }, select: {
-      status: true, botEnabled: true, assignedUserId: true, contactId: true, contact: { select: { externalId: true, phoneNormalized: true } },
+      channel: true, status: true, botEnabled: true, assignedUserId: true, contactId: true, contact: { select: { externalId: true, phoneNormalized: true } },
       requestAgenda: true, salesState: { select: { stage: true } },
     } });
-    const live = Boolean(conversation && isBcLiveContact(conversation.contact));
+    const live = Boolean(conversation && conversation.channel === "WHATSAPP" && isBcLiveContact(conversation.contact));
     if (!conversation || !live && !conversation.contact.externalId?.startsWith("SIMULATOR:")) return NextResponse.json({ error: "Simulator or authorized pilot conversation required" }, { status: 403 });
     if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return NextResponse.json({ ok: true, handled: true, skipped: "HUMAN_OWNS_CONVERSATION" });
     if ((await prisma.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }))?.botMasterSwitch === false) return NextResponse.json({ ok: true, handled: true, skipped: "BOT_DISABLED" });

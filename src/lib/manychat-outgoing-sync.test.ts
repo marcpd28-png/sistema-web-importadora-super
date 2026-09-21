@@ -11,6 +11,7 @@ function database() {
   const messages: Array<Record<string, unknown>> = [];
   const updates: Array<Record<string, unknown>> = [];
   const db = {
+    $executeRaw: async () => 1,
     conversation: {
       findMany: async () => [{ id: "conversation-1", contact: { externalId: "real" } }],
       updateMany: async (args: Record<string, unknown>) => { updates.push(args); return { count: 1 }; },
@@ -34,6 +35,8 @@ test("new manual sends are stored outbound once without asserting delivery or ch
   assert.equal(messages[0].senderType, "AGENT"); assert.equal(messages[0].status, "unknown");
   assert.equal((messages[0].createdAt as Date).toISOString(), event.occurredAt.replace("Z", ".000Z"));
   assert.deepEqual(Object.keys(updates[0].data as object), ["lastMessageAt"]);
+  assert.deepEqual(updates[1], { where: { id: "conversation-1" }, data: { botEnabled: false, status: "ATENDIENDO" } });
+  assert.equal(updates.length, 2, "a duplicated import must not pause a newly resumed conversation again");
 });
 
 test("old messages and invalid future timestamps are ignored before touching the database", async () => {

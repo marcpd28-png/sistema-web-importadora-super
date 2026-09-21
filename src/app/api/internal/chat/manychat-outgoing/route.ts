@@ -23,7 +23,10 @@ export async function POST(request: Request) {
         status: result.ignored === "before_activation" ? 200 : 422,
       });
     }
-    if (!result.duplicate) triggerPusherEvent(`chat-${result.message.conversationId}`, "new-message", result.message);
+    if (!result.duplicate) {
+      triggerPusherEvent(`chat-${result.message.conversationId}`, "new-message", result.message);
+      if (input.data.source === "agent") triggerPusherEvent(`chat-${result.message.conversationId}`, "conversation-updated", { botEnabled: false, status: "ATENDIENDO" });
+    }
     return NextResponse.json({ ok: true, duplicate: result.duplicate, messageId: result.message.id });
   } catch {
     console.error("[manychat-outgoing-sync] persistence failed");

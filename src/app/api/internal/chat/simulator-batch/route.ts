@@ -38,10 +38,10 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async tx => {
       await lockSimulatorConversation(tx, input.conversationId);
       const conversation = await tx.conversation.findUnique({ where: { id: input.conversationId }, select: {
-        botEnabled: true, assignedUserId: true, status: true, contactId: true, contact: { select: { externalId: true, phoneNormalized: true } },
+        channel: true, botEnabled: true, assignedUserId: true, status: true, contactId: true, contact: { select: { externalId: true, phoneNormalized: true } },
         messages: { where: { direction: "OUTBOUND", senderType: { in: ["BOT", "AGENT"] }, OR: [{ status: null }, { status: { notIn: ["failed", "pending"] } }] }, select: { id: true }, take: 1 },
       } });
-      const live = Boolean(conversation && isBcLiveContact(conversation.contact));
+      const live = Boolean(conversation && conversation.channel === "WHATSAPP" && isBcLiveContact(conversation.contact));
       if (!conversation || !live && !conversation.contact.externalId?.startsWith("SIMULATOR:")) return { denied: true, messages: [] };
       if (live && (await tx.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }))?.botMasterSwitch === false) return { skipped: true, messages: [] };
       if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return { skipped: true, messages: [] };

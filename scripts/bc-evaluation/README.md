@@ -54,3 +54,15 @@ La foto original está en el respaldo privado `/home/IMPORTADORA-backups/bc-inbo
 Esta suite establece la línea base previa a un intérprete de IA. Un cambio posterior debe ejecutar el mismo corpus y las mismas etiquetas, añadir casos de los errores nuevos y comprobar que mejora cobertura sin aumentar productos incorrectos. Precio, stock y especificaciones deben continuar viniendo de datos verificados.
 
 Metodología consultada: [OpenAI Docs: evaluación con datos de producción, criterios explícitos y casos representativos](https://developers.openai.com/api/docs/guides/evaluation-best-practices), [Stanford: precisión y recall en recuperación de información](https://nlp.stanford.edu/IR-book/html/htmledition/evaluation-of-unranked-retrieval-sets-1.html).
+
+## Ortografía y nombres incompletos sobre inventario
+
+`spelling-audit.cjs` trabaja únicamente con una copia local `{ capturedAt, products, brands }`, con los campos del selector comercial. No conecta a la base, modifica productos ni envía mensajes. Guardar la copia y el informe en `.cache`, fuera de Git.
+
+```sh
+node --import tsx scripts/bc-evaluation/spelling-audit.cjs .cache/inventory.json .cache/spelling-report.json
+```
+
+El tercer argumento opcional es un módulo anterior que exporte `createCatalogIndex`, para comparar ambas versiones sobre la misma copia. Se prueban prefijos de cuatro/cinco letras, eliminación de letras y transposición, por familia y marca; códigos exactos de todos los productos; y fragmentos de precio, familia, marca y cantidad para los prefijos reconocidos. Los tipos de menos de seis letras quedan fuera de la generación de variantes, pero sus productos participan en la prueba de códigos.
+
+La comparación de variantes usa como referencia la consulta completa del mismo selector: mide estabilidad, no precisión comercial independiente. Una variante puede ser ambigua o una palabra real distinta. Revisar resultados adicionales y regresiones, y no contar consultas completas vacías como éxitos. La prueba de fragmentos se limita a prefijos que ya dieron coincidencias y no acredita cualquier conversación ni el transporte por WhatsApp.

@@ -1,18 +1,23 @@
 import type { PrismaClient, Prisma } from "@prisma/client";
-import { isBcLiveContact } from "./bc-live-policy";
+import { getBcLivePolicy, isBcLiveContact } from "./bc-live-policy";
 import { sendN8nOutboundMessage } from "./n8n-outbound";
 import { normalizeCommercialText } from "./commercial-query";
 import { triggerPusherEvent } from "./pusher-server";
 import { MANYCHAT_IMAGE_FLOW, validateImageInput } from "./manychat-image-dispatch";
 
 const meta = (v: unknown) => v && typeof v === "object" && !Array.isArray(v) ? v as Record<string, unknown> : {};
+let lastConversationId: string | undefined;
 export async function processBcLivePilot(db: PrismaClient) {
-  if (process.env.BC_LIVE_PILOT_ENABLED !== "true" || !process.env.BC_LIVE_PILOT_STARTED_AT) return;
-  const started = new Date(process.env.BC_LIVE_PILOT_STARTED_AT);
-  if (!Number.isFinite(started.getTime())) return;
+  const policy = getBcLivePolicy();
+  if (!policy.enabled || !policy.startedAt || policy.startedAt > new Date()) return;
+  const started = policy.startedAt;
   if ((await db.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }))?.botMasterSwitch === false) return;
-  const phones = (process.env.BC_LIVE_PILOT_PHONES ?? "").split(",").map(s => s.trim());
-  const conversations = await db.conversation.findMany({ where: { botEnabled: true, assignedUserId: null, status: "AUTOMATICO", contact: { phoneNormalized: { in: phones } } }, include: { contact: true }, take: 10 });
+  const conversations = await db.conversation.findMany({ where: { channel: "WHATSAPP", botEnabled: true, assignedUserId: null, status: "AUTOMATICO",
+    ...(lastConversationId ? { id: { gt: lastConversationId } } : {}),
+    contact: { ...(policy.scope === "ALLOWLIST" ? { phoneNormalized: { in: policy.phones } } : { phoneNormalized: { not: null } }) },
+  }, include: { contact: true }, orderBy: { id: "asc" }, take: 25 });
+  // Traverse every eligible conversation; idle contacts must not starve later IDs.
+  lastConversationId = conversations.length === 25 ? conversations[conversations.length - 1].id : undefined;
   const key = process.env.N8N_INTERNAL_API_KEY;
   if (!key) return;
   const base = `http://127.0.0.1:${process.env.PORT || "4000"}/api/internal/chat/`;
@@ -23,6 +28,7 @@ export async function processBcLivePilot(db: PrismaClient) {
   };
   for (const conversation of conversations) {
     if (!isBcLiveContact(conversation.contact)) continue;
+    try {
     // A transport crash may already have reached WhatsApp: never retry it blindly.
     const staleBefore = new Date(Date.now() - 120_000).toISOString();
     const stale = await db.$executeRaw`UPDATE "ChatMessage" SET status = 'uncertain' WHERE "conversationId" = ${conversation.id} AND status = 'bc_sending' AND metadata->>'bcDispatchStartedAt' < ${staleBefore}`;
@@ -62,6 +68,10 @@ export async function processBcLivePilot(db: PrismaClient) {
     }
     const input = { conversationId: conversation.id, triggerMessageId: latest.id };
     const result = await call("requests", input);
-    if (!result.handled) await call("simulator-batch", { ...input, requestId: `bc:${latest.id}`, messages: [{ type: "TEXT", content: "Estoy atendiendo la prueba BC. Puedes consultar productos por nombre o código, enviar una foto o pedir «quiero comprar CODIGO 2 unidades y también CODIGO 1 unidad». Si una referencia tiene varios modelos, te pediré elegir el código. Escribe «asesor» para pasar a atención manual." }] });
+    if (!result.handled) await call("simulator-batch", { ...input, requestId: `bc:${latest.id}`, messages: [{ type: "TEXT", content: "Puedes consultar productos por nombre o código, pedir un catálogo o escribir «quiero comprar CODIGO 2 unidades». Si hay varios modelos, te pediré elegir el código. Para continuar con un audio o video, escribe tu consulta o solicita un asesor." }] });
+    } catch {
+      // A failed conversation must not prevent delivery/processing for everyone else.
+      console.error("[bc-worker] Conversation processing failed; pending work retained.");
+    }
   }
 }

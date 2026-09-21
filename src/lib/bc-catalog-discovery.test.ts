@@ -13,6 +13,49 @@ const rows: CatalogCandidate[] = [
 ];
 const index = createCatalogIndex(rows);
 
+const partialInventory = createCatalogIndex([
+  { code: "AU1", name: "AUDIFONO JBL TUNE 110 NEGRO", brand: "JBL", category: "AURICULARES", unitPrice: 70 },
+  { code: "AU2", name: "AUDIFONO JBL TUNE 120 BLANCO", brand: "JBL", category: "AURICULARES", unitPrice: 100 },
+  { code: "PA1", name: "PARLANTE JBL", brand: "JBL", category: "PARLANTES", unitPrice: 200 },
+  { code: "FU1", name: "FUNDA PARA AUDIFONO JBL", brand: "JBL", category: "AURICULARES", unitPrice: 10 },
+  { code: "LI1", name: "LICUADORA PORTATIL", brand: null, category: "COCINA", unitPrice: 90 },
+  { code: "LI2", name: "LICUADORA GRANDE", brand: null, category: "COCINA", unitPrice: 150 },
+  { code: "CA1", name: "CAMAROTE", brand: null, category: "MUEBLES" },
+  { code: "CA2", name: "CAMARA SEGURIDAD", brand: null, category: "CAMARA DE SEGURIDAD" },
+]);
+const partialCodes = (query: string) => partialInventory.select(query).products.map(product => product.code).sort();
+
+test("partial family names and misspellings retain all models and exclude accessories", () => {
+  for (const query of ["audif JBL", "busco audif JBL", "audifnos JBL", "audif marca JBL"]) {
+    assert.deepEqual(partialCodes(query), ["AU1", "AU2"], query);
+  }
+  assert.deepEqual(partialCodes("parlan JBL"), ["PA1"]);
+  for (const query of ["licuad", "busco licuadroa", "licuadoras"]) {
+    assert.deepEqual(partialCodes(query), ["LI1", "LI2"], query);
+  }
+});
+
+test("family completion preserves constraints and never completes codes or numeric models", () => {
+  assert.deepEqual(partialCodes("audif JBL negros hasta 75 soles"), ["AU1"]);
+  assert.deepEqual(partialCodes("audif JBL blancos hasta 75 soles"), []);
+  assert.deepEqual(partialCodes("audif JBL TUNE 110"), ["AU1"]);
+  for (const query of ["audif JBL TUNE 11", "audif JBL TUNE 110 PRO", "codigo AU", "marca licuad", "licuad INEXISTENTE", "licuad hasta 50 soles", "aud", "camar"]) {
+    assert.deepEqual(partialCodes(query), [], query);
+  }
+});
+
+test("partial subjects in separate messages keep the brand and quantity on the same request", () => {
+  const plan = planRequests(emptyAgenda(), [
+    { id: "p", content: "precio" }, { id: "f", content: "audif" },
+    { id: "b", content: "JBL" }, { id: "q", content: "2 unidades" },
+  ], partialInventory);
+  assert.equal(plan.agenda.topics.length, 1);
+  const price = plan.agenda.requests.find(request => request.kind === "PRICE")!;
+  assert.equal(price.quantity, 2);
+  assert.deepEqual(price.sourceMessageIds, ["p", "f", "b", "q"]);
+  assert.deepEqual(partialCodes(plan.agenda.topics[0].query), ["AU1", "AU2"]);
+});
+
 function searchViaAgenda(content: string) {
   const { agenda } = planRequests(emptyAgenda(), [{ id: "input", content }]);
   assert.equal(agenda.topics.length, 1, content);
