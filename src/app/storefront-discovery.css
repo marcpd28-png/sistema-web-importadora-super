@@ -106,8 +106,9 @@
   .catalog-sections-layout .catalog-section-header h2 { font-size: 17px; line-height: 1.2; }
   .catalog-section-eyebrow { display: none; }
   .catalog-sections-layout .catalog-section-link { padding: 6px 10px; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
-  .hero { padding: 3px; border-radius: 14px; }
-  .hero .hero-panel { padding: 3px; border-radius: 12px; }
+  .public-store-header-shell:has(+ .hero) { margin-bottom: 0; }
+  .hero { padding: 0; border-radius: 14px; }
+  .hero .hero-panel { padding: 0; border-radius: 12px; }
   .hero .hero-banner-carousel, .hero .hero-banner-visual { min-height: 0; height: clamp(120px, 32vw, 160px); aspect-ratio: auto; border-radius: 10px; }
   .hero .hero-banner-visual-media { padding: 0; }
   .hero .hero-banner-visual-media img { object-fit: contain; }
@@ -125,14 +126,14 @@
   .storefront-filters input, .storefront-filters select { min-height: 44px; font-size: 16px; }
   .storefront-filters .storefront-stock-filter input { min-height: auto; width: 20px; height: 20px; }
   .storefront-filters .button { min-height: 44px; }
-  .storefront-visual-categories { padding: 10px; margin: 8px 0; border-radius: 14px; }
+  .storefront-visual-categories { padding: 6px 10px; margin: 4px 0; border-radius: 14px; }
   .storefront-visual-categories .category-desktop-label { display: none; }
   .category-mobile-label { display: inline; }
   .storefront-category-tile .category-full-name { display: none; }
   .storefront-category-tile .category-short-name { display: inline; }
   .categories-expanded .category-full-name { display: inline; }
   .categories-expanded .category-short-name { display: none; }
-  .category-expand-button { display: block; border: 0; background: transparent; color: #2820cf; font: inherit; font-size: 12px; padding: 8px 0 8px 8px; min-height: 44px; cursor: pointer; }
+  .category-expand-button { display: block; border: 0; background: transparent; color: #2820cf; font: inherit; font-size: 12px; padding: 4px 0 4px 8px; min-height: 32px; cursor: pointer; }
   .category-expand-button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; border-radius: 4px; }
   .storefront-category-tiles { --category-gap: 6px; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding: 2px 0 4px; }
   .storefront-category-tiles::-webkit-scrollbar { display: none; }
