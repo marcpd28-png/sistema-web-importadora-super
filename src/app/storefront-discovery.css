@@ -16,6 +16,7 @@
 @media (max-width: 1279px) {
   .storefront-category-tiles { --category-columns: 7; }
 }
+.storefront-filter-toggle { display: none; }
 .storefront-filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
 .storefront-filters label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; flex: 1 1 130px; min-width: 0; }
 .storefront-filters input, .storefront-filters select { min-width: 0; width: 100%; padding: 10px; border: 1px solid #d9dce8; background: white; border-radius: 8px; }
@@ -103,6 +104,19 @@
   .hero .hero-banner-visual-media { padding: 0; }
   .hero .hero-banner-visual-media img { object-fit: contain; }
   .storefront-visual-categories, .storefront-filter-panel { padding: 14px; margin: 12px 0; }
+  .storefront-filter-panel { padding: 10px 12px; border-radius: 14px; }
+  .storefront-filter-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .storefront-filter-header p { margin: 0; min-width: 0; font-size: 13px; line-height: 1.35; }
+  .storefront-filter-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-height: 44px; padding: 8px 10px; border: 1px solid #dedbf9; border-radius: 10px; background: #f3f1ff; color: #2820cf; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .storefront-filter-toggle:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; }
+  .storefront-filter-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #2820cf; color: white; font-size: 11px; }
+  .storefront-filter-toggle[aria-expanded="true"] .storefront-filter-chevron { transform: rotate(180deg); }
+  .storefront-filter-content { display: none; }
+  .storefront-filter-content.is-expanded { display: block; margin-top: 10px; padding-top: 12px; border-top: 1px solid #e8e7f3; }
+  .storefront-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .storefront-filters input, .storefront-filters select { min-height: 44px; font-size: 16px; }
+  .storefront-filters .storefront-stock-filter input { min-height: auto; width: 20px; height: 20px; }
+  .storefront-filters .button { min-height: 44px; }
   .storefront-visual-categories { padding: 10px; margin: 8px 0; border-radius: 14px; }
   .storefront-visual-categories .category-desktop-label { display: none; }
   .category-mobile-label { display: inline; }

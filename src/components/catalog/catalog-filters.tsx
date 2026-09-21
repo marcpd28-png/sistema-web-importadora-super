@@ -1,11 +1,34 @@
+"use client";
+
 import Link from "next/link";
+import { useId, useState } from "react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import type { BrandOption, CategoryOption } from "@/lib/store-types";
 
 type Props = { categories: CategoryOption[]; brands: BrandOption[]; category: string; collection: string;
   query: string; brand: string; sort: string; minPrice?: number; maxPrice?: number; inStock: boolean; count: number; featuredOnly: boolean };
 export function CatalogFilters(props: Props) {
+  const [expanded, setExpanded] = useState(false);
+  const filtersId = useId();
+  const activeFilterCount = [
+    props.category && props.category !== "all",
+    props.brand && props.brand !== "all",
+    props.minPrice !== undefined,
+    props.maxPrice !== undefined,
+    props.inStock,
+    props.featuredOnly,
+  ].filter(Boolean).length;
   return <section className="storefront-filter-panel" aria-label="Filtros de productos">
-    <p role="status">{props.count} {props.count === 1 ? "modelo encontrado" : "modelos encontrados"}</p>
+    <div className="storefront-filter-header">
+      <p role="status">{props.count} {props.count === 1 ? "modelo encontrado" : "modelos encontrados"}</p>
+      <button type="button" className="storefront-filter-toggle" aria-expanded={expanded} aria-controls={filtersId} onClick={() => setExpanded(value => !value)}>
+        <SlidersHorizontal size={16} aria-hidden="true" />
+        <span>{expanded ? "Ocultar" : "Filtros"}</span>
+        {activeFilterCount > 0 ? <span className="storefront-filter-count" aria-label={`${activeFilterCount} filtros activos`}>{activeFilterCount}</span> : null}
+        <ChevronDown size={16} aria-hidden="true" className="storefront-filter-chevron" />
+      </button>
+    </div>
+    <div id={filtersId} className={`storefront-filter-content${expanded ? " is-expanded" : ""}`}>
     <form action="/" className="storefront-filters">
       {props.collection ? <input type="hidden" name="collection" value={props.collection} /> : null}
       {props.query ? <input type="hidden" name="q" value={props.query} /> : null}
@@ -27,5 +50,6 @@ export function CatalogFilters(props: Props) {
       <input type="hidden" name="view" value="all" />
     </form>
     {props.collection === "mas-vendidos" ? <p className="muted">El orden de esta selección corresponde a las unidades vendidas en el ERP.</p> : null}
+    </div>
   </section>;
 }
