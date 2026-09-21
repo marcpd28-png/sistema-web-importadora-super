@@ -1,6 +1,14 @@
 .storefront-shortcuts-static { overflow-x: auto; scrollbar-width: thin; width: 100%; }
 .storefront-shortcuts-static .public-store-shortcuts-marquee-group { display: flex; width: max-content; gap: 20px; padding: 10px 16px; }
 .storefront-shortcuts-static a { white-space: nowrap; flex-shrink: 0; }
+@media (max-width: 920px) {
+  .public-store-header-shell .public-store-mobile-marquee { width: 100%; margin: 0; padding: 0; }
+  .storefront-shortcuts-static { scrollbar-width: none; }
+  .storefront-shortcuts-static::-webkit-scrollbar { display: none; }
+  .storefront-shortcuts-static .public-store-shortcuts-marquee-group { gap: 8px; padding: 0 8px; }
+  .public-store-header-shell .public-store-mobile-marquee .public-store-shortcut { min-height: 44px; padding: 4px 6px; gap: 4px; font-size: 11px; line-height: 1.2; border-radius: 6px; }
+  .public-store-header-shell .public-store-mobile-marquee .public-store-shortcut svg { width: 13px; height: 13px; flex-shrink: 0; }
+}
 .storefront-category-group { padding: 10px 12px; border-bottom: 1px solid #e6e8f0; }
 .storefront-category-group summary { cursor: pointer; font-weight: 650; padding: 8px 0; }
 .storefront-category-group a { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; color: #25304a; }
