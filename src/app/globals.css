@@ -16736,6 +16736,24 @@ body.admin-sidebar-collapsed .admin-nav-icon {
   margin: 0;
 }
 
+.admin-nav-tooltip { display: none; }
+body.admin-sidebar-collapsed .admin-nav-tooltip {
+  display: block;
+  position: fixed;
+  z-index: 2000;
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 9px 12px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: #172033;
+  color: #fff;
+  box-shadow: 0 4px 16px #0003;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 body.admin-sidebar-collapsed .admin-nav-badge {
   position: absolute;
   top: -4px;

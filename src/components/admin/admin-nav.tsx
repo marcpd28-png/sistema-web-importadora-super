@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   ChartNoAxesCombined,
   DatabaseZap,
@@ -95,6 +96,24 @@ type AdminNavProps = {
 export function AdminNav({ badges }: AdminNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [tooltip, setTooltip] = useState<{ label: string; left: number; top: number } | null>(null);
+  const showTooltip = (element: HTMLElement, label: string) => {
+    if (!document.body.classList.contains("admin-sidebar-collapsed")) return;
+    const rect = element.getBoundingClientRect();
+    setTooltip({ label, left: Math.min(rect.right + 10, window.innerWidth - 250), top: Math.max(8, Math.min(rect.top, window.innerHeight - 60)) });
+  };
+  useEffect(() => {
+    const hide = () => setTooltip(null);
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") hide(); };
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    document.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     "Principal": true,
@@ -183,7 +202,9 @@ export function AdminNav({ badges }: AdminNavProps) {
                 if (link.kind === "action") {
                   return (
                     <form action={logoutAction} key={link.label}>
-                      <button className="admin-nav-link admin-nav-button" type="submit">
+                      <button className="admin-nav-link admin-nav-button" type="submit" aria-label={link.label}
+                        onMouseEnter={event => showTooltip(event.currentTarget, link.label)} onMouseLeave={() => setTooltip(null)}
+                        onFocus={event => showTooltip(event.currentTarget, link.label)} onBlur={() => setTooltip(null)} onClick={() => setTooltip(null)}>
                         <span className="admin-nav-icon">
                           <Icon size={18} />
                         </span>
@@ -205,8 +226,12 @@ export function AdminNav({ badges }: AdminNavProps) {
                       isActive && "is-active",
                     )}
                     href={link.href}
-                    onFocus={() => handlePrefetch(link.href)}
-                    onMouseEnter={() => handlePrefetch(link.href)}
+                    aria-label={link.label}
+                    onFocus={event => { handlePrefetch(link.href); showTooltip(event.currentTarget, link.label); }}
+                    onMouseEnter={event => { handlePrefetch(link.href); showTooltip(event.currentTarget, link.label); }}
+                    onMouseLeave={() => setTooltip(null)}
+                    onBlur={() => setTooltip(null)}
+                    onClick={() => setTooltip(null)}
                     onTouchStart={() => handlePrefetch(link.href)}
                   >
                     <span className="admin-nav-icon">
@@ -223,6 +248,7 @@ export function AdminNav({ badges }: AdminNavProps) {
           </section>
         );
       })}
+      {tooltip ? createPortal(<div className="admin-nav-tooltip" role="tooltip" style={{ left: tooltip.left, top: tooltip.top }}>{tooltip.label}</div>, document.body) : null}
     </nav>
   );
 }
