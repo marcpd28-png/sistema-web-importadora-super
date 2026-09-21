@@ -12,6 +12,7 @@ export function PublicStoreCategoryMenu({ brands, categories }: { brands: BrandO
   const [expanded, setExpanded] = useState<string | null>(null);
   const search = normalize(query.trim());
   const groups = [...new Set(categories.map(c => c.parentName ?? "Categorías"))];
+  const publishedCount = categories.reduce((total, category) => total + (category.productCount ?? 0), 0);
   const visibleGroups = groups.map(group => ({ group, children: categories.filter(c => (c.parentName ?? "Categorías") === group && (!search || normalize(group).includes(search) || normalize(c.name).includes(search))) })).filter(g => g.children.length);
   const visibleBrands = brands.filter(b => !search || normalize(b.name).includes(search));
   const close = () => { if (menu.current) { menu.current.open = false; menu.current.querySelector("summary")?.focus(); } };
@@ -27,13 +28,15 @@ export function PublicStoreCategoryMenu({ brands, categories }: { brands: BrandO
       <div className="category-menu-heading">
         <div className="public-store-category-toolbar"><strong>Categorías</strong><button type="button" className="icon-button" aria-label="Cerrar categorías" onClick={close}><X size={20} /></button></div>
         <label className="category-menu-search"><Search size={17} aria-hidden="true" /><input type="search" aria-label="Buscar categorías o marcas" placeholder="Buscar categorías o marcas" value={query} onChange={event => setQuery(event.target.value)} /></label>
+        <p className="category-menu-count-note">Cantidades en productos publicados, no en unidades de stock.</p>
       </div>
       <div className="category-menu-results">
-      <CatalogPrefetchLink href="/?view=all" className="public-store-shortcut-dropdown-link">Todos los productos</CatalogPrefetchLink>
+      <CatalogPrefetchLink href="/?view=all" className="public-store-shortcut-dropdown-link">Todos los productos <small aria-label={`${publishedCount} productos publicados`}>{publishedCount}</small></CatalogPrefetchLink>
       {visibleGroups.map(({ group, children }) => {
         const Icon = icons[slugs.indexOf(children[0].parentSlug?.replace("familia-", "") ?? "")] ?? PackageSearch;
         const open = search ? true : expanded === group;
-        return <details className="storefront-category-group" key={group} open={open}><summary onClick={event => { event.preventDefault(); setExpanded(expanded === group ? null : group); }}><Icon size={19} aria-hidden="true" /><span>{group}</span><ChevronDown className="category-menu-chevron" size={16} aria-hidden="true" /></summary>
+        const groupCount = categories.filter(c => (c.parentName ?? "Categorías") === group).reduce((total, c) => total + (c.productCount ?? 0), 0);
+        return <details className="storefront-category-group" key={group} open={open}><summary onClick={event => { event.preventDefault(); setExpanded(expanded === group ? null : group); }}><Icon size={19} aria-hidden="true" /><span>{group}</span><small aria-label={`${groupCount} productos publicados`}>{groupCount}</small><ChevronDown className="category-menu-chevron" size={16} aria-hidden="true" /></summary>
           {children[0].parentSlug ? <CatalogPrefetchLink href={'/?category=' + children[0].parentSlug}>Ver todo en {group}</CatalogPrefetchLink> : null}
           {children.map(c => <CatalogPrefetchLink href={'/?category=' + c.slug} key={c.slug}>{c.name}<small>{c.productCount}</small></CatalogPrefetchLink>)}
         </details>;

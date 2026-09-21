@@ -286,7 +286,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
       {isSectionedView ? <VisualCategories families={data.families} /> : <>
         <CatalogFilters categories={[...data.families, ...data.categories]} brands={data.brands} category={category} collection={normalizedCollection}
-          query={q} brand={brand} sort={sort} minPrice={minPrice} maxPrice={maxPrice} inStock={inStock} count={data.totalResults} featuredOnly={featuredOnly} />
+          query={q} brand={brand} sort={sort} minPrice={minPrice} maxPrice={maxPrice} inStock={inStock} count={data.totalResults} productCount={data.totalSkuResults} featuredOnly={featuredOnly} />
         {selectedCategory?.slug.startsWith("familia-") ? <nav className="storefront-subcategories" aria-label="Subcategorías">{data.categories.filter(c => c.parentSlug === selectedCategory.slug).map(c => <Link key={c.slug} href={'/?category=' + c.slug}>{c.name}</Link>)}</nav> : null}
         {data.campaignDescription ? <p className="storefront-campaign-description">{data.campaignDescription}</p> : null}
         {normalizedCollection === "mas-vendidos" ? <p className="storefront-campaign-description">{data.salesSummary.hasRealSales ? (data.salesSummary.hasDatedSales ? "Ordenados por unidades vendidas en los últimos 15 días." : "Ordenados por unidades vendidas acumuladas en el ERP.") : "El ranking de ventas no está disponible en este momento. Puedes explorar las categorías."}</p> : null}

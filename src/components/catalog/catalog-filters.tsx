@@ -6,7 +6,7 @@ import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import type { BrandOption, CategoryOption } from "@/lib/store-types";
 
 type Props = { categories: CategoryOption[]; brands: BrandOption[]; category: string; collection: string;
-  query: string; brand: string; sort: string; minPrice?: number; maxPrice?: number; inStock: boolean; count: number; featuredOnly: boolean };
+  query: string; brand: string; sort: string; minPrice?: number; maxPrice?: number; inStock: boolean; count: number; productCount: number; featuredOnly: boolean };
 export function CatalogFilters(props: Props) {
   const [expanded, setExpanded] = useState(false);
   const filtersId = useId();
@@ -20,7 +20,7 @@ export function CatalogFilters(props: Props) {
   ].filter(Boolean).length;
   return <section className="storefront-filter-panel" aria-label="Filtros de productos">
     <div className="storefront-filter-header">
-      <p role="status">{props.count} {props.count === 1 ? "modelo encontrado" : "modelos encontrados"}</p>
+      <p role="status" title="Productos publicados por código; los modelos agrupan variantes de color. No son unidades de stock.">{props.productCount} {props.productCount === 1 ? "producto" : "productos"} · {props.count} {props.count === 1 ? "modelo" : "modelos"}</p>
       <button type="button" className="storefront-filter-toggle" aria-expanded={expanded} aria-controls={filtersId} onClick={() => setExpanded(value => !value)}>
         <SlidersHorizontal size={16} aria-hidden="true" />
         <span>{expanded ? "Ocultar" : "Filtros"}</span>
@@ -29,6 +29,7 @@ export function CatalogFilters(props: Props) {
       </button>
     </div>
     <div id={filtersId} className={`storefront-filter-content${expanded ? " is-expanded" : ""}`}>
+    <p className="category-menu-count-note">Los productos se cuentan por código publicado. Los modelos agrupan variantes de color. Estos conteos no son unidades de stock.</p>
     <form action="/" className="storefront-filters">
       {props.collection ? <input type="hidden" name="collection" value={props.collection} /> : null}
       {props.query ? <input type="hidden" name="q" value={props.query} /> : null}
