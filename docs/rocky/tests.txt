@@ -1,0 +1,50 @@
+✔ agenda and answers commit together only for the current batch, stock and revision (175.5385ms)
+✔ learns a confirmed customer term with traceable evidence and recalls it in later conversations (4.2452ms)
+✔ unknown terms require explicit correction, never a model's inferred result or a negated selection (0.7388ms)
+✔ conflicting aliases and expired memories ask for clarification instead of guessing (0.6521ms)
+✔ FAQ counts keep only structured interests and exclude canceled and unrelated requests (0.5943ms)
+[bc-worker] Conversation processing failed; pending work retained.
+[bc-worker] Conversation processing failed; pending work retained.
+✔ worker visits contacts beyond the first page and isolates conversation failures (5.751ms)
+✔ rechaza requests sin API key (12.8009ms)
+✔ rechaza requests con API key incorrecta (0.5058ms)
+✔ rechaza query inválida (1.4886ms)
+✔ busca productos por nombre (0.7947ms)
+✔ busca productos por código (0.2975ms)
+✔ busca productos por marca (0.1361ms)
+✔ busca productos por categoría (0.1521ms)
+✔ devuelve lista vacía cuando no hay resultados relevantes (0.4615ms)
+✔ respeta el limit solicitado (0.1992ms)
+✔ no devuelve productos invisibles (0.1523ms)
+✔ serializa precios Decimal como números JSON (0.6275ms)
+✔ caso 1: Samsung, carga rápida, presupuesto y búsqueda (12.8841ms)
+✔ caso 2: objeción conserva el producto y no inventa descuentos (0.6322ms)
+✔ caso 3: stock exacto desde backend (0.4984ms)
+✔ caso 4: compara ambos y pide uso (0.5758ms)
+✔ caso 5: mayorista conserva producto, consulta stock precio promociones (0.4166ms)
+✔ caso 6: humano prevalece sobre modelo (0.3563ms)
+✔ caso 7: garantía con fuente, sin dato deriva (0.532ms)
+✔ caso 8: fallback semántico obtiene producto pero precio se recarga (0.4276ms)
+✔ no stock inventado si falla herramienta (0.4395ms)
+✔ no ejecutar herramientas o workflows no autorizados (1.3244ms)
+✔ localhost obligatorio y una inferencia compartida (0.3849ms)
+✔ control humano domina AUTO y COPILOT (0.1186ms)
+✔ RAG chunking y validación de dimensión (0.5058ms)
+✔ autenticación fail closed y body acotado sin content-length (2.3433ms)
+✔ URLs externas no se descargan ni se usan como producto (0.196ms)
+✔ sin selección implícita entre varios resultados (0.2588ms)
+✔ credenciales comunes no pasan al contexto (0.1767ms)
+✔ salida LLM no inventa códigos ni presupuesto y no puede ejecutar acciones (0.3157ms)
+✔ vocabulario inicial proporcionado conserva otros calificadores (0.1381ms)
+✔ stock por código no compite con una inferencia ni pierde precisión (0.1722ms)
+✔ precio mayorista cero conserva el precio unitario como BC (0.1864ms)
+✔ text and captioned media survive simulator validation, webhook and inbox decoding (2.3729ms)
+✔ rejects empty messages, remote downloads, executable files, mismatches and oversized media (7.8096ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 793.1298

@@ -1,0 +1,42 @@
+2026-09-21T09:27:25+00:00
+               total        used        free      shared  buff/cache   available
+Mem:     16769044480  7213273088  3690332160   403406848  6698881024  9555771392
+Swap:     2147479552  2144882688     2596864
+Filesystem        1B-blocks        Used    Available Use% Mounted on
+/dev/sda1      206900281344 50097881088 156785623040  25% /
+some avg10=0.00 avg60=0.00 avg300=0.00 total=137347213
+full avg10=0.00 avg60=0.00 avg300=0.00 total=132005916
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0 2094612 3603840 2278964 4262916    0    1   157   301 1302    4  3  1 96  0  0  0
+ 0  0 2094612 3603616 2279296 4262824    0    0   332     0 2716 4890  1  1 98  0  0  0
+ 1  0 2094612 3601852 2279872 4262820    0    0   576     0 3499 6036  2  2 95  1  0  0
+n8n-staging 0.26% 293.7MiB / 15.62GiB
+n8n 0.25% 381.2MiB / 15.62GiB
+n8n_postgres 0.05% 168.3MiB / 15.62GiB
+super_analitico_cobranzas_app 0.02% 318.4MiB / 15.62GiB
+gestion-compras 0.25% 43.59MiB / 15.62GiB
+super_portal 0.03% 29.68MiB / 15.62GiB
+ventas_app 0.00% 3.043GiB / 15.62GiB
+procesos_app 0.01% 23.93MiB / 15.62GiB
+rrhh_app 0.01% 90.55MiB / 15.62GiB
+super_nginx_gateway 0.00% 1.816MiB / 15.62GiB
+portainer 0.00% 18.9MiB / 15.62GiB
+COMMAND         %MEM %CPU
+streamlit       19.3  0.0
+next-server (v1  2.1  1.8
+python           1.9  0.0
+node-MainThread  1.9  1.9
+node-MainThread  1.5  0.1
+next-server (v1  1.3  0.0
+postgres         0.8  0.0
+postgres         0.8  0.0
+node             0.8  0.4
+node             0.8  0.4
+postgres         0.8  0.0
+node             0.7  0.3
+ollama           0.6  0.0
+postgres         0.5  1.4
+NAME          ID              SIZE      MODIFIED
+qwen2.5:7b    845dbda0ea48    4.7 GB    4 months ago
+NAME    ID    SIZE    PROCESSOR    CONTEXT    UNTIL

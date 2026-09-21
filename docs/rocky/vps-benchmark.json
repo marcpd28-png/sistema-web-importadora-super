@@ -1,0 +1,36 @@
+{
+  "time": "2026-09-21T09:32:22Z",
+  "before": {
+    "MemAvailable": 9314572,
+    "SwapFree": 0
+  },
+  "runs": [
+    {
+      "model": "qwen3.5:4b",
+      "seconds": 100.11988717224449,
+      "error": "TimeoutError"
+    },
+    {
+      "model": "qwen3-embedding:0.6b",
+      "seconds": 30.078828524332494,
+      "tokens": null,
+      "evalDurationNs": null,
+      "embeddingDimensions": 1024,
+      "reply": null,
+      "after": {
+        "MemAvailable": 7483348,
+        "SwapFree": 292
+      }
+    }
+  ],
+  "9b": {
+    "status": "DEFERRED_RESOURCE_BUDGET",
+    "weightsBytes": 6600000000,
+    "requiredHeadroomBytes": 3221225472,
+    "reason": "Weights + runtime/context + production reserve exceed available memory; swap is already full."
+  },
+  "after": {
+    "MemAvailable": 8641376,
+    "SwapFree": 292
+  }
+}

@@ -1,0 +1,6 @@
+{"query":"arrancador","latencyMs":761,"top":[{"source":"N1052","title":"(N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618","score":0.01639344262295082}]}
+{"query":"booster","latencyMs":717,"top":[{"source":"N1052","title":"(N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618","score":0.01639344262295082}]}
+{"query":"aparato para prender el carro","latencyMs":697,"top":[{"source":"N1052","title":"(N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618","score":0.01639344262295082}]}
+{"query":"cargador Samsung","latencyMs":1491,"top":[{"source":"O31","title":"(O31)CARGADOR  SAMSUNG 25W C A C (ORIGINAL)","score":0.031754032258064516},{"source":"O991","title":"(O991) DADO SAMSUNG 60W ORIGINAL 003701","score":0.031544957774465976},{"source":"O33","title":"(O33) CARGADOR DE AUTO SAMSUNG 45 W C A C (ORIGINAL)","score":0.03125763125763126}]}
+{"query":"LK618","latencyMs":1099,"top":[{"source":"N1052","title":"(N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618","score":0.01639344262295082}]}
+{"documents":1679,"vectors":[{"count":1378}]}

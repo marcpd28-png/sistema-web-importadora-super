@@ -29,6 +29,18 @@ const list = (value: string) => value.split(",").map(item => item.trim()).filter
 export async function POST(request: Request) {
   const key = process.env.N8N_INTERNAL_API_KEY;
   if (!key || request.headers.get("x-internal-api-key") !== key) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Explicit per-conversation rollout. BC still owns the durable outbound worker.
+  if (process.env.ROCKY_AUTO_ENABLED === "true") {
+    const rockyInput = inputSchema.safeParse(await request.clone().json());
+    if (rockyInput.success) {
+      const session = await prisma.rockySession.findUnique({ where: { conversationId: rockyInput.data.conversationId }, select: { mode: true } });
+      if (session?.mode === "AUTO") {
+        const { runRocky } = await import("@/lib/rocky/service");
+        try { return NextResponse.json({ handled: true, ...await runRocky(rockyInput.data) }); }
+        catch { return NextResponse.json({ handled: true, error: "ROCKY_RETRY_REQUIRED" }, { status: 503 }); }
+      }
+    }
+  }
   if (process.env.BC_REQUEST_AGENDA_ENABLED !== "true") return NextResponse.json({ ok: true, handled: false });
   try {
     const input = inputSchema.parse(await request.json());

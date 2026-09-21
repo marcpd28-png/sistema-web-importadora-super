@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "elapsedMs": 22087,
+  "conversationId": "cmub2m7c40002kwuvjvxi4yt9",
+  "requestId": "3da471cd-b8ac-4a5a-801b-f302f1d4e9e8",
+  "intent": "PRODUCT_SEARCH",
+  "model": "qwen3.5:2b",
+  "tools": [
+    "searchProducts",
+    "searchKnowledge"
+  ],
+  "reason": null,
+  "messages": 2,
+  "reply": "CR420 — (CR420) SQ CARGADOR M. SUPER FLASH TIPO C 35W 6.8A MODEL. C28\nPrecio por unidad: S/ 13.00. Stock: 405 unidades.\n\n¿Qué código te interesa?"
+}

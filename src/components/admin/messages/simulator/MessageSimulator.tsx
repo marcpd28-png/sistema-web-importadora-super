@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Bug, FileDown, RefreshCw, Send, UserRound } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
 import { SIMULATOR_MEDIA_ACCEPT, SIMULATOR_MEDIA_MAX_BYTES } from "@/lib/simulator-message";
+import type { RockyResult } from "@/lib/rocky/contracts";
 
 type SimulatorResponse = {
   automationError: string | null;
@@ -14,6 +15,7 @@ type SimulatorResponse = {
   customerMessageId: string | null;
   pendingSince: string;
   messages: ChatMessage[];
+  rocky?: RockyResult;
 };
 
 type MessagesResponse = {
@@ -42,6 +44,9 @@ function formatTime(value: Date | string) {
 }
 
 export function MessageSimulator() {
+  const [engine, setEngine] = useState<"BC" | "ROCKY">("ROCKY");
+  const [rocky, setRocky] = useState<RockyResult | null>(null);
+  const [feedback, setFeedback] = useState("");
   const [content, setContent] = useState("");
   const [attachment, setAttachment] = useState<{ type: "IMAGE" | "AUDIO"; dataUrl: string; name: string } | null>(null);
   const [readingFile, setReadingFile] = useState(false);
@@ -145,6 +150,7 @@ export function MessageSimulator() {
     try {
       const response = await fetch("/api/admin/conversations/simulate", {
         body: JSON.stringify({
+          engine,
           content: message,
           name,
           phone,
@@ -164,6 +170,8 @@ export function MessageSimulator() {
       setConversationId(payload.conversationId ?? null);
       setPendingCustomerMessageId(payload.customerMessageId ?? null);
       setPendingSince(payload.pendingSince ?? null);
+      setRocky(payload.rocky ?? null);
+      setFeedback(payload.rocky?.reply ?? "");
 
       if (payload.automationError) {
         setWaitingForN8n(false);
@@ -171,8 +179,8 @@ export function MessageSimulator() {
       } else if (payload.automationTriggered) {
         setContent("");
         setAttachment(null);
-        setWaitingForN8n(true);
-        setNotice("Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
+        setWaitingForN8n(!payload.rocky);
+        setNotice(payload.rocky ? payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación." : "Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
       }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "No se pudo simular el mensaje.");
@@ -182,6 +190,8 @@ export function MessageSimulator() {
   }
 
   function handleNewSession() {
+    setRocky(null);
+    setFeedback("");
     fileVersion.current += 1;
     setAttachment(null);
     setReadingFile(false);
@@ -209,6 +219,14 @@ export function MessageSimulator() {
         </div>
 
         <label className="simulator-field">
+          <span>Motor de conversación</span>
+          <select value={engine} disabled={busy || waitingForN8n} onChange={event => { setEngine(event.target.value as "BC" | "ROCKY"); handleNewSession(); }}>
+            <option value="BC">BC · actual</option>
+            <option value="ROCKY">ROCKY · pruebas IA</option>
+          </select>
+        </label>
+
+        <label className="simulator-field">
           <span>Cliente</span>
           <input value={name} onChange={(event) => setName(event.target.value)} />
         </label>
@@ -224,18 +242,34 @@ export function MessageSimulator() {
         </button>
 
         <p className="message-simulator-help">
-          Puedes escribir la consulta en varios mensajes. El bot los agrupa después de 12 segundos sin recibir otro mensaje.
+          {engine === "ROCKY" ? "Prueba Rocky con el catálogo real. Las respuestas se guardan solamente en esta conversación de prueba." : "Puedes escribir la consulta en varios mensajes. El bot los agrupa después de 12 segundos sin recibir otro mensaje."}
         </p>
+        {rocky && <div className="message-simulator-help" aria-live="polite">
+          <strong>ROCKY · {rocky.model}</strong>
+          <p>Intención: {rocky.intent} · {Math.round(rocky.confidence * 100)}%</p>
+          <p>Skill: {rocky.skill}</p>
+          <p>Herramientas: {rocky.toolsRequested.join(", ") || "ninguna"}</p>
+          <p>Productos: {rocky.products.map(p => p.code).join(", ") || "por precisar"}</p>
+          <p>Fuentes: {rocky.sources.map(s => s.title).join(", ") || "catálogo / reglas internas"}</p>
+          {rocky.reasonCode && <p>Motivo: {rocky.reasonCode}</p>}
+          <details><summary>Corregir sugerencia</summary>
+            <textarea aria-label="Respuesta corregida" value={feedback} maxLength={4000} onChange={event => setFeedback(event.target.value)} />
+            <button type="button" className="btn btn-outline" onClick={async () => {
+              const response = await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "feedback", runId: rocky.rockyRequestId, humanResponse: feedback }) });
+              setNotice(response.ok ? "Corrección guardada para revisión humana." : "No se pudo guardar la corrección.");
+            }}>Guardar corrección</button>
+          </details>
+        </div>}
       </aside>
 
       <section className="message-simulator-chat">
         <div className="message-simulator-chat-header">
           <div>
             <h2>{name || "Cliente Simulador"}</h2>
-            <p>Dispara el flujo real de n8n en modo simulacion</p>
+            <p>{engine === "ROCKY" ? "Conversación de prueba con Rocky" : "Dispara el flujo real de n8n en modo simulacion"}</p>
           </div>
           <span className="conversation-badge badge-automatico">
-            {waitingForN8n ? "ESPERANDO N8N" : "N8N REAL"}
+            {engine === "ROCKY" ? busy ? "ROCKY PENSANDO" : "ROCKY" : waitingForN8n ? "ESPERANDO N8N" : "N8N REAL"}
           </span>
         </div>
 
@@ -243,7 +277,7 @@ export function MessageSimulator() {
           {messages.length === 0 ? (
             <div className="message-simulator-empty">
               <Bot size={44} />
-              <p>Escribe una consulta como cliente para disparar el workflow real.</p>
+              <p>{engine === "ROCKY" ? "Escribe una consulta para probar a Rocky." : "Escribe una consulta como cliente para disparar el workflow real."}</p>
             </div>
           ) : (
             messages.map((message) => {
@@ -257,7 +291,7 @@ export function MessageSimulator() {
                 >
                   <div className="simulator-bubble-meta">
                     {isCustomer ? <UserRound size={13} /> : <Bot size={13} />}
-                    <span>{isCustomer ? "Cliente" : isBot ? "Bot" : "Sistema"}</span>
+                    <span>{isCustomer ? "Cliente" : isBot ? engine === "ROCKY" ? "ROCKY" : "BC" : "Sistema"}</span>
                   </div>
                   {message.messageType === "IMAGE" && message.mediaUrl ? (
                     <div className="simulator-media-message">

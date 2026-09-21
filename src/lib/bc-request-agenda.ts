@@ -1,3 +1,4 @@
+import { businessQuestion } from "./business-question";
 import { z } from "zod";
 import { describeCommercialConstraints, normalizeCommercialText, parseCommercialQuery } from "./commercial-query";
 import { commercialClauses, groupCommercialFragments, type CommercialLexicon, type CommercialMessage } from "./commercial-language";
@@ -125,7 +126,7 @@ export function planRequests(previous: RequestAgenda, messages: CommercialMessag
       if (catalog) kinds.push("CATALOG");
       if (/\b(?:envios?|envian|envias|hacen delivery|shalom|olva|entrega|demora|flete)\b/.test(text) && !catalog) kinds.push("SHIPPING");
       if (/\b(?:pago|pagos|yape|plin|transferencia|aceptan tarjetas?)\b/.test(text)) kinds.push("PAYMENT");
-      if (/\b(?:direccion|horario|ubicacion|donde estan|donde queda)\b/.test(text)) kinds.push("STORE");
+      if (businessQuestion(text)) kinds.push("STORE");
       const business = kinds.some(kind => ["SHIPPING", "PAYMENT", "STORE"].includes(kind));
       let purchaseRequested = purchasing && !business && !catalog;
       if (!business && /\b(?:precio|precios|cuesta|cuestan|salen|cotiza|cotizar|cuanto sale|cuanto por)\b/.test(text)) kinds.push("PRICE");

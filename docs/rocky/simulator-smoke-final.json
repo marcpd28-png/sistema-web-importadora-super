@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "elapsedMs": 19875,
+  "conversationId": "cmub3k3880002kwn0k0vge38h",
+  "requestId": "f3b5ac8d-61e4-43c4-a84a-46eb80852c64",
+  "intent": "PRODUCT_SEARCH",
+  "model": "qwen3.5:2b",
+  "tools": [
+    "searchProducts",
+    "searchKnowledge",
+    "getProduct",
+    "getProduct",
+    "getProduct"
+  ],
+  "reason": null,
+  "messages": 2,
+  "reply": "O356 — (O356) CIGARRERA SAMSUNG DUAL FAST CHARGER 15W (000289)\nPrecio por unidad: S/ 49.00. Stock: 1 unidades.\n\n¿Qué código te interesa?\nIndícame el modelo de tu Samsung para verificar la compatibilidad antes de elegir."
+}

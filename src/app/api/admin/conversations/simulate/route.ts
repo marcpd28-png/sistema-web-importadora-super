@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { simulatorInputSchema, simulatorWebhookMessage } from "@/lib/simulator-message";
+import { runRocky } from "@/lib/rocky/service";
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,12 @@ export async function POST(request: Request) {
   try {
     await requireAdmin();
     const input = simulatorInputSchema.parse(await request.json());
+    if (input.engine === "ROCKY" && process.env.ROCKY_SIMULATOR_ENABLED !== "true") {
+      return NextResponse.json({ error: "Rocky aún no está habilitado en este servidor." }, { status: 503 });
+    }
     const now = new Date();
     const normalizedPhone = normalizeWhatsappPhone(input.phone);
-    const externalId = buildSimulatorExternalId(input.sessionKey);
+    const externalId = buildSimulatorExternalId(input.engine === "ROCKY" ? `rocky:${input.sessionKey}` : input.sessionKey);
     const externalMessageId = `SIM-CUSTOMER-${randomUUID()}`;
 
     const contact = await prisma.chatContact.upsert({
@@ -86,7 +90,7 @@ export async function POST(request: Request) {
           status: "AUTOMATICO",
         },
       });
-    } else if (!conversation.botEnabled || conversation.status !== "AUTOMATICO") {
+    } else if (input.engine === "BC" && (!conversation.botEnabled || conversation.status !== "AUTOMATICO")) {
       conversation = await prisma.conversation.update({
         where: { id: conversation.id },
         data: {
@@ -99,6 +103,22 @@ export async function POST(request: Request) {
     const settings = await prisma.storeSettings.findFirst({
       select: { botMasterSwitch: true },
     });
+    if (input.engine === "ROCKY") {
+      if (settings?.botMasterSwitch === false) return NextResponse.json({ error: "Bot global apagado en configuración." }, { status: 409 });
+      const customerMessage = await prisma.chatMessage.create({ data: {
+        conversationId: conversation.id, senderType: "CUSTOMER", direction: "INBOUND", messageType: input.attachment?.type || "TEXT",
+        content: input.content, mediaUrl: input.attachment?.dataUrl, externalMessageId,
+        metadata: { source: "rocky-simulator", simulation: true },
+      } });
+      try {
+        const rocky = await runRocky({ conversationId: conversation.id, triggerMessageId: customerMessage.id, simulate: true });
+        const messages = await prisma.chatMessage.findMany({ where: { conversationId: conversation.id }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100 });
+        return NextResponse.json({ automationError: null, automationExecutionId: rocky.result.rockyRequestId, automationName: "ROCKY", automationTriggered: true,
+          conversationId: conversation.id, customerMessageId: customerMessage.id, pendingSince: now.toISOString(), messages: messages.reverse(), rocky: rocky.result });
+      } catch {
+        return NextResponse.json({ error: "Rocky no pudo completar la consulta. Revisa su estado y vuelve a intentarlo." }, { status: 503 });
+      }
+    }
     let automationError: string | null = null;
     const automationExecutionId: string | null = null;
     const automationName = "BC - Simulador";

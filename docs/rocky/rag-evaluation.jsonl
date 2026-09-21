@@ -1,0 +1,6 @@
+{"query":"arrancador","latencyMs":689,"top":[{"source":"N1052","title":"(N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618","score":0.01639344262295082}]}
+{"query":"booster","latencyMs":714,"top":[{"source":"O398-ROJO.","title":"(O398-ROJO) PARLANTE JBL CHARGE 6 ORIGINAL","score":0.01639344262295082},{"source":"O494-CAMUFLADO","title":"(O494-CAMUFLADO) JBL PARLANTE BOOMBOX 4 CAMUFLADO","score":0.016129032258064516},{"source":"O278-NEGRO","title":"(O278-NEGRO) JBL PARLANTE CLIP 5","score":0.015873015873015872}]}
+{"query":"aparato para prender el carro","latencyMs":683,"top":[]}
+{"query":"cargador Samsung","latencyMs":722,"top":[{"source":"O991","title":"(O991) DADO SAMSUNG 60W ORIGINAL 003701","score":0.031544957774465976},{"source":"O948","title":"(O948) CARGADOR SAMSUNG 25W POWER ADAPTER 1 PUERTO -C","score":0.01639344262295082},{"source":"O31","title":"(O31)CARGADOR  SAMSUNG 25W C A C (ORIGINAL)","score":0.016129032258064516}]}
+{"query":"LK618","latencyMs":861,"top":[{"source":"N1052","title":"(N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618","score":0.01639344262295082}]}
+{"documents":1679,"vectors":[{"count":609}]}

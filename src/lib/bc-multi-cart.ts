@@ -110,7 +110,7 @@ export function advanceMultiCart(input: { cart: MultiCart; content: string; prod
   if (text === "ver carrito" || text === "resumen") return result(multiCartSummary(cart));
   if (cart.stage === "COMPLETE" && live) return result(`El pedido ${cart.orderNumber} está pendiente de revisión. El pago no está verificado.`);
   if (cart.stage === "COMPLETE") return result(`La referencia ${cart.orderNumber} ya está registrada en esta simulación. El comprobante sigue pendiente de validación; no se creó un pedido real.`);
-  if (/[?¿]|\b(?:catalogo|garantia|horario|informacion|precios?|stock|envios?|aceptan)\b/.test(text)) return null;
+  if (/[?¿]|\b(?:catalogo|garantia|horarios?|informacion|precios?|stock|envios?|aceptan)\b/.test(text)) return null;
   if (cart.stage === "REVIEW") {
     if (!/^(?:continuar compra|continuar|si|confirmo carrito)$/.test(text)) return null;
     cart.stage = !cart.name ? "NAME" : !cart.documentType ? "DOCUMENT" : !cart.documentNumber ? "DOCUMENT_NUMBER" : "DELIVERY";

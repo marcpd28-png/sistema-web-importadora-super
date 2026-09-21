@@ -1,0 +1,38 @@
+[PM2] Applying action stopProcessId on app [importadora-rocky-web-v2](ids: [ 4 ])
+[PM2] [importadora-rocky-web-v2](4) ✓
+┌────┬──────────────────────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name                             │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────────────────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 1  │ catalog-enricher                 │ default     │ 0.1.0   │ fork    │ 0        │ 0      │ 3    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 0  │ importadora                      │ default     │ N/A     │ fork    │ 2068193  │ 44m    │ 189… │ online    │ 0%       │ 68.1mb   │ root     │ disabled │
+│ 3  │ importadora-rocky-web            │ default     │ N/A     │ fork    │ 2084778  │ 107s   │ 0    │ online    │ 0%       │ 48.0mb   │ root     │ disabled │
+│ 4  │ importadora-rocky-web-v2         │ default     │ N/A     │ fork    │ 0        │ 0      │ 0    │ stopped   │ 0%       │ 0b       │ root     │ disabled │
+│ 2  │ importadora-router-v2-staging    │ default     │ N/A     │ fork    │ 1034998  │ 2D     │ 30   │ online    │ 0%       │ 59.1mb   │ root     │ disabled │
+└────┴──────────────────────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+2026-09-21T10:24:34+00:00
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       6.8Gi       4.0Gi       400Mi       5.6Gi       8.8Gi
+Swap:          2.0Gi       1.8Gi       166Mi
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       193G   63G  130G  33% /
+17G	/usr/share/ollama/.ollama/models
+1.4G	/home/IMPORTADORA-releases/rocky-20260921
+1.4G	/home/IMPORTADORA-releases/rocky-20260921-r2
+MemoryCurrent=1556455424
+MemoryPeak=5369417728
+CPUQuotaPerSecUSec=2s
+MemoryHigh=5368709120
+MemoryMax=6442450944
+MemorySwapMax=0
+low 0
+high 18420
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+LISTEN 0      511        127.0.0.1:4002       0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:11434      0.0.0.0:*
+LISTEN 0      511          0.0.0.0:4000       0.0.0.0:*
+LISTEN 0      511          0.0.0.0:4001       0.0.0.0:*

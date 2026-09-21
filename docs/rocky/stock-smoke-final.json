@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "elapsedMs": 132,
+  "conversationId": "cmub3lep40009kwn0rozmkl2t",
+  "requestId": "6aa0cbb5-99ee-4653-b500-c44456a05dc2",
+  "intent": "STOCK_QUERY",
+  "model": "rules-and-tools",
+  "tools": [
+    "getProductByCode",
+    "getStock"
+  ],
+  "reason": null,
+  "messages": 2,
+  "reply": "N1052 — (N1052) INFLADOR + ARRANCADOR DE BATERIA LINKMAX PARA AUTO LK618\nPrecio por unidad: S/ 189.00. Stock: 52 unidades.\n\n¿Qué código te interesa?"
+}

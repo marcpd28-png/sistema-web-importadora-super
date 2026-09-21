@@ -13,6 +13,7 @@ export function safeInlineMediaUrl(value: string) {
 }
 
 export const simulatorInputSchema = z.object({
+  engine: z.enum(["BC", "ROCKY"]).default("BC"),
   content: z.string().trim().max(1200).default(""),
   name: z.string().trim().min(1).max(180).default("Cliente Simulador"),
   phone: z.string().trim().max(32).default("+51 999 888 777"),

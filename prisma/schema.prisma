@@ -839,6 +839,7 @@ model ChatContact {
   updatedAt       DateTime       @updatedAt
   conversations   Conversation[]
   conversationMemory CustomerConversationMemory?
+  rockyPreferences RockyCustomerPreferences?
 
   @@unique([channel, externalId])
   @@index([phone])
@@ -871,6 +872,8 @@ model Conversation {
   salesState           ConversationSalesState?
   requestAgenda        ConversationRequestAgenda?
   automationExecutions AutomationExecution[]
+  rockySession         RockySession?
+  rockyRuns            RockyRun[]
 
   @@index([contactId])
   @@index([channel])
@@ -1087,4 +1090,90 @@ model MessageTemplate {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ROCKY is opt-in. Human control remains in Conversation.botEnabled/status/assignedUserId.
+model RockySession {
+  conversationId String @id
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  mode String @default("COPILOT") @db.VarChar(16)
+  revision Int @default(0)
+  memory Json
+  updatedAt DateTime @updatedAt
+}
+
+model RockyCustomerPreferences {
+  contactId String @id
+  contact ChatContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  preferences Json
+  updatedAt DateTime @updatedAt
+}
+
+model RockyRun {
+  id String @id
+  conversationId String
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  triggerMessageId String @unique
+  intent String @db.VarChar(40)
+  skill String @db.VarChar(64)
+  result Json
+  createdAt DateTime @default(now())
+  feedback RockyFeedback[]
+  @@index([conversationId, createdAt])
+  @@index([intent, createdAt])
+}
+
+model RockyFeedback {
+  id String @id @default(cuid())
+  runId String
+  run RockyRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  humanResponse String @db.Text
+  outcome String? @db.VarChar(80)
+  reviewerId String @db.VarChar(191)
+  status String @default("AI_FEEDBACK") @db.VarChar(32)
+  createdAt DateTime @default(now())
+  @@index([status, createdAt])
+}
+
+model RockySynonym {
+  id String @id @default(cuid())
+  phrase String @db.VarChar(120)
+  canonical String @db.VarChar(120)
+  frequency Int @default(1)
+  status String @default("PENDING") @db.VarChar(16)
+  reviewedBy String? @db.VarChar(191)
+  updatedAt DateTime @updatedAt
+  @@unique([phrase, canonical])
+}
+
+model KnowledgeDocument {
+  id String @id @default(cuid())
+  sourceType String @db.VarChar(40)
+  sourceId String @db.VarChar(191)
+  title String @db.VarChar(240)
+  productId String? @db.VarChar(191)
+  brand String? @db.VarChar(120)
+  category String? @db.VarChar(120)
+  version String @db.VarChar(80)
+  contentHash String @db.VarChar(64)
+  metadata Json
+  approved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chunks KnowledgeChunk[]
+  @@unique([sourceType, sourceId])
+  @@index([productId])
+  @@map("knowledge_documents")
+}
+
+model KnowledgeChunk {
+  id String @id @default(cuid())
+  documentId String
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  position Int
+  content String @db.Text
+  // Embeddings live in knowledge_embeddings, provisioned separately after pgvector resource checks.
+  createdAt DateTime @default(now())
+  @@unique([documentId, position])
+  @@map("knowledge_chunks")
 }

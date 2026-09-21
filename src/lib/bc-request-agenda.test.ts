@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { agendaSchema, emptyAgenda, planRequests, requestedQuantity } from "./bc-request-agenda";
-import { answerProductRequest, splitAnswerText } from "./bc-request-answers";
+import { answerBusinessRequest, answerProductRequest, splitAnswerText } from "./bc-request-answers";
 import { createCatalogIndex } from "./catalog-selection";
 import type { CommercialProduct } from "./commercial-catalog";
 import { literalProductCodes } from "./commercial-query";
@@ -232,4 +232,14 @@ test("dos fotos en cinco mensajes conservan sus precios y referencias separados"
   assert.deepEqual(plan.agenda.requests.map(job => job.kind), ["PRICE", "PRICE", "PAYMENT"]);
   assert.deepEqual(plan.agenda.requests.slice(0, 2).map(job => plan.agenda.topics.find(topic => topic.id === job.topicId)?.selectedCode), ["A1", "P1"]);
   assert.deepEqual(plan.agenda.requests.slice(0, 2).map(job => job.sourceMessageIds), [["i1", "q1"], ["i2", "q2"]]);
+});
+
+test("horarios en plural y preguntas de apertura no generan búsqueda de producto", () => {
+  for (const content of ["hora cuales son sus horarios de atencion", "HOLA DESEO SUS HORARIOS ATENCION", "¿A qué hora abren?", "hasta qué hora atienden"]) {
+    const { agenda } = planRequests(emptyAgenda(), [{ id: "hours", content }], index);
+    assert.deepEqual(agenda.requests.map(request => request.kind), ["STORE"], content);
+    assert.equal(agenda.topics.length, 0);
+    const answer = answerBusinessRequest(agenda.requests[0], { supportHours: "Lun a sáb 8:00 am - 7:00 pm", storeAddress: "Jr. Huallaga 420", paymentMethods: [], deliveryMethods: [] });
+    assert.match(answer!.content, /8:00 am/); assert.equal(answer!.status, "ANSWERED");
+  }
 });

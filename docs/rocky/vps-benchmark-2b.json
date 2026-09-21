@@ -1,0 +1,43 @@
+{
+  "time": "2026-09-21T09:44:23Z",
+  "before": {
+    "MemAvailable": 9401524,
+    "SwapFree": 212440
+  },
+  "runs": [
+    {
+      "model": "qwen3.5:2b",
+      "seconds": 6.421617242973298,
+      "tokens": 14,
+      "evalDurationNs": 1740250046,
+      "embeddingDimensions": 0,
+      "reply": "Necesito un cargador para cargar el dispositivo que tengo.",
+      "after": {
+        "MemAvailable": 5447540,
+        "SwapFree": 207064
+      }
+    },
+    {
+      "model": "qwen3-embedding:0.6b",
+      "seconds": 1.8428766187280416,
+      "tokens": null,
+      "evalDurationNs": null,
+      "embeddingDimensions": 1024,
+      "reply": null,
+      "after": {
+        "MemAvailable": 7551352,
+        "SwapFree": 207064
+      }
+    }
+  ],
+  "9b": {
+    "status": "DEFERRED_RESOURCE_BUDGET",
+    "weightsBytes": 6600000000,
+    "requiredHeadroomBytes": 3221225472,
+    "reason": "Weights + runtime/context + production reserve exceed available memory; swap is already full."
+  },
+  "after": {
+    "MemAvailable": 9068732,
+    "SwapFree": 207064
+  }
+}

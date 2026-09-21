@@ -33,7 +33,7 @@ export function extractCommercialSubject(text: string, isEntity: (word: string) 
 
 export type CommercialMessage = { id: string; content: string; sourceMessageIds?: string[]; imageReference?: { code: string | null; label: string } };
 export type CommercialLexicon = { fragmentKind(content: string): "subject" | "qualifier" | null };
-const operation = /\b(?:catalogos?|precio|precios|cuanto|cuesta|cuestan|stock|informacion|info|garantia|envios?|envian|shalom|yape|plin|pagos?|direccion|horario|ubicacion|reintenta|cancela)\b/;
+const operation = /\b(?:catalogos?|precio|precios|cuanto|cuesta|cuestan|stock|informacion|info|garantia|envios?|envian|shalom|yape|plin|pagos?|direccion|horarios?|ubicacion|reintenta|cancela)\b/;
 
 /** Join fragments only while they extend one request. Independent operations and
  * corrections stay separate, and every contributing source ID survives planning. */
@@ -66,6 +66,6 @@ export function commercialClauses(content: string) {
   let marker = "\uE000URL";
   while (content.includes(marker)) marker += "_";
   const protectedContent = content.replace(/https?:\/\/[^\s<>"']+/gi, url => `${marker}${urls.push(url) - 1}\uE001`);
-  return protectedContent.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|(?:saber\s+)?cu[aá]nto|se\s+puede\s+pagar|puedo\s+pagar|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|stock\b|disponibilidad\b|informaci[oó]n\b|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio|d[oó]nde|horario|direcci[oó]n))/i)
+  return protectedContent.split(/\n+|[?]\s*(?=\S)|(?:\s+y\s+|[,;]\s*)(?=(?:¿|(?:saber\s+)?cu[aá]nto|se\s+puede\s+pagar|puedo\s+pagar|hacen\s+env|aceptan|formas?\s+de\s+pago|medios?\s+de\s+pago|env[ií]os?|stock\b|disponibilidad\b|informaci[oó]n\b|tambi[eé]n\s+(?:quiero|dame|informaci[oó]n|precio)|(?:el\s+)?precio|d[oó]nde|horarios?|direcci[oó]n))/i)
     .filter(value => value.trim()).map(value => urls.reduce((text, url, i) => text.replaceAll(`${marker}${i}\uE001`, url), value));
 }
