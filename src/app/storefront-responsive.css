@@ -90,6 +90,39 @@
   right: -5px;
 }
 
+@media (min-width: 921px) {
+  .store-side-actions {
+    right: 16px;
+    bottom: 24px;
+    justify-items: center;
+    gap: 10px;
+  }
+
+  .store-side-actions .store-side-action:not(.store-side-action-whatsapp) {
+    width: 64px;
+    min-width: 64px;
+    height: 56px;
+    padding: 6px 4px;
+    gap: 4px;
+  }
+
+  .store-side-actions .store-side-action:not(.store-side-action-whatsapp) > svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  .store-side-actions .store-side-action > span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .store-side-actions .store-side-action:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+  }
+}
+
 body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[open], .store-assistant-panel) .store-side-actions > .store-side-action {
   visibility: hidden;
   pointer-events: none;

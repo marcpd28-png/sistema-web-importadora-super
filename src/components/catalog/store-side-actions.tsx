@@ -37,11 +37,12 @@ export function StoreSideActions({
       <button
         aria-label={`Abrir carrito${itemCount > 0 ? `, ${itemCount} productos` : ""}`}
         className="store-side-action store-side-action-cart"
+        title="Ver mi carrito"
         onClick={openCart}
         type="button"
       >
         <ShoppingCart size={24} />
-        {itemCount > 0 ? <strong className="store-side-action-badge">{itemCount}</strong> : null}
+        {itemCount > 0 ? <strong className="store-side-action-badge" aria-hidden="true">{itemCount > 99 ? "99+" : itemCount}</strong> : null}
         <span>Carrito</span>
       </button>
 

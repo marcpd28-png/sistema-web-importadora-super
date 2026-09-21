@@ -291,7 +291,7 @@ export default async function Home({ searchParams }: HomeProps) {
         {data.campaignDescription ? <p className="storefront-campaign-description">{data.campaignDescription}</p> : null}
         {normalizedCollection === "mas-vendidos" ? <p className="storefront-campaign-description">{data.salesSummary.hasRealSales ? (data.salesSummary.hasDatedSales ? "Ordenados por unidades vendidas en los últimos 15 días." : "Ordenados por unidades vendidas acumuladas en el ERP.") : "El ranking de ventas no está disponible en este momento. Puedes explorar las categorías."}</p> : null}
       </>}
-      <section className="catalog-experience-shell" id="catalogo">
+      <section className={`catalog-experience-shell${isSectionedView ? " catalog-experience-shell-home" : ""}`} id="catalogo">
         <CatalogExperience
           bestSellerProducts={data.bestSellerProducts}
           catalogTitle={catalogTitle}

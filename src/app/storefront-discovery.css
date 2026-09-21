@@ -52,6 +52,13 @@
 .category-mobile-label, .category-expand-button, .category-short-name { display: none; }
 .storefront-category-tile:focus-visible { outline: 3px solid #4f46e5; outline-offset: 3px; }
 .storefront-category-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 0; background: transparent; color: #3526c9; flex-shrink: 0; }
+@media (min-width: 921px) {
+  .storefront-visual-categories { margin: 10px 0 0; padding: 14px 24px; }
+  .storefront-visual-categories .catalog-section-header { margin-bottom: 6px; }
+  .storefront-visual-categories .storefront-category-tile { padding-block: 6px; gap: 4px; }
+  .storefront-visual-categories .storefront-category-icon { height: 36px; }
+  .catalog-experience-shell.catalog-experience-shell-home { margin-top: 10px; padding-top: 0; }
+}
 @media (max-width: 1279px) {
   .storefront-category-tiles { --category-columns: 7; }
 }
