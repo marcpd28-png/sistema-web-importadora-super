@@ -9,6 +9,7 @@ import { ProductCoverField } from "@/components/admin/product-cover-field";
 import { ProductMediaManager } from "@/components/admin/product-media-manager";
 import { AdminFormSectionNav } from "@/components/admin/admin-form-section-nav";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ErpProductEditor } from "@/components/admin/erp-product-editor";
 
 const PRODUCT_FORM_SECTIONS = [
   { id: "product-identity", label: "Información", description: "Datos que identifican el producto" },
@@ -66,6 +67,8 @@ export function ProductForm({
         <Link href="/admin/atencion">Requiere atención</Link>
       </div>
 
+      {product ? <ErpProductEditor productId={product.id} /> : null}
+
       <form
         action={formAction}
         className="stack-lg admin-long-form"
@@ -93,7 +96,7 @@ export function ProductForm({
             <strong>Listo</strong>
             <span>
               {status === "updated"
-                ? "El producto se actualizó correctamente."
+                ? "El producto se actualizó en la web. Los cambios al ERP se envían desde su panel."
                 : "Operación completada correctamente."}
             </span>
           </div>
@@ -317,7 +320,7 @@ export function ProductForm({
         <div className="actions-row product-editor-actions admin-form-sticky-actions">
           <span className="admin-form-save-hint">Los productos nuevos se guardan ocultos hasta que decidas publicarlos.</span>
           <SubmitButton pendingLabel={product ? "Guardando cambios..." : "Creando producto..."}>
-            {product ? "Guardar cambios" : "Crear producto"}
+            {product ? "Guardar cambios solo en la web" : "Crear producto"}
           </SubmitButton>
         </div>
       </form>

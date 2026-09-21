@@ -60,6 +60,14 @@ export function buildErpEditorialPayload(
   identity: { externalId: string; code: string },
   content: EditorialContent,
 ): Record<string, unknown> & ReturnType<typeof buildEditorialFields> {
+  return { ...buildErpProductBasePayload(record, identity), ...buildEditorialFields(content) };
+}
+
+// Shared by both editors: the ERP resets omitted image references.
+export function buildErpProductBasePayload(
+  record: Record<string, unknown>,
+  identity: { externalId: string; code: string },
+): Record<string, unknown> {
   if (!/^\d+$/.test(identity.externalId) || String(record.id) !== identity.externalId || record.internal_id !== identity.code) {
     throw new EditorialWriteError("IDENTITY_MISMATCH", "El código del producto no coincide con el ERP. Revisa su vinculación.", 409);
   }
@@ -95,5 +103,5 @@ export function buildErpEditorialPayload(
     "percentage_perception", "percentage_of_profit", "category_id", "brand_id"]) {
     if (key in record) body[key] = record[key];
   }
-  return { ...body, image, image_url: record.image_url, temp_path: null, ...buildEditorialFields(content) };
+  return { ...body, image, image_url: record.image_url, temp_path: null };
 }

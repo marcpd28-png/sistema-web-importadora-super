@@ -25,6 +25,8 @@
 .DS_Store
 *.pem
 /.cache/
+/output/
+/tmp/
 
 # debug
 npm-debug.log*
