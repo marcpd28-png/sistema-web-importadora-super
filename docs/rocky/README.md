@@ -33,7 +33,7 @@ flowchart TD
   BC --> OUT[n8n / ManyChat / WhatsApp]
 ```
 
-Release activo: `/home/IMPORTADORA-releases/rocky-20260921-image-names`, proceso PM2 `importadora-rocky-image-names`, puerto localhost 4005. Las siete rutas HTTP ROCKY usan esta versión, incluido el simulador asíncrono y la auditoría de fotos. El fallback estático sirve la unión de recursos desde `rocky-20260921-r2/.next/static`. Los releases anteriores se conservan para reversión. Detalles: [reconocimiento por nombre](image-name-deployment.md) y [respuesta asíncrona del simulador](simulator-background-fix.md).
+Release activo: `/home/IMPORTADORA-releases/rocky-20260921-image-names`, proceso PM2 `importadora-rocky-image-names`, puerto localhost 4005. Las rutas HTTP ROCKY usan esta versión, incluido el simulador asíncrono y la API de auditoría. La página `/admin/atencion` usa el release `rocky-20260921-hidden-audit`, proceso `importadora-rocky-hidden-audit`, puerto 4006, que separa los incongruentes ocultos. El fallback estático sirve la unión de recursos desde `rocky-20260921-r2/.next/static`. Los releases anteriores se conservan para reversión. Detalles: [reconocimiento por nombre](image-name-deployment.md) y [respuesta asíncrona del simulador](simulator-background-fix.md).
 
 Lectura ampliada de códigos en fotos: [comportamiento, pruebas y límites](lectura-codigos-fotos.md).
 

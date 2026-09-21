@@ -8,15 +8,28 @@ import styles from "./catalog-image-audit-panel.module.css";
 export async function CatalogImageAuditPanel({ params }: { params?: Record<string, string | string[] | undefined> }) {
   const [report, progress] = await Promise.all([readCatalogImageAudit(), readCatalogImageAuditProgress()]);
   const chosen = typeof params?.audit === "string" ? params.audit : "CODE_DIFFERENT";
-  const filter = chosen === "ALL" || chosen in auditStatusLabels ? chosen : "CODE_DIFFERENT";
+  const filter = chosen === "ALL" || chosen === "HIDDEN_CODE_DIFFERENT" || chosen in auditStatusLabels ? chosen : "CODE_DIFFERENT";
+  const incongruentVisibility = report ? await prisma.product.findMany({
+    where: { id: { in: report.rows.filter(row => row.status === "CODE_DIFFERENT").map(row => row.productId) } },
+    select: { id: true, isVisible: true },
+  }) : [];
+  const hiddenIds = new Set(incongruentVisibility.filter(product => !product.isVisible).map(product => product.id));
+  const hiddenCount = report?.rows.filter(row => row.status === "CODE_DIFFERENT" && hiddenIds.has(row.productId)).length || 0;
   const query = typeof params?.aq === "string" ? params.aq.trim().slice(0, 120) : "";
   const needle = query.toLocaleLowerCase("es");
-  const rows = (report?.rows || []).filter(row => (filter === "ALL" || row.status === filter) && (!needle || `${row.code} ${row.name} ${row.printedCodes.join(" ")}`.toLocaleLowerCase("es").includes(needle)));
+  const rows = (report?.rows || []).filter(row => {
+    const matchesFilter = filter === "HIDDEN_CODE_DIFFERENT"
+      ? row.status === "CODE_DIFFERENT" && hiddenIds.has(row.productId)
+      : filter === "CODE_DIFFERENT"
+        ? row.status === "CODE_DIFFERENT" && !hiddenIds.has(row.productId)
+        : filter === "ALL" || row.status === filter;
+    return matchesFilter && (!needle || `${row.code} ${row.name} ${row.printedCodes.join(" ")}`.toLocaleLowerCase("es").includes(needle));
+  });
   const totalPages = Math.max(1, Math.ceil(rows.length / 20));
   const requested = Number(params?.ap || 1);
   const page = Math.max(1, Math.min(totalPages, Number.isSafeInteger(requested) ? requested : 1));
   const shown = rows.slice((page - 1) * 20, page * 20);
-  const current = await prisma.product.findMany({ where: { id: { in: shown.map(row => row.productId) } }, select: { id: true, code: true, name: true, imageUrl: true, localImageUrl: true, media: { where: { type: "IMAGE" }, select: { url: true } }, variants: { select: { imageUrl: true } } } });
+  const current = await prisma.product.findMany({ where: { id: { in: shown.map(row => row.productId) } }, select: { id: true, code: true, name: true, isVisible: true, imageUrl: true, localImageUrl: true, media: { where: { type: "IMAGE" }, select: { url: true } }, variants: { select: { imageUrl: true } } } });
   const href = (status: string, next = 1) => `/admin/atencion?${new URLSearchParams({ audit: status, aq: query, ap: String(next) })}#codigos-incongruentes`;
   return <section className={`panel ${styles.panel}`} id="codigos-incongruentes" aria-labelledby="audit-heading">
     <div className={styles.heading}>
@@ -30,9 +43,12 @@ export async function CatalogImageAuditPanel({ params }: { params?: Record<strin
     </div>
     {report ? <>
       <nav className={styles.tabs} aria-label="Resultado de revisión de imágenes">
-        {(["CODE_DIFFERENT", "CODE_MATCH", "NAME_MATCH", "UNVERIFIABLE", "ERROR", "NO_IMAGE"] as AuditStatus[]).map(status => <Link key={status} href={href(status)} aria-current={filter === status ? "page" : undefined}>{auditStatusLabels[status]} <strong>{report.counts[status]}</strong></Link>)}
+        <Link href={href("CODE_DIFFERENT")} aria-current={filter === "CODE_DIFFERENT" ? "page" : undefined}>Códigos incongruentes <strong>{report.counts.CODE_DIFFERENT - hiddenCount}</strong></Link>
+        <Link href={href("HIDDEN_CODE_DIFFERENT")} aria-current={filter === "HIDDEN_CODE_DIFFERENT" ? "page" : undefined}>Incongruentes ocultos <strong>{hiddenCount}</strong></Link>
+        {(["CODE_MATCH", "NAME_MATCH", "UNVERIFIABLE", "ERROR", "NO_IMAGE"] as AuditStatus[]).map(status => <Link key={status} href={href(status)} aria-current={filter === status ? "page" : undefined}>{auditStatusLabels[status]} <strong>{report.counts[status]}</strong></Link>)}
         <Link href={href("ALL")} aria-current={filter === "ALL" ? "page" : undefined}>Todas las filas <strong>{report.rows.length}</strong></Link>
       </nav>
+      {filter === "HIDDEN_CODE_DIFFERENT" ? <div><h3>Incongruentes ocultos</h3><p>Productos incongruentes actualmente ocultos en el catálogo sincronizado. Se muestran aparte para facilitar tu revisión.</p></div> : null}
       <form action="/admin/atencion#codigos-incongruentes" className={styles.search}>
         <input type="hidden" name="audit" value={filter} /><label>Buscar código o nombre <input type="search" name="aq" defaultValue={query} maxLength={120} /></label><button className="button button-primary" type="submit">Buscar</button>
       </form>
@@ -51,7 +67,7 @@ export async function CatalogImageAuditPanel({ params }: { params?: Record<strin
             <p>{row.reason}</p>
             {row.visualReview ? <p>Etiqueta contrastada visualmente por el asistente. Pendiente de tu validación comercial.</p> : <p>Resultado automático. Revisa la imagen antes de realizar cambios.</p>}
             {row.nameEvidence ? <details><summary>Ver texto leído y evidencia</summary><blockquote>{row.nameEvidence}</blockquote><p>Palabras coincidentes: {row.matchingWords.join(", ") || "Ninguna"}</p><ul>{row.codeEvidence.map((read, i) => <li key={i}>{read.code} · lectura {read.view} · confianza OCR {Math.round(read.confidence)} / 100</li>)}</ul><small>Confianza OCR: medida del lector, no garantía de exactitud. Foto registrada el {row.scannedAt}.</small></details> : null}
-            <div className={styles.actions}><Link className="button button-primary" href={`/admin/products/${row.productId}#product-cover`}>Revisar y corregir producto</Link><span>{row.visible ? "Visible" : "Oculto"} · Stock al barrido: {row.stock}</span></div>
+            <div className={styles.actions}><Link className="button button-primary" href={`/admin/products/${row.productId}#product-cover`}>Revisar y corregir producto</Link><span>{(product?.isVisible ?? row.visible) ? "Visible" : "Oculto"} · Stock al barrido: {row.stock}</span></div>
           </div>
         </article>;
       })}</div>
