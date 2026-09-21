@@ -46,6 +46,13 @@
 .category-menu-count-note { margin: 6px 0; color: #64748b; font-size: 11px; line-height: 1.35; }
 .category-menu-results .public-store-shortcut-dropdown-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .storefront-visual-categories, .storefront-filter-panel { margin: 20px 0; padding: 24px; border: 1px solid #e8e7f3; border-radius: 20px; background: white; }
+/* Use the same gap above categories and above the home product sections. */
+.site-shell { --home-section-gap: 10px; }
+.site-shell > .storefront-visual-categories { margin-block: var(--home-section-gap) 0; }
+.catalog-experience-shell.catalog-experience-shell-home { margin-top: var(--home-section-gap); padding-top: 0; }
+@media (max-width: 920px) {
+  .site-shell { --home-section-gap: 4px; }
+}
 .storefront-category-tiles { --category-columns: var(--category-count); --category-gap: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: var(--category-gap); }
 .storefront-category-tile { flex: 0 0 calc((100% - (var(--category-columns) - 1) * var(--category-gap)) / var(--category-columns)); min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 5px; border-radius: 0; background: transparent; text-align: center; color: #22213d; font-size: 12px; line-height: 1.3; font-weight: 650; overflow-wrap: anywhere; }
 .storefront-category-tile:hover { background: transparent; color: #2820cf; }
@@ -57,7 +64,6 @@
   .storefront-visual-categories .catalog-section-header { margin-bottom: 6px; }
   .storefront-visual-categories .storefront-category-tile { padding-block: 6px; gap: 4px; }
   .storefront-visual-categories .storefront-category-icon { height: 36px; }
-  .catalog-experience-shell.catalog-experience-shell-home { margin-top: 10px; padding-top: 0; }
 }
 @media (max-width: 1279px) {
   .storefront-category-tiles { --category-columns: 7; }
