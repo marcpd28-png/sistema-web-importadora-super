@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { catalogImageContentHash } from "../router-v2-catalog-image-match";
+import { matchCatalogImageName, type ImageNameText } from "./image-names";
 
 // Formatting only: never substitute O/0, I/1, or change model digits.
 export const imageCodeKey = (code: string) => code.toUpperCase().trim().replace(/[()]/g, "").replace(/\s+/g, "").replace(/[.,;:]+$/, "");
@@ -44,18 +45,21 @@ export async function identifyCatalogImageCodes(imageUrl: string, visibleCodes: 
     const keys = [...new Set(visibleCodes.flatMap(code => {
       return catalogImageAliases(typeof code === "string" ? { code } : code).flatMap(key => [key, key.split(/[-_]/)[0]]);
     }))];
-    const output = await new Promise<ImageCodeRead[]>((resolve,reject) => {
+    const output = await new Promise<{ reads: ImageCodeRead[]; text: ImageNameText[] }>((resolve,reject) => {
       const child=execFile("/usr/bin/python3",[path.join(process.cwd(),"scripts/rocky/image-code-ocr.py")],{timeout:22000,maxBuffer:1_000_000,encoding:"utf8",windowsHide:true,
         env:{PATH:"/usr/bin:/bin",LANG:"C.UTF-8",OMP_THREAD_LIMIT:"1",NODE_ENV:process.env.NODE_ENV}},(error,stdout)=>{
           if(error){reject(error);return;}try{resolve(JSON.parse(stdout));}catch(error){reject(error);}
         });
       child.stdin?.on("error",()=>{});
-      child.stdin?.end(JSON.stringify({image:imageUrl.slice(imageUrl.indexOf(",")+1),keys}));
+      child.stdin?.end(JSON.stringify({image:imageUrl.slice(imageUrl.indexOf(",")+1),keys,includeText:true}));
     });
-    const confirmed=confirmedImageCodes(output);
+    const confirmed=confirmedImageCodes(output.reads);
     const resolved=confirmed.map(read=>({...read,...resolveImageCode(read.code,visibleCodes)})).filter(read=>read.codes.length);
     const codes=[...new Set(resolved.flatMap(read=>read.codes))];
-    if (!codes.length) return null;
+    if (!codes.length) {
+      const names = matchCatalogImageName(output.text, visibleCodes.map(product => typeof product === "string" ? { code: product } : product));
+      return names.length ? { status: names.length === 1 ? "READY" : "CHOICES", model: "local-catalog-name-multipass", hints: { code: names.join(", "), confidence: .8 }, codes: names } : null;
+    }
     const exact=resolved.every(read=>read.kind==="EXACT") && codes.length===1;
     return {status:exact?"READY":resolved.every(read=>read.kind==="EXACT")?"MULTIPLE":"CHOICES",model:"local-catalog-code-multipass",hints:{code:resolved.map(read=>read.code).join(", "),confidence:Math.min(...resolved.map(read=>read.confidence))},codes};
   } catch { return null; } finally {busy=false;}

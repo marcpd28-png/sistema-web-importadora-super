@@ -14,6 +14,7 @@ import { lockSimulatorConversation } from "@/lib/simulator-input-batch";
 import { productFromOwnUrl } from "./sales";
 import sharp from "sharp";
 import { redactSensitiveText } from "./guardrails";
+import { readCatalogImageAudit } from "../catalog-image-audit-store";
 
 export function rockyProvider() { return process.env.ROCKY_LLM_ENABLED === "true" ? new OllamaLocalProvider() : undefined; }
 export function rockyKnowledge() { return new PostgresKnowledge(process.env.ROCKY_RAG_VECTOR_ENABLED === "true" ? new OllamaLocalProvider() : undefined); }
@@ -54,7 +55,12 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     memory.productCodes = [];
     resolvedProductCode = undefined;
     const exactImage = await matchCatalogSourceImage(trigger.mediaUrl, hash => prisma.product.findMany({ where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2 }));
-    if (exactImage) photoMatch = { ...exactImage, codes: [exactImage.hints.code] };
+    const audit = exactImage ? await readCatalogImageAudit() : null;
+    const auditRows = audit?.rows.filter(row => row.code === exactImage?.hints.code && row.roles.includes("PORTADA")) || [];
+    // A known discrepancy, including a base-code/color variant, needs fresh OCR
+    // evidence and cannot be resolved solely from the catalog's file association.
+    const disputed = auditRows.some(row => row.status === "CODE_DIFFERENT");
+    if (exactImage && !disputed) photoMatch = { ...exactImage, codes: [exactImage.hints.code] };
     else {
       const visible = await prisma.product.findMany({ where: { isVisible: true }, select: { code: true, name: true } });
       photoMatch = await identifyCatalogImageCodes(trigger.mediaUrl, visible);
@@ -68,13 +74,13 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     ...(image ? { image } : {}) });
   if (trigger.messageType === "IMAGE") {
     if (photoMatch && !result.requiresHuman) {
-      result.reply = `${photoMatch.model === "catalog-source-image-sha256" ? "📸 La foto coincide con una imagen de nuestro catálogo." : `📸 Leí el código ${photoMatch.hints.code} en tu imagen.`} ¡Gracias por enviarla! 😊\n${result.reply}\n\nPrecio y stock consultados ahora; pueden diferir de los impresos en la foto.`;
+      result.reply = `${photoMatch.model === "catalog-source-image-sha256" ? "📸 La foto coincide con una imagen de nuestro catálogo." : photoMatch.model === "local-catalog-name-multipass" ? "📸 El nombre y los detalles que leo en tu foto coinciden con esta referencia del catálogo." : `📸 Leí el código ${photoMatch.hints.code} en tu imagen.`} ¡Gracias por enviarla! 😊\n${result.reply}\n\nPrecio y stock consultados ahora; pueden diferir de los impresos en la foto.`;
       result.confidenceEvidence.push(photoMatch.model);
       if (photoMatch.status === "MULTIPLE") {
         result.reply = `📸 Identifiqué estos códigos en tu imagen 😊\n\n${result.products.map(product => `🛍️ ${product.name}\nCódigo: ${product.code}\n💰 S/ ${product.unitPrice.toFixed(2)} · 📦 Stock: ${product.stockUnits}`).join("\n\n")}\n\nPrecio y stock consultados ahora. ${photoMatch.codes.length > 6 ? "Te muestro los primeros 6; envía las demás etiquetas por separado para continuar." : "¿De cuáles necesitas más información?"}`;
       }
       if (photoMatch.status === "CHOICES") {
-        result.reply = `📸 Leí ${photoMatch.hints.code} en tu imagen 😊 Ese código corresponde a varias referencias o variantes del catálogo:\n${result.products.map(product => `• ${product.code} — ${product.name}`).join("\n")}\n\n¿Cuál es la tuya? Confírmame el color, la versión o el código completo para darte su precio y stock exactos.`;
+        result.reply = `📸 ${photoMatch.model === "local-catalog-name-multipass" ? "El nombre que leo en tu foto tiene estas posibles coincidencias" : `Leí ${photoMatch.hints.code} en tu imagen. Encontré estas referencias o variantes`} 😊\n${result.products.map(product => `• ${product.code} — ${product.name}`).join("\n")}\n\n¿Cuál es la tuya? Confírmame el color, la versión o el código completo para darte su precio y stock exactos.`;
         result.memory.productCodes = [];
       }
       if (photoMatch.hints.confidence < 0.85) {

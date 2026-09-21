@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { buildProductsNeedingPhotoWhere } from "@/lib/product-photo-policy";
 import { buildProductSearchWhere } from "@/lib/store-shared";
 import styles from "./page.module.css";
+import { CatalogImageAuditPanel } from "@/components/admin/catalog-image-audit-panel";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 25;
@@ -39,10 +40,12 @@ export default async function AttentionPage({ searchParams }: {
         <div>
           <p className="eyebrow">Catálogo e inventario</p>
           <h1>Requiere atención</h1>
-          <p>Completa las fotos de tus productos para que puedan aparecer en la web.</p>
+          <p>Revisa la identidad de las imágenes y completa las fotos pendientes de tus productos.</p>
         </div>
         <Link className="button button-secondary" href="/admin/products">Ver todos los productos</Link>
       </header>
+
+      <CatalogImageAuditPanel params={params} />
 
       <section className={styles.rule} aria-label="Regla de publicación">
         <ShieldCheck size={24} aria-hidden="true" />

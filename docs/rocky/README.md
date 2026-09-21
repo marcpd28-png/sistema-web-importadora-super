@@ -33,7 +33,7 @@ flowchart TD
   BC --> OUT[n8n / ManyChat / WhatsApp]
 ```
 
-Release activo: `/home/IMPORTADORA-releases/rocky-20260921-r2`, proceso PM2 `importadora-rocky-web-v2`, puerto localhost 4003. La instancia anterior `importadora-rocky-web` queda detenida.
+Release activo: `/home/IMPORTADORA-releases/rocky-20260921-r2`, proceso PM2 `importadora-rocky-web-v2`, puerto localhost 4003. El slot anterior `rocky-20260921` / `importadora-rocky-web` se conserva para reversión. Nginx dirige también `/admin/atencion` y `/api/admin/catalog-image-audit` al release activo.
 
 Lectura ampliada de códigos en fotos: [comportamiento, pruebas y límites](lectura-codigos-fotos.md).
 
@@ -129,3 +129,5 @@ Apagar ROCKY mediante `ROCKY_SIMULATOR_ENABLED=false` y reiniciar solo `importad
 Actualización de espera y búsqueda directa: [correccion-espera.md](correccion-espera.md).
 
 Catálogos PDF, enlaces filtrados y reconocimiento de códigos en fotos: [catalogos-fotos-tono.md](catalogos-fotos-tono.md).
+
+Barrido completo de fotografías, revisión de códigos y reconocimiento por nombre: [auditoria-imagenes.md](auditoria-imagenes.md).

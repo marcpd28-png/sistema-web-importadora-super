@@ -9,6 +9,7 @@ data = base64.b64decode(payload["image"], validate=True)
 if len(data) > 4_194_304: raise ValueError("image limit")
 known = set(payload["keys"])
 reads = []
+texts = []
 spots = []
 
 def key(value):
@@ -28,6 +29,9 @@ def scan(image, mode, name, crop=False):
         word = {"text": f[11], "x": int(f[6]), "y": int(f[7]), "w": int(f[8]), "h": int(f[9]), "conf": float(f[10])}
         words.append(word); lines.setdefault(tuple(f[1:5]), []).append(word)
     for line in lines.values():
+        meaningful=[w for w in line if re.search(r"[A-Za-z0-9]",w["text"])]
+        if meaningful:
+            texts.append({"text":" ".join(w["text"] for w in meaningful),"confidence":sum(w["conf"] for w in meaningful)/len(meaningful),"view":name})
         for i in range(len(line)):
             for count in range(1, min(3, len(line)-i)+1):
                 group=line[i:i+count]
@@ -83,4 +87,4 @@ with Image.open(io.BytesIO(data)) as source:
     if not enough():
         for angle in [90,270]:
             rotated=image.rotate(angle,expand=True);scan(rotated,11,"rotate-"+str(angle));scan(rotated,6,"rotate-block-"+str(angle))
-print(json.dumps(reads[:200]))
+print(json.dumps({"reads":reads[:200],"text":texts[:350]}) if payload.get("includeText") else json.dumps(reads[:200]))
