@@ -137,12 +137,13 @@
   .categories-expanded .category-short-name { display: none; }
   .category-expand-button { display: block; border: 0; background: transparent; color: #2820cf; font: inherit; font-size: 12px; padding: 4px 0 4px 8px; min-height: 32px; cursor: pointer; }
   .category-expand-button:focus-visible { outline: 2px solid #4f46e5; outline-offset: 2px; border-radius: 4px; }
-  .storefront-category-tiles { --category-gap: 6px; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding: 2px 0 4px; }
+  .storefront-category-tiles { --category-gap: 4px; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none; padding: 2px 0 4px; }
   .storefront-category-tiles::-webkit-scrollbar { display: none; }
-  .storefront-category-tile { flex: 0 0 calc((100% - 24px) / 4.3); font-size: 11px; line-height: 1.2; padding: 2px; gap: 2px; min-height: 44px; border-radius: 0; background: transparent; scroll-snap-align: start; }
+  .storefront-category-tile { flex: 0 0 auto; min-width: 56px; font-size: 11px; line-height: 1.2; padding: 2px 4px; gap: 2px; min-height: 44px; border-radius: 0; background: transparent; scroll-snap-align: start; }
+  .storefront-category-tile .category-short-name { white-space: nowrap; }
   .storefront-category-tile:hover { background: transparent; color: #2820cf; }
   .categories-expanded .storefront-category-tiles { --category-columns: 3; flex-wrap: wrap; justify-content: center; overflow: visible; }
-  .categories-expanded .storefront-category-tile { flex-basis: calc((100% - 12px) / 3); }
+  .categories-expanded .storefront-category-tile { flex-basis: calc((100% - 8px) / 3); min-width: 0; }
   .storefront-category-icon { width: 24px; height: 24px; border-radius: 0; background: transparent; }
   .storefront-category-icon svg { width: 23px; height: 23px; }
   .storefront-visual-categories .catalog-section-header { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 4px 10px; margin-bottom: 2px; }
