@@ -269,7 +269,7 @@ function getAssistantProductImage(product: AssistantProductRecord) {
   };
 }
 
-function mapAssistantProduct(
+export function mapAssistantProduct(
   product: AssistantProductRecord,
   currencySymbol: string,
 ): ShopAssistantProductCard {
@@ -299,7 +299,7 @@ function mapAssistantProduct(
   };
 }
 
-const ASSISTANT_PRODUCT_SELECT = {
+export const ASSISTANT_PRODUCT_SELECT = {
   id: true,
   slug: true,
   code: true,

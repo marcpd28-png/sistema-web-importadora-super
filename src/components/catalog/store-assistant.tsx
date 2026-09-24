@@ -1,890 +1,214 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LoaderCircle, Send, ShoppingCart, Sparkles, X } from "lucide-react";
-import {
-  isCartStoreHydrated,
-  rehydrateCartStore,
-  useCartStore,
-} from "@/components/catalog/cart-store";
-import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
-import { getPublicProductName } from "@/lib/product-name";
-import { formatCurrency } from "@/lib/utils";
-import type {
-  ShopAssistantProductCard,
-  ShopAssistantQuickAction,
-  ShopAssistantReply,
-  ShopAssistantRequest,
-} from "@/lib/shop-assistant-types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUp, Check, MessageCircle, Minus, Plus, RotateCcw, Square, X } from "lucide-react";
+import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "./cart-store";
+import type { ShopAssistantProductCard, ShopAssistantReply } from "@/lib/shop-assistant-types";
+import styles from "./store-assistant.module.css";
 
 export type StoreAssistantPanelProps = {
-  businessName: string;
-  open: boolean;
-  onClose: () => void;
-  initialPrompt?: string | null;
-  initialProductCode?: string | null;
-  initialCategorySlug?: string | null;
+  businessName: string; open: boolean; onClose: () => void;
+  initialPrompt?: string | null; initialProductCode?: string | null; initialCategorySlug?: string | null;
   onInitialPromptHandled?: () => void;
 };
+type Message = ShopAssistantReply & { id: string; role: "user" | "assistant" };
+const newId = () => crypto.randomUUID();
+const safeHref = (href: string) => /^(https?:\/\/|\/(?!\/))/.test(href) ? href : null;
 
-type AssistantMessage = {
-  id: string;
-  role: "assistant" | "user";
-  text: string;
-  products?: ShopAssistantProductCard[];
-  quickActions?: ShopAssistantQuickAction[];
-  suggestedPrompts?: string[];
-};
-
-type AssistantConversationSnapshot = {
-  messages: AssistantMessage[];
-  contextProductCode: string | null;
-  contextCategorySlug: string | null;
-  lastProductId?: string | null;
-  lastProductCode?: string | null;
-  lastIntent?: string | null;
-  budget?: number | null;
-  welcomeDismissed?: boolean;
-};
-
-type AssistantProductCardProps = {
-  product: ShopAssistantProductCard;
-};
-
-type AssistantMessageCardProps = {
-  message: AssistantMessage;
-};
-
-function buildWelcomeMessage(businessName: string): AssistantMessage {
-  return {
-    id: "assistant-welcome",
-    role: "assistant",
-    text: `Dime presupuesto, ocasión o uso y te propongo opciones de ${businessName}.`,
-    quickActions: [
-      { label: "Ver ofertas", href: "/?featured=1", accent: true },
-      { label: "Buscar producto", href: "/?focus=search" },
-      { label: "Recomiéndame uno", href: "/?featured=1" },
-    ],
-    suggestedPrompts: [
-      "Busco audífonos por 25 soles",
-      "Muéstrame algo para regalar",
-      "Necesito un producto con stock",
-      "Quiero ver ofertas",
-    ],
-  };
+function MessageText({ text }: { text: string }) {
+  return <p>{text.split(/(https?:\/\/[^\s<>]+)/g).map((part, i) => /^https?:\/\//.test(part)
+    ? <a key={i} href={part} target="_blank" rel="noreferrer">{part}</a> : part)}</p>;
 }
 
-const MAX_STORED_MESSAGES = 12;
-
-function getMessageId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function getAssistantStorageKey(businessName: string) {
-  const normalized = businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  return `importadora-store-assistant:${normalized || "default"}`;
-}
-
-function getAssistantSessionStorageKey(businessName: string) {
-  const normalized = businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  return `importadora-store-assistant-session:${normalized || "default"}`;
-}
-
-function getAssistantSessionId(storageKey: string) {
-  if (typeof window === "undefined") {
-    return "server-session";
+function ProductActions({ product }: { product: ShopAssistantProductCard }) {
+  const addItem = useCartStore(s => s.addItem);
+  const inCart = useCartStore(s => s.items.find(item => item.key === `${product.id}:unit`)?.quantity || 0);
+  const [added, setAdded] = useState(0);
+  const [adding, setAdding] = useState(false);
+  const [selectedQuantity, setSelectedQuantity] = useState(product.recommendedQuantity || 1);
+  const remaining = Math.max(0, product.stockUnits - inCart);
+  const quantity = Math.max(1, Math.min(selectedQuantity, remaining));
+  const busy = useRef(false);
+  async function add() {
+    if (busy.current || !remaining) return;
+    busy.current = true;
+    setAdding(true);
+    try {
+      if (!isCartStoreHydrated()) await rehydrateCartStore();
+      const before = useCartStore.getState().items.find(item => item.key === `${product.id}:unit`)?.quantity || 0;
+      const available = Math.max(0, product.stockUnits - before);
+      if (!available) return;
+      addItem({
+        id: product.id, code: product.code, slug: product.slug, name: product.name, description: null,
+        brand: product.brand, category: product.category, categoryId: null, imageUrl: product.imageUrl,
+        sourceImageUrl: product.imageUrl, localImageUrl: product.imageUrl?.startsWith("/") ? product.imageUrl : null,
+        media: [], primaryMedia: null, unitLabel: "unidad", unitPrice: product.unitPriceValue,
+        wholesalePrice: product.wholesalePriceValue, wholesaleMinQty: product.wholesaleMinQty,
+        boxPrice: null, unitsPerBox: product.unitsPerBox, stockUnits: product.stockUnits,
+        isVisible: true, isFeatured: false, syncEnabled: true, lastSyncedAt: null,
+        updatedAt: new Date().toISOString(), hasPhoto: Boolean(product.imageUrl), technicalSpecs: product.technicalSpecs || null,
+      }, "unit", Math.min(quantity, available));
+      const after = useCartStore.getState().items.find(item => item.key === `${product.id}:unit`)?.quantity || 0;
+      setAdded(Math.max(0, after - before));
+    } finally { busy.current = false; setAdding(false); }
   }
-
-  try {
-    const existing = window.localStorage.getItem(storageKey)?.trim();
-    if (existing) {
-      return existing;
-    }
-
-    const sessionId = window.crypto?.randomUUID?.() ?? getMessageId();
-    window.localStorage.setItem(storageKey, sessionId);
-    return sessionId;
-  } catch {
-    return getMessageId();
-  }
-}
-
-function extractBudgetFromText(value: string) {
-  const normalized = value.toLowerCase();
-  const match =
-    normalized.match(/\b(?:s\/|s\.\/|pen)\s*(\d+(?:[.,]\d{1,2})?)\b/) ??
-    normalized.match(/\b(\d+(?:[.,]\d{1,2})?)\s*(?:soles?|s\/|s\.\/|pen)\b/) ??
-    normalized.match(
-      /\b(?:presupuesto|hasta|maximo|máximo|maxima|máxima|aprox|aproximado|alrededor|cerca de)\s*(?:de|es|unos|unas)?\s*(?:s\/|s\.\/|pen)?\s*(\d+(?:[.,]\d{1,2})?)\b/,
-    );
-
-  if (!match?.[1]) {
-    return null;
-  }
-
-  const budget = Number(match[1].replace(",", "."));
-  return Number.isFinite(budget) && budget > 0 ? budget : null;
-}
-
-function inferAssistantIntent(text: string) {
-  const normalized = text.toLowerCase();
-
-  if (/\b(oferta|ofertas|promo|promocion|promociones|destacado|destacados)\b/.test(normalized)) {
-    return "offers";
-  }
-
-  if (/\b(categoria|categorias|rubro|rubros|seccion|secciones)\b/.test(normalized)) {
-    return "categories";
-  }
-
-  if (/\b(whatsapp|contacto|horario|hora|pedido|comprar|compra|envio|entrega|delivery|pago|cotizacion|cotizar)\b/.test(normalized)) {
-    return "support";
-  }
-
-  if (/\b(similar|parecid|alternativ|relacionad)\b/.test(normalized)) {
-    return "similar";
-  }
-
-  if (/\b(barat|econom|menor precio|menos precio|mas barato|más barato)\b/.test(normalized)) {
-    return "cheaper";
-  }
-
-  if (/\b(stock|disponible|disponibilidad|queda|quedan|tienes|hay)\b/.test(normalized)) {
-    return "stock";
-  }
-
-  if (/\b(regal|cumple|anivers|detalle|sorpresa|navidad|amigo secreto|mama|papa|madre|padre)\b/.test(normalized)) {
-    return "gift";
-  }
-
-  if (/\b(\d{2,}[-\s]?\d{2,}|[a-z]{2,}\s*-\s*\d{2,})\b/i.test(text)) {
-    return "product-code";
-  }
-
-  return "search";
-}
-
-function isLegacyWelcomeMessage(message: AssistantMessage) {
-  return (
-    message.role === "assistant" &&
-    (
-      message.id === "assistant-welcome" ||
-      message.text.includes("Puedo buscar productos por código") ||
-      message.text.includes("Consulta código, precio, categoría") ||
-      message.quickActions?.some(
-        (action) => action.label === "Buscar catálogo" || action.label === "Ver ofertas",
-      ) === true
-    )
-  );
-}
-
-function normalizeAssistantMessages(
-  messages: AssistantMessage[],
-  businessName: string,
-) {
-  if (!messages.length) {
-    return [buildWelcomeMessage(businessName)];
-  }
-
-  const normalized = messages.slice(-MAX_STORED_MESSAGES);
-
-  if (isLegacyWelcomeMessage(normalized[0])) {
-    normalized[0] = buildWelcomeMessage(businessName);
-  }
-
-  return normalized;
-}
-
-function readAssistantSnapshot(storageKey: string) {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as Partial<AssistantConversationSnapshot>;
-
-    if (!Array.isArray(parsed.messages)) {
-      return null;
-    }
-
-    const messages = parsed.messages.filter(
-      (message): message is AssistantMessage =>
-        Boolean(message) &&
-        typeof message.id === "string" &&
-        (message.role === "assistant" || message.role === "user") &&
-        typeof message.text === "string",
-    );
-
-    if (!messages.length) {
-      return null;
-    }
-
-    return {
-      messages,
-      contextProductCode:
-        typeof parsed.contextProductCode === "string" ? parsed.contextProductCode : null,
-      contextCategorySlug:
-        typeof parsed.contextCategorySlug === "string" ? parsed.contextCategorySlug : null,
-      lastProductId: typeof parsed.lastProductId === "string" ? parsed.lastProductId : null,
-      lastProductCode: typeof parsed.lastProductCode === "string" ? parsed.lastProductCode : null,
-      lastIntent: typeof parsed.lastIntent === "string" ? parsed.lastIntent : null,
-      budget: typeof parsed.budget === "number" && Number.isFinite(parsed.budget) ? parsed.budget : null,
-      welcomeDismissed: parsed.welcomeDismissed === true,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function saveAssistantSnapshot(
-  storageKey: string,
-  snapshot: AssistantConversationSnapshot,
-) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const compactSnapshot: AssistantConversationSnapshot = {
-      ...snapshot,
-      messages: snapshot.messages.slice(-MAX_STORED_MESSAGES),
-    };
-
-    window.localStorage.setItem(storageKey, JSON.stringify(compactSnapshot));
-  } catch {
-    // Ignore storage failures in private mode or quota-constrained browsers.
-  }
-}
-
-function clearAssistantSnapshot(storageKey: string) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.removeItem(storageKey);
-  } catch {
-    // Ignore storage failures.
-  }
-}
-
-function AssistantProductCard({ product }: AssistantProductCardProps) {
-  const addItem = useCartStore((state) => state.addItem);
-  const displayName = getPublicProductName(product.name);
-  const safeImageUrl = getSafeMediaUrl(product.imageUrl);
-  const [added, setAdded] = useState(false);
-  const quantity = Math.max(1, Math.min(product.recommendedQuantity ?? 1, product.stockUnits));
-
-  const handleAddToCart = async () => {
-    if (!isCartStoreHydrated()) {
-      await rehydrateCartStore();
-    }
-
-    addItem(
-      {
-        id: product.id,
-        code: product.code,
-        slug: product.slug,
-        name: displayName,
-        description: null,
-        brand: product.brand,
-        category: product.category,
-        categoryId: null,
-        imageUrl: product.imageUrl,
-        sourceImageUrl: product.imageUrl,
-        localImageUrl: product.imageUrl?.startsWith("/") ? product.imageUrl : null,
-        media: product.imageUrl
-          ? [
-              {
-                id: `${product.id}-assistant-image`,
-                type: "IMAGE",
-                url: product.imageUrl,
-                altText: product.imageAlt ?? displayName,
-                sortOrder: 0,
-              },
-            ]
-          : [],
-        primaryMedia: product.imageUrl
-          ? {
-              id: `${product.id}-assistant-image`,
-              type: "IMAGE",
-              url: product.imageUrl,
-              altText: product.imageAlt ?? displayName,
-              sortOrder: 0,
-            }
-          : null,
-        unitLabel: "unidad",
-        unitPrice: product.unitPriceValue,
-        wholesalePrice: product.wholesalePriceValue,
-        wholesaleMinQty: product.wholesaleMinQty,
-        boxPrice: null,
-        unitsPerBox: product.unitsPerBox,
-        stockUnits: product.stockUnits,
-        isVisible: true,
-        isFeatured: false,
-        syncEnabled: true,
-        lastSyncedAt: null,
-        updatedAt: new Date().toISOString(),
-        hasPhoto: false,
-        technicalSpecs: product.technicalSpecs ?? null,
-      },
-      "unit",
-      quantity,
-    );
-
-    setAdded(true);
-  };
-
-  return (
-    <div className="store-assistant-product-card">
-      {safeImageUrl ? (
-        <div className="store-assistant-product-media">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt={product.imageAlt ?? displayName}
-            decoding="async"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            src={getOptimizedImageUrl(safeImageUrl, 128) ?? undefined}
-          />
-        </div>
-      ) : null}
-
-      <div className="store-assistant-product-top">
-        <span className="product-code">{product.code}</span>
-        <span className="store-assistant-availability">
-          {product.availabilityLabel} · {product.stockUnits}
-        </span>
+  return <div className={styles.productActions}>
+    <Link href={`/producto/${encodeURIComponent(product.slug)}`}>Ver {product.code}</Link>
+    {product.stockUnits > 0 && <>
+      <div className={styles.quantityControl} role="group" aria-label={`Cantidad de ${product.name}`}>
+        <button type="button" aria-label={`Reducir cantidad de ${product.code}`} disabled={adding || !remaining || quantity <= 1} onClick={() => setSelectedQuantity(quantity - 1)}><Minus size={14} /></button>
+        <input type="number" aria-label={`Cantidad de ${product.code}`} min={1} max={Math.max(1, remaining)} step={1} value={quantity} disabled={adding || !remaining}
+          onChange={event => setSelectedQuantity(Math.max(1, Math.min(remaining, Math.floor(Number(event.target.value)) || 1)))} />
+        <button type="button" aria-label={`Aumentar cantidad de ${product.code}`} disabled={adding || quantity >= remaining} onClick={() => setSelectedQuantity(quantity + 1)}><Plus size={14} /></button>
       </div>
-
-      <strong>{displayName}</strong>
-      <span className="store-assistant-product-meta">
-        {product.brand ?? product.category ?? "Catálogo"}
-      </span>
-
-      {product.technicalSpecs ? (
-        <span className="store-assistant-product-specs">{product.technicalSpecs}</span>
-      ) : null}
-
-      <div className="store-assistant-product-prices">
-        <span className="is-unitary">Unitario {formatCurrency(product.unitPriceValue)}</span>
-        {product.wholesalePrice ? (
-          <span className="is-wholesale">
-            Mayorista {formatCurrency(product.wholesalePriceValue ?? product.unitPriceValue)} desde {product.wholesaleMinQty}
-          </span>
-        ) : null}
-      </div>
-
-      {product.recommendationReason ? (
-        <p className="store-assistant-product-reason">{product.recommendationReason}</p>
-      ) : null}
-
-      <div className="store-assistant-product-actions">
-        <button
-          className="button button-primary"
-          disabled={product.stockUnits <= 0}
-          onClick={() => void handleAddToCart()}
-          type="button"
-        >
-          <ShoppingCart size={15} />
-          {added
-            ? "Agregado"
-            : quantity > 1
-              ? `Agregar ${quantity}`
-              : "Agregar"}
-        </button>
-        <Link className="button button-secondary" href={`/producto/${product.slug}`}>
-          Ver
-        </Link>
-      </div>
-    </div>
-  );
+      <button type="button" onClick={() => void add()} disabled={adding || !remaining}>
+        <Plus size={13} />{!remaining ? "Stock completo en tu carrito" : `Agregar ${quantity} al carrito`}
+      </button>
+      <span className={styles.cartFeedback} role="status">{added > 0 && <><Check size={13} /> Agregaste {added}. </>}{inCart > 0 && `En tu carrito: ${inCart} unidades.`}</span>
+    </>}
+  </div>;
 }
 
-function AssistantActions({ message }: { message: AssistantMessage }) {
-  if (!message.quickActions?.length) {
-    return null;
-  }
-
-  return (
-    <div className="store-assistant-actions">
-      {message.quickActions.map((action) =>
-        action.href.startsWith("http") ? (
-          <a
-            className={`store-assistant-action-pill ${action.accent ? "is-accent" : ""}`}
-            href={action.href}
-            key={`${message.id}-${action.href}-${action.label}`}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {action.label}
-          </a>
-        ) : (
-          <Link
-            className={`store-assistant-action-pill ${action.accent ? "is-accent" : ""}`}
-            href={action.href}
-            key={`${message.id}-${action.href}-${action.label}`}
-          >
-            {action.label}
-          </Link>
-        ),
-      )}
-    </div>
-  );
-}
-
-function AssistantMessageCard({ message }: AssistantMessageCardProps) {
-  return (
-    <article
-      className={`store-assistant-message ${message.role === "user" ? "is-user" : "is-assistant"}`}
-    >
-      <div className="store-assistant-bubble">
-        <p>{message.text}</p>
-
-        {message.products?.length ? (
-          <div className="store-assistant-products">
-            {message.products.map((product) => (
-              <AssistantProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        ) : null}
-
-        <AssistantActions message={message} />
-      </div>
-    </article>
-  );
-}
-
-function AssistantWelcomeBanner({
-  message,
-  onDismiss,
-}: {
-  message: AssistantMessage;
-  onDismiss: () => void;
-}) {
-  return (
-    <div className="store-assistant-welcome">
-      <div className="store-assistant-welcome-head">
-        <span className="store-assistant-badge">
-          <Sparkles size={14} />
-          Compra guiada
-        </span>
-        <button
-          aria-label="Ocultar mensaje"
-          className="icon-button icon-button-close"
-          onClick={onDismiss}
-          type="button"
-        >
-          <X size={16} />
-        </button>
-      </div>
-
-      <p className="store-assistant-welcome-text">{message.text}</p>
-      <AssistantActions message={message} />
-    </div>
-  );
-}
-
-function AssistantFooter({
-  canSend,
-  draft,
-  onDraftChange,
-  onSend,
-  suggestedPrompts,
-  inputRef,
-}: {
-  canSend: boolean;
-  draft: string;
-  onDraftChange: (value: string) => void;
-  onSend: (text: string) => void;
-  suggestedPrompts: string[];
-  inputRef: React.RefObject<HTMLInputElement | null>;
-}) {
-  return (
-    <footer className="store-assistant-footer">
-      {suggestedPrompts.length ? (
-        <div className="store-assistant-prompts">
-          {suggestedPrompts.map((prompt) => (
-            <button
-              className="store-assistant-prompt"
-              key={prompt}
-              onClick={() => onSend(prompt)}
-              type="button"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <form
-        className="store-assistant-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSend(draft);
-        }}
-      >
-        <input
-          onChange={(event) => onDraftChange(event.target.value)}
-          placeholder="Escribe un código, nombre o pregunta..."
-          ref={inputRef}
-          value={draft}
-        />
-        <button className="button button-primary" disabled={!canSend} type="submit">
-          <Send size={16} />
-          Enviar
-        </button>
-      </form>
-    </footer>
-  );
-}
-
-export function StoreAssistantPanel({
-  businessName,
-  initialPrompt = null,
-  initialProductCode = null,
-  initialCategorySlug = null,
-  onInitialPromptHandled,
-  onClose,
-  open,
-}: StoreAssistantPanelProps) {
-  const storageKey = useMemo(() => getAssistantStorageKey(businessName), [businessName]);
-  const sessionStorageKey = useMemo(
-    () => getAssistantSessionStorageKey(businessName),
-    [businessName],
-  );
-  const [loading, setLoading] = useState(false);
+export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt, initialProductCode, initialCategorySlug, onInitialPromptHandled }: StoreAssistantPanelProps) {
+  const storageKey = `rocky-chat-v2:${businessName}`;
+  const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<AssistantMessage[]>(() => [
-    buildWelcomeMessage(businessName),
-  ]);
-  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const contextProductCodeRef = useRef<string | null>(null);
-  const contextCategorySlugRef = useRef<string | null>(null);
-  const lastProductIdRef = useRef<string | null>(null);
-  const lastIntentRef = useRef<string | null>(null);
-  const lastBudgetRef = useRef<number | null>(null);
-  const sessionIdRef = useRef<string>("server-session");
-  const handledInitialRequestRef = useRef<string | null>(null);
-  const conversationVersionRef = useRef(0);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const bodyRef = useRef<HTMLDivElement | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  const active = useRef<AbortController | null>(null);
+  const session = useRef("");
+  const productCode = useRef<string | null>(null);
+  const category = useRef<string | null>(null);
+  const retryText = useRef("");
+  const handled = useRef<string | null>(null);
 
   useEffect(() => {
-    const snapshot = readAssistantSnapshot(storageKey);
-    const sessionId = getAssistantSessionId(sessionStorageKey);
-
     const timer = window.setTimeout(() => {
-      sessionIdRef.current = sessionId;
-
-      if (!snapshot) {
-        setMessages([buildWelcomeMessage(businessName)]);
-        setWelcomeDismissed(false);
-        contextProductCodeRef.current = null;
-        contextCategorySlugRef.current = null;
-        lastProductIdRef.current = null;
-        lastIntentRef.current = null;
-        lastBudgetRef.current = null;
-      } else {
-        setMessages(normalizeAssistantMessages(snapshot.messages, businessName));
-        setWelcomeDismissed(snapshot.welcomeDismissed === true);
-        contextProductCodeRef.current = snapshot.contextProductCode;
-        contextCategorySlugRef.current = snapshot.contextCategorySlug;
-        lastProductIdRef.current = snapshot.lastProductId ?? null;
-        lastIntentRef.current = snapshot.lastIntent ?? null;
-        lastBudgetRef.current =
-          typeof snapshot.budget === "number" && Number.isFinite(snapshot.budget)
-            ? snapshot.budget
-            : null;
-      }
-
-      setIsHydrated(true);
+      session.current = newId();
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(storageKey) || "null");
+        if (saved && typeof saved.session === "string" && Array.isArray(saved.messages)) {
+          session.current = saved.session;
+          setMessages(saved.messages.filter((m: Message) => m && typeof m.text === "string" && ["user", "assistant"].includes(m.role)).slice(-20));
+          productCode.current = typeof saved.productCode === "string" ? saved.productCode : null;
+          category.current = typeof saved.category === "string" ? saved.category : null;
+        }
+      } catch { /* Chat remains usable without browser storage. */ }
+      setReady(true);
     }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [businessName, sessionStorageKey, storageKey]);
-
-  useEffect(() => {
-    if (!isHydrated) {
-      return;
-    }
-
-    saveAssistantSnapshot(storageKey, {
-      messages,
-      contextProductCode: contextProductCodeRef.current,
-      contextCategorySlug: contextCategorySlugRef.current,
-      lastProductId: lastProductIdRef.current,
-      lastProductCode: contextProductCodeRef.current,
-      lastIntent: lastIntentRef.current,
-      budget: lastBudgetRef.current,
-      welcomeDismissed,
-    });
-  }, [isHydrated, messages, storageKey, welcomeDismissed]);
+    return () => { window.clearTimeout(timer); active.current?.abort(); };
+  }, [storageKey]);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (!ready) return;
+    try { sessionStorage.setItem(storageKey, JSON.stringify({ session: session.current, messages: messages.slice(-20), productCode: productCode.current, category: category.current })); } catch { /* Optional persistence. */ }
+  }, [messages, ready, storageKey]);
 
-    window.setTimeout(() => {
-      inputRef.current?.focus();
-    }, 60);
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const timer = window.setTimeout(() => input.current?.focus(), 80);
+    return () => { clearTimeout(timer); document.body.style.overflow = overflow; previous?.focus(); };
   }, [open]);
 
-  useEffect(() => {
-    if (!bodyRef.current) {
-      return;
+  useEffect(() => { if (body.current) body.current.scrollTop = body.current.scrollHeight; }, [messages, loading, error, open]);
+  useEffect(() => { if (input.current) { input.current.style.height = "auto"; input.current.style.height = `${Math.min(input.current.scrollHeight, 128)}px`; } }, [draft, open]);
+
+  const send = useCallback(async (text: string, retry = false) => {
+    const clean = text.trim();
+    if (!clean || !ready || active.current) return;
+    const controller = new AbortController();
+    active.current = controller;
+    const requestSession = session.current;
+    const timeout = window.setTimeout(() => controller.abort(), 45000);
+    retryText.current = clean;
+    const userMessage: Message = { id: newId(), role: "user", text: clean };
+    if (!retry) setMessages(current => [...current, userMessage]);
+    setDraft(""); setError(null); setLoading(true);
+    try {
+      const response = await fetch("/api/shop-assistant", { method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+        body: JSON.stringify({ message: clean, context: { sessionId: requestSession }, productContextCode: productCode.current, contextCategorySlug: category.current,
+          recentMessages: (retry ? messages : [...messages, userMessage]).slice(-6).map(m => ({ role: m.role, text: m.text.slice(0, 4000) })) }),
+      });
+      if (!response.ok) throw new Error("REQUEST_FAILED");
+      const reply: ShopAssistantReply = await response.json();
+      if (typeof reply.text !== "string") throw new Error("INVALID_RESPONSE");
+      if (requestSession !== session.current) return;
+      productCode.current = reply.contextProductCode || null;
+      category.current = reply.contextCategorySlug || null;
+      setMessages(current => [...current, { ...reply, id: newId(), role: "assistant" }]);
+    } catch {
+      if (requestSession === session.current) setError(controller.signal.aborted ? "La consulta se detuvo. Puedes volver a intentarlo." : "No se pudo conectar con Rocky. Inténtalo de nuevo.");
+    } finally {
+      window.clearTimeout(timeout);
+      if (active.current === controller) { active.current = null; setLoading(false); }
     }
-
-    bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [messages, loading]);
-
-  const sendMessage = useCallback(
-    async (text: string) => {
-      const cleanText = text.trim();
-      if (!cleanText || loading) {
-        return;
-      }
-
-      const requestVersion = conversationVersionRef.current;
-
-      setWelcomeDismissed(true);
-
-      const userMessage: AssistantMessage = {
-        id: getMessageId(),
-        role: "user",
-        text: cleanText,
-      };
-
-      const budgetFromMessage = extractBudgetFromText(cleanText);
-      const intentFromMessage = inferAssistantIntent(cleanText);
-      if (budgetFromMessage !== null) {
-        lastBudgetRef.current = budgetFromMessage;
-      }
-      lastIntentRef.current = intentFromMessage;
-
-      setMessages((current) => [...current, userMessage]);
-      setDraft("");
-      setLoading(true);
-
-      try {
-        const recentMessages = [...messages.slice(-5), userMessage].map((message) => ({
-          role: message.role,
-          text: message.text,
-        }));
-
-        const assistantContext = {
-          sessionId: sessionIdRef.current,
-          lastCategory: contextCategorySlugRef.current,
-          lastProductId: lastProductIdRef.current,
-          lastProductCode: contextProductCodeRef.current,
-          lastIntent: lastIntentRef.current,
-          budget: lastBudgetRef.current,
-        };
-
-        const payload: ShopAssistantRequest = {
-          message: cleanText,
-          productContextCode: contextProductCodeRef.current,
-          contextCategorySlug: contextCategorySlugRef.current,
-          context: assistantContext,
-          recentMessages,
-        };
-
-        const response = await fetch("/api/shop-assistant", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          throw new Error("Assistant request failed");
-        }
-
-        const reply = (await response.json()) as ShopAssistantReply;
-
-        if (conversationVersionRef.current !== requestVersion) {
-          return;
-        }
-
-        contextProductCodeRef.current = reply.contextProductCode ?? null;
-        contextCategorySlugRef.current = reply.contextCategorySlug ?? null;
-        lastProductIdRef.current = reply.products?.[0]?.id ?? null;
-        lastIntentRef.current = reply.meta?.intent ?? intentFromMessage;
-        setMessages((current) => [
-          ...current,
-          {
-            id: getMessageId(),
-            role: "assistant",
-            text: reply.text,
-            products: reply.products,
-            quickActions: reply.quickActions,
-            suggestedPrompts: reply.suggestedPrompts,
-          },
-        ]);
-      } catch {
-        if (conversationVersionRef.current !== requestVersion) {
-          return;
-        }
-
-        setMessages((current) => [
-          ...current,
-          {
-            id: getMessageId(),
-            role: "assistant",
-            text: "No pude responder en este momento. Intenta con un código, nombre o categoría.",
-            suggestedPrompts: [
-              "Busca por código",
-              "Muéstrame ofertas",
-              "¿Cómo envío mi pedido?",
-            ],
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [loading, messages],
-  );
-
-  const canSend = draft.trim().length > 0 && !loading;
-  const suggestedPrompts = useMemo(() => {
-    const latestAssistant = [...messages].reverse().find((message) => message.role === "assistant");
-    return latestAssistant?.suggestedPrompts ?? [];
-  }, [messages]);
+  }, [messages, ready]);
 
   useEffect(() => {
-    if (!open || !isHydrated || !initialPrompt) {
-      return;
-    }
-
-    const requestKey = `${initialProductCode ?? ""}:${initialCategorySlug ?? ""}:${initialPrompt}`;
-    if (handledInitialRequestRef.current === requestKey) {
-      return;
-    }
-
-    handledInitialRequestRef.current = requestKey;
-    contextProductCodeRef.current = initialProductCode;
-    contextCategorySlugRef.current = initialCategorySlug;
-    setWelcomeDismissed(true);
-    void sendMessage(initialPrompt);
+    if (!initialPrompt) { handled.current = null; return; }
+    if (!open || !ready || loading || handled.current === initialPrompt) return;
+    handled.current = initialPrompt;
+    productCode.current = initialProductCode || null;
+    category.current = initialCategorySlug || null;
+    void send(initialPrompt);
     onInitialPromptHandled?.();
-  }, [
-    initialCategorySlug,
-    initialPrompt,
-    initialProductCode,
-    onInitialPromptHandled,
-    isHydrated,
-    open,
-    sendMessage,
-  ]);
+  }, [open, ready, loading, initialPrompt, initialProductCode, initialCategorySlug, send, onInitialPromptHandled]);
 
-  const clearHistory = () => {
-    conversationVersionRef.current += 1;
-    clearAssistantSnapshot(storageKey);
-    handledInitialRequestRef.current = null;
-    setLoading(false);
-    setWelcomeDismissed(false);
-    contextProductCodeRef.current = null;
-    contextCategorySlugRef.current = null;
-    lastProductIdRef.current = null;
-    lastIntentRef.current = null;
-    lastBudgetRef.current = null;
-    setDraft("");
-    setMessages([buildWelcomeMessage(businessName)]);
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
-  };
-
-  const welcomeMessage = messages[0];
-  const hasWelcomeIntro = Boolean(welcomeMessage && isLegacyWelcomeMessage(welcomeMessage));
-  const showWelcomeBanner =
-    hasWelcomeIntro &&
-    !welcomeDismissed &&
-    draft.trim().length === 0 &&
-    Boolean(welcomeMessage);
-  const visibleMessages = hasWelcomeIntro ? messages.slice(1) : messages;
-
-  if (!open) {
-    return null;
+  function reset() {
+    active.current?.abort(); active.current = null;
+    session.current = newId(); productCode.current = null; category.current = null; handled.current = null;
+    setMessages([]); setDraft(""); setError(null); setLoading(false);
+    input.current?.focus();
   }
-
-  return (
-    <>
-      <button
-        aria-label="Cerrar asistente"
-        className="store-assistant-backdrop"
-        onClick={onClose}
-        type="button"
-      />
-
-      <section className="store-assistant-panel" role="dialog" aria-label="Asistente de compra">
-        <header className="store-assistant-head">
-          <div className="store-assistant-head-copy">
-            <span className="store-assistant-badge">
-              <Sparkles size={14} />
-              Compra guiada
-            </span>
-            <strong>Asistente de compra</strong>
-            <p>Dime presupuesto, categoría o uso y te muestro opciones.</p>
-          </div>
-
-          <div className="store-assistant-head-actions">
-            <button className="button button-secondary button-chip" onClick={clearHistory} type="button">
-              Limpiar chat
-            </button>
-            <button aria-label="Cerrar ventana del asistente" className="icon-button icon-button-close" onClick={onClose} type="button">
-              <X size={18} />
-            </button>
-          </div>
-        </header>
-
-        <div className="store-assistant-body" ref={bodyRef}>
-          {showWelcomeBanner ? (
-            <AssistantWelcomeBanner
-              message={welcomeMessage}
-              onDismiss={() => setWelcomeDismissed(true)}
-            />
-          ) : null}
-
-          {visibleMessages.map((message) => (
-            <AssistantMessageCard key={message.id} message={message} />
-          ))}
-
-          {loading ? (
-            <div className="store-assistant-loading">
-              <LoaderCircle className="store-assistant-spinner" size={18} />
-              <span>Consultando catálogo...</span>
-            </div>
-          ) : null}
-        </div>
-
-        <AssistantFooter
-          canSend={canSend}
-          draft={draft}
-          inputRef={inputRef}
-          onDraftChange={(value) => {
-            setDraft(value);
-            if (value.trim().length > 0) {
-              setWelcomeDismissed(true);
-            }
-          }}
-          onSend={(text) => {
-            void sendMessage(text);
-          }}
-          suggestedPrompts={visibleMessages.some((message) => message.role === "user") || draft.trim() ? [] : suggestedPrompts}
-        />
-      </section>
-    </>
-  );
+  if (!open) return null;
+  return <>
+    <div className={styles.backdrop} onClick={onClose} aria-hidden="true" />
+    <section ref={panel} className={styles.panel} role="dialog" aria-modal="true" aria-labelledby="rocky-chat-title" onKeyDown={event => {
+      if (event.key === "Escape") { event.preventDefault(); onClose(); }
+      if (event.key === "Tab") {
+        const elements = panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], textarea');
+        const first = elements?.[0], last = elements?.[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    }}>
+      <header className={styles.header}>
+        <span className={styles.avatar} aria-hidden="true"><MessageCircle size={21} strokeWidth={1.7} /></span>
+        <div className={styles.identity}><h2 id="rocky-chat-title">Rocky<span>Asistente</span></h2><p>{businessName}</p></div>
+        <button className={styles.iconButton} type="button" title="Nueva conversación" aria-label="Nueva conversación" onClick={reset} disabled={!ready}><RotateCcw size={17} /></button>
+        <button className={styles.iconButton} type="button" title="Cerrar" aria-label="Cerrar asistente" onClick={onClose}><X size={20} /></button>
+      </header>
+      <div ref={body} className={styles.body} role="log" aria-live="polite" aria-label="Conversación con Rocky">
+        {!messages.length && <div className={styles.empty}><span className={styles.emptyIcon}><MessageCircle size={30} strokeWidth={1.3} /></span><h3>¿En qué puedo ayudarte?</h3><p>Consulta productos, precios o detalles de tu compra.<br />Estoy aquí para ayudarte.</p></div>}
+        {messages.map(message => <article key={message.id} className={message.role === "user" ? styles.userMessage : styles.assistantMessage}>
+          <span className={styles.speaker}>{message.role === "user" ? "Tú" : "Rocky"}</span>
+          <MessageText text={message.text} />
+          {message.role === "assistant" && <>
+            {message.products?.map(product => <ProductActions key={product.id} product={product} />)}
+            {message.quickActions?.filter(action => safeHref(action.href)).map(action => <a className={styles.actionLink} key={action.href} href={action.href} target={action.href.startsWith("https://wa.me/") ? "_blank" : undefined} rel="noreferrer">{action.label}<span aria-hidden="true">↗</span></a>)}
+          </>}
+        </article>)}
+        {loading && <div className={styles.loading} role="status"><span><i /><i /><i /></span>Rocky está consultando tu mensaje</div>}
+        {error && <div className={styles.error} role="alert"><p>{error}</p><button type="button" onClick={() => void send(retryText.current, true)}><RotateCcw size={13} />Reintentar</button></div>}
+      </div>
+      <footer className={styles.footer}>
+        <form className={styles.composer} onSubmit={event => { event.preventDefault(); void send(draft); }}>
+          <textarea ref={input} aria-label="Mensaje para Rocky" placeholder="Escribe tu mensaje…" rows={1} maxLength={1200} value={draft} disabled={!ready} onChange={event => setDraft(event.target.value)} onKeyDown={event => {
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(draft); }
+          }} />
+          {loading ? <button className={styles.send} aria-label="Detener respuesta" title="Detener" type="button" onClick={() => active.current?.abort()}><Square size={14} fill="currentColor" /></button>
+            : <button className={styles.send} aria-label="Enviar mensaje" title="Enviar" type="submit" disabled={!draft.trim() || !ready}><ArrowUp size={20} /></button>}
+        </form>
+        <div className={styles.footnote}><span>Asistente de {businessName}</span><span>Enter para enviar</span></div>
+      </footer>
+    </section>
+  </>;
 }

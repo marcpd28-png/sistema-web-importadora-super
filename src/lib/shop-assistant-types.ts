@@ -34,6 +34,7 @@ export type ShopAssistantReply = {
   quickActions?: ShopAssistantQuickAction[];
   suggestedPrompts?: string[];
   meta?: {
+    engine?: "ROCKY";
     intent?: string | null;
     usedOllama?: boolean;
     ollamaModel?: string | null;

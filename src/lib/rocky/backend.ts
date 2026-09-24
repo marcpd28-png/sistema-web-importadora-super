@@ -11,7 +11,7 @@ import { loadCommercialCatalog } from "@/lib/commercial-catalog";
 import { expandInitialVocabulary } from "./vocabulary";
 import { getPreferredProductImageUrl } from "../product-media";
 
-export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
+export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?: boolean } = {}): ToolBackend {
   return {
     async catalog(query) {
       const snapshot = await loadCommercialCatalog();
@@ -24,6 +24,7 @@ export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
       if (terms) params.set("q", terms);
       else if (!selection.categories.length && !selection.brands.length) params.set("q", selection.label);
       const url = buildPublicUrl(`/?${params}`);
+      if (options.catalogPdf === false) return { scope: "FILTERED", label: selection.label, url, count: selection.products.length, reason: "WEB_CATALOG" };
       try {
         const generated = await generateRequestedCatalogPdf(query, false, snapshot, selection);
         return { scope: "FILTERED", label: selection.label, url, count: generated.catalog?.productCount || 0,

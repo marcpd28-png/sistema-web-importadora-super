@@ -2,9 +2,26 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   reconcileCartItems,
+  useCartStore,
   type CartItem,
 } from "@/components/catalog/cart-store";
 import type { CatalogProduct } from "@/lib/store";
+
+test("agregar varias veces suma unidades sin superar el stock", () => {
+  const previous = useCartStore.getState().items;
+  try {
+    useCartStore.setState({ items: [] });
+    const product = buildProduct({ stockUnits: 5 });
+    useCartStore.getState().addItem(product, "unit", 2);
+    assert.equal(useCartStore.getState().items[0].quantity, 2);
+    useCartStore.getState().addItem(product, "unit", 2);
+    assert.equal(useCartStore.getState().items[0].quantity, 4);
+    useCartStore.getState().addItem(product, "unit", 2);
+    assert.equal(useCartStore.getState().items[0].quantity, 5);
+  } finally {
+    useCartStore.setState({ items: previous });
+  }
+});
 
 function buildProduct(
   overrides: Partial<CatalogProduct> = {},
