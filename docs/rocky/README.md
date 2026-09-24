@@ -131,3 +131,7 @@ Actualización de espera y búsqueda directa: [correccion-espera.md](correccion-
 Catálogos PDF, enlaces filtrados y reconocimiento de códigos en fotos: [catalogos-fotos-tono.md](catalogos-fotos-tono.md).
 
 Barrido completo de fotografías, revisión de códigos y reconocimiento por nombre: [auditoria-imagenes.md](auditoria-imagenes.md).
+
+## Actualización del 24/09/2026
+
+El simulador, `/api/admin/conversations/simulate`, `/api/admin/rocky` y `/api/internal/rocky/` usan ahora `rocky-20260924-sales`, PM2 `importadora-rocky-sales`, puerto 4008. Consultar [flujo breve y validación de despliegue](flujo-ventas-breve.md). Las demás rutas conservan los procesos descritos arriba.

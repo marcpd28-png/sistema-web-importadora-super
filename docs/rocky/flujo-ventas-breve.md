@@ -1,6 +1,6 @@
 # Flujo breve de Rocky — 24 de septiembre de 2026
 
-Implementación local para el simulador. No activa ROCKY_AUTO_ENABLED, no envía mensajes a clientes, no crea pedidos reales ni valida pagos.
+Publicado en el VPS para el simulador. No activa ROCKY_AUTO_ENABLED, no envía mensajes a clientes, no crea pedidos reales ni valida pagos.
 
 ## Atención
 
@@ -22,6 +22,14 @@ Los medios del simulador usan ROUTER_V2_DELIVERY_METHODS y ROUTER_V2_PAYMENT_MET
 
 ## Pendiente de integración real
 
-Validar con la base de datos y el simulador desplegado: persistencia entre turnos, adjuntos, duplicados y toma de control por un asesor. La base local no estaba disponible durante esta implementación.
+Se verificó en la base del VPS, por API privada y pública, el flujo de nueve turnos con foto, compra, consulta lateral, datos, confirmación y comprobante. La referencia no crea un pedido real. Queda pendiente ampliar pruebas de concurrencia y toma de control durante checkout.
 
 Conectar y verificar la creación de pedidos y la entrega multimedia en la cola real antes de habilitar atención autónoma. No se genera un enlace de pago ni se comprueba el abono en esta versión. El modelo conserva sus límites de concurrencia actuales; no se ha acreditado capacidad para miles de consultas simultáneas.
+
+## Despliegue verificado
+
+Release `/home/IMPORTADORA-releases/rocky-20260924-sales`, PM2 `importadora-rocky-sales`, puerto 4008. Base del release: `rocky-20260921-image-names`; cambios de aplicación del commit `63db43c`. Sin migraciones. Las cuatro rutas del simulador y de Rocky apuntan a 4008; auditoría, BC y tienda conservan sus upstreams.
+
+55 pruebas en Linux, build Next.js y pruebas integradas privadas/públicas aprobadas. Tienda y simulador HTTP 200; 19 recursos estáticos accesibles; API interna sin credencial HTTP 401. Ollama y pgvector disponibles; envío real apagado. Script reproducible: `scripts/rocky/verify-sales-flow.mjs --execute` con `ROCKY_TEST_BASE`.
+
+Respaldo de Nginx: `/home/IMPORTADORA-backups/rocky-sales-20260924/nginx.conf`. Para revertir las cuatro rutas, restaurar ese archivo en `/etc/nginx/sites-enabled/tiendavirtualsuper.com.conf`, comprobar con `nginx -t` y recargar Nginx. El proceso anterior permanece disponible en 4005. Logs: `/var/log/rocky/sales-*.log`.
