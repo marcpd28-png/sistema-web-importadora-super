@@ -16525,11 +16525,11 @@ main,
   }
 }
 
-@media (max-width: 920px) {
-  .site-shell:has(> .public-store-header-shell) {
-    padding-top: 0;
-  }
+.site-shell:has(> .public-store-header-shell) {
+  padding-top: 0;
+}
 
+@media (max-width: 920px) {
   .public-store-header-shell,
   .public-store-header-shell.is-collapsed {
     position: sticky;
