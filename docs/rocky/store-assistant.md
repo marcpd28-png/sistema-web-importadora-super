@@ -72,3 +72,30 @@ Verificado: TypeScript, ESLint, build de producción, portada 200 y sus 17 asset
 ROCKY sigue como motor. En navegador se comprobó vista inicial vacía, respuesta a
 «precio N12» con enlaces sin tarjetas y reinicio de conversación. A 390×844 el panel
 ocupa el alto disponible, el input permanece visible y no hay overflow horizontal.
+
+## Cantidades y adiciones repetidas — 24/09/2026
+
+Código publicado: `3668168`, rama `codex/desarrollo-actualizado`.
+La tarjeta incluye controles de cantidad y permite agregar nuevamente. El límite
+descuenta las unidades ya presentes en el carrito. Las solicitudes «quiero comprar
+3 unidades», «quiero 2» y «dame dos» conservan el producto seleccionado y usan la
+cantidad indicada en el último mensaje.
+
+Release: `/home/IMPORTADORA-releases/rocky1-quantity-3668168`, construido con el árbol
+completo del commit publicado y dependencias independientes. Proceso PM2 guardado:
+`importadora-rocky1-quantity`, localhost 4012. Nginx dirige `@reverse_proxy` y
+`/api/shop-assistant` a este proceso; las otras rutas especializadas conservan sus
+destinos. Los recursos inmutables se agregaron al directorio de `@rocky_static`.
+No se aplicaron migraciones ni se crearon pedidos.
+
+Verificación: 10 pruebas automatizadas aprobadas, compilación de producción exitosa,
+prueba de API privada y pública con cantidades 12, 3 y 2, portada HTTP 200 y 15
+recursos disponibles. En navegador se agregó PC28 dos veces con 2 unidades: el
+carrito mostró 4 unidades y precio mayorista. Se retiró ese producto al terminar.
+
+Respaldo y registros: `/home/IMPORTADORA-backups/rocky1-quantity-3668168/`.
+Para revertir, restaurar únicamente los upstreams de `@reverse_proxy` a 4011 y
+`/api/shop-assistant` a 4009, ejecutar `nginx -t` y recargar Nginx. Los procesos
+anteriores siguen disponibles. El archivo `nginx.conf` del respaldo conserva la
+configuración anterior completa; evitar sobrescribir cambios posteriores de otras
+publicaciones al revertir.
