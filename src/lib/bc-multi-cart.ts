@@ -29,7 +29,7 @@ export function priceMultiCart(lines: Array<{ code: string; quantity: number }>,
     const product = products.find(p => p.code === code && p.isVisible);
     if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100000 || product.stockUnits < quantity) return { error: `No puedo confirmar ${quantity} unidades de ${code}: revisa el producto o su stock.` };
     const pricing = getLinePricing({ ...product, unitPrice: Number(product.unitPrice), wholesalePrice: product.wholesalePrice === null ? null : Number(product.wholesalePrice), boxPrice: product.boxPrice === null ? null : Number(product.boxPrice) }, quantity);
-    priced.push({ code, name: product.name, quantity, unitPrice: money(pricing.unitPrice), total: money(pricing.total) });
+    priced.push({ code, name: product.name.slice(0, 180), quantity, unitPrice: money(pricing.unitPrice), total: money(pricing.total) });
   }
   return { cart: multiCartSchema.parse({ version: 1, stage: "REVIEW", lines: priced, total: money(priced.reduce((sum, line) => sum + line.total, 0)) }) };
 }

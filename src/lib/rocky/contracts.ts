@@ -1,9 +1,12 @@
 import { z } from "zod";
+import { multiCartSchema } from "../bc-multi-cart";
 
 export const intents = ["GREETING", "BUSINESS_QUERY", "PRODUCT_SEARCH", "PRODUCT_DETAILS", "PRODUCT_COMPARISON", "PRODUCT_RECOMMENDATION", "PRODUCT_COMPATIBILITY", "PRICE_QUERY", "STOCK_QUERY", "PROMOTION_QUERY", "WHOLESALE_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY", "WARRANTY_QUERY", "RETURN_QUERY", "ORDER_STATUS", "COMPLAINT", "PRICE_OBJECTION", "SALES_OBJECTION", "CATALOG_REQUEST", "HUMAN_REQUEST", "FOLLOW_UP", "UNKNOWN"] as const;
 export const modeSchema = z.enum(["MANUAL", "COPILOT", "AUTO"]);
 export type RockyMode = z.infer<typeof modeSchema>;
 export const memorySchema = z.object({
+  cart: multiCartSchema.optional(),
+  awaitingQuantity: z.boolean().default(false),
   version: z.literal(1).default(1), intent: z.enum(intents).default("UNKNOWN"),
   productCodes: z.array(z.string().max(64)).max(6).default([]),
   shownCodes: z.array(z.string().max(64)).max(8).default([]),
@@ -26,6 +29,8 @@ export type ProductFact = {
   unitPrice: number; wholesalePrice: number | null; wholesaleMinQty: number;
   stockUnits: number; description: string | null; technicalSpecs: string | null;
   updatedAt?: string;
+  imageUrl?: string | null;
+  url?: string;
 };
 export type KnowledgeHit = { id: string; sourceId: string; sourceType: string; text: string; score: number; productId: string | null; title: string };
 export type ToolCall = { name: string; ok: boolean; latencyMs: number; resultCount: number; reasonCode?: string };

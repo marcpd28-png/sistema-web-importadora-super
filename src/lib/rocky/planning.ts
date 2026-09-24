@@ -5,6 +5,9 @@ export const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u03
 export function detectPlan(text: string, memory: RockyMemory = memorySchema.parse({})): RockyPlan {
   const t = normalize(text);
   let codes = [...new Set((text.match(/\b[A-Za-z]{1,8}[-]?\d{2,8}[A-Za-z]?\b/g) || []).map(c => c.toUpperCase()))].slice(0, 6);
+  const knownCodes = [...new Set([...memory.productCodes, ...memory.shownCodes])].filter(code =>
+    new RegExp(`(?:^|[^A-Z0-9-])${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=$|[^A-Z0-9-])`, "i").test(text));
+  if (knownCodes.length) codes = knownCodes.slice(0, 6);
   const ordinal = t.match(/^(?:el|la) (primero|primera|segundo|segunda|tercero|tercera)[.! ]*$/);
   if (ordinal) {
     const index = Math.floor(["primero", "primera", "segundo", "segunda", "tercero", "tercera"].indexOf(ordinal[1]) / 2);
@@ -23,7 +26,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
     ["DELIVERY_QUERY", /delivery|envio|entrega|envian/], ["PAYMENT_QUERY", /pago|pagar|cuenta bancaria|yape|plin/],
     ["STOCK_QUERY", /stock|disponible|disponibilidad/], ["PROMOTION_QUERY", /promocion|descuento|oferta/],
     ["WHOLESALE_QUERY", /mayorista|al por mayor/], ["PRICE_QUERY", /precio|cuanto cuesta|cuanto sale/],
-    ["CATALOG_REQUEST", /catalogo/], ["PRODUCT_DETAILS", /caracteristicas|ficha|detalle|especificaciones/],
+    ["CATALOG_REQUEST", /catalogo/], ["PRODUCT_DETAILS", /caracteristicas|ficha|detalle|especificaciones|\bfotos?\b|\bimagenes?\b/],
     ["PRODUCT_RECOMMENDATION", /recomienda|que me sugieres/], ["SALES_OBJECTION", /no estoy seguro|lo voy a pensar/],
     ["GREETING", /^(?:hola|buenos dias|buenas tardes|buenas noches)[!. ]*$/],
     ["PRODUCT_SEARCH", /quiero|busco|necesito|tienes|tienen|cargador|arrancador|booster/],

@@ -15,6 +15,10 @@ import { productFromOwnUrl } from "./sales";
 import sharp from "sharp";
 import { redactSensitiveText } from "./guardrails";
 import { readCatalogImageAudit } from "../catalog-image-audit-store";
+import { loadCommercialCatalog } from "../commercial-catalog";
+import { runRockyCheckout, wantsRockyCheckout } from "./checkout";
+import { rockyAttachments } from "./attachments";
+import { buildPublicUrl } from "../site-url";
 
 export function rockyProvider() { return process.env.ROCKY_LLM_ENABLED === "true" ? new OllamaLocalProvider() : undefined; }
 export function rockyKnowledge() { return new PostgresKnowledge(process.env.ROCKY_RAG_VECTOR_ENABLED === "true" ? new OllamaLocalProvider() : undefined); }
@@ -37,6 +41,15 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
   const revision = conversation.rockySession?.revision ?? 0;
   const parsedMemory = memorySchema.safeParse(conversation.rockySession?.memory);
   const memory = parsedMemory.success ? parsedMemory.data : memorySchema.parse({ productCodes: conversation.salesState?.selectedProductCode ? [conversation.salesState.selectedProductCode] : [], quantity: conversation.salesState?.quantity || 1 });
+  const list = (value: string | undefined) => (value ?? "").split(",").map(item => item.trim()).filter(Boolean);
+  // Checkout is exercised in the simulator before enabling any live order/payment writes.
+  const checkout = input.simulate && ["TEXT", "IMAGE"].includes(trigger.messageType) && effectiveMode(conversation.rockySession?.mode, conversation) !== "MANUAL" && wantsRockyCheckout(trigger.content, memory)
+    ? runRockyCheckout({ text: trigger.content, memory, products: (await loadCommercialCatalog()).products,
+      conversationId: conversation.id, triggerMessageId: trigger.id,
+      ...(trigger.messageType === "IMAGE" ? { voucherMessageId: trigger.id } : {}),
+      deliveryMethods: list(process.env.ROUTER_V2_DELIVERY_METHODS ?? "DELIVERY, SHALOM, RECOJO"),
+      paymentMethods: list(process.env.ROUTER_V2_PAYMENT_METHODS ?? "Yape, Plin, transferencia bancaria"),
+    }) : null;
   const preferences = conversation.contact.rockyPreferences?.preferences;
   if (Array.isArray(preferences)) memory.needs = [...new Set([...memory.needs, ...preferences.filter((p): p is string => typeof p === "string").map(p => p.slice(0, 120))])].slice(-10);
   const recalled = recallCustomerProduct(readCustomerMemory(conversation.contact.conversationMemory?.state), trigger.content);
@@ -51,7 +64,7 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
   const orchestrator = new RockyAIOrchestrator(createToolBackend(rockyKnowledge()), rockyProvider());
   let image: string | undefined;
   let photoMatch: ImageCodeMatch | null = null;
-  if (trigger.messageType === "IMAGE" && trigger.mediaUrl?.startsWith("data:image/")) {
+  if (!checkout && trigger.messageType === "IMAGE" && trigger.mediaUrl?.startsWith("data:image/")) {
     memory.productCodes = [];
     resolvedProductCode = undefined;
     const exactImage = await matchCatalogSourceImage(trigger.mediaUrl, hash => prisma.product.findMany({ where: { isVisible: true, sourceImageContentHash: hash }, select: { code: true }, take: 2 }));
@@ -69,10 +82,10 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     try { if (!photoMatch) image = (await sharp(Buffer.from(trigger.mediaUrl.split(",")[1], "base64"), { limitInputPixels: 16000000 }).resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 75 }).toBuffer()).toString("base64"); }
     catch { /* Invalid images are handled by clarification, never downloaded remotely. */ }
   }
-  const result = await orchestrator.chat({ text: redactSensitiveText(trigger.content).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
+  const result = checkout ?? await orchestrator.chat({ text: redactSensitiveText(trigger.content).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
     resolvedProductCode, ...(photoMatch && photoMatch.status !== "READY" ? { resolvedProductCodes: photoMatch.codes.slice(0, 6) } : {}),
     ...(image ? { image } : {}) });
-  if (trigger.messageType === "IMAGE") {
+  if (!checkout && trigger.messageType === "IMAGE") {
     if (photoMatch && !result.requiresHuman) {
       result.reply = `${photoMatch.model === "catalog-source-image-sha256" ? "📸 La foto coincide con una imagen de nuestro catálogo." : photoMatch.model === "local-catalog-name-multipass" ? "📸 El nombre y los detalles que leo en tu foto coinciden con esta referencia del catálogo." : `📸 Leí el código ${photoMatch.hints.code} en tu imagen.`} ¡Gracias por enviarla! 😊\n${result.reply}\n\nPrecio y stock consultados ahora; pueden diferir de los impresos en la foto.`;
       result.confidenceEvidence.push(photoMatch.model);
@@ -112,6 +125,7 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     const master = await tx.storeSettings.findFirst({ select: { botMasterSwitch: true } });
     const mode = effectiveMode(fresh.rockySession?.mode, fresh);
     const canSimulate = input.simulate && mode !== "MANUAL" && master?.botMasterSwitch !== false;
+    if (checkout && !canSimulate) throw new Error("CHECKOUT_CONTROL_CHANGED_RETRY");
     const canQueue = !input.simulate && mode === "AUTO" && process.env.ROCKY_AUTO_ENABLED === "true" && master?.botMasterSwitch !== false && isBcLiveContact(conversation.contact);
     if (result.products.length) {
       const current = await tx.product.findMany({ where: { id: { in: result.products.map(p => p.id) }, isVisible: true }, select: { id: true, stockUnits: true, unitPrice: true, wholesalePrice: true, wholesaleMinQty: true } });
@@ -123,8 +137,10 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     // This service never calls an outbound provider. Simulator messages are records only.
     if (canSimulate) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT", content: result.reply,
       externalMessageId: `rocky-sim:${trigger.id}`, status: "sent", metadata: { agentId: "rocky-simulator", rockyRequestId: result.rockyRequestId } } });
-    if (canSimulate && result.catalog?.document) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "DOCUMENT", content: result.catalog.document.name, mediaUrl: result.catalog.document.url,
-      externalMessageId: `rocky-catalog:${trigger.id}`, status: "sent", metadata: { agentId: "rocky-simulator", rockyRequestId: result.rockyRequestId } } });
+    if (canSimulate) for (const [index, attachment] of rockyAttachments(result, buildPublicUrl("/")).entries()) {
+      await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", ...attachment,
+        externalMessageId: `rocky-media:${trigger.id}:${index}`, status: "sent", metadata: { agentId: "rocky-simulator", rockyRequestId: result.rockyRequestId } } });
+    }
     if (canQueue && !result.requiresHuman) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT", content: result.reply,
       externalMessageId: `rocky-outbox:${trigger.id}`, status: "bc_queued", metadata: { agentId: "rocky", requestId: result.rockyRequestId, rockyRequestId: result.rockyRequestId, triggerMessageId: trigger.id } } });
     if (result.requiresHuman && (canSimulate || canQueue)) await tx.conversation.update({ where: { id: conversation.id }, data: { botEnabled: false, status: "ATENDIENDO" } });

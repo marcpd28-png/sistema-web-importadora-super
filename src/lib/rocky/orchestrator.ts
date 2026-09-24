@@ -5,6 +5,7 @@ import { detectPlan, SYSTEM_PROMPT } from "./planning";
 import { selectSkill } from "./skills";
 import { ToolExecutor, type ToolBackend, type ToolName } from "./tools";
 import { compareFacts } from "./sales";
+import { checkoutPrompt } from "./checkout";
 
 export class RockyAIOrchestrator {
   constructor(private backend: ToolBackend, private provider?: LLMProvider) {}
@@ -29,7 +30,7 @@ export class RockyAIOrchestrator {
       try {
         const generated = await this.provider.plan([
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify({ memory, history: input.history?.slice(-4).map(s => s.slice(0, 700)), message: input.text }), ...(input.image ? { images: [input.image] } : {}) },
+          { role: "user", content: JSON.stringify({ memory: { productCodes: memory.productCodes, query: memory.query, quantity: memory.quantity, needs: memory.needs }, history: memory.cart ? [] : input.history?.slice(-4).map(s => s.slice(0, 700)), message: input.text }), ...(input.image ? { images: [input.image] } : {}) },
         ]);
         tokens = generated.tokens; model = this.provider.model;
         // An uncertain model cannot override safety or explicit deterministic product/budget extraction.
@@ -90,17 +91,18 @@ export class RockyAIOrchestrator {
     const confidence = requiresHuman ? 0.3 : plan.intent === "GREETING" ? 0.95 : exact ? 0.95 : products.length ? 0.75 : sources.length ? 0.7 : 0.35;
     // Deliberately render commercial assertions from evidence, never from unconstrained LLM prose.
     let reply = "Con gusto te ayudo 😊 ¿Qué producto buscas y para qué lo vas a utilizar? Puedes indicarme el código o tu presupuesto.";
-    if (plan.intent === "GREETING") reply = "¡Hola! 👋 Soy Rocky, de Importadora Super. Encantado de ayudarte 😊 ¿Qué producto necesitas y para qué lo usarás?";
+    if (plan.intent === "GREETING") reply = "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?";
     else if (requiresHuman) reply = plan.intent === "HUMAN_REQUEST" ? "Claro 😊 Te paso con un asesor para que pueda ayudarte." : "Quiero darte información correcta 😊 Necesito que un asesor verifique esta consulta. Dejo registrada tu solicitud para que te ayude.";
+    else if (plan.intent === "SALES_OBJECTION") reply = "Claro, tómate tu tiempo. ¿Qué duda te falta resolver para decidir?";
     else if (catalog) reply = catalog.scope === "FULL"
       ? `¡Claro! 😊 Puedes encontrar nuestro catálogo completo en la página web oficial 🛍️\n${catalog.url}\n\nSi me dices qué producto o marca buscas, te ayudo a encontrarlo.`
       : catalog.document
         ? `¡Claro! 😊 Te adjunto el catálogo de ${catalog.label} 📚 (${catalog.count} productos con stock y foto).\n\n🌐 También puedes ver esa selección en nuestra tienda virtual:\n${catalog.url}\n\n¿Cuál te gustó? Te ayudo con el precio y la cantidad que necesites 🤝`
         : `Con gusto 😊 Por ahora no pude preparar el PDF de ${catalog.label}. Puedes revisar esa selección en nuestra tienda virtual 🛍️\n${catalog.url}\n\nSi me indicas el modelo que te interesa, revisamos su disponibilidad.`;
     else if (sources.length && plan.intent === "BUSINESS_QUERY") reply = "¡Claro! 😊 " + sources.map(source => source.text).join("\n");
-    else if (sources.length && ["WARRANTY_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY"].includes(plan.intent)) reply = sources.slice(0, 2).map(s => `${s.text}\nFuente: ${s.title} (${s.sourceId})`).join("\n\n");
+    else if (sources.length && ["WARRANTY_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY"].includes(plan.intent)) reply = sources.slice(0, 2).map(s => s.text).join("\n\n");
     else if (products.length) {
-      const facts = products.slice(0, 4).map(p => {
+      const facts = products.slice(0, 3).map(p => {
         // Match BC getUnitTier: ERP zero means no wholesale tier, not a free product.
         const wholesale = plan.quantity >= p.wholesaleMinQty && Boolean(p.wholesalePrice);
         const price = wholesale ? p.wholesalePrice! : p.unitPrice;
@@ -109,15 +111,19 @@ export class RockyAIOrchestrator {
       reply = "¡Claro! 😊 Esto es lo que encontré:\n\n" + facts;
       if (plan.intent === "PRODUCT_COMPARISON") reply += products.length < plan.codes.length ? "\n\nNo encontré todos los códigos. Confirma los modelos para completar la comparación." : `\n\n${compareFacts(products).map(row => `${row.attribute}: ${row.values.map(v => `${v.code}: ${v.value}`).join(" / ")}`).join("\n") || "No hay atributos técnicos suficientes para afirmar ventajas entre estos modelos."}\n\n¿Para qué uso lo necesitas? La mejor opción depende de esa necesidad.`;
       else if (plan.intent === "PRICE_OBJECTION") reply = "Entiendo que el precio supera lo que esperabas. No tengo un descuento adicional confirmado.\n\n" + facts + "\n\n¿Cuál es tu presupuesto máximo?";
-      else if (plan.intent === "PRODUCT_DETAILS") reply += `\n\n${products[0].technicalSpecs || "No tengo una ficha técnica verificada para ampliar esos datos."}`;
+      else if (plan.intent === "PRODUCT_DETAILS") reply += /foto|imagen/i.test(input.text)
+        ? `\n\n${products[0].imageUrl ? "Te muestro la foto del catálogo." : "No tengo una foto disponible de este producto."}\n¿Quieres comprarlo?`
+        : `\n\n${products[0].technicalSpecs?.split(/[;\n]/).slice(0, 3).join(" · ") || "No tengo una ficha técnica verificada para ampliar esos datos."}\n¿Quieres comprarlo?`;
       else if (plan.intent === "PRODUCT_RECOMMENDATION") reply += "\n\n¿Con qué equipo lo usarás y qué característica es indispensable?";
-      else if (plan.intent === "WHOLESALE_QUERY") reply += "\n\nEl asesor puede ayudarte a continuar la compra con esta cantidad.";
-      else reply += "\n\n¿Cuál te interesa? Dime el código y te ayudo a continuar 😊";
+      else if (plan.intent === "WHOLESALE_QUERY") reply += "\n\n¿Continuamos con esta cantidad? Escribe «quiero comprar».";
+      else reply += products.length === 1 ? "\n\n¿Quieres comprarlo?" : "\n\n¿Cuál eliges: el primero, segundo o tercero?";
       if (plan.needs.includes("Samsung") && ["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent)) reply += "\nIndícame el modelo de tu Samsung para verificar la compatibilidad antes de elegir.";
     } else if (!["GREETING", "FOLLOW_UP", "UNKNOWN"].includes(plan.intent)) reply = "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?";
-    const next = memorySchema.parse({ ...memory, intent: plan.intent, productCodes: plan.codes.length ? plan.codes : products.length === 1 ? [products[0].code] : [], shownCodes: products.slice(0, 8).map(p => p.code),
-      query: plan.query, budget: plan.budget, quantity: plan.quantity, needs: plan.needs,
-      stage: requiresHuman ? "HANDOFF" : plan.intent === "PRICE_OBJECTION" ? "OBJECTION" : plan.intent === "PRODUCT_COMPARISON" ? "COMPARISON" : "QUALIFICATION",
+    const sideQuestion = ["BUSINESS_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY", "WARRANTY_QUERY", "CATALOG_REQUEST"].includes(plan.intent);
+    if (!requiresHuman && memory.cart && sideQuestion) reply += `\n\n${checkoutPrompt(memory.cart)}`;
+    const next = memorySchema.parse({ ...memory, intent: plan.intent, productCodes: plan.codes.length ? plan.codes : products.length === 1 ? [products[0].code] : sideQuestion ? memory.productCodes : [], shownCodes: products.length ? products.slice(0, 3).map(p => p.code) : memory.shownCodes,
+      query: sideQuestion ? memory.query : plan.query, budget: sideQuestion ? memory.budget : plan.budget, quantity: sideQuestion ? memory.quantity : plan.quantity, needs: sideQuestion ? memory.needs : plan.needs,
+      stage: requiresHuman ? "HANDOFF" : memory.cart ? "CLOSING" : plan.intent === "PRICE_OBJECTION" ? "OBJECTION" : plan.intent === "PRODUCT_COMPARISON" ? "COMPARISON" : "QUALIFICATION",
       asked: [...new Set([...memory.asked, ...(reply.includes("presupuesto máximo") ? ["budget"] : []), ...(reply.includes("¿Para qué uso") ? ["useCase"] : [])])].slice(-10),
     });
     return { rockyRequestId: randomUUID(), intent: plan.intent, skill: skill.name, confidence, confidenceEvidence: evidence,

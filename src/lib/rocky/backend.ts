@@ -9,6 +9,7 @@ import { PostgresKnowledge } from "./rag";
 import type { ToolBackend } from "./tools";
 import { loadCommercialCatalog } from "@/lib/commercial-catalog";
 import { expandInitialVocabulary } from "./vocabulary";
+import { getPreferredProductImageUrl } from "../product-media";
 
 export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
   return {
@@ -60,6 +61,7 @@ export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
     async product(code): Promise<ProductFact | null> {
       const p = await prisma.product.findFirst({ where: { isVisible: true, OR: [{ id: code }, { code: { equals: code, mode: "insensitive" } }, { externalCode: { equals: code, mode: "insensitive" } }, { externalId: code }] },
         select: { id: true, code: true, name: true, brand: true, category: true, unitPrice: true, wholesalePrice: true, wholesaleMinQty: true, stockUnits: true, description: true, technicalSpecs: true, updatedAt: true,
+          slug: true, imageUrl: true, localImageUrl: true, sourceImageUrl: true, media: { where: { type: "IMAGE" }, select: { url: true }, orderBy: { sortOrder: "asc" } },
           digitalProfile: { select: { status: true } }, specifications: { select: { name: true, value: true }, orderBy: { sortOrder: "asc" }, take: 20 } } });
       if (!p) {
         if (code.length > 64) return null;
@@ -70,6 +72,7 @@ export function createToolBackend(rag: PostgresKnowledge): ToolBackend {
         return candidates.length === 1 ? this.product(candidates[0].id) : null;
       }
       return { id: p.id, code: p.code, name: p.name, brand: p.brand, category: p.category, unitPrice: Number(p.unitPrice), wholesalePrice: p.wholesalePrice === null ? null : Number(p.wholesalePrice), wholesaleMinQty: p.wholesaleMinQty,
+        imageUrl: getPreferredProductImageUrl({ ...p, imageUrl: p.sourceImageUrl ?? p.imageUrl }), url: buildPublicUrl(`/producto/${p.slug}`),
         stockUnits: p.stockUnits, description: p.description, technicalSpecs: p.digitalProfile?.status === "PUBLICADA" && p.specifications.length ? p.specifications.map(s => `${s.name}: ${s.value}`).join("; ") : p.technicalSpecs, updatedAt: p.updatedAt.toISOString() };
     },
     knowledge: (query, productId, sourceType) => rag.search({ query, productId, sourceType }),

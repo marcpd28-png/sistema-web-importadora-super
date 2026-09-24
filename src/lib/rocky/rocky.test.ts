@@ -55,7 +55,9 @@ test("caso 6: humano prevalece sobre modelo", async () => {
 });
 test("caso 7: garantía con fuente, sin dato deriva", async () => {
   const result = await new RockyAIOrchestrator(backend).chat({ text: "¿Qué garantía tienen?" });
-  assert.match(result.reply, /policy-v1/);
+  assert.match(result.reply, /La garantía requiere comprobante/);
+  assert.equal(result.sources[0].sourceId, "policy-v1");
+  assert.doesNotMatch(result.reply, /policy-v1/);
   const missing = await new RockyAIOrchestrator({ ...backend, knowledge: async () => [] }).chat({ text: "¿Qué garantía tienen?" });
   assert.equal(missing.requiresHuman, true); assert.equal(missing.reasonCode, "NO_APPROVED_KNOWLEDGE");
 });
