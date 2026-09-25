@@ -616,7 +616,7 @@ export function FichaEditorWorkspace({ product, status }: FichaEditorWorkspacePr
       </header>
 
       {/* Main Split-Screen Container */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "24px", alignItems: "start" }}>
+      <div className="admin-ficha-editor-grid">
         
         {/* Left Form Panel */}
         <form onSubmit={handleSubmit} className="stack-md">

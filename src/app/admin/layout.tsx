@@ -8,6 +8,7 @@ import { ForcePasswordChange } from "@/components/admin/force-password-change";
 import { SidebarToggle } from "@/components/admin/sidebar-toggle";
 import { DarkModeToggle } from "@/components/admin/dark-mode-toggle";
 import { LogoutButton } from "@/components/admin/logout-button";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export const metadata: Metadata = {
   robots: {
@@ -38,8 +39,7 @@ export default async function AdminLayout({
       <a className="admin-skip-link" href="#admin-main-content">
         Ir al contenido principal
       </a>
-      <aside className="admin-sidebar">
-        <div className="admin-sidebar-main" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <AdminSidebar>
           <div className="admin-sidebar-brand">
             <div className="brand-logo-container">
               <BrandLogo href="/admin" priority size="sm" />
@@ -65,8 +65,7 @@ export default async function AdminLayout({
           </div>
 
           <AdminNav badges={badges} />
-        </div>
-      </aside>
+      </AdminSidebar>
 
       <section className="admin-content" id="admin-main-content" tabIndex={-1}>{children}</section>
     </main>

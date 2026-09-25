@@ -1,0 +1,170 @@
+/* Keep responsive admin rules together, after the shared desktop styles. */
+.admin-mobile-header { display: none; }
+.admin-sidebar-main { display: flex; flex-direction: column; }
+
+.admin-shell :where(.panel, .stack-lg, .stack-md, .form-grid, .field, .table-wrap, .admin-user-table-card) {
+  min-width: 0;
+}
+
+.admin-shell :where(.table-wrap, .admin-user-table-card) {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.admin-ficha-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+
+.admin-promo-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 920px) {
+  /* A saved desktop collapse preference must never create an 80px mobile column. */
+  body .admin-shell,
+  body.admin-sidebar-collapsed .admin-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+  }
+
+  body .admin-shell .admin-sidebar {
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    max-height: 100dvh;
+    padding: 0.5rem !important;
+    border-radius: 0 !important;
+    background: var(--surface-strong);
+  }
+
+  .admin-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 44px;
+    font-weight: 700;
+  }
+
+  .admin-mobile-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface-strong);
+    color: var(--foreground);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  body .admin-sidebar .admin-sidebar-main {
+    display: none !important;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  body .admin-sidebar[data-mobile-open="true"] .admin-sidebar-main {
+    display: flex !important;
+  }
+
+  body .admin-sidebar .admin-sidebar-brand {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  body .admin-sidebar .admin-sidebar-controls,
+  body .admin-sidebar .admin-sidebar-utilities {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    gap: 0.5rem !important;
+  }
+
+  body .admin-sidebar .admin-desktop-sidebar-toggle { display: none !important; }
+  body .admin-sidebar .admin-sidebar-utilities .admin-shell-icon-button {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+  }
+
+  body .admin-sidebar .admin-nav {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
+    flex: none;
+    overflow: visible !important;
+    width: 100%;
+  }
+
+  body .admin-sidebar .admin-nav-section,
+  body .admin-sidebar .admin-nav-links {
+    display: grid !important;
+    gap: 0.25rem;
+  }
+
+  body .admin-sidebar .admin-nav-links.is-accordion-closed { display: none !important; }
+  body .admin-sidebar .admin-nav-section-title {
+    display: flex !important;
+    min-height: 44px;
+    margin: 0 !important;
+  }
+
+  body .admin-sidebar .admin-nav-link {
+    justify-content: flex-start;
+    width: 100%;
+    height: auto;
+    min-height: 44px;
+    margin: 0 !important;
+    padding: 0.65rem;
+  }
+
+  body .admin-sidebar .admin-nav-label {
+    display: block !important;
+    max-width: none;
+    white-space: normal;
+  }
+
+  body .admin-sidebar .admin-nav-badge {
+    position: static;
+    margin-left: auto;
+    transform: none;
+  }
+
+  body .admin-nav-tooltip { display: none !important; }
+  .admin-content > * { padding-inline: 0; }
+  .admin-content > .panel { padding: 1rem; }
+  .admin-shell :where(.field input, .field select, .field textarea, .search-field input, .admin-user-search input) {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+
+  .admin-shell :where(.button, .icon-button, select) { min-height: 44px; }
+  .admin-shell :where(.panel-header, .admin-chart-head, .pagination-row) { flex-wrap: wrap; }
+  .admin-shell :where(h1, h2, h3, .panel-copy, .admin-user-identity) { overflow-wrap: anywhere; }
+  .admin-shell .form-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .admin-shell .field-wide { grid-column: 1 / -1; }
+  .admin-ficha-editor-grid,
+  .admin-promo-charts-grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-ficha-editor-grid > * { min-width: 0; }
+  .admin-ficha-editor-grid > .stack-xs { position: static !important; }
+}
+
+@media (max-width: 560px) {
+  .admin-shell .panel { padding: 0.85rem; }
+  .admin-shell .button { white-space: normal; height: auto; padding-block: 0.6rem; }
+  .admin-shell .admin-chart-head { flex-direction: column; }
+}

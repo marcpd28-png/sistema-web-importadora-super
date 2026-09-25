@@ -1789,7 +1789,7 @@ body[data-admin-theme="dark"] :where(.chat-messages, .message-simulator-chat) {
 @media (max-width: 900px) {
   .messages-app-shell {
     height: calc(100dvh - 5.25rem);
-    min-height: 620px;
+    min-height: 0;
     margin: 0;
     border: 1px solid var(--line);
     border-radius: 18px;
@@ -1807,7 +1807,7 @@ body[data-admin-theme="dark"] :where(.chat-messages, .message-simulator-chat) {
 @media (max-width: 768px) {
   .messages-app-shell {
     height: calc(100dvh - 5rem);
-    min-height: 580px;
+    min-height: 0;
   }
 
   .messages-app-navigation-title p {

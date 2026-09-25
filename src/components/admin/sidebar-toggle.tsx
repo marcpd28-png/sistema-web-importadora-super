@@ -17,7 +17,10 @@ export function SidebarToggle() {
       }
     });
 
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.body.classList.remove("admin-sidebar-collapsed");
+    };
   }, []);
 
   const toggle = () => {
@@ -38,7 +41,7 @@ export function SidebarToggle() {
       aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
       aria-pressed={collapsed}
       onClick={toggle}
-      className="icon-button admin-shell-icon-button"
+      className="icon-button admin-shell-icon-button admin-desktop-sidebar-toggle"
       title={collapsed ? "Expandir menú" : "Colapsar menú"}
       type="button"
     >

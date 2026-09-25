@@ -6,6 +6,7 @@ import { getClarityProjectId } from "@/lib/clarity";
 import "./globals.css";
 import "./storefront-responsive.css";
 import "./storefront-discovery.css";
+import "./admin/admin-responsive.css";
 
 const displayFont = Bricolage_Grotesque({
   variable: "--font-display",
