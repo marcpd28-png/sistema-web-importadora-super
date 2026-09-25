@@ -175,9 +175,9 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
       <section className="panel admin-hero-panel">
         <div className="admin-hero-copy">
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}><p className="eyebrow" style={{ margin: 0 }}>Dashboard operativo</p><span id="dashboard-settings-portal"></span></div>
-          <h1>Control center del catálogo</h1>
+          <h1>Resumen del negocio</h1>
           <p className="panel-copy">
-            Estado comercial, sincronización ERP, campañas y atención al cliente en una sola superficie.
+            Inventario, ventas y atención al cliente.
           </p>
         </div>
 
@@ -258,7 +258,7 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
         <div className="panel-header">
           <div>
             <p className="eyebrow">Análisis de la Tienda</p>
-            <h2>Comportamiento del Consumidor e Interacciones QR</h2>
+            <h2>Actividad y resultados</h2>
           </div>
         </div>
 

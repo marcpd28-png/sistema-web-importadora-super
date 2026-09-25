@@ -8,13 +8,14 @@ import type { ProductActionState } from "@/components/admin/product-form-state";
 import { ProductCoverField } from "@/components/admin/product-cover-field";
 import { ProductMediaManager } from "@/components/admin/product-media-manager";
 import { AdminFormSectionNav } from "@/components/admin/admin-form-section-nav";
+import { MobileDisclosure } from "./mobile-disclosure";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { ErpProductEditor } from "@/components/admin/erp-product-editor";
 
 const PRODUCT_FORM_SECTIONS = [
   { id: "product-identity", label: "Información", description: "Datos que identifican el producto" },
   { id: "product-commerce", label: "Precio e inventario", description: "Venta, unidad y existencias" },
-  { id: "product-cover", label: "Contenido", description: "Descripción, portada y galería" },
+  { id: "product-description", label: "Contenido", description: "Descripción, portada y galería" },
   { id: "product-publishing", label: "Publicación", description: "Revisión y visibilidad" },
 ] as const;
 
@@ -245,7 +246,7 @@ export function ProductForm({
               </details>
             </section>
 
-            <section className="product-section-card">
+            <section className="product-section-card admin-form-anchor" id="product-description">
               <div className="product-section-head">
                 <div><p className="eyebrow">Contenido</p><h2>Descripción del producto</h2></div>
               </div>
@@ -299,6 +300,7 @@ export function ProductForm({
           </div>
 
           <aside className="product-editor-sidebar">
+            <MobileDisclosure title="Resumen del producto">
             <article className="product-summary-card">
               <p className="eyebrow">Resumen</p>
               <strong>{liveSummary.name || "Nuevo producto"}</strong>
@@ -314,6 +316,7 @@ export function ProductForm({
               <span>{values.technicalSpecs.trim() ? "Con especificaciones" : "Sin especificaciones"}</span>
               <span>{mediaCount} medios</span>
             </article>
+            </MobileDisclosure>
           </aside>
         </div>
 

@@ -1,5 +1,19 @@
 /* Keep responsive admin rules together, after the shared desktop styles. */
 .admin-mobile-header { display: none; }
+.admin-mobile-dock,
+.admin-mobile-nav-search,
+.admin-mobile-section-select,
+.admin-mobile-disclosure-toggle { display: none; }
+.admin-mobile-disclosure,
+.admin-mobile-disclosure > div { min-width: 0; height: 100%; }
+.product-editor-sidebar .admin-mobile-disclosure > div:not([hidden]) { display: grid; gap: 1rem; }
+.admin-audit-photo-unavailable { display: grid; align-content: center; justify-items: center; gap: 8px; height: 300px; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; background: var(--surface-strong); color: var(--muted); font-size: 12px; }
+body[data-admin-theme="dark"] .admin-shell .eyebrow,
+body[data-admin-theme="dark"] .admin-shell .admin-chip-filter.is-active,
+body[data-admin-theme="dark"] .admin-mobile-dock a[aria-current="page"] { color: #c7d2fe; }
+body[data-admin-theme="dark"] .admin-shell .status-badge.is-hidden { color: #fda4af; background: #f43f5e24; }
+body[data-admin-theme="dark"] .admin-shell .status-badge.is-warning { color: #fcd34d; background: #f59e0b24; }
+body[data-admin-theme="dark"] .admin-shell .status-badge.is-visible { color: #6ee7b7; background: #10b98124; }
 .admin-sidebar-main { display: flex; flex-direction: column; }
 
 .admin-shell :where(.panel, .stack-lg, .stack-md, .form-grid, .field, .table-wrap, .admin-user-table-card) {
@@ -167,4 +181,197 @@
   .admin-shell .panel { padding: 0.85rem; }
   .admin-shell .button { white-space: normal; height: auto; padding-block: 0.6rem; }
   .admin-shell .admin-chart-head { flex-direction: column; }
+}
+
+/* Mobile information hierarchy: compact summaries, deliberate detail, quick navigation. */
+@media (max-width: 920px) {
+  .admin-shell { --admin-dock-height: calc(64px + env(safe-area-inset-bottom)); }
+  .admin-shell .button, .admin-shell .icon-button, .admin-shell select { min-height: 44px; }
+  .admin-shell .icon-button { min-width: 44px; }
+  body .admin-shell .admin-sidebar {
+    overflow: visible !important;
+    align-self: start;
+    border-bottom: 1px solid var(--line);
+  }
+  body .admin-sidebar .admin-sidebar-main {
+    position: absolute;
+    top: 100%;
+    inset-inline: 0;
+    max-height: calc(100dvh - 64px - var(--admin-dock-height));
+    padding: 0.5rem 0.75rem 1rem;
+    background: var(--surface-strong);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 16px 32px #0002;
+    border-radius: 0 0 18px 18px;
+  }
+  .admin-mobile-nav-search { display: block; }
+  .admin-mobile-nav-search input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--foreground);
+    font-size: 16px;
+  }
+  body .admin-sidebar .admin-nav-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .admin-sidebar .admin-nav-link {
+    gap: 0.45rem;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    border: 1px solid var(--line);
+  }
+  body .admin-sidebar .admin-nav-icon { flex: 0 0 28px; width: 28px; height: 28px; }
+  body .admin-sidebar .admin-nav-badge { font-size: 0.65rem; padding: 0.2rem; min-width: 18px; }
+  body .admin-sidebar .admin-nav-section-title { padding: 0.5rem !important; font-size: 0.7rem !important; }
+  .admin-mobile-dock {
+    position: fixed;
+    z-index: 70;
+    bottom: 0;
+    inset-inline: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-height: var(--admin-dock-height);
+    padding: 4px 8px max(4px, env(safe-area-inset-bottom));
+    background: var(--surface-strong);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -3px 16px #0001;
+  }
+  .admin-mobile-dock a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 52px;
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 650;
+  }
+  .admin-mobile-dock a[aria-current="page"] { color: var(--brand-primary); background: rgba(var(--brand-rgb), 0.09); }
+  .admin-shell:has(input:focus, textarea:focus, select:focus) .admin-mobile-dock { display: none; }
+  body .admin-content { padding-bottom: calc(var(--admin-dock-height) + 1rem) !important; }
+  .admin-shell :where(.panel, .stack-lg) { gap: 0.85rem; }
+  .admin-shell .panel h1, .admin-shell .admin-user-page-header h1 { font-size: clamp(1.3rem, 5vw, 1.65rem); line-height: 1.2; }
+  .admin-shell .panel h2, .admin-shell .product-section-head h2 { font-size: 1.05rem; }
+  .admin-shell .panel-copy { font-size: 0.82rem; line-height: 1.4; }
+  .admin-shell :where(.panel-header, .admin-user-page-header) { gap: 0.6rem; }
+  .admin-shell .admin-hero-copy { gap: 0.3rem; }
+  .admin-shell .admin-hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  .admin-shell .admin-hero-actions .button { font-size: 0.74rem; padding-inline: 0.4rem; }
+  .admin-shell .admin-hero-status { flex-direction: row; flex-wrap: wrap; gap: 0.3rem; }
+  .admin-shell .admin-status-pill { min-height: 26px; padding: 0.25rem 0.5rem; font-size: 0.68rem; }
+  .admin-shell .admin-hero-meta { font-size: 0.7rem; }
+  .admin-shell .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+  .admin-shell .metric-panel { min-height: 0; gap: 0.25rem; padding: 0.65rem; border-radius: 12px; }
+  .admin-shell .metric-panel strong { font-size: 1.4rem; }
+  .admin-shell .metric-panel span { font-size: 0.72rem; }
+  .admin-shell .metric-panel svg { width: 18px; height: 18px; }
+  .admin-shell .admin-hero-footnote { font-size: 0.72rem; gap: 0.4rem; }
+  .admin-shell .dashboard-widgets-grid { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+  .admin-shell .dashboard-widget-slot { min-height: 0 !important; }
+  .admin-mobile-disclosure { height: auto; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface-strong); }
+  .admin-mobile-disclosure-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 52px;
+    padding: 0.75rem;
+    border: 0;
+    background: transparent;
+    color: var(--foreground);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+  }
+  .admin-mobile-disclosure-toggle svg { flex-shrink: 0; }
+  .admin-mobile-disclosure[data-expanded="true"] > button svg { transform: rotate(180deg); }
+  .admin-shell .admin-form-section-nav { top: 61px; padding: 0.4rem; border-radius: 10px; }
+  .admin-shell .admin-form-section-nav-track { display: none; }
+  .admin-mobile-section-select { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
+  .admin-mobile-section-select > span { flex-shrink: 0; }
+  .admin-mobile-section-select select { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem; font-size: 16px; color: var(--foreground); background: var(--surface-strong); }
+  .admin-shell .admin-form-anchor { scroll-margin-top: 8.5rem; }
+  .admin-shell .admin-form-sticky-actions { bottom: calc(var(--admin-dock-height) + 0.4rem); flex-direction: row; flex-wrap: wrap; padding: 0.6rem; gap: 0.5rem; }
+  .admin-shell .admin-form-sticky-actions .button { width: auto; flex: 1 1 auto; }
+  .admin-shell .admin-form-save-hint { width: 100%; font-size: 0.72rem; }
+  .admin-shell:has(input:focus, textarea:focus, select:focus) .admin-form-sticky-actions { bottom: 0.4rem; }
+  .admin-shell .pagination-row { flex-direction: row; display: flex; justify-content: space-between; gap: 0.5rem; }
+  .admin-shell .pagination-row .button { font-size: 0.78rem; }
+  .admin-shell .messages-app-shell { height: calc(100dvh - 5.25rem - var(--admin-dock-height)); min-height: 0; }
+  .admin-shell:has(input:focus, textarea:focus, select:focus) .messages-app-shell { height: calc(100dvh - 5.25rem); }
+}
+
+@media (max-width: 760px) {
+  .admin-audit-photo-unavailable { height: 96px; font-size: 10px; }
+  .admin-shell :where(.admin-products-sanity-chips, .admin-user-tabs, .admin-quote-filters) {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    overflow-x: auto;
+    max-width: 100%;
+    padding-block: 0.3rem;
+    scrollbar-width: thin;
+  }
+  .admin-shell :where(.admin-products-sanity-chips, .admin-user-tabs, .admin-quote-filters) > * { flex: 0 0 auto; min-height: 44px; white-space: nowrap; }
+  .admin-shell .admin-products-sanity-chips .admin-chip-filter { width: auto; min-width: 0; flex: 0 0 auto; }
+  .admin-shell .admin-products-sanity-rail { padding: 0; border: 0; background: transparent; }
+  .admin-shell .admin-products-toolbar .admin-filters { display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.5rem; }
+  .admin-shell .admin-products-toolbar .search-field { flex: 1 0 100%; }
+  .admin-shell .admin-products-toolbar .button { flex: 1 1 auto; width: auto; }
+  .admin-shell .admin-products-advanced-filters { flex: 1 0 100%; }
+  .admin-shell .admin-user-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem; }
+  .admin-shell .admin-user-toolbar .button { width: auto; }
+  .admin-shell .admin-quote-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.4rem; }
+  .admin-shell .admin-quote-stats article { padding: 0.55rem 0.3rem; gap: 0.2rem; border-radius: 10px; min-height: 0; }
+  .admin-shell .admin-quote-stats strong { font-size: 1.2rem; }
+  .admin-shell .admin-quote-stats span { font-size: 0.65rem; }
+  .admin-shell .data-table tbody { gap: 0.65rem; }
+  .admin-shell .data-table tbody tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem 0.7rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: var(--surface-strong);
+  }
+  .admin-shell .data-table td { min-width: 0; width: auto; padding: 0; border: 0; font-size: 0.8rem; overflow-wrap: anywhere; }
+  .admin-shell .data-table td::before { margin: 0 0 0.15rem; font-size: 0.61rem; letter-spacing: 0.02em; }
+  .admin-shell .data-table td p { margin: 0.15rem 0 0; font-size: 0.73rem; line-height: 1.3; }
+  .admin-shell .data-table td[data-label="Producto"],
+  .admin-shell .data-table td[data-label="Usuario"],
+  .admin-shell .data-table td[data-label="Cliente"],
+  .admin-shell .data-table td[data-label="Productos"],
+  .admin-shell .data-table td[data-label="Acciones"] { grid-column: 1 / -1; }
+  .admin-shell .data-table td[data-label="Producto"]::before,
+  .admin-shell .data-table td[data-label="Usuario"]::before,
+  .admin-shell .data-table td[data-label="Sel."]::before,
+  .admin-shell .data-table td[data-label="Acciones"]::before { display: none; }
+  .admin-shell .admin-products-table td[data-label="Producto"] { grid-row: 1; padding-right: 36px; }
+  .admin-shell .admin-products-table td[data-label="Sel."] { position: absolute; right: 4px; top: 4px; }
+  .admin-product-select-target { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; cursor: pointer; }
+  .admin-product-select-target input { width: 20px; height: 20px; }
+  .admin-shell .admin-product-identity { gap: 0.5rem; align-items: flex-start; }
+  .admin-shell .admin-product-identity > div { min-width: 0; }
+  .admin-shell .admin-product-identity strong { font-size: 0.84rem; line-height: 1.3; }
+  .admin-shell .admin-product-thumb { width: 44px; height: 44px; flex: 0 0 44px; }
+  .admin-shell .data-table :where(.status-badge, .admin-user-role-pill) { font-size: 0.67rem; padding: 0.25rem 0.4rem; }
+  .admin-shell .data-table .table-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: flex-end; }
+  .admin-shell .data-table .table-actions :where(.button, .icon-button) { width: auto; min-width: 44px; min-height: 44px; }
+  .admin-shell .data-table td[data-label="Acciones"] { padding-top: 0.4rem; border-top: 1px solid var(--line); }
+  .admin-shell .admin-user-table-card { border: 0; background: transparent; }
+  .admin-shell .admin-user-identity small { overflow-wrap: anywhere; white-space: normal; }
+  .admin-shell #product-commerce .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }

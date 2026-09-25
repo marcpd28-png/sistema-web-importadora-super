@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { getStoreAnalyticsReport } from "@/lib/store-analytics-report";
 import styles from "./analytics.module.css";
+import { MobileDisclosure } from "@/components/admin/mobile-disclosure";
 export const dynamic = "force-dynamic";
 const number = (value: bigint | number) => Number(value).toLocaleString("es-PE");
 const labels: Record<string, string> = { direct: "Directo / sin referencia", google: "Google", tiktok: "TikTok", facebook: "Facebook", instagram: "Instagram", whatsapp: "WhatsApp", other: "Otras fuentes", mobile: "Móvil", desktop: "Pantalla grande" };
@@ -34,10 +35,16 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         {(report.events.checkout_error || 0) > 0 && <li><strong>{number(report.events.checkout_error)} errores al enviar cotizaciones.</strong> Revisa los registros del ERP y prueba el formulario.</li>}
         <li><strong>Comprueba el recorrido.</strong> Usa grabaciones y mapas de calor para entender las dificultades detrás de estas cifras.</li>
       </ul><a className={styles.button} href="https://clarity.microsoft.com/" target="_blank" rel="noopener noreferrer">Abrir mapas y grabaciones ↗</a><small>Los mapas se consultan en Microsoft Clarity con la cuenta del proyecto.</small></section></div>
+      <MobileDisclosure title="Productos y búsquedas">
       <div className={styles.grid}><section className={styles.card}><h2>Productos que despiertan interés</h2><div className={styles.table}><table><thead><tr><th>Producto</th><th>Vistas</th><th>Añadidos</th></tr></thead><tbody>{report.products.map(row => <tr key={row.code}><td>{row.name}<small>{row.code}</small></td><td>{number(row.views)}</td><td>{number(row.carts)}</td></tr>)}</tbody></table></div>{!report.products.length && <p className={styles.empty}>Aparecerán al consultar productos o añadirlos al carrito.</p>}<small>Acciones registradas, no unidades vendidas.</small></section>
       <section className={styles.card}><h2>Qué buscan los clientes</h2><div className={styles.table}><table><thead><tr><th>Búsqueda</th><th>Consultas</th><th>Sin resultados</th></tr></thead><tbody>{report.searches.map(row => <tr key={row.term}><td>{row.term}</td><td>{number(row.total)}</td><td>{number(row.empty)}</td></tr>)}</tbody></table></div>{!report.searches.length && <p className={styles.empty}>Todavía no hay búsquedas con resultados medidos.</p>}<small>No incluye redirecciones directas a productos ni términos filtrados por privacidad.</small></section></div>
+      </MobileDisclosure>
+      <MobileDisclosure title="Origen y dispositivos">
       <div className={styles.grid}><section className={styles.card}><h2>Origen de las visitas</h2><Bars rows={report.sources}/></section><section className={styles.card}><h2>Dispositivos</h2><Bars rows={report.devices}/><small>Según el ancho de pantalla; una sesión puede usar ambos tamaños.</small></section></div>
+      </MobileDisclosure>
+      <MobileDisclosure title="Asistente y pedidos">
       <div className={styles.grid}><section className={styles.card}><h2>Interacciones con Rocky</h2><div className={styles.barLabel}><span>Aperturas</span><strong>{number(report.events.assistant_open || 0)}</strong></div><div className={styles.barLabel}><span>Mensajes enviados</span><strong>{number(report.events.assistant_message || 0)}</strong></div><small>Solo acciones en la tienda con consentimiento. Esta medición no guarda textos de conversaciones.</small></section><section className={styles.card}><h2>Pedidos marcados como pagados</h2><strong className={styles.value}>{number(report.orders)}</strong><p>Pedidos creados en el período, con estado actual «pagado».</p><small>Datos del sistema: excluye pedidos de prueba y cobros simulados. No se atribuyen a estas visitas ni se cuentan como conversión web.</small></section></div>
+      </MobileDisclosure>
     </>}
   </div>;
 }

@@ -556,12 +556,15 @@ export function AdminProductsWorkspace({
                 return (
                   <tr key={product.id}>
                     <td data-label="Sel.">
+                      <label className="admin-product-select-target">
+                      <span className="sr-only">Seleccionar {product.name}</span>
                       <input
                         checked={selectedIds.includes(product.id)}
                         form={undefined}
                         onChange={() => toggleSelection(product.id)}
                         type="checkbox"
                       />
+                      </label>
                     </td>
                     <td data-label="Producto">
                       <div className="admin-product-identity">
@@ -606,7 +609,7 @@ export function AdminProductsWorkspace({
                     </td>
                     <td data-label="Acciones">
                       <div className="table-actions admin-product-actions">
-                        <Link className="icon-button" href={`/admin/products/${product.id}`}>
+                        <Link className="icon-button" aria-label={`Editar ${product.name}`} href={`/admin/products/${product.id}`}>
                           <PencilLine size={16} />
                         </Link>
                         <button

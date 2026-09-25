@@ -28,6 +28,7 @@ import {
 import { logoutAction } from "@/app/admin/actions";
 import type { AdminNavBadges } from "@/lib/admin";
 import { cn } from "@/lib/utils";
+import { useAdminMobile } from "./use-admin-mobile";
 
 type AdminNavLink = {
   href?: string;
@@ -97,6 +98,12 @@ type AdminNavProps = {
 export function AdminNav({ badges }: AdminNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const mobile = useAdminMobile();
+  const [search, setSearch] = useState("");
+  const [mobileSection, setMobileSection] = useState<string | null>(null);
+  const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const query = mobile ? normalize(search.trim()) : "";
+  const activeSection = sections.find(section => section.links.some(link => link.href === pathname || (link.href !== "/admin" && link.href !== "/" && link.href && pathname.startsWith(link.href + "/"))))?.title;
   const [tooltip, setTooltip] = useState<{ label: string; left: number; top: number } | null>(null);
   const showTooltip = (element: HTMLElement, label: string) => {
     if (window.matchMedia("(max-width: 920px)").matches || !document.body.classList.contains("admin-sidebar-collapsed")) return;
@@ -140,6 +147,10 @@ export function AdminNav({ badges }: AdminNavProps) {
   }, []);
 
   const toggleSection = (title: string) => {
+    if (mobile) {
+      setMobileSection((mobileSection ?? activeSection) === title ? "" : title);
+      return;
+    }
     const newState = { ...expandedSections, [title]: !expandedSections[title] };
     setExpandedSections(newState);
     localStorage.setItem("admin-nav-expanded", JSON.stringify(newState));
@@ -153,8 +164,14 @@ export function AdminNav({ badges }: AdminNavProps) {
 
   return (
     <nav className="admin-nav" aria-label="Navegación administrativa">
+      <label className="admin-mobile-nav-search">
+        <span className="sr-only">Buscar una sección</span>
+        <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar una sección…" />
+      </label>
       {sections.map((section) => {
-        const isExpanded = expandedSections[section.title] !== false;
+        const links = section.links.filter(link => !query || normalize(link.label + " " + section.title).includes(query));
+        if (!links.length) return null;
+        const isExpanded = mobile ? Boolean(query) || (mobileSection ?? activeSection) === section.title : expandedSections[section.title] !== false;
         
         return (
           <section className="admin-nav-section" key={section.title}>
@@ -191,7 +208,7 @@ export function AdminNav({ badges }: AdminNavProps) {
               className={cn("admin-nav-links", !isExpanded && "is-accordion-closed")}
               id={`admin-nav-${section.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
             >
-              {section.links.map((link) => {
+              {links.map((link) => {
                 const Icon = link.icon;
                 const isLink = link.kind !== "action" && Boolean(link.href);
                 const isActive =
@@ -227,6 +244,7 @@ export function AdminNav({ badges }: AdminNavProps) {
                       isActive && "is-active",
                     )}
                     href={link.href}
+                    aria-current={isActive ? "page" : undefined}
                     aria-label={link.label}
                     onFocus={event => { handlePrefetch(link.href); showTooltip(event.currentTarget, link.label); }}
                     onMouseEnter={event => { handlePrefetch(link.href); showTooltip(event.currentTarget, link.label); }}
@@ -249,6 +267,7 @@ export function AdminNav({ badges }: AdminNavProps) {
           </section>
         );
       })}
+      {query && !sections.some(section => section.links.some(link => normalize(link.label + " " + section.title).includes(query))) ? <p className="muted">No hay secciones con ese nombre.</p> : null}
       {tooltip ? createPortal(<div className="admin-nav-tooltip" role="tooltip" style={{ left: tooltip.left, top: tooltip.top }}>{tooltip.label}</div>, document.body) : null}
     </nav>
   );

@@ -25,8 +25,19 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     ...(role !== "all" ? { role } : {}),
     ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } }] } : {}),
   };
+  const pageSize = 10;
+  const requestedPage = Number(typeof params?.page === "string" ? params.page : "1");
+  const totalResults = await prisma.user.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
+  const page = Number.isSafeInteger(requestedPage) ? Math.min(totalPages, Math.max(1, requestedPage)) : 1;
+  const pageHref = (target: number) => {
+    const query = new URLSearchParams({ page: String(target) });
+    if (q) query.set("q", q);
+    if (role !== "all") query.set("role", role);
+    return `/admin/users?${query}`;
+  };
   const [users, totalUsers, adminUsers, shopperUsers, promoterUsers] = await Promise.all([
-    prisma.user.findMany({ where, orderBy: [{ createdAt: "desc" }], select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true } }),
+    prisma.user.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true } }),
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),
     prisma.user.count({ where: { role: "USERSHOP" } }),
@@ -56,7 +67,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         <button className="button button-secondary" type="submit">Buscar</button>
         {q ? <Link className="button button-ghost" href={role === "all" ? "/admin/users" : `/admin/users?role=${role}`}>Limpiar</Link> : null}
       </form>
-      <div className="admin-user-results-head"><span>{users.length} {users.length === 1 ? "usuario" : "usuarios"}</span>{role !== "all" ? <span className="muted">Rol: {roleLabels[role]}</span> : null}</div>
+      <div className="admin-user-results-head"><span>{totalResults ? (page - 1) * pageSize + 1 : 0}–{Math.min(page * pageSize, totalResults)} de {totalResults} usuarios · página {page} de {totalPages}</span>{role !== "all" ? <span className="muted">Rol: {roleLabels[role]}</span> : null}</div>
       {users.length ? (
         <div className="admin-user-table-card"><table className="data-table admin-users-table">
           <thead><tr><th>Usuario</th><th>Contacto</th><th>Rol</th><th>Registro</th><th><span className="sr-only">Acciones</span></th></tr></thead>
@@ -69,6 +80,10 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           </tr>)}</tbody>
         </table></div>
       ) : <article className="admin-user-empty"><UsersRound size={24} /><strong>No encontramos usuarios</strong><p>Prueba otro término o limpia los filtros aplicados.</p><Link className="button button-secondary" href="/admin/users">Ver todos</Link></article>}
+      {totalPages > 1 ? <nav className="pagination-row" aria-label="Páginas de usuarios">
+        {page > 1 ? <Link className="button button-secondary" href={pageHref(page - 1)}>Página anterior</Link> : <span />}
+        {page < totalPages ? <Link className="button button-secondary" href={pageHref(page + 1)}>Siguiente página</Link> : null}
+      </nav> : null}
     </section>
   );
 }

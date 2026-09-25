@@ -7,12 +7,13 @@ import styles from "./page.module.css";
 import { CatalogImageAuditPanel } from "@/components/admin/catalog-image-audit-panel";
 
 export const dynamic = "force-dynamic";
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 
 export default async function AttentionPage({ searchParams }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const view = params?.view === "audit" || params?.audit || params?.aq || params?.ap ? "audit" : "photos";
   const query = typeof params?.q === "string" ? params.q.trim().slice(0, 120) : "";
   const requestedPage = Number(params?.page ?? 1);
   const attentionWhere = buildProductsNeedingPhotoWhere();
@@ -45,7 +46,12 @@ export default async function AttentionPage({ searchParams }: {
         <Link className="button button-secondary" href="/admin/products">Ver todos los productos</Link>
       </header>
 
-      <CatalogImageAuditPanel params={params} />
+      <nav className={styles.views} aria-label="Tipo de atención">
+        <Link href="/admin/atencion?view=photos" aria-current={view === "photos" ? "page" : undefined}>Fotos pendientes · {summary._count}</Link>
+        <Link href="/admin/atencion?view=audit" aria-current={view === "audit" ? "page" : undefined}>Revisión de imágenes</Link>
+      </nav>
+
+      {view === "audit" ? <CatalogImageAuditPanel params={params} /> : <>
 
       <section className={styles.rule} aria-label="Regla de publicación">
         <ShieldCheck size={24} aria-hidden="true" />
@@ -127,6 +133,7 @@ export default async function AttentionPage({ searchParams }: {
         )}
       </section>
       <p className={styles.help}>Al guardar una foto válida en la portada o galería, el producto sale de esta lista. Para que se muestre en la web, también debe tener activada la opción de publicación «Visible».</p>
+      </>}
     </div>
   );
 }
