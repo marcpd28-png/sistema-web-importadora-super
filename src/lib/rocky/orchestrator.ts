@@ -47,7 +47,7 @@ export class RockyAIOrchestrator {
     let requiresHuman = ["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS"].includes(plan.intent);
     const call = async (name: ToolName, args: unknown) => {
       const result = await executor.execute(name, args);
-      for (const product of result.products) if ((!(["searchProducts", "getProduct"].includes(name)) || matchesRequestedModel(plan.query, product)) && !products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
+      for (const product of result.products) if ((plan.codes.includes(product.code) || (plan.codes.length > 1 ? plan.codes.some(code => matchesRequestedModel(code, product)) : matchesRequestedModel(plan.query, product))) && !products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
       sources.push(...result.sources);
       if (result.catalog) catalog = result.catalog;
     };
@@ -72,8 +72,8 @@ export class RockyAIOrchestrator {
         if (["PRICE_QUERY", "WHOLESALE_QUERY"].includes(plan.intent) && skill.tools.includes("getPrice")) for (const code of plan.codes) await call("getPrice", { code });
         if (["PRICE_OBJECTION", "WHOLESALE_QUERY", "PROMOTION_QUERY"].includes(plan.intent)) await call("getPromotions", { code: plan.codes[0] });
         if (plan.intent === "PRICE_OBJECTION") await call("searchProducts", { query: memory.query || plan.query, budget: plan.budget });
-      } else if (skill.tools.includes("searchProducts") && !["GREETING", "UNKNOWN", "FOLLOW_UP"].includes(plan.intent)) {
-        await call("searchProducts", { query: plan.query || input.text.slice(0, 120), budget: plan.budget });
+      } else if (plan.query && skill.tools.includes("searchProducts") && !["GREETING", "UNKNOWN", "FOLLOW_UP"].includes(plan.intent)) {
+        await call("searchProducts", { query: plan.query, budget: plan.budget });
         if (!products.length && skill.tools.includes("searchKnowledge")) {
           await call("searchKnowledge", { query: plan.query });
           // RAG may identify a product, but its price and stock are always reloaded from the backend.
@@ -94,6 +94,10 @@ export class RockyAIOrchestrator {
     if (plan.intent === "GREETING") reply = "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?";
     else if (requiresHuman) reply = plan.intent === "HUMAN_REQUEST" ? "Claro 😊 Te paso con un asesor para que pueda ayudarte." : "Quiero darte información correcta 😊 Necesito que un asesor verifique esta consulta. Dejo registrada tu solicitud para que te ayude.";
     else if (plan.intent === "SALES_OBJECTION") reply = "Claro, tómate tu tiempo. ¿Qué duda te falta resolver para decidir?";
+    else if (plan.intent === "FOLLOW_UP") reply = memory.awaitingQuantity
+      ? memory.pendingPurchaseQuantity ? "¿Qué producto eliges? Dime el código o una de las opciones." : "¿Cuántas unidades llevas?"
+      : memory.cart ? `Conservamos tu compra. ${checkoutPrompt(memory.cart)}`
+      : memory.productCodes.length === 1 ? "Con gusto 😊 Si deseas comprarlo, dime cuántas unidades necesitas." : "Con gusto 😊 ¿Qué producto te interesa?";
     else if (catalog) reply = catalog.scope === "FULL"
       ? `¡Claro! 😊 Puedes encontrar nuestro catálogo completo en la página web oficial 🛍️\n${catalog.url}\n\nSi me dices qué producto o marca buscas, te ayudo a encontrarlo.`
       : catalog.document
@@ -116,12 +120,18 @@ export class RockyAIOrchestrator {
         : `\n\n${products[0].technicalSpecs?.split(/[;\n]/).slice(0, 3).join(" · ") || "No tengo una ficha técnica verificada para ampliar esos datos."}\n¿Quieres comprarlo?`;
       else if (plan.intent === "PRODUCT_RECOMMENDATION") reply += "\n\n¿Con qué equipo lo usarás y qué característica es indispensable?";
       else if (plan.intent === "WHOLESALE_QUERY") reply += "\n\n¿Continuamos con esta cantidad? Escribe «quiero comprar».";
-      else reply += products.length === 1 ? "\n\n¿Quieres comprarlo?" : "\n\n¿Cuál eliges: el primero, segundo o tercero?";
+      else reply += products.length === 1 ? "\n\n¿Quieres comprarlo?" : products.length === 2 ? "\n\n¿Cuál eliges: el primero o el segundo?" : "\n\n¿Cuál eliges: el primero, segundo o tercero?";
       if (plan.needs.includes("Samsung") && ["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent)) reply += "\nIndícame el modelo de tu Samsung para verificar la compatibilidad antes de elegir.";
     } else if (!["GREETING", "FOLLOW_UP", "UNKNOWN"].includes(plan.intent)) reply = "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?";
-    const sideQuestion = ["BUSINESS_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY", "WARRANTY_QUERY", "CATALOG_REQUEST"].includes(plan.intent);
-    if (!requiresHuman && memory.cart && sideQuestion) reply += `\n\n${checkoutPrompt(memory.cart)}`;
-    const next = memorySchema.parse({ ...memory, intent: plan.intent, productCodes: plan.codes.length ? plan.codes : products.length === 1 ? [products[0].code] : sideQuestion ? memory.productCodes : [], shownCodes: products.length ? products.slice(0, 3).map(p => p.code) : memory.shownCodes,
+    const sideQuestion = ["BUSINESS_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY", "WARRANTY_QUERY", "CATALOG_REQUEST", "GREETING", "FOLLOW_UP", "SALES_OBJECTION"].includes(plan.intent);
+    const resumeCart = !["FOLLOW_UP", "SALES_OBJECTION"].includes(plan.intent) && (sideQuestion || ["PRODUCT_DETAILS", "PRICE_QUERY", "STOCK_QUERY"].includes(plan.intent));
+    if (!requiresHuman && memory.cart && resumeCart) {
+      const nextQuestion = checkoutPrompt(memory.cart);
+      reply = reply.replace(/\n+¿Quieres comprarlo\?$/, "");
+      if (nextQuestion) reply += `\n\n${nextQuestion}`;
+    }
+    const keepOptions = ["PRODUCT_DETAILS", "PRICE_QUERY", "STOCK_QUERY"].includes(plan.intent) && products.every(p => memory.shownCodes.includes(p.code));
+    const next = memorySchema.parse({ ...memory, intent: plan.intent, productCodes: plan.codes.length ? plan.codes : products.length === 1 ? [products[0].code] : sideQuestion ? memory.productCodes : [], shownCodes: products.length && !keepOptions ? products.slice(0, 3).map(p => p.code) : memory.shownCodes,
       query: sideQuestion ? memory.query : plan.query, budget: sideQuestion ? memory.budget : plan.budget, quantity: sideQuestion ? memory.quantity : plan.quantity, needs: sideQuestion ? memory.needs : plan.needs,
       stage: requiresHuman ? "HANDOFF" : memory.cart ? "CLOSING" : plan.intent === "PRICE_OBJECTION" ? "OBJECTION" : plan.intent === "PRODUCT_COMPARISON" ? "COMPARISON" : "QUALIFICATION",
       asked: [...new Set([...memory.asked, ...(reply.includes("presupuesto máximo") ? ["budget"] : []), ...(reply.includes("¿Para qué uso") ? ["useCase"] : [])])].slice(-10),

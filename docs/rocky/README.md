@@ -135,3 +135,7 @@ Barrido completo de fotografías, revisión de códigos y reconocimiento por nom
 ## Actualización del 24/09/2026
 
 El simulador, `/api/admin/conversations/simulate`, `/api/admin/rocky` y `/api/internal/rocky/` usan ahora `rocky-20260924-sales`, PM2 `importadora-rocky-sales`, puerto 4008. Consultar [flujo breve y validación de despliegue](flujo-ventas-breve.md). Las demás rutas conservan los procesos descritos arriba.
+
+Actualización posterior: esas cuatro rutas usan `rocky2-conversations-20260924`, PM2 `importadora-rocky2-conversations`, puerto 4014. Incluye las mejoras de conversación y validación pública de 12 turnos; consultar [pruebas y despliegue de conversaciones](pruebas-conversacion.md). La versión 4008 se conserva para reversión.
+
+Actualización del 25/09: las rutas de Rocky y `/admin/rocky/aprendizaje` usan `rocky2-learning-20260925`, PM2 `importadora-rocky2-learning`, puerto 4015. Incluye correcciones derivadas de la auditoría y revisión de ejemplos por un administrador. Ver [aprendizaje revisado y despliegue](aprendizaje-revisado.md). La versión 4014 sigue disponible; el proceso 4008 fue detenido por no recibir tráfico.

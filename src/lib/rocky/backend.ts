@@ -1,7 +1,6 @@
 import { generateRequestedCatalogPdf } from "../catalog-pdf";
 import { buildPublicUrl } from "../site-url";
 import { matchesRequestedModel } from "./model-match";
-import { businessQuestion } from "../business-question";
 import { prisma } from "@/lib/prisma";
 import { searchInternalProducts } from "@/lib/internal-product-search";
 import type { ProductFact } from "./contracts";
@@ -10,12 +9,13 @@ import type { ToolBackend } from "./tools";
 import { loadCommercialCatalog } from "@/lib/commercial-catalog";
 import { expandInitialVocabulary } from "./vocabulary";
 import { getPreferredProductImageUrl } from "../product-media";
+import { catalogSubject, productSubject, businessTopics } from "./query-language";
 
 export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?: boolean } = {}): ToolBackend {
   return {
     async catalog(query) {
       const snapshot = await loadCommercialCatalog();
-      const selection = snapshot.search(query, false);
+      const selection = snapshot.search(catalogSubject(query), false);
       if (!selection.scoped) return { scope: "FULL", label: "catálogo completo", url: buildPublicUrl("/?view=all"), count: snapshot.products.length };
       const params = new URLSearchParams({ view: "all" });
       if (selection.categories.length === 1) params.set("category", selection.categories[0]);
@@ -26,21 +26,23 @@ export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?
       const url = buildPublicUrl(`/?${params}`);
       if (options.catalogPdf === false) return { scope: "FILTERED", label: selection.label, url, count: selection.products.length, reason: "WEB_CATALOG" };
       try {
-        const generated = await generateRequestedCatalogPdf(query, false, snapshot, selection);
+        const generated = await generateRequestedCatalogPdf(catalogSubject(query), false, snapshot, selection);
         return { scope: "FILTERED", label: selection.label, url, count: generated.catalog?.productCount || 0,
           ...(generated.catalog ? { document: { url: generated.catalog.absoluteUrl, name: `Catálogo de ${selection.label}.pdf` } } : { reason: "NO_AVAILABLE_CATALOG_IMAGES" }) };
       } catch { return { scope: "FILTERED", label: selection.label, url, count: 0, reason: "PDF_UNAVAILABLE" }; }
     },
     async business(query) {
       const settings = await prisma.storeSettings.findUnique({ where: { id: 1 }, select: { supportHours: true, storeAddress: true } });
-      const hours = businessQuestion(query) === "HOURS";
-      const field = hours ? "supportHours" : "storeAddress";
-      const value = settings?.[field]?.trim();
-      if (!value) return [];
-      return [{ id: `StoreSettings:1:${field}`, sourceId: `StoreSettings:${field}`, sourceType: "BUSINESS", productId: null, score: 1,
-        title: "Configuración publicada de la tienda", text: hours ? `Nuestro horario de atención es: ${value}. Es el horario general publicado; los cambios por feriados o excepciones requieren confirmación.` : `Nuestra dirección es: ${value}.` }];
+      const topics = businessTopics(query);
+      const fields = [topics.hours ? "supportHours" : null, topics.address ? "storeAddress" : null].filter((field): field is "supportHours" | "storeAddress" => field !== null);
+      return fields.flatMap(field => {
+        const value = settings?.[field]?.trim();
+        return value ? [{ id: `StoreSettings:1:${field}`, sourceId: `StoreSettings:${field}`, sourceType: "BUSINESS", productId: null, score: 1,
+          title: "Configuración publicada de la tienda", text: field === "supportHours" ? `Nuestro horario de atención es: ${value}. Es el horario general publicado; los cambios por feriados o excepciones requieren confirmación.` : `Nuestra dirección es: ${value}.` }] : [];
+      });
     },
     async search(query, budget) {
+      if (!productSubject(query)) return [];
       query = expandInitialVocabulary(query);
       const aliases = await prisma.rockySynonym.findMany({ where: { phrase: { equals: query, mode: "insensitive" }, status: "APPROVED" }, take: 3 });
       const candidates = (await searchInternalProducts({ query, limit: 8 })).filter(p => matchesRequestedModel(query, p));

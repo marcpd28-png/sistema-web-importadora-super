@@ -31,13 +31,20 @@ try {
   let data = await send('quiero comprar 2 unidades');
   assert.equal(data.rocky.memory.cart.stage, 'NAME');
   const total = data.rocky.memory.cart.total;
+  for (const content of ['gracias', 'un momento', 'confirmar pedido']) {
+    data = await send(content);
+    assert.equal(data.rocky.memory.cart.stage, 'NAME');
+    assert.equal(data.rocky.memory.cart.name, undefined);
+    assert.match(data.rocky.reply, /nombre/);
+  }
   data = await send('¿Cuál es su horario?');
   assert.equal(data.rocky.memory.cart.stage, 'NAME');
   assert.match(data.rocky.reply, /nombre/);
-  for (const [content, stage] of [['Cliente Prueba', 'DOCUMENT'], ['boleta 12345678', 'DELIVERY'], ['recojo', 'CONFIRM'], ['confirmar pedido', 'PAYMENT'], ['Yape', 'VOUCHER']]) {
+  for (const [content, stage] of [['me llamo Cliente Prueba', 'DOCUMENT'], ['boleta 12345678', 'DELIVERY'], ['recojo', 'CONFIRM'], ['confirmar pedido', 'PAYMENT'], ['Yape', 'VOUCHER']]) {
     data = await send(content);
     assert.equal(data.rocky.memory.cart.stage, stage);
     assert.equal(data.rocky.memory.cart.total, total);
+    assert.equal(data.rocky.memory.cart.name, 'Cliente Prueba');
   }
   const reference = data.rocky.memory.cart.orderNumber;
   assert.match(reference, /^SIM-CART-/);

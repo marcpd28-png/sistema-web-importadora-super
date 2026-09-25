@@ -7,6 +7,7 @@ export type RockyMode = z.infer<typeof modeSchema>;
 export const memorySchema = z.object({
   cart: multiCartSchema.optional(),
   awaitingQuantity: z.boolean().default(false),
+  pendingPurchaseQuantity: z.number().int().positive().max(100000).optional(),
   version: z.literal(1).default(1), intent: z.enum(intents).default("UNKNOWN"),
   productCodes: z.array(z.string().max(64)).max(6).default([]),
   shownCodes: z.array(z.string().max(64)).max(8).default([]),

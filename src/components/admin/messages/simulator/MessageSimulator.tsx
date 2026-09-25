@@ -289,6 +289,7 @@ export function MessageSimulator() {
               const response = await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "feedback", runId: rocky.rockyRequestId, humanResponse: feedback }) });
               setNotice(response.ok ? "Corrección guardada para revisión humana." : "No se pudo guardar la corrección.");
             }}>Guardar corrección</button>
+            <p><a href="/admin/rocky/aprendizaje">Revisar correcciones de Rocky</a></p>
           </details>
         </div>}
       </aside>
