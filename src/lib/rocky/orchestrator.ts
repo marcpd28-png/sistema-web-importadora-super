@@ -1,6 +1,6 @@
 import { matchesRequestedModel } from "./model-match";
 import { randomUUID } from "node:crypto";
-import { memorySchema, type LLMProvider, type ProductFact, type RockyMemory, type RockyResult } from "./contracts";
+import { memorySchema, planSchema, type LLMProvider, type ProductFact, type RockyMemory, type RockyResult } from "./contracts";
 import { detectPlan, SYSTEM_PROMPT } from "./planning";
 import { selectSkill } from "./skills";
 import { ToolExecutor, type ToolBackend, type ToolName } from "./tools";
@@ -26,18 +26,23 @@ export class RockyAIOrchestrator {
     let reasonCode: string | null = null;
     // High risk requests are decided before consulting the model.
     const exactToolRequest = plan.codes.length > 0 && ["STOCK_QUERY", "PRICE_QUERY", "PRODUCT_COMPARISON", "WHOLESALE_QUERY", "PRODUCT_DETAILS"].includes(plan.intent);
-    if (this.provider && !exactToolRequest && (plan.intent === "UNKNOWN" || Boolean(input.image)) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "BUSINESS_QUERY"].includes(plan.intent)) {
+    if (this.provider && !exactToolRequest && (plan.intent === "UNKNOWN" || Boolean(input.image)) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS", "BUSINESS_QUERY"].includes(plan.intent)) {
       try {
+        // Optional retrieval must not prevent deterministic handling or model fallback.
+        const reviewedExamples = await this.backend.reviewedExamples?.(input.text).catch(() => []) || [];
         const generated = await this.provider.plan([
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify({ memory: { productCodes: memory.productCodes, query: memory.query, quantity: memory.quantity, needs: memory.needs }, history: memory.cart ? [] : input.history?.slice(-4).map(s => s.slice(0, 700)), message: input.text }), ...(input.image ? { images: [input.image] } : {}) },
+          { role: "user", content: JSON.stringify({ memory: { productCodes: memory.productCodes, query: memory.query, quantity: memory.quantity, needs: memory.needs }, history: memory.cart ? [] : input.history?.slice(-4).map(s => s.slice(0, 700)), reviewedExamples, message: input.text }), ...(input.image ? { images: [input.image] } : {}) },
         ]);
         tokens = generated.tokens; model = this.provider.model;
         // An uncertain model cannot override safety or explicit deterministic product/budget extraction.
-        const proposed = generated.plan;
+        const proposed = planSchema.parse(generated.plan);
+        // A planner cannot erase an explicit model/version, even when its JSON is valid.
+        const anchors = plan.query.match(/\b[A-Za-z]*\d+[A-Za-z0-9-]*\b/g) || [];
+        if (anchors.some(anchor => !proposed.query.toLowerCase().includes(anchor.toLowerCase()))) proposed.query = plan.query;
         plan = { ...plan, ...(plan.intent === "UNKNOWN" ? { intent: proposed.intent, query: proposed.query } : {}),
           ...((["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION", "CATALOG_REQUEST"].includes(plan.intent) || input.image && ["PRICE_QUERY", "STOCK_QUERY", "PRODUCT_DETAILS", "WHOLESALE_QUERY"].includes(plan.intent)) && proposed.query.trim() ? { query: proposed.query.replace(/\b\d+(?:\.\d+)?\s*(?:soles|PEN)\b/gi, "").trim() } : {}),
-          codes: plan.codes.length ? plan.codes : proposed.codes.filter(code => input.text.toUpperCase().includes(code.toUpperCase()) || memory.productCodes.includes(code)) };
+          codes: plan.codes.length ? plan.codes : proposed.codes.filter(code => new RegExp(`(?:^|[^A-Z0-9-])${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=$|[^A-Z0-9-])`, "i").test(input.text)) };
       } catch { reasonCode = "MODEL_UNAVAILABLE_OR_INVALID"; model = "deterministic-safe-fallback"; }
     }
     const skill = selectSkill(plan.intent);

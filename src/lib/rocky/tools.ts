@@ -4,6 +4,7 @@ import type { CatalogDelivery, KnowledgeHit, ProductFact, ToolCall } from "./con
 export const toolNames = ["getCatalog", "getBusinessInfo", "searchProducts", "getProduct", "getProductByCode", "getStock", "getPrice", "getPromotions", "compareProducts", "checkCompatibility", "getCategories", "getCustomer", "getCustomerOrders", "getOrderStatus", "createCart", "createCheckout", "searchKnowledge", "sendProduct", "sendImage", "sendCatalog", "handoffToHuman", "runWorkflow"] as const;
 export type ToolName = typeof toolNames[number];
 export interface ToolBackend {
+  reviewedExamples?(query: string): Promise<import("./reviewed-examples").ReviewedExample[]>;
   catalog?(query: string): Promise<CatalogDelivery>;
   business?(query: string): Promise<KnowledgeHit[]>;
   search(query: string, budget?: number | null): Promise<ProductFact[]>;

@@ -10,9 +10,18 @@ import { loadCommercialCatalog } from "@/lib/commercial-catalog";
 import { expandInitialVocabulary } from "./vocabulary";
 import { getPreferredProductImageUrl } from "../product-media";
 import { catalogSubject, productSubject, businessTopics } from "./query-language";
+import { PLANNING_APPROVAL, selectReviewedExamples } from "./reviewed-examples";
 
 export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?: boolean } = {}): ToolBackend {
   return {
+    async reviewedExamples(query) {
+      const rows = await prisma.rockyFeedback.findMany({ where: { status: PLANNING_APPROVAL }, orderBy: { createdAt: "desc" }, take: 200,
+        select: { status: true, outcome: true, run: { select: { triggerMessageId: true } } } });
+      if (!rows.length) return [];
+      const messages = await prisma.chatMessage.findMany({ where: { id: { in: rows.map(row => row.run.triggerMessageId) } }, select: { id: true, content: true } });
+      const questions = new Map(messages.map(row => [row.id, row.content]));
+      return selectReviewedExamples(query, rows.map(row => ({ ...row, question: questions.get(row.run.triggerMessageId) || "" })));
+    },
     async catalog(query) {
       const snapshot = await loadCommercialCatalog();
       const selection = snapshot.search(catalogSubject(query), false);

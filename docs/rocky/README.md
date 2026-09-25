@@ -139,3 +139,5 @@ El simulador, `/api/admin/conversations/simulate`, `/api/admin/rocky` y `/api/in
 Actualización posterior: esas cuatro rutas usan `rocky2-conversations-20260924`, PM2 `importadora-rocky2-conversations`, puerto 4014. Incluye las mejoras de conversación y validación pública de 12 turnos; consultar [pruebas y despliegue de conversaciones](pruebas-conversacion.md). La versión 4008 se conserva para reversión.
 
 Actualización del 25/09: las rutas de Rocky y `/admin/rocky/aprendizaje` usan `rocky2-learning-20260925`, PM2 `importadora-rocky2-learning`, puerto 4015. Incluye correcciones derivadas de la auditoría y revisión de ejemplos por un administrador. Ver [aprendizaje revisado y despliegue](aprendizaje-revisado.md). La versión 4014 sigue disponible; el proceso 4008 fue detenido por no recibir tráfico.
+
+Actualización posterior del 25/09: las cinco rutas usan `rocky2-precision-20260925`, PM2 `importadora-rocky2-precision`, puerto 4016. Incorpora instrucciones reforzadas, validación del plan y ejemplos de intención activados expresamente por administrador. Ver [precisión y evaluación](precision-respuestas.md). Se conserva 4015 para reversión.

@@ -7,6 +7,7 @@ const base=process.env.ROCKY_TEST_BASE || 'http://127.0.0.1:4015';
 if(!process.argv.includes('--execute') || !['127.0.0.1','tiendavirtualsuper.com'].includes(new URL(base).hostname)) throw Error('SIMULATOR_ONLY');
 const url=new URL(process.env.DATABASE_URL);url.searchParams.set('connection_limit','1');
 const db=new PrismaClient({datasourceUrl:url.toString()});
+let ownFeedbackId;
 try {
  const admin=await db.user.findFirst({where:{role:'ADMIN'},select:{id:true,email:true,name:true}});
  assert.ok(admin && process.env.AUTH_SECRET);
@@ -27,15 +28,29 @@ try {
   }
  }
  const correction=await fetch(base+'/api/admin/rocky',{method:'POST',headers,body:JSON.stringify({action:'feedback',runId:last.rockyRequestId,humanResponse:'Ejemplo técnico de revisión. Descartar: no es una política comercial.'})});
- assert.equal(correction.status,200);const feedback=await correction.json();
+ assert.equal(correction.status,200);const feedback=await correction.json();ownFeedbackId=feedback.id;
  const page=await fetch(base+'/admin/rocky/aprendizaje',{headers:{cookie}});assert.equal(page.status,200);
  const html=await page.text();assert.ok(html.includes('Mejorar las respuestas de Rocky'),`Page ${page.url}: ${html.match(/<title>(.*?)<\/title>/)?.[1]}, password=${html.includes('contraseña')}, headings=${JSON.stringify([...html.matchAll(/<h[12][^>]*>([^<]*)<\/h[12]>/g)].map(m=>m[1]))}`);
  const reviewForm=[...html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)].map(m=>m[0]).find(form=>form.includes(`value="${feedback.id}"`));
  assert.ok(reviewForm,'Test feedback not present in review queue');
  const action=reviewForm.match(/name="(\$ACTION_ID_[^"]+)"/);assert.ok(action,'Server action missing');
- const form=new FormData();form.set(action[1],'');form.set('id',feedback.id);form.set('status','REJECTED');
+ const form=new FormData();form.set(action[1],'');form.set('id',feedback.id);form.set('status','APPROVED_FOR_EVALUATION');
  const review=await fetch(base+'/admin/rocky/aprendizaje',{method:'POST',headers:{cookie,origin:base},body:form});assert.ok(review.ok);
+ assert.equal((await db.rockyFeedback.findUnique({where:{id:feedback.id}})).status,'APPROVED_FOR_EVALUATION');
+ async function submitOwnExample(expectedStatus,fields={}) {
+  const response=await fetch(base+'/admin/rocky/aprendizaje',{headers:{cookie}});assert.ok(response.ok);
+  const html=await response.text();const ownForm=[...html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)].map(m=>m[0]).find(f=>f.includes(`value="${feedback.id}"`));assert.ok(ownForm);
+  const action=ownForm.match(/name="(\$ACTION_ID_[^"]+)"/);assert.ok(action);
+  const body=new FormData();body.set(action[1],'');body.set('id',feedback.id);for(const [key,value] of Object.entries(fields))body.set(key,value);
+  assert.ok((await fetch(base+'/admin/rocky/aprendizaje',{method:'POST',headers:{cookie,origin:base},body})).ok);
+  assert.equal((await db.rockyFeedback.findUnique({where:{id:feedback.id}})).status,expectedStatus);
+ }
+ await submitOwnExample('APPROVED_FOR_PLANNING',{intent:'BUSINESS_QUERY'});
+ assert.equal((await db.rockyFeedback.findUnique({where:{id:feedback.id}})).outcome,'PLANNER:BUSINESS_QUERY');
+ await submitOwnExample('APPROVED_FOR_EVALUATION');
+ form.set('status','REJECTED');
+ assert.ok((await fetch(base+'/admin/rocky/aprendizaje',{method:'POST',headers:{cookie,origin:base},body:form})).ok);
  assert.equal((await db.rockyFeedback.findUnique({where:{id:feedback.id}})).status,'REJECTED');
  const unauth=await fetch(base+'/admin/rocky/aprendizaje',{redirect:'manual'});assert.ok([302,303,307,308,401].includes(unauth.status));
- console.log(JSON.stringify({ok:true,base,turns,bothBusinessFields:true,catalogFixed:true,noUnrelatedCable:true,feedbackReview:true,unauthenticatedPage:unauth.status}));
-} finally {await db.$disconnect()}
+ console.log(JSON.stringify({ok:true,base,turns,bothBusinessFields:true,catalogFixed:true,noUnrelatedCable:true,feedbackReview:true,activateAndRevokeExample:true,unauthenticatedPage:unauth.status}));
+} finally {if(ownFeedbackId)await db.rockyFeedback.updateMany({where:{id:ownFeedbackId},data:{status:'REJECTED',outcome:null}});await db.$disconnect()}
