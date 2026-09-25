@@ -10,7 +10,7 @@ export default function PoliticaPrivacidad() {
   return (
     <div className="legal-document">
       <h1 style={{ fontSize: "2rem", fontWeight: 800, color: "#0f172a", marginBottom: "8px" }}>POLÍTICA DE PRIVACIDAD</h1>
-      <p style={{ color: "#64748b", marginBottom: "16px", fontSize: "0.95rem" }}>Última actualización: 12 de septiembre de 2026</p>
+      <p style={{ color: "#64748b", marginBottom: "16px", fontSize: "0.95rem" }}>Última actualización: 24 de septiembre de 2026</p>
 
       <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "8px", border: "1px solid #e2e8f0", marginBottom: "32px", fontSize: "0.95rem" }}>
         <p style={{ margin: 0 }}><strong>Contacto de Privacidad:</strong> <a href="mailto:importacionessupersac@gmail.com" style={{ color: "#2320da", textDecoration: "underline" }}>importacionessupersac@gmail.com</a></p>
@@ -21,7 +21,7 @@ export default function PoliticaPrivacidad() {
         <p>
           <strong>Importaciones Sam Sac</strong> es la empresa responsable del tratamiento de los datos personales 
           utilizados para prestar los servicios asociados a la plataforma y tienda online <strong>Importaciones Super</strong> (accesible a través de <a href="https://tiendavirtualsuper.com" target="_blank" rel="noreferrer" style={{ color: "#2320da", textDecoration: "underline" }}>https://tiendavirtualsuper.com</a>). 
-          Esta política aplica a los datos recabados en el sitio web, así como a la información tratada a través de nuestros canales de atención por WhatsApp Business y la aplicación integrada de Meta ("importaciones super api").
+          Esta política aplica a los datos recabados en el sitio web, así como a la información tratada a través de nuestros canales de atención por WhatsApp Business y la aplicación integrada de Meta (&quot;importaciones super api&quot;).
         </p>
       </section>
 
@@ -143,9 +143,28 @@ export default function PoliticaPrivacidad() {
       </section>
 
       <section style={{ marginBottom: "32px" }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "32px", marginBottom: "16px" }}>ANALÍTICA OPCIONAL DE NAVEGACIÓN</h2>
+        <p>Con su aceptación, nuestra tienda también conserva durante aproximadamente 90 días eventos de
+          navegación: productos consultados, búsquedas, acciones del carrito, cotizaciones confirmadas y
+          clics de contacto. Usamos un identificador de sesión que se renueva tras 30 minutos de inactividad,
+          el canal de origen y el tamaño de pantalla. No copiamos mensajes del chat ni datos de formularios
+          a estos eventos. Filtramos búsquedas con patrones de teléfonos, correos y otros datos sensibles;
+          evite introducir datos personales en el buscador.</p>
+        <p>Cuando la analítica está habilitada y usted la acepta, utilizamos Microsoft Clarity
+          para medir visitas, páginas consultadas, clics y desplazamientos, y generar mapas de calor
+          y grabaciones de navegación. Microsoft procesa estos datos para proporcionar los informes.
+          El texto del documento se oculta en las grabaciones. La herramienta también procesa información
+          técnica, como las URL visitadas y características del dispositivo.</p>
+        <p>Puede aceptar o rechazar la analítica sin afectar sus compras y cambiar su elección
+          desde «Privacidad y cookies» en el catálogo. El rastreador se carga solo después de aceptar;
+          se autoriza el almacenamiento de analítica y se mantiene denegado el de publicidad.</p>
+        <p>Más información en la <a href="https://privacy.microsoft.com/es-es/privacystatement" target="_blank" rel="noopener noreferrer">declaración de privacidad de Microsoft</a>.</p>
+      </section>
+
+      <section style={{ marginBottom: "32px" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "32px", marginBottom: "16px" }}>K. CAMBIOS EN ESTA POLÍTICA</h2>
         <p>
-          Nos reservamos el derecho de actualizar, modificar o enmendar esta Política de Privacidad en cualquier momento para reflejar cambios en nuestras prácticas operativas o exigencias legales. La versión más reciente y vigente siempre estará disponible en esta página, indicando la fecha de la "Última actualización" en la parte superior.
+          Nos reservamos el derecho de actualizar, modificar o enmendar esta Política de Privacidad en cualquier momento para reflejar cambios en nuestras prácticas operativas o exigencias legales. La versión más reciente y vigente siempre estará disponible en esta página, indicando la fecha de la &quot;Última actualización&quot; en la parte superior.
         </p>
       </section>
     </div>

@@ -9,6 +9,7 @@ import { getCatalogPageData } from "@/lib/store";
 import { getCatalogSearchDestination } from "@/lib/store";
 import type { CatalogProduct } from "@/lib/store";
 import { CatalogExperience } from "@/components/catalog/catalog-experience";
+import { SearchResultAnalytics } from "@/components/catalog/search-result-analytics";
 import { HeroCarousel } from "@/components/catalog/hero-carousel";
 import { HeroBannerCarousel } from "@/components/catalog/hero-banner-carousel";
 import { HeroProductCarousel } from "@/components/catalog/hero-product-carousel";
@@ -292,6 +293,7 @@ export default async function Home({ searchParams }: HomeProps) {
         {normalizedCollection === "mas-vendidos" ? <p className="storefront-campaign-description">{data.salesSummary.hasRealSales ? (data.salesSummary.hasDatedSales ? "Ordenados por unidades vendidas en los últimos 15 días." : "Ordenados por unidades vendidas acumuladas en el ERP.") : "El ranking de ventas no está disponible en este momento. Puedes explorar las categorías."}</p> : null}
       </>}
       <section className={`catalog-experience-shell${isSectionedView ? " catalog-experience-shell-home" : ""}`} id="catalogo">
+        <SearchResultAnalytics query={resolvedQuery || ""} resultCount={data.totalResults} />
         <CatalogExperience
           bestSellerProducts={data.bestSellerProducts}
           catalogTitle={catalogTitle}

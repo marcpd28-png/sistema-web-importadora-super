@@ -64,6 +64,7 @@ const sections: AdminNavSection[] = [
   {
     title: "Ventas y Marketing",
     links: [
+      { href: "/admin/analitica", label: "Visitas y mapas de calor", icon: ChartNoAxesCombined },
       { href: "/admin/orders", label: "Órdenes / Pagos", icon: ShoppingBag, badgeKey: "pendingOrdersCount" },
       { href: "/admin/quotes", label: "Cotizaciones", icon: FileText, badgeKey: "pendingQuotesCount" },
       { href: "/admin/cupones", label: "Cupones de Descuento", icon: Tag },

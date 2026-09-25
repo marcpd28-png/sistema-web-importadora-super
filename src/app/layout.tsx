@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { getPublicSiteUrl } from "@/lib/site-url";
+import { StoreAnalytics } from "@/components/catalog/store-analytics";
+import { getClarityProjectId } from "@/lib/clarity";
 import "./globals.css";
 import "./storefront-responsive.css";
 import "./storefront-discovery.css";
@@ -47,13 +49,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${displayFont.variable} ${bodyFont.variable}`}>
-      <body>
+      <body data-clarity-mask="true">
         <script
           dangerouslySetInnerHTML={{
             __html: `if (localStorage.getItem("admin-sidebar-collapsed") === "true") { document.body.classList.add("admin-sidebar-collapsed"); }`
           }}
         />
         {children}
+        <StoreAnalytics projectId={getClarityProjectId(process.env.CLARITY_PROJECT_ID)} />
       </body>
     </html>
   );

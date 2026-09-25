@@ -6,6 +6,8 @@ import { CircleX, ImageIcon, Minus, Plus, ShoppingCart, ZoomIn } from "lucide-re
 import { CartStoreBootstrap } from "@/components/catalog/cart-store-bootstrap";
 import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "@/components/catalog/cart-store";
 import { trackAddToCart, trackViewItem } from "@/lib/analytics";
+import { storeAnalyticsAllowed } from "@/lib/store-analytics-client";
+import { analyticsConsentEvent } from "@/lib/store-analytics-contract";
 import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogProduct, ProductMediaView, StoreSettingsView } from "@/lib/store";
@@ -152,7 +154,11 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
   const hasSavings = wholesaleApplies && wholesaleSavings > 0;
 
   useEffect(() => {
-    trackViewItem({
+    let sent = false;
+    const send = () => {
+      if (sent || !storeAnalyticsAllowed()) return;
+      sent = true;
+      trackViewItem({
       item_id: product.code,
       item_name: displayName,
       item_brand: product.brand ?? undefined,
@@ -160,6 +166,10 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
       price: product.unitPrice,
       quantity: 1,
     });
+    };
+    const later = () => { window.setTimeout(send, 0); };
+    later(); window.addEventListener(analyticsConsentEvent, later);
+    return () => window.removeEventListener(analyticsConsentEvent, later);
   }, [displayName, product.brand, product.category, product.code, product.unitPrice]);
 
   useEffect(() => {

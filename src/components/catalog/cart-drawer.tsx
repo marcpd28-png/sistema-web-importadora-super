@@ -20,6 +20,7 @@ import {
 import { CulqiCheckout } from "@/components/catalog/culqi-checkout";
 import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
 import { rehydrateCartStore } from "@/components/catalog/cart-store";
+import { trackStoreEvent } from "@/lib/store-analytics-client";
 import { trackBeginCheckout } from "@/lib/analytics";
 import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getLinePricing } from "@/lib/pricing";
@@ -864,6 +865,7 @@ export function CartDrawer({
       let payload: {
         message?: string;
         quoteNumber?: string | null;
+        localQuoteId?: string;
         statusSteps?: QuoteStatusStep[];
         whatsappHref?: string | null;
       } = {};
@@ -883,6 +885,7 @@ export function CartDrawer({
       }
 
       setQuoteState("success");
+      if (payload.localQuoteId) trackStoreEvent("quote_created", { quoteId: payload.localQuoteId });
       setQuoteMessage(payload.message ?? "Cotización enviada correctamente.");
       setQuoteMessageTone("success");
       setQuoteStatusSteps(payload.statusSteps ?? []);
@@ -890,6 +893,7 @@ export function CartDrawer({
       setQuoteFormOpen(true);
     } catch (error) {
       setQuoteState("error");
+      trackStoreEvent("checkout_error");
       setQuoteMessage(
         error instanceof Error ? error.message : "No se pudo enviar la cotización.",
       );

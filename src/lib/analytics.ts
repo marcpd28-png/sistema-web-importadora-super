@@ -1,3 +1,6 @@
+import { trackClarityEvent } from "./clarity";
+import { trackStoreEvent } from "./store-analytics-client";
+
 export type AnalyticsItem = {
   item_id: string;
   item_name: string;
@@ -29,9 +32,11 @@ function pushDataLayer(event: DataLayerEvent) {
   }
 
   window.dataLayer?.push(event);
+  if (typeof event.event === "string") trackClarityEvent(event.event);
 }
 
 export const trackViewItem = (item: AnalyticsItem) => {
+  trackStoreEvent("view_item", { productCode: item.item_id });
   pushDataLayer({
     event: "view_item",
     ecommerce: {
@@ -43,6 +48,7 @@ export const trackViewItem = (item: AnalyticsItem) => {
 };
 
 export const trackAddToCart = (item: AnalyticsItem) => {
+  trackStoreEvent("add_to_cart", { productCode: item.item_id });
   pushDataLayer({
     event: "add_to_cart",
     ecommerce: {
@@ -54,6 +60,7 @@ export const trackAddToCart = (item: AnalyticsItem) => {
 };
 
 export const trackBeginCheckout = (items: AnalyticsItem[], value: number) => {
+  trackStoreEvent("begin_checkout");
   pushDataLayer({
     event: "begin_checkout",
     ecommerce: {
@@ -78,6 +85,7 @@ export const trackPurchase = (payload: PurchasePayload) => {
 };
 
 export const trackSearch = (searchTerm: string) => {
+  trackStoreEvent("search", { searchTerm });
   pushDataLayer({
     event: "search",
     search_term: searchTerm,

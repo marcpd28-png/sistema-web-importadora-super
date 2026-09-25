@@ -47,6 +47,12 @@ FACTURADOR_MAX_RETRIES="5"
 FACTURADOR_RETRY_DELAY_MS="5000"
 ```
 
+## Analítica de visitantes
+
+Integración opcional de Microsoft Clarity para visitas, mapas de calor y grabaciones.
+Configura `CLARITY_PROJECT_ID` y consulta [la guía de activación](docs/analitica.md).
+«Visitas y mapas de calor» muestra sesiones, búsquedas, productos, carritos, cotizaciones y contactos con consentimiento. Sin ID no se carga Clarity; la medición propia sigue disponible.
+
 ## Arranque local
 
 1. Instala dependencias:

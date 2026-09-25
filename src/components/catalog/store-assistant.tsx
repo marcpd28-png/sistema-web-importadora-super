@@ -1,4 +1,5 @@
 "use client";
+import { trackStoreEvent } from "@/lib/store-analytics-client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -50,6 +51,7 @@ function ProductActions({ product }: { product: ShopAssistantProductCard }) {
         updatedAt: new Date().toISOString(), hasPhoto: Boolean(product.imageUrl), technicalSpecs: product.technicalSpecs || null,
       }, "unit", Math.min(quantity, available));
       const after = useCartStore.getState().items.find(item => item.key === `${product.id}:unit`)?.quantity || 0;
+      if (after > before) trackStoreEvent("add_to_cart", { productCode: product.code });
       setAdded(Math.max(0, after - before));
     } finally { busy.current = false; setAdding(false); }
   }
@@ -111,6 +113,7 @@ export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt
 
   useEffect(() => {
     if (!open) return;
+    trackStoreEvent("assistant_open");
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -124,6 +127,7 @@ export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt
   const send = useCallback(async (text: string, retry = false) => {
     const clean = text.trim();
     if (!clean || !ready || active.current) return;
+    trackStoreEvent("assistant_message");
     const controller = new AbortController();
     active.current = controller;
     const requestSession = session.current;

@@ -805,6 +805,25 @@ model OrderReview {
   @@index([orderId, createdAt])
 }
 
+// Anonymous, consented storefront activity. No customer identity or message contents.
+model StoreAnalyticsEvent {
+  id String @id @db.Uuid
+  sessionId String @db.Uuid
+  name String @db.VarChar(32)
+  page String @db.VarChar(16)
+  source String @db.VarChar(20)
+  device String @db.VarChar(16)
+  productCode String? @db.VarChar(64)
+  searchTerm String? @db.VarChar(80)
+  resultCount Int?
+  quoteId String? @unique @db.VarChar(191)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt, name])
+  @@index([sessionId, createdAt])
+  @@index([productCode, createdAt])
+}
+
 model OrderItem {
   id         String   @id @default(cuid())
   orderId    String
