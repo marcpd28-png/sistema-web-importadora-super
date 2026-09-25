@@ -8,7 +8,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
   const knownCodes = [...new Set([...memory.productCodes, ...memory.shownCodes])].filter(code =>
     new RegExp(`(?:^|[^A-Z0-9-])${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=$|[^A-Z0-9-])`, "i").test(text));
   if (knownCodes.length) codes = [...knownCodes, ...codes.filter(code => !knownCodes.some(known => known.toUpperCase() === code || known.toUpperCase().startsWith(`${code}-`)))].slice(0, 6);
-  const ordinal = t.match(/^(?:el|la) (primero|primera|segundo|segunda|tercero|tercera)[.! ]*$/);
+  const ordinal = t.match(/\b(?:el|la|del) (primero|primera|segundo|segunda|tercero|tercera)\b/);
   if (ordinal) {
     const index = Math.floor(["primero", "primera", "segundo", "segunda", "tercero", "tercera"].indexOf(ordinal[1]) / 2);
     if (memory.shownCodes[index]) codes = [memory.shownCodes[index]];
@@ -26,7 +26,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
     ["DELIVERY_QUERY", /delivery|envio|entrega|envian/], ["PAYMENT_QUERY", /pago|pagar|cuenta bancaria|yape|plin/],
     ["STOCK_QUERY", /stock|disponible|disponibilidad/], ["PROMOTION_QUERY", /promocion|descuento|oferta/],
     ["WHOLESALE_QUERY", /mayorista|al por mayor/], ["PRICE_QUERY", /precio|cuanto cuesta|cuanto sale/],
-    ["CATALOG_REQUEST", /catalogo/], ["PRODUCT_DETAILS", /caracteristicas|ficha|detalle|especificaciones|\bfotos?\b|\bimagenes?\b/],
+    ["CATALOG_REQUEST", /catalogo/], ["PRODUCT_DETAILS", /caracteristicas|ficha|detalle|informacion|especificaciones|\bfotos?\b|\bimagenes?\b/],
     ["PRODUCT_RECOMMENDATION", /recomienda|que me sugieres/], ["SALES_OBJECTION", /no estoy seguro|lo voy a pensar/],
     ["GREETING", /^(?:hola(?: buenas(?: tardes| noches)?| buenos dias| buen dia)?|buenas|buen dia|buenos dias|buenas tardes|buenas noches)[!. ]*$/],
     ["PRODUCT_SEARCH", /quiero|busco|necesito|tienes|tienen|cargador|arrancador|booster/],
@@ -41,8 +41,11 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
   const follow = ["PRICE_OBJECTION", "WHOLESALE_QUERY", "FOLLOW_UP", "STOCK_QUERY", "PRICE_QUERY", "PRODUCT_COMPARISON", "PRODUCT_DETAILS", "PRODUCT_COMPATIBILITY", "WARRANTY_QUERY"].includes(intent);
   const query = text.replace(/(?:quiero|necesito|llevo|deseo)\s+\d+\s*(?:unidades|uds|piezas)\b/gi, " ").replace(/(?:máximo|maximo|hasta|presupuesto(?: de)?)\s*\d+(?:\.\d+)?\s*(?:soles)?/gi, "").replace(/\b(?:hola|quiero|un|una|para|tienes|tienen|busco|necesito|disponibles?|stock)\b/gi, " ").replace(/[¿?!,]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
   const subject = productSubject(query);
-  const usePrevious = follow && !codes.length && (!subject || ["PRICE_OBJECTION", "WHOLESALE_QUERY", "FOLLOW_UP", "PRODUCT_COMPARISON", "WARRANTY_QUERY"].includes(intent));
-  return { intent, codes: codes.length ? codes : usePrevious ? memory.productCodes : [], query: usePrevious ? memory.query : subject,
+  const another = /\b(?:el otro|del otro|la otra|los otros|las otras)\b/.test(t) && !subject;
+  const usePrevious = !another && !ordinal && (follow || intent === "PRODUCT_SEARCH" && !subject) && !codes.length && (!subject || ["PRICE_OBJECTION", "WHOLESALE_QUERY", "FOLLOW_UP", "PRODUCT_COMPARISON", "WARRANTY_QUERY"].includes(intent));
+  // A list of options is not a selected product. Never repeat a broad inventory search for "ese".
+  const referenceCodes = usePrevious ? memory.productCodes : [];
+  return { intent, codes: codes.length ? codes : referenceCodes, query: ordinal && !codes.length || another ? "" : usePrevious ? referenceCodes.length === 1 ? memory.query : "" : subject,
     budget: budget ? Number(budget[1]) : follow ? memory.budget : null,
     quantity: quantity ? Math.min(100000, Math.max(1, Number(quantity[1]))) : follow ? memory.quantity : 1,
     needs: [...new Set([...(follow ? memory.needs : []), ...(/samsung/.test(t) ? ["Samsung"] : []), ...(/rapido|rapida/.test(t) ? ["carga rápida"] : [])])].slice(-10) };

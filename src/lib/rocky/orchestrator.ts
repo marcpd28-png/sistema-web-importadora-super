@@ -1,4 +1,5 @@
-import { matchesRequestedModel } from "./model-match";
+import { matchesRequestedModel, matchesRequestedType } from "./model-match";
+import { customerQuestions } from "./customer-questions";
 import { randomUUID } from "node:crypto";
 import { memorySchema, planSchema, type LLMProvider, type ProductFact, type RockyMemory, type RockyResult } from "./contracts";
 import { detectPlan, SYSTEM_PROMPT } from "./planning";
@@ -10,23 +11,57 @@ import { checkoutPrompt } from "./checkout";
 export class RockyAIOrchestrator {
   constructor(private backend: ToolBackend, private provider?: LLMProvider) {}
   async chat(input: { text: string; memory?: RockyMemory; history?: string[]; image?: string; resolvedProductCode?: string; resolvedProductCodes?: string[] }): Promise<RockyResult> {
+    const intent = detectPlan(input.text, input.memory).intent;
+    const parts = !input.image && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS", "PRODUCT_COMPATIBILITY", "CATALOG_REQUEST"].includes(intent) ? customerQuestions(input.text) : [];
+    if (parts.length < 2) return this.singleChat(input);
+    const started = Date.now();
+    let memory = input.memory;
+    const results: RockyResult[] = [];
+    for (const part of parts) {
+      // Labels route each independent topic; no recursive splitting or model-authored tools.
+      const result = await this.singleChat({ ...input, text: part.text, memory, topicIntent: part.intent });
+      results.push(result); memory = result.memory;
+    }
+    const first = results[0];
+    const requiresHuman = results.some(result => result.requiresHuman);
+    const sections = results.map((result, index) => {
+      let reply = result.reply.replace(/^¡Claro! 😊\s*|^Con gusto 😊\s*/, "").replace(/\n\n¿(?:Quieres comprarlo|Cuál eliges)[\s\S]*$/, "");
+      if (result.memory.cart) reply = reply.replace(`\n\n${checkoutPrompt(result.memory.cart)}`, "");
+      if (result.requiresHuman && !result.sources.length) reply = "Necesito que un asesor confirme esta información.";
+      return `${parts[index].label}: ${reply}`;
+    });
+    const resume = !requiresHuman && memory?.cart && !sections.some(section => section.includes("¿")) ? checkoutPrompt(memory.cart) : "";
+    return { ...first, reply: [...sections, ...(resume ? [resume] : [])].join("\n\n").slice(0, 3900), requiresHuman,
+      reasonCode: requiresHuman ? "PARTIAL_INFORMATION_REQUIRES_REVIEW" : first.reasonCode,
+      finalAction: requiresHuman ? "HANDOFF" : "SUGGEST", confidence: Math.min(...results.map(result => result.confidence)),
+      memory: memorySchema.parse({ ...memory, ...(requiresHuman ? { stage: "HANDOFF" } : {}) }),
+      products: [...new Map(results.flatMap(result => result.products).map(product => [product.id, product])).values()],
+      sources: [...new Map(results.flatMap(result => result.sources).map(source => [source.id, source])).values()],
+      toolsRequested: results.flatMap(result => result.toolsRequested), toolCalls: results.flatMap(result => result.toolCalls),
+      confidenceEvidence: [...new Set(results.flatMap(result => result.confidenceEvidence))],
+      tokens: results.some(result => result.tokens) ? { input: results.reduce((n, result) => n + (result.tokens?.input || 0), 0), output: results.reduce((n, result) => n + (result.tokens?.output || 0), 0) } : null,
+      model: results.find(result => result.tokens)?.model || first.model, latencyMs: Date.now() - started };
+  }
+  private async singleChat(input: { text: string; memory?: RockyMemory; history?: string[]; image?: string; resolvedProductCode?: string; resolvedProductCodes?: string[]; topicIntent?: import("./contracts").RockyPlan["intent"] }): Promise<RockyResult> {
     const started = Date.now();
     const memory = input.memory || memorySchema.parse({});
     let plan = detectPlan(input.text, memory);
+    if (input.topicIntent) plan.intent = input.topicIntent;
     if (input.resolvedProductCode && !plan.codes.length && ["UNKNOWN", "PRODUCT_SEARCH", "PRODUCT_DETAILS", "FOLLOW_UP", "PRICE_QUERY", "STOCK_QUERY", "WHOLESALE_QUERY"].includes(plan.intent)) {
       plan.codes = [input.resolvedProductCode];
       if (["UNKNOWN", "FOLLOW_UP", "PRODUCT_SEARCH"].includes(plan.intent)) plan.intent = "PRODUCT_DETAILS";
     }
-    if (input.resolvedProductCodes?.length && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS"].includes(plan.intent)) {
+    if (input.resolvedProductCodes?.length && ["UNKNOWN", "PRODUCT_SEARCH", "PRODUCT_DETAILS", "FOLLOW_UP", "PRICE_QUERY", "STOCK_QUERY", "WHOLESALE_QUERY"].includes(plan.intent)) {
       plan.codes = input.resolvedProductCodes.slice(0, 6);
       plan.intent = "PRODUCT_DETAILS";
     }
     let tokens: RockyResult["tokens"] = null;
     let model = "rules-and-tools";
     let reasonCode: string | null = null;
+    const needsReference = !input.image && !plan.codes.length && !plan.query && ["PRODUCT_SEARCH", "PRODUCT_DETAILS", "PRICE_QUERY", "STOCK_QUERY", "WHOLESALE_QUERY", "PRODUCT_COMPARISON"].includes(plan.intent);
     // High risk requests are decided before consulting the model.
     const exactToolRequest = plan.codes.length > 0 && ["STOCK_QUERY", "PRICE_QUERY", "PRODUCT_COMPARISON", "WHOLESALE_QUERY", "PRODUCT_DETAILS"].includes(plan.intent);
-    if (this.provider && !exactToolRequest && (plan.intent === "UNKNOWN" || Boolean(input.image)) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS", "BUSINESS_QUERY"].includes(plan.intent)) {
+    if (this.provider && !needsReference && !exactToolRequest && (plan.intent === "UNKNOWN" || Boolean(input.image)) && !["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS", "BUSINESS_QUERY"].includes(plan.intent)) {
       try {
         // Optional retrieval must not prevent deterministic handling or model fallback.
         const reviewedExamples = await this.backend.reviewedExamples?.(input.text).catch(() => []) || [];
@@ -48,17 +83,18 @@ export class RockyAIOrchestrator {
     const skill = selectSkill(plan.intent);
     const executor = new ToolExecutor(this.backend, skill.tools);
     let catalog: RockyResult["catalog"];
+    const catalogProblem = plan.intent === "CATALOG_REQUEST" && /no (?:puedo|se puede|me deja) abrir|no (?:lo )?encuentro|no me (?:sale|aparece)/i.test(input.text);
     const products: ProductFact[] = []; const sources: RockyResult["sources"] = [];
     let requiresHuman = ["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS"].includes(plan.intent);
     const call = async (name: ToolName, args: unknown) => {
       const result = await executor.execute(name, args);
-      for (const product of result.products) if ((plan.codes.includes(product.code) || (plan.codes.length > 1 ? plan.codes.some(code => matchesRequestedModel(code, product)) : matchesRequestedModel(plan.query, product))) && !products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
+      for (const product of result.products) if (matchesRequestedType(plan.query, product) && (plan.codes.includes(product.code) || (plan.codes.length > 1 ? plan.codes.some(code => matchesRequestedModel(code, product)) : matchesRequestedModel(plan.query, product))) && !products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
       sources.push(...result.sources);
       if (result.catalog) catalog = result.catalog;
     };
     try {
       if (plan.intent === "CATALOG_REQUEST") {
-        await call("getCatalog", { query: input.text });
+        await call("getCatalog", { query: catalogProblem ? "catálogo completo" : input.text });
       } else if (plan.intent === "BUSINESS_QUERY") {
         await call("getBusinessInfo", { query: input.text.slice(0, 120) });
         if (!sources.length) { requiresHuman = true; reasonCode = "BUSINESS_INFO_NOT_CONFIGURED"; }
@@ -96,13 +132,15 @@ export class RockyAIOrchestrator {
     const confidence = requiresHuman ? 0.3 : plan.intent === "GREETING" ? 0.95 : exact ? 0.95 : products.length ? 0.75 : sources.length ? 0.7 : 0.35;
     // Deliberately render commercial assertions from evidence, never from unconstrained LLM prose.
     let reply = "Con gusto te ayudo 😊 ¿Qué producto buscas y para qué lo vas a utilizar? Puedes indicarme el código o tu presupuesto.";
-    if (plan.intent === "GREETING") reply = "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?";
+    if (needsReference) reply = memory.shownCodes.length > 1 ? "¿Cuál de las opciones te interesa? Dime el código o si es la primera, segunda o tercera." : /\bcaja|\bpor\s+\d+/i.test(input.text) ? "¿De qué producto necesitas el precio por cantidad? Dime el nombre o el código." : "¿De qué producto necesitas información? Dime el nombre o el código.";
+    else if (plan.intent === "GREETING") reply = memory.productCodes.length || memory.cart ? "Hola de nuevo. Seguimos con tu consulta." : "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?";
     else if (requiresHuman) reply = plan.intent === "HUMAN_REQUEST" ? "Claro 😊 Te paso con un asesor para que pueda ayudarte." : "Quiero darte información correcta 😊 Necesito que un asesor verifique esta consulta. Dejo registrada tu solicitud para que te ayude.";
     else if (plan.intent === "SALES_OBJECTION") reply = "Claro, tómate tu tiempo. ¿Qué duda te falta resolver para decidir?";
     else if (plan.intent === "FOLLOW_UP") reply = memory.awaitingQuantity
       ? memory.pendingPurchaseQuantity ? "¿Qué producto eliges? Dime el código o una de las opciones." : "¿Cuántas unidades llevas?"
       : memory.cart ? `Conservamos tu compra. ${checkoutPrompt(memory.cart)}`
       : memory.productCodes.length === 1 ? "Con gusto 😊 Si deseas comprarlo, dime cuántas unidades necesitas." : "Con gusto 😊 ¿Qué producto te interesa?";
+    else if (catalogProblem && catalog) reply = `Puedes abrir el catálogo aquí:\n${catalog.url}\n\n¿Te aparece un error al abrirlo o no encuentras un producto?`;
     else if (catalog) reply = catalog.scope === "FULL"
       ? `¡Claro! 😊 Puedes encontrar nuestro catálogo completo en la página web oficial 🛍️\n${catalog.url}\n\nSi me dices qué producto o marca buscas, te ayudo a encontrarlo.`
       : catalog.document
@@ -126,6 +164,11 @@ export class RockyAIOrchestrator {
       else if (plan.intent === "PRODUCT_RECOMMENDATION") reply += "\n\n¿Con qué equipo lo usarás y qué característica es indispensable?";
       else if (plan.intent === "WHOLESALE_QUERY") reply += "\n\n¿Continuamos con esta cantidad? Escribe «quiero comprar».";
       else reply += products.length === 1 ? "\n\n¿Quieres comprarlo?" : products.length === 2 ? "\n\n¿Cuál eliges: el primero o el segundo?" : "\n\n¿Cuál eliges: el primero, segundo o tercero?";
+      if (/\b(?:caja|paquete|docena)s?\b/i.test(input.text) && /precio|cuanto|cuánto|costo/i.test(input.text)) {
+        reply = reply.replace(/\n\n¿(?:Quieres comprarlo|Cuál eliges)[\s\S]*$/, "");
+        reply += "\n\nEl precio mostrado es por unidad. Necesito confirmar la presentación y el precio por caja con un asesor.";
+        requiresHuman = true; reasonCode = "PACKAGE_QUOTE_REQUIRES_VERIFICATION";
+      }
       if (plan.needs.includes("Samsung") && ["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent)) reply += "\nIndícame el modelo de tu Samsung para verificar la compatibilidad antes de elegir.";
     } else if (!["GREETING", "FOLLOW_UP", "UNKNOWN"].includes(plan.intent)) reply = "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?";
     const sideQuestion = ["BUSINESS_QUERY", "DELIVERY_QUERY", "PAYMENT_QUERY", "WARRANTY_QUERY", "CATALOG_REQUEST", "GREETING", "FOLLOW_UP", "SALES_OBJECTION"].includes(plan.intent);
@@ -141,7 +184,7 @@ export class RockyAIOrchestrator {
       stage: requiresHuman ? "HANDOFF" : memory.cart ? "CLOSING" : plan.intent === "PRICE_OBJECTION" ? "OBJECTION" : plan.intent === "PRODUCT_COMPARISON" ? "COMPARISON" : "QUALIFICATION",
       asked: [...new Set([...memory.asked, ...(reply.includes("presupuesto máximo") ? ["budget"] : []), ...(reply.includes("¿Para qué uso") ? ["useCase"] : [])])].slice(-10),
     });
-    return { rockyRequestId: randomUUID(), intent: plan.intent, skill: skill.name, confidence, confidenceEvidence: evidence,
+    return { rockyRequestId: randomUUID(), intent: plan.intent, skill: skill.name, confidence: requiresHuman ? Math.min(confidence, 0.3) : confidence, confidenceEvidence: evidence,
       toolsRequested: executor.calls.map(c => c.name), toolCalls: executor.calls, products, sources, reply: reply.slice(0, 3900), requiresHuman, reasonCode,
       ...(catalog ? { catalog } : {}), memory: next, model, latencyMs: Date.now() - started, tokens, finalAction: requiresHuman ? "HANDOFF" : "SUGGEST" };
   }
