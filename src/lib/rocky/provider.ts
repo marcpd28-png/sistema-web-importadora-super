@@ -38,9 +38,7 @@ export class OllamaLocalProvider implements LLMProvider {
     return singleInference(async () => {
       const raw = await this.call("chat", { model: this.model, messages: messages.map(m => m.role === "system" ? m : { ...m, content: redactSensitiveText(m.content) }), stream: false, think: false,
         format: z.toJSONSchema(planSchema), keep_alive: rockyKeepAlive(),
-        // Planning needs a compact JSON object. Four CPU threads and a bounded
-        // context keep the 4B model within the supervised response budget.
-        options: { num_ctx: 4096, num_predict: 240, num_thread: 4, temperature: 0 },
+        options: { num_ctx: 8192, num_predict: 600, num_thread: 2, temperature: 0 },
       });
       return { plan: planSchema.parse(JSON.parse(raw.message.content)), tokens: { input: Number(raw.prompt_eval_count) || 0, output: Number(raw.eval_count) || 0 } };
     });
