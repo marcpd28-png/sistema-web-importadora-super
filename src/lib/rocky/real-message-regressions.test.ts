@@ -14,6 +14,33 @@ const inventory = [
 ];
 const index = createCatalogIndex(inventory);
 
+test("cámara espía busca el producto sin depender del modelo, incluso después de un saludo o una repetición", async () => {
+  const camera: ProductFact = { id: "spy-camera", code: "N437", name: "MINI CAMARA ESPIA WIFI", brand: null, category: "CAMARAS", unitPrice: 50, wholesalePrice: null, wholesaleMinQty: 3, stockUnits: 10, description: null, technicalSpecs: null };
+  const queries: string[] = [];
+  const engine = new RockyAIOrchestrator({ search: async query => { queries.push(query); return [camera]; }, product: async () => camera, knowledge: async () => [] }, {
+    model: "unavailable", plan: async () => { throw new Error("Model unavailable"); }, embed: async () => [], health: async () => ({ ready: false, models: [] }),
+  });
+  let memory = (await engine.chat({ text: "hola" })).memory;
+  for (const text of ["camara espia", "camara espia", "cámara espía", "cámaras espías"]) {
+    const result = await engine.chat({ text, memory });
+    assert.equal(result.intent, "PRODUCT_SEARCH");
+    assert.equal(result.model, "rules-and-tools");
+    assert.ok(result.toolCalls.some(call => call.name === "searchProducts" && call.ok));
+    assert.deepEqual(result.products.map(p => p.code), ["N437"]);
+    assert.doesNotMatch(result.reply, /Qué producto buscas/);
+    memory = result.memory;
+  }
+  assert.deepEqual(queries, ["camara espia", "camara espia", "camara espia", "camaras espias"]);
+});
+
+test("cámara nombrada no reemplaza la intención de reclamo, devolución o asesor", () => {
+  assert.equal(detectPlan("asesor para camara espia").intent, "HUMAN_REQUEST");
+  assert.equal(detectPlan("reclamo camara espia").intent, "COMPLAINT");
+  assert.equal(detectPlan("devolver camara espia").intent, "RETURN_QUERY");
+  assert.equal(detectPlan("catálogo de cámaras espías").intent, "CATALOG_REQUEST");
+  assert.equal(detectPlan("mi pedido de camara espia").intent, "ORDER_STATUS");
+});
+
 // Anonymous utterances observed in the 24-hour audit; these are regression cases, not a blind accuracy benchmark.
 for (const text of ["tendra catalogo", "hola solicito su catalogo", "catálogo xfavor", "catálogo actualizado", "envíeme su catálogo", "buen día, catálogo por favor", "buenas noches, disculpe por la hora. me brindas el catalogo por favor"]) {
   test(`catálogo general sin filtros de cortesía: ${text}`, () => {

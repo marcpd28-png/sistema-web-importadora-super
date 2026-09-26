@@ -29,7 +29,7 @@ export function detectPlan(text: string, memory: RockyMemory = memorySchema.pars
     ["CATALOG_REQUEST", /catalogo/], ["PRODUCT_DETAILS", /caracteristicas|ficha|detalle|informacion|especificaciones|\bfotos?\b|\bimagenes?\b/],
     ["PRODUCT_RECOMMENDATION", /recomienda|que me sugieres/], ["SALES_OBJECTION", /no estoy seguro|lo voy a pensar/],
     ["GREETING", /^(?:hola(?: buenas(?: tardes| noches)?| buenos dias| buen dia)?|buenas|buen dia|buenos dias|buenas tardes|buenas noches)[!. ]*$/],
-    ["PRODUCT_SEARCH", /quiero|busco|necesito|tienes|tienen|cargador|arrancador|booster/],
+    ["PRODUCT_SEARCH", /quiero|busco|necesito|tienes|tienen|cargador|arrancador|booster|\bcamaras?\b/],
     ["FOLLOW_UP", /^(?:si|ok|ese|el primero|el segundo|gracias)[!. ]*$/],
   ];
   let intent = rules.find(([, rule]) => rule.test(t))?.[0] || (codes.length ? "PRODUCT_DETAILS" : "UNKNOWN");
