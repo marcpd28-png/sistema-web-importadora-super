@@ -1,5 +1,6 @@
 /* Keep responsive admin rules together, after the shared desktop styles. */
 .admin-mobile-header { display: none; }
+.admin-mobile-copy, .admin-mobile-catalog-view { display: none; }
 .admin-mobile-dock,
 .admin-mobile-nav-search,
 .admin-mobile-section-select,
@@ -253,7 +254,7 @@ body[data-admin-theme="dark"] .admin-shell .status-badge.is-visible { color: #6e
   }
   .admin-mobile-dock a[aria-current="page"] { color: var(--brand-primary); background: rgba(var(--brand-rgb), 0.09); }
   .admin-shell:has(input:focus, textarea:focus, select:focus) .admin-mobile-dock { display: none; }
-  body .admin-content { padding-bottom: calc(var(--admin-dock-height) + 1rem) !important; }
+  body .admin-content { padding-top: 0.5rem !important; padding-bottom: calc(var(--admin-dock-height) + 1rem) !important; }
   .admin-shell :where(.panel, .stack-lg) { gap: 0.85rem; }
   .admin-shell .panel h1, .admin-shell .admin-user-page-header h1 { font-size: clamp(1.3rem, 5vw, 1.65rem); line-height: 1.2; }
   .admin-shell .panel h2, .admin-shell .product-section-head h2 { font-size: 1.05rem; }
@@ -314,6 +315,26 @@ body[data-admin-theme="dark"] .admin-shell .status-badge.is-visible { color: #6e
 }
 
 @media (max-width: 760px) {
+  .admin-shell .admin-desktop-copy { display: none; }
+  .admin-shell .admin-mobile-copy { display: inline; }
+  .admin-shell .admin-products-panel { gap: 0.6rem; padding: 0.75rem; }
+  .admin-shell .admin-products-page-head { flex-direction: row; align-items: center; flex-wrap: nowrap; }
+  .admin-shell .admin-products-page-head :where(.eyebrow, .panel-copy) { display: none; }
+  .admin-shell .admin-products-page-head h1 { margin: 0; }
+  .admin-shell .admin-products-new-button { width: auto; padding-inline: 0.85rem; font-size: 0.85rem; }
+  .admin-shell .admin-mobile-catalog-view { display: block; min-width: 0; }
+  .admin-mobile-catalog-view select { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 0.5rem 0.65rem; background: var(--surface-strong); color: var(--foreground); font-size: 16px; }
+  .admin-shell .admin-products-sanity-rail .admin-products-sanity-chips { display: none; }
+  .admin-shell .admin-products-toolbar .admin-filters { display: grid; grid-template-columns: minmax(0, 1fr) 44px 44px; gap: 0.4rem; }
+  .admin-shell .admin-products-toolbar .search-field { min-width: 0; height: 44px; padding: 0 0.6rem; border-radius: 10px; background: var(--surface-strong); }
+  .admin-shell .admin-products-toolbar .search-field > svg { display: none; }
+  .admin-shell .admin-products-toolbar .search-field input { width: 100%; min-height: 42px; border: 0; border-radius: 0; padding: 0; background: transparent; box-shadow: none; }
+  .admin-shell .admin-products-toolbar .admin-filters > .button { width: auto; padding-inline: 0.4rem; border-radius: 10px; }
+  .admin-shell .admin-products-filter-toggle { grid-column: 3; grid-row: 1; }
+  .admin-shell .admin-products-search-submit { grid-column: 2; grid-row: 1; }
+  .admin-shell .admin-products-toolbar .admin-filters > a { grid-column: 1 / -1; justify-self: start; }
+  .admin-shell .admin-products-toolbar .admin-products-advanced-filters { grid-column: 1 / -1; }
+  .admin-shell .admin-products-panel .results-copy { margin: 0; font-size: 0.75rem; line-height: 1.4; }
   .admin-audit-photo-unavailable { height: 96px; font-size: 10px; }
   .admin-shell :where(.admin-products-sanity-chips, .admin-user-tabs, .admin-quote-filters) {
     display: flex;
@@ -327,7 +348,6 @@ body[data-admin-theme="dark"] .admin-shell .status-badge.is-visible { color: #6e
   .admin-shell :where(.admin-products-sanity-chips, .admin-user-tabs, .admin-quote-filters) > * { flex: 0 0 auto; min-height: 44px; white-space: nowrap; }
   .admin-shell .admin-products-sanity-chips .admin-chip-filter { width: auto; min-width: 0; flex: 0 0 auto; }
   .admin-shell .admin-products-sanity-rail { padding: 0; border: 0; background: transparent; }
-  .admin-shell .admin-products-toolbar .admin-filters { display: flex; flex-direction: row; flex-wrap: wrap; gap: 0.5rem; }
   .admin-shell .admin-products-toolbar .search-field { flex: 1 0 100%; }
   .admin-shell .admin-products-toolbar .button { flex: 1 1 auto; width: auto; }
   .admin-shell .admin-products-advanced-filters { flex: 1 0 100%; }
