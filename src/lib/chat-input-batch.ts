@@ -19,7 +19,7 @@ export function isDeliveredReply(message: ChatInputMessage) {
 }
 
 /** A sliding period of silence, not a fixed look-back window that loses earlier fragments. */
-export function buildChatInputBatch(messages: ChatInputMessage[], triggerMessageId: string, now = Date.now()) {
+export function buildChatInputBatch(messages: ChatInputMessage[], triggerMessageId: string, now = Date.now(), quietPeriodMs = CHAT_QUIET_PERIOD_MS) {
   const ordered = [...messages].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id));
   const inbound = ordered.filter(m => m.direction === "INBOUND" && m.senderType === "CUSTOMER");
   const latest = inbound.at(-1);
@@ -32,7 +32,7 @@ export function buildChatInputBatch(messages: ChatInputMessage[], triggerMessage
   }
   const pending = ordered.slice(start).filter(m => m.direction === "INBOUND" && m.senderType === "CUSTOMER");
   if (!pending.some(m => m.id === triggerMessageId)) return { ...base, status: "ALREADY_ANSWERED" as const };
-  const waitMs = Math.max(0, latest!.createdAt.getTime() + CHAT_QUIET_PERIOD_MS - now);
+  const waitMs = Math.max(0, latest!.createdAt.getTime() + quietPeriodMs - now);
   if (waitMs) return { ...base, status: "WAITING" as const, waitMs };
   const content = pending.map(m => m.content.trim()).filter(Boolean).join("\n");
   const common = { ...base, messageIds: pending.map(m => m.id) };

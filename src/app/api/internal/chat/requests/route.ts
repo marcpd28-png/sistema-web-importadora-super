@@ -30,14 +30,22 @@ export async function POST(request: Request) {
   const key = process.env.N8N_INTERNAL_API_KEY;
   if (!key || request.headers.get("x-internal-api-key") !== key) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   // Explicit per-conversation rollout. BC still owns the durable outbound worker.
-  if (process.env.ROCKY_AUTO_ENABLED === "true") {
+  if (process.env.ROCKY_AUTO_ENABLED === "true" || process.env.ROCKY_COPILOT_ENABLED === "true") {
     const rockyInput = inputSchema.safeParse(await request.clone().json());
     if (rockyInput.success) {
-      const session = await prisma.rockySession.findUnique({ where: { conversationId: rockyInput.data.conversationId }, select: { mode: true } });
-      if (session?.mode === "AUTO") {
-        const { runRocky } = await import("@/lib/rocky/service");
+      const session = await prisma.rockySession.findUnique({ where: { conversationId: rockyInput.data.conversationId }, select: {
+        mode: true, conversation: { select: { botEnabled: true, status: true, assignedUserId: true } },
+      } });
+      const botOwnsConversation = Boolean(session?.conversation.botEnabled && session.conversation.status === "AUTOMATICO" && !session.conversation.assignedUserId);
+      const enabled = botOwnsConversation && (session?.mode === "AUTO" ? process.env.ROCKY_AUTO_ENABLED === "true"
+        : session?.mode === "COPILOT" ? process.env.ROCKY_COPILOT_ENABLED === "true" : false);
+      if (enabled) {
+        const { RockyInputBatchError, runRocky } = await import("@/lib/rocky/service");
         try { return NextResponse.json({ handled: true, ...await runRocky(rockyInput.data) }); }
-        catch { return NextResponse.json({ handled: true, error: "ROCKY_RETRY_REQUIRED" }, { status: 503 }); }
+        catch (error) {
+          if (error instanceof RockyInputBatchError) return NextResponse.json({ handled: true, skipped: error.status, retryAfterMs: error.retryAfterMs });
+          return NextResponse.json({ handled: true, error: "ROCKY_RETRY_REQUIRED" }, { status: 503 });
+        }
       }
     }
   }

@@ -34,4 +34,5 @@ export type Conversation = PrismaConversation & {
   assignedUser?: { name: string; email?: string } | null;
   lastMessage?: ConversationLastMessage | null;
   productContext?: ProductContext;
+  rockySession?: { mode: string } | null;
 };

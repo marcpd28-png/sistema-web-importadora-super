@@ -306,6 +306,7 @@ export async function getConversations(input: GetConversationsInput) {
       include: {
         contact: true,
         assignedUser: { select: { name: true, email: true } },
+        rockySession: { select: { mode: true } },
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -343,6 +344,7 @@ export async function getConversation(id: string) {
     include: {
       contact: true,
       assignedUser: { select: { name: true, email: true } },
+      rockySession: { select: { mode: true } },
     },
   });
 }

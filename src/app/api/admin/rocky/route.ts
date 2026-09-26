@@ -30,7 +30,9 @@ export async function POST(request: Request) {
       const session = await prisma.$transaction(async tx => {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`rocky:${input.conversationId}`}))`;
         const saved = await tx.rockySession.upsert({ where: { conversationId: input.conversationId }, create: { conversationId: input.conversationId, mode: input.mode, memory: memorySchema.parse({}) }, update: { mode: input.mode, revision: { increment: 1 } } });
-        if (input.mode === "MANUAL") await tx.conversation.update({ where: { id: input.conversationId }, data: { botEnabled: false, status: "ATENDIENDO" } });
+        await tx.conversation.update({ where: { id: input.conversationId }, data: input.mode === "MANUAL"
+          ? { botEnabled: false, status: "ATENDIENDO" }
+          : { botEnabled: true, status: "AUTOMATICO", assignedUserId: null } });
         return saved;
       });
       return Response.json({ session });

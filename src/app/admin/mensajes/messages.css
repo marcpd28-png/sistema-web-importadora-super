@@ -792,6 +792,16 @@
   gap: 8px;
 }
 
+.chat-rocky-mode select {
+  min-height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-bg);
+  color: var(--text);
+  padding: 0 8px;
+  font-size: 13px;
+}
+
 .btn {
   padding: 6px 12px;
   border-radius: var(--radius-md);
@@ -1918,6 +1928,22 @@ body[data-admin-theme="dark"] :where(.chat-messages, .message-simulator-chat) {
   background: transparent;
   cursor: zoom-in;
 }
+
+.rocky-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 10px 6px;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.rocky-suggestion p { margin: 4px 0 0; white-space: pre-wrap; }
+.rocky-suggestion-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
 .message-image-trigger:focus-visible {
   outline: 3px solid #008069;

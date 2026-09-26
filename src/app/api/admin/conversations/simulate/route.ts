@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { simulatorInputSchema, simulatorWebhookMessage } from "@/lib/simulator-message";
-import { runRocky } from "@/lib/rocky/service";
+import { ROCKY_BATCH_QUIET_PERIOD_MS, RockyInputBatchError, runRocky } from "@/lib/rocky/service";
 
 export const dynamic = "force-dynamic";
 
@@ -129,8 +129,12 @@ export async function POST(request: Request) {
       if (input.background) {
         const conversationId = conversation.id;
         after(async () => {
-          try { await runRocky({ conversationId, triggerMessageId: customerMessage.id, simulate: true }); }
+          try {
+            await new Promise(resolve => setTimeout(resolve, ROCKY_BATCH_QUIET_PERIOD_MS));
+            await runRocky({ conversationId, triggerMessageId: customerMessage.id, simulate: true, waitForBatch: true });
+          }
           catch (error) {
+            if (error instanceof RockyInputBatchError && error.status === "SUPERSEDED") return;
             console.error("[rocky-simulator] failed", error instanceof Error ? error.message : "UnknownError");
             await prisma.chatMessage.update({ where: { id: customerMessage.id }, data: {
               metadata: { source: "rocky-simulator", simulation: true, simulationError: true },

@@ -10,9 +10,10 @@ interface Props {
   onTakeConversation: () => void;
   onCloseConversation: () => void;
   onBack: () => void;
+  onRockyModeChange: (mode: "MANUAL" | "COPILOT" | "AUTO") => void;
 }
 
-export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCloseConversation, onBack }: Props) {
+export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCloseConversation, onBack, onRockyModeChange }: Props) {
   const { contact, botEnabled } = conversation;
   const [actionsOpen, setActionsOpen] = useState(false);
 
@@ -46,6 +47,15 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
       
       <button className="messages-mobile-actions-toggle" type="button" aria-expanded={actionsOpen} aria-controls="chat-conversation-actions" onClick={() => setActionsOpen(!actionsOpen)}>Acciones</button>
       <div className="chat-header-actions" id="chat-conversation-actions">
+        <label className="chat-rocky-mode">
+          <span className="sr-only">Modo de atención</span>
+          <select aria-label="Modo de atención" value={conversation.rockySession?.mode || (botEnabled ? "COPILOT" : "MANUAL")}
+            onChange={(event) => onRockyModeChange(event.target.value as "MANUAL" | "COPILOT" | "AUTO")}>
+            <option value="MANUAL">Asesor</option>
+            <option value="COPILOT">Rocky sugiere</option>
+            <option value="AUTO">Rocky automático</option>
+          </select>
+        </label>
         {botEnabled ? (
           <button className="btn btn-outline" onClick={onToggleBot} type="button">
             <StopCircle size={14} /> Pausar Bot

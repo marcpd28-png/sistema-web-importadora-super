@@ -7,6 +7,7 @@ interface Props {
 
 export function ConversationStatus({ conversation }: Props) {
   const { botEnabled, status, assignedUser } = conversation;
+  const mode = conversation.rockySession?.mode;
 
   return (
     <div className="conversation-status-bar">
@@ -14,7 +15,7 @@ export function ConversationStatus({ conversation }: Props) {
         {botEnabled ? (
           <>
             <Bot size={16} color="#25D366" />
-            <span>Bot Automático</span>
+            <span>{mode === "COPILOT" ? "Rocky sugiere" : mode === "AUTO" ? "Rocky automático" : "Bot activo"}</span>
           </>
         ) : (
           <>

@@ -147,3 +147,5 @@ Nueva actualización del 25/09: las cinco rutas de Rocky usan `rocky2-communicat
 Actualización del 26/09: las API de Rocky y `/api/shop-assistant` usan `rocky-camera-20260926`, PM2 `importadora-rocky-camera`, puerto 4025. Las páginas administrativas mantienen 4024. Se corrigió la búsqueda directa «cámara espía», verificada con catálogo real y sin depender del modelo. Ver [búsqueda de cámaras y despliegue](busqueda-camaras.md). Las instancias antiguas 4015 y 4016 están detenidas; 4017 y 4012 permanecen activas para reversión.
 
 Actualización posterior del 26/09: las API de Rocky y `/api/shop-assistant` usan `rocky-catalog-20260926`, PM2 `importadora-rocky-catalog`, puerto 4026. La búsqueda reconoce nombres del catálogo, errores de escritura comprobados y calificadores en mensajes sucesivos. Ver [búsqueda por nombre y contexto](busqueda-por-nombre.md). Se conserva 4025 para reversión.
+
+Etapa supervisada: Rocky agrupa fragmentos durante cinco segundos y el Centro de Mensajes permite elegir Asesor, Rocky sugiere o Rocky automático por conversación. Ver [copiloto y agrupación de mensajes](copiloto-y-agrupacion.md).

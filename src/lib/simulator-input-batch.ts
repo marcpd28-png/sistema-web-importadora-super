@@ -5,7 +5,7 @@ export async function lockSimulatorConversation(tx: Prisma.TransactionClient, co
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`simulator:${conversationId}`}))`;
 }
 
-export async function readSimulatorInputBatch(tx: Prisma.TransactionClient, conversationId: string, triggerMessageId: string) {
+export async function readSimulatorInputBatch(tx: Prisma.TransactionClient, conversationId: string, triggerMessageId: string, options: { ignoreQuietPeriod?: boolean; quietPeriodMs?: number } = {}) {
   const lastReply = await tx.chatMessage.findFirst({
     where: { conversationId, direction: "OUTBOUND", senderType: { in: ["BOT", "AGENT"] },
       OR: [{ status: null }, { status: { notIn: ["failed", "pending"] } }] },
@@ -18,5 +18,5 @@ export async function readSimulatorInputBatch(tx: Prisma.TransactionClient, conv
     take: CHAT_BATCH_MAX_MESSAGES + 2,
     select: { id: true, direction: true, senderType: true, messageType: true, content: true, mediaUrl: true, createdAt: true, status: true },
   });
-  return buildChatInputBatch(rows, triggerMessageId);
+  return buildChatInputBatch(rows, triggerMessageId, options.ignoreQuietPeriod ? Number.MAX_SAFE_INTEGER : Date.now(), options.quietPeriodMs);
 }

@@ -44,6 +44,7 @@ export type RockyResult = {
   products: ProductFact[]; sources: KnowledgeHit[]; reply: string; requiresHuman: boolean;
   reasonCode: string | null; memory: RockyMemory; model: string; latencyMs: number;
   tokens: { input: number; output: number } | null; finalAction: "SUGGEST" | "SIMULATE" | "HANDOFF" | "QUEUE";
+  inputMessageIds?: string[];
 };
 export type LLMMessage = { role: "system" | "user" | "assistant" | "tool"; content: string; images?: string[] };
 export interface LLMProvider {

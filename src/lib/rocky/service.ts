@@ -10,7 +10,7 @@ import { PostgresKnowledge } from "./rag";
 import { readCustomerMemory, recallCustomerProduct } from "@/lib/bc-customer-memory";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { isBcLiveContact } from "@/lib/bc-live-policy";
-import { lockSimulatorConversation } from "@/lib/simulator-input-batch";
+import { lockSimulatorConversation, readSimulatorInputBatch } from "@/lib/simulator-input-batch";
 import { productFromOwnUrl } from "./sales";
 import sharp from "sharp";
 import { redactSensitiveText } from "./guardrails";
@@ -22,13 +22,20 @@ import { buildPublicUrl } from "../site-url";
 
 export function rockyProvider() { return process.env.ROCKY_LLM_ENABLED === "true" ? new OllamaLocalProvider() : undefined; }
 export function rockyKnowledge() { return new PostgresKnowledge(process.env.ROCKY_RAG_VECTOR_ENABLED === "true" ? new OllamaLocalProvider() : undefined); }
+export class RockyInputBatchError extends Error {
+  constructor(readonly status: string, readonly retryAfterMs?: number) {
+    super(`ROCKY_INPUT_${status}`);
+    this.name = "RockyInputBatchError";
+  }
+}
+export const ROCKY_BATCH_QUIET_PERIOD_MS = 5_000;
 const json = (value: unknown) => JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 export function effectiveMode(mode: string | undefined, conversation: { botEnabled: boolean; assignedUserId: string | null; status: string }): RockyMode {
   if (!conversation.botEnabled || conversation.assignedUserId || conversation.status !== "AUTOMATICO") return "MANUAL";
   return mode === "AUTO" ? "AUTO" : mode === "MANUAL" ? "MANUAL" : "COPILOT";
 }
 
-export async function runRocky(input: { conversationId: string; triggerMessageId: string; simulate?: boolean }) {
+export async function runRocky(input: { conversationId: string; triggerMessageId: string; simulate?: boolean; waitForBatch?: boolean }) {
   const conversation = await prisma.conversation.findUnique({ where: { id: input.conversationId }, include: {
     contact: { include: { conversationMemory: true, rockyPreferences: true } }, rockySession: true, salesState: true,
   } });
@@ -38,13 +45,18 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
   if (!trigger) throw new Error("MESSAGE_NOT_FOUND");
   const duplicate = await prisma.rockyRun.findUnique({ where: { triggerMessageId: trigger.id } });
   if (duplicate) return { result: duplicate.result as unknown as RockyResult, duplicate: true };
+  const batch = await readSimulatorInputBatch(prisma, conversation.id, trigger.id, {
+    ignoreQuietPeriod: input.simulate && !input.waitForBatch, quietPeriodMs: ROCKY_BATCH_QUIET_PERIOD_MS,
+  });
+  if (batch.status !== "READY") throw new RockyInputBatchError(batch.status, "waitMs" in batch ? batch.waitMs : undefined);
+  const customerText = batch.content || trigger.content;
   const revision = conversation.rockySession?.revision ?? 0;
   const parsedMemory = memorySchema.safeParse(conversation.rockySession?.memory);
   const memory = parsedMemory.success ? parsedMemory.data : memorySchema.parse({ productCodes: conversation.salesState?.selectedProductCode ? [conversation.salesState.selectedProductCode] : [], quantity: conversation.salesState?.quantity || 1 });
   const list = (value: string | undefined) => (value ?? "").split(",").map(item => item.trim()).filter(Boolean);
   // Checkout is exercised in the simulator before enabling any live order/payment writes.
-  const checkout = input.simulate && ["TEXT", "IMAGE"].includes(trigger.messageType) && effectiveMode(conversation.rockySession?.mode, conversation) !== "MANUAL" && wantsRockyCheckout(trigger.content, memory)
-    ? runRockyCheckout({ text: trigger.content, memory, products: (await loadCommercialCatalog()).products,
+  const checkout = input.simulate && ["TEXT", "IMAGE"].includes(trigger.messageType) && effectiveMode(conversation.rockySession?.mode, conversation) !== "MANUAL" && wantsRockyCheckout(customerText, memory)
+    ? runRockyCheckout({ text: customerText, memory, products: (await loadCommercialCatalog()).products,
       conversationId: conversation.id, triggerMessageId: trigger.id,
       ...(trigger.messageType === "IMAGE" ? { voucherMessageId: trigger.id } : {}),
       deliveryMethods: list(process.env.ROUTER_V2_DELIVERY_METHODS ?? "DELIVERY, SHALOM, RECOJO"),
@@ -52,15 +64,15 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     }) : null;
   const preferences = conversation.contact.rockyPreferences?.preferences;
   if (Array.isArray(preferences)) memory.needs = [...new Set([...memory.needs, ...preferences.filter((p): p is string => typeof p === "string").map(p => p.slice(0, 120))])].slice(-10);
-  const recalled = recallCustomerProduct(readCustomerMemory(conversation.contact.conversationMemory?.state), trigger.content);
+  const recalled = recallCustomerProduct(readCustomerMemory(conversation.contact.conversationMemory?.state), customerText);
   let resolvedProductCode = recalled || undefined;
   if (recalled) memory.productCodes = [recalled];
-  const slug = productFromOwnUrl(trigger.content, process.env.NEXT_PUBLIC_SITE_URL || "https://tiendavirtualsuper.com");
+  const slug = productFromOwnUrl(customerText, process.env.NEXT_PUBLIC_SITE_URL || "https://tiendavirtualsuper.com");
   if (slug) {
     const product = await prisma.product.findFirst({ where: { slug, isVisible: true }, select: { code: true } });
     if (product) { memory.productCodes = [product.code]; resolvedProductCode = product.code; }
   }
-  const history = await prisma.chatMessage.findMany({ where: { conversationId: conversation.id, createdAt: { lt: trigger.createdAt }, messageType: "TEXT" }, orderBy: { createdAt: "desc" }, take: 4, select: { content: true } });
+  const history = await prisma.chatMessage.findMany({ where: { conversationId: conversation.id, id: { notIn: batch.messageIds }, createdAt: { lt: trigger.createdAt }, messageType: "TEXT" }, orderBy: { createdAt: "desc" }, take: 4, select: { content: true } });
   const orchestrator = new RockyAIOrchestrator(createToolBackend(rockyKnowledge()), rockyProvider());
   let image: string | undefined;
   let photoMatch: ImageCodeMatch | null = null;
@@ -82,9 +94,11 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     try { if (!photoMatch) image = (await sharp(Buffer.from(trigger.mediaUrl.split(",")[1], "base64"), { limitInputPixels: 16000000 }).resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 75 }).toBuffer()).toString("base64"); }
     catch { /* Invalid images are handled by clarification, never downloaded remotely. */ }
   }
-  const result = checkout ?? await orchestrator.chat({ text: redactSensitiveText(trigger.content).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
+  const result = checkout ?? await orchestrator.chat({ text: redactSensitiveText(customerText).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
     resolvedProductCode, ...(photoMatch && photoMatch.status !== "READY" ? { resolvedProductCodes: photoMatch.codes.slice(0, 6) } : {}),
     ...(image ? { image } : {}) });
+  result.inputMessageIds = batch.messageIds;
+  if (batch.messageIds.length > 1 && !result.confidenceEvidence.includes("BATCHED_INPUT")) result.confidenceEvidence.push("BATCHED_INPUT");
   if (!checkout && trigger.messageType === "IMAGE") {
     if (photoMatch && !result.requiresHuman) {
       result.reply = `${photoMatch.model === "catalog-source-image-sha256" ? "📸 La foto coincide con una imagen de nuestro catálogo." : photoMatch.model === "local-catalog-name-multipass" ? "📸 El nombre y los detalles que leo en tu foto coinciden con esta referencia del catálogo." : `📸 Leí el código ${photoMatch.hints.code} en tu imagen.`} ¡Gracias por enviarla! 😊\n${result.reply}\n\nPrecio y stock consultados ahora; pueden diferir de los impresos en la foto.`;

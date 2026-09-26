@@ -20,6 +20,16 @@ test("espera exactamente 12 segundos sin mensajes y reinicia al recibir otro", (
   assert.equal(batch([first, second], "b", 21).status, "READY");
 });
 
+test("permite una espera específica para Rocky sin cambiar la espera general", () => {
+  const first = message("a", 0, "camara");
+  const second = message("b", 3, "espia");
+  assert.equal(buildChatInputBatch([first, second], "b", origin + 7_999, 5_000).status, "WAITING");
+  const result = buildChatInputBatch([first, second], "b", origin + 8_000, 5_000);
+  assert.equal(result.status, "READY");
+  if (result.status === "READY") assert.equal(result.content, "camara\nespia");
+  assert.equal(buildChatInputBatch([first, second], "b", origin + 8_000).status, "WAITING");
+});
+
 test("conserva toda la consulta aunque dure más de 12 segundos o tenga más de ocho mensajes", () => {
   const messages = Array.from({ length: 10 }, (_, i) => message(String(i).padStart(2, "0"), i * 8, i === 0 ? "hola busco catálogo" : i === 9 ? "de proyectores" : "por favor"));
   const result = batch(messages.slice().reverse(), "09", 84);

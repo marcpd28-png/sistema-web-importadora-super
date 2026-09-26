@@ -80,7 +80,7 @@ export function MessageSimulator() {
     return () => window.clearInterval(timer);
   }, [busy]);
 
-  const canSend = Boolean(content.trim() || attachment) && !busy && !readingFile && !(engine === "ROCKY" && waitingForN8n);
+  const canSend = Boolean(content.trim() || attachment) && !busy && !readingFile;
   const conversationLabel = useMemo(() => phone.trim() || "sin telefono", [phone]);
 
   useEffect(() => {
@@ -210,7 +210,7 @@ export function MessageSimulator() {
         setContent("");
         setAttachment(null);
         setWaitingForN8n(!payload.rocky);
-        setNotice(payload.rocky ? payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación." : engine === "ROCKY" ? "Rocky está preparando la respuesta. Los catálogos con muchas fotos pueden tardar varios minutos; aparecerán aquí cuando estén listos." : "Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
+        setNotice(payload.rocky ? payload.rocky.requiresHuman ? "Rocky solicita atención humana. Inicia una nueva sesión para otra prueba." : "Respuesta de Rocky preparada. Puedes continuar la conversación." : engine === "ROCKY" ? "Puedes enviar más fragmentos. Rocky espera 5 segundos desde el último mensaje antes de responder." : "Puedes enviar más mensajes. El bot espera 12 segundos desde el último mensaje antes de preparar la respuesta.");
       }
     } catch (error) {
       setNotice(controller.signal.aborted ? "Terminó la espera. El mensaje puede haberse guardado en el servidor; inicia una nueva sesión si quieres repetir la prueba." : error instanceof Error ? error.message : "No se pudo simular el mensaje.");

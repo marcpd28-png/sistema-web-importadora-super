@@ -43,6 +43,8 @@ type MessagesResponse = {
   total: number;
 };
 
+type RockySuggestion = { runId: string; triggerMessageId: string; reply: string };
+
 function useDebouncedValue<T>(value: T, delayMs: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -218,6 +220,7 @@ export function MessagesWorkspace() {
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [rockySuggestion, setRockySuggestion] = useState<RockySuggestion | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeMessagesRef = useRef<ChatMessage[]>([]);
@@ -238,6 +241,24 @@ export function MessagesWorkspace() {
   useEffect(() => {
     conversationsRef.current = conversations;
   }, [conversations]);
+
+  useEffect(() => {
+    if (!activeId) { setRockySuggestion(null); return undefined; }
+    let stopped = false;
+    const refreshSuggestion = async () => {
+      try {
+        const response = await fetch(`/api/admin/rocky?conversationId=${encodeURIComponent(activeId)}`, { cache: "no-store" });
+        if (!response.ok || stopped) return;
+        const payload = await response.json() as { runs?: Array<{ id: string; triggerMessageId: string; result?: { reply?: string; finalAction?: string } }> };
+        const lastInbound = [...activeMessagesRef.current].reverse().find(message => message.direction === "INBOUND" && message.senderType === "CUSTOMER");
+        const run = payload.runs?.find(item => item.triggerMessageId === lastInbound?.id && item.result?.finalAction === "SUGGEST" && item.result.reply);
+        setRockySuggestion(run ? { runId: run.id, triggerMessageId: run.triggerMessageId, reply: run.result!.reply! } : null);
+      } catch { /* Polling de sugerencias no debe bloquear la bandeja. */ }
+    };
+    void refreshSuggestion();
+    const interval = window.setInterval(refreshSuggestion, MESSAGE_POLL_MS);
+    return () => { stopped = true; window.clearInterval(interval); };
+  }, [activeId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -556,31 +577,24 @@ export function MessagesWorkspace() {
   };
 
   const handleToggleBot = async () => {
-    if (!activeId) {
-      return;
-    }
+    await handleRockyModeChange(activeConversation?.botEnabled ? "MANUAL" : "COPILOT");
+  };
 
-    const current = activeConversation?.botEnabled;
-    const nextStatus = !current;
-
-    setConversations((previous) =>
-      previous.map((conversation) =>
-        conversation.id === activeId ? { ...conversation, botEnabled: nextStatus } : conversation,
-      ),
-    );
-
+  const handleRockyModeChange = async (mode: "MANUAL" | "COPILOT" | "AUTO") => {
+    if (!activeId) return;
+    const previous = activeConversation;
+    setConversations(current => current.map(conversation => conversation.id === activeId ? {
+      ...conversation, botEnabled: mode !== "MANUAL", status: mode === "MANUAL" ? "ATENDIENDO" : "AUTOMATICO",
+      assignedUserId: mode === "MANUAL" ? conversation.assignedUserId : null, rockySession: { mode },
+    } : conversation));
     try {
-      await fetch(`/api/admin/conversations/${activeId}`, {
-        body: JSON.stringify({ botEnabled: nextStatus }),
-        headers: { "Content-Type": "application/json" },
-        method: "PATCH",
-      });
-    } catch {
-      setConversations((previous) =>
-        previous.map((conversation) =>
-          conversation.id === activeId ? { ...conversation, botEnabled: Boolean(current) } : conversation,
-        ),
-      );
+      const response = await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "mode", conversationId: activeId, mode }) });
+      if (!response.ok) throw new Error("No se pudo cambiar el modo de Rocky.");
+      if (mode !== "COPILOT") setRockySuggestion(null);
+    } catch (error) {
+      if (previous) setConversations(current => current.map(conversation => conversation.id === activeId ? previous : conversation));
+      setWorkspaceError(error instanceof Error ? error.message : "No se pudo cambiar el modo de Rocky.");
     }
   };
 
@@ -601,11 +615,11 @@ export function MessagesWorkspace() {
       ),
     );
 
-    await fetch(`/api/admin/conversations/${activeId}`, {
-      body: JSON.stringify({ botEnabled: false, status: "ATENDIENDO" }),
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
-    });
+    await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "mode", conversationId: activeId, mode: "MANUAL" }) });
+    setConversations(current => current.map(conversation => conversation.id === activeId
+      ? { ...conversation, rockySession: { mode: "MANUAL" } } : conversation));
+    setRockySuggestion(null);
   };
 
   const handleCloseConversation = async () => {
@@ -671,6 +685,7 @@ export function MessagesWorkspace() {
               onCloseConversation={handleCloseConversation}
               onTakeConversation={handleTakeConversation}
               onToggleBot={handleToggleBot}
+              onRockyModeChange={handleRockyModeChange}
             />
 
             <div className="chat-messages" onScroll={handleMessagesScroll} ref={messagesContainerRef}>
@@ -707,6 +722,17 @@ export function MessagesWorkspace() {
             </div>
 
             <div className="chat-count">{activeMessages.length} de {messageTotal} mensajes cargados</div>
+            {activeConversation.rockySession?.mode === "COPILOT" && rockySuggestion ? (
+              <div className="rocky-suggestion" role="status">
+                <div><strong>Rocky sugiere</strong><p>{rockySuggestion.reply}</p></div>
+                <div className="rocky-suggestion-actions">
+                  <button className="btn btn-primary" type="button" onClick={async () => {
+                    if (await handleSendMessage(rockySuggestion.reply)) setRockySuggestion(null);
+                  }}>Enviar sugerencia</button>
+                  <button className="btn btn-outline" type="button" onClick={() => setRockySuggestion(null)}>Descartar</button>
+                </div>
+              </div>
+            ) : null}
             <MessageInput key={activeConversation.id} contact={activeConversation.contact} onSendMessage={handleSendMessage} />
           </div>
 
