@@ -8,6 +8,7 @@ export function normalizeCatalogText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/\bpro\s*\+/g, "pro plus ").replace(/(\d)\s+(gb|tb|mb|w|mah)\b/g, "$1$2")
     .replace(/\b(?:readmi|redmy)\b/g, "redmi").replace(/\b(?:samsumg|sansung)\b/g, "samsung")
+    .replace(/\b(?:bluetoth|bluethoot|blutooth)\b/g, "bluetooth")
     .replace(/\b(?:xiomi|xiami|xiaomy|xioami)\b/g, "xiaomi").replace(/[^a-z0-9]+/g, " ").trim();
 }
 export function isCatalogRequest(content: string) {

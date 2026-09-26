@@ -36,9 +36,11 @@ for (const text of ["mi pedido", "quiero hablar con asesor", "reclamo por pago",
   });
 }
 test("invalid model plan falls back without executing its query", async () => {
-  const result = await new RockyAIOrchestrator(emptyBackend, provider({ ...proposed, intent: "EXECUTE_SQL" } as unknown as RockyPlan)).chat({ text: "algo diferente" });
+  const queries: string[] = [];
+  const result = await new RockyAIOrchestrator({ ...emptyBackend, search: async query => { queries.push(query); return []; } }, provider({ ...proposed, intent: "EXECUTE_SQL" } as unknown as RockyPlan)).chat({ text: "algo diferente" });
   assert.equal(result.reasonCode, "MODEL_UNAVAILABLE_OR_INVALID");
-  assert.deepEqual(result.toolsRequested, []);
+  assert.deepEqual(queries, ["algo diferente"]);
+  assert.deepEqual(result.toolsRequested, ["searchProducts"]);
 });
 test("only separately approved, relevant intent examples are eligible", () => {
   const question = "lámpara lunar recargable";

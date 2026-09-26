@@ -11,6 +11,7 @@ import { expandInitialVocabulary } from "./vocabulary";
 import { getPreferredProductImageUrl } from "../product-media";
 import { catalogSubject, productSubject, businessTopics } from "./query-language";
 import { PLANNING_APPROVAL, selectReviewedExamples } from "./reviewed-examples";
+import { createCatalogIndex } from "../catalog-selection";
 
 export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?: boolean } = {}): ToolBackend {
   return {
@@ -54,7 +55,10 @@ export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?
       if (!productSubject(query)) return [];
       query = expandInitialVocabulary(query);
       const aliases = await prisma.rockySynonym.findMany({ where: { phrase: { equals: query, mode: "insensitive" }, status: "APPROVED" }, take: 3 });
-      const candidates = (await searchInternalProducts({ query, limit: 8 })).filter(p => matchesRequestedModel(query, p));
+      const internal = (await searchInternalProducts({ query, limit: 8 })).filter(p => matchesRequestedModel(query, p));
+      // Broad internal results must not suppress the full-catalog spelling fallback.
+      const selection = createCatalogIndex(internal).select(query);
+      const candidates = selection.scoped ? selection.products : [];
       if (!candidates.length) {
         const catalog = await loadCommercialCatalog();
         const matches = catalog.search(query, false).products;

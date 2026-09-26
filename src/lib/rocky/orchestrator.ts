@@ -7,6 +7,8 @@ import { selectSkill } from "./skills";
 import { ToolExecutor, type ToolBackend, type ToolName } from "./tools";
 import { compareFacts } from "./sales";
 import { checkoutPrompt } from "./checkout";
+import { createCatalogIndex } from "../catalog-selection";
+import { parseCommercialQuery } from "../commercial-query";
 
 export class RockyAIOrchestrator {
   constructor(private backend: ToolBackend, private provider?: LLMProvider) {}
@@ -58,6 +60,44 @@ export class RockyAIOrchestrator {
     let tokens: RockyResult["tokens"] = null;
     let model = "rules-and-tools";
     let reasonCode: string | null = null;
+    // An unrecognized product name can be resolved by current catalog evidence,
+    // even when the model is unavailable. Do not search images or known service intents.
+    const catalogLookup = new ToolExecutor(this.backend, selectSkill("PRODUCT_SEARCH").tools);
+    let namedSearch: { query: string; result: Awaited<ReturnType<ToolExecutor["execute"]>> } | undefined;
+    let catalogMatchedIntent = false;
+    let refinedQuery = false;
+    if (plan.intent === "UNKNOWN" && plan.query && !input.image && !/https?:\/\/|@/.test(plan.query)) {
+      try {
+        const previousQuery = !memory.cart && memory.shownCodes.length ? memory.query : "";
+        const fragment = parseCommercialQuery(plan.query);
+        const constraintOnly = !fragment.text && (fragment.constraints.measurements.length > 0 || fragment.constraints.colors.length > 0);
+        const refine = () => {
+          const combined = `${previousQuery} ${plan.query}`;
+          if (!previousQuery || combined.length > 120) return;
+          plan = { ...plan, intent: "PRODUCT_SEARCH", query: combined, codes: [], quantity: memory.quantity, budget: memory.budget, needs: memory.needs };
+          refinedQuery = true;
+        };
+        if (constraintOnly) refine();
+        let result = await catalogLookup.execute("searchProducts", { query: plan.query, budget: plan.budget });
+        let selection = createCatalogIndex(result.products).select(plan.query);
+        // A catalog-backed qualifier refines the previous product, including brands
+        // stored only in names. A newly named product type starts a new search.
+        if (!refinedQuery && previousQuery && selection.products.length && !selection.categories.length && !selection.types.length) {
+          refine();
+          if (refinedQuery) {
+            result = await catalogLookup.execute("searchProducts", { query: plan.query, budget: plan.budget });
+            selection = createCatalogIndex(result.products).select(plan.query);
+          }
+        }
+        const ids = new Set(selection.scoped ? selection.products.map(p => p.code) : []);
+        result.products = result.products.filter(p => ids.has(p.code) && matchesRequestedModel(plan.query, p));
+        namedSearch = { query: plan.query, result };
+        if (result.products.length) {
+          plan.intent = "PRODUCT_SEARCH";
+          catalogMatchedIntent = true;
+        }
+      } catch { /* The normal planner/fallback remains available if the catalog fails. */ }
+    }
     const needsReference = !input.image && !plan.codes.length && !plan.query && ["PRODUCT_SEARCH", "PRODUCT_DETAILS", "PRICE_QUERY", "STOCK_QUERY", "WHOLESALE_QUERY", "PRODUCT_COMPARISON"].includes(plan.intent);
     // High risk requests are decided before consulting the model.
     const exactToolRequest = plan.codes.length > 0 && ["STOCK_QUERY", "PRICE_QUERY", "PRODUCT_COMPARISON", "WHOLESALE_QUERY", "PRODUCT_DETAILS"].includes(plan.intent);
@@ -87,7 +127,8 @@ export class RockyAIOrchestrator {
     const products: ProductFact[] = []; const sources: RockyResult["sources"] = [];
     let requiresHuman = ["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY", "ORDER_STATUS"].includes(plan.intent);
     const call = async (name: ToolName, args: unknown) => {
-      const result = await executor.execute(name, args);
+      const result = name === "searchProducts" && namedSearch && namedSearch.query === (args as { query?: string }).query
+        ? namedSearch.result : await executor.execute(name, args);
       for (const product of result.products) if (matchesRequestedType(plan.query, product) && (plan.codes.includes(product.code) || (plan.codes.length > 1 ? plan.codes.some(code => matchesRequestedModel(code, product)) : matchesRequestedModel(plan.query, product))) && !products.some(p => p.id === product.id) && (!(["PRODUCT_SEARCH", "PRODUCT_RECOMMENDATION"].includes(plan.intent) && plan.budget !== null) || product.unitPrice <= plan.budget!)) products.push(product);
       sources.push(...result.sources);
       if (result.catalog) catalog = result.catalog;
@@ -115,7 +156,7 @@ export class RockyAIOrchestrator {
         if (plan.intent === "PRICE_OBJECTION") await call("searchProducts", { query: memory.query || plan.query, budget: plan.budget });
       } else if (plan.query && skill.tools.includes("searchProducts") && !["GREETING", "UNKNOWN", "FOLLOW_UP"].includes(plan.intent)) {
         await call("searchProducts", { query: plan.query, budget: plan.budget });
-        if (!products.length && skill.tools.includes("searchKnowledge")) {
+        if (!products.length && !refinedQuery && skill.tools.includes("searchKnowledge")) {
           await call("searchKnowledge", { query: plan.query });
           // RAG may identify a product, but its price and stock are always reloaded from the backend.
           for (const source of sources.filter(s => s.productId).slice(0, 3)) {
@@ -128,7 +169,8 @@ export class RockyAIOrchestrator {
     if (plan.intent === "ORDER_STATUS") reasonCode = "IDENTITY_VERIFICATION_REQUIRED";
     if (["HUMAN_REQUEST", "COMPLAINT", "RETURN_QUERY"].includes(plan.intent)) reasonCode = plan.intent;
     const exact = plan.codes.length > 0 && plan.codes.every(code => products.some(p => p.code.toUpperCase() === code.toUpperCase()));
-    const evidence = ["RULE_BASED_INTENT", ...(exact ? ["EXACT_PRODUCT_MATCH"] : []), ...(products.length ? ["CURRENT_BACKEND_DATA"] : []), ...(sources.length ? ["APPROVED_KNOWLEDGE"] : []), ...(executor.calls.some(c => !c.ok) ? ["TOOL_FAILURE"] : [])];
+    const calls = [...catalogLookup.calls, ...executor.calls];
+    const evidence = [catalogMatchedIntent ? "CATALOG_MATCHED_INTENT" : "RULE_BASED_INTENT", ...(refinedQuery ? ["CATALOG_QUERY_REFINED"] : []), ...(exact ? ["EXACT_PRODUCT_MATCH"] : []), ...(products.length ? ["CURRENT_BACKEND_DATA"] : []), ...(sources.length ? ["APPROVED_KNOWLEDGE"] : []), ...(calls.some(c => !c.ok) ? ["TOOL_FAILURE"] : [])];
     const confidence = requiresHuman ? 0.3 : plan.intent === "GREETING" ? 0.95 : exact ? 0.95 : products.length ? 0.75 : sources.length ? 0.7 : 0.35;
     // Deliberately render commercial assertions from evidence, never from unconstrained LLM prose.
     let reply = "Con gusto te ayudo 😊 ¿Qué producto buscas y para qué lo vas a utilizar? Puedes indicarme el código o tu presupuesto.";
@@ -185,7 +227,7 @@ export class RockyAIOrchestrator {
       asked: [...new Set([...memory.asked, ...(reply.includes("presupuesto máximo") ? ["budget"] : []), ...(reply.includes("¿Para qué uso") ? ["useCase"] : [])])].slice(-10),
     });
     return { rockyRequestId: randomUUID(), intent: plan.intent, skill: skill.name, confidence: requiresHuman ? Math.min(confidence, 0.3) : confidence, confidenceEvidence: evidence,
-      toolsRequested: executor.calls.map(c => c.name), toolCalls: executor.calls, products, sources, reply: reply.slice(0, 3900), requiresHuman, reasonCode,
+      toolsRequested: calls.map(c => c.name), toolCalls: calls, products, sources, reply: reply.slice(0, 3900), requiresHuman, reasonCode,
       ...(catalog ? { catalog } : {}), memory: next, model, latencyMs: Date.now() - started, tokens, finalAction: requiresHuman ? "HANDOFF" : "SUGGEST" };
   }
 }
