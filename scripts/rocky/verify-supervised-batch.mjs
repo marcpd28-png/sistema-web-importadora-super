@@ -44,6 +44,16 @@ try {
   assert.equal(await db.rockyRun.count({ where: { triggerMessageId: { in: [first.customerMessageId, second.customerMessageId] } } }), 1);
   assert.equal(result.messages.filter(message => message.direction === 'OUTBOUND' && message.senderType === 'BOT'
     && message.messageType === 'TEXT' && message.externalMessageId?.startsWith('rocky-sim:')).length, 1);
+  for (const mode of ['MANUAL', 'COPILOT']) {
+    const response = await fetch(base + '/api/admin/rocky', { method: 'POST', headers,
+      body: JSON.stringify({ action: 'mode', conversationId: second.conversationId, mode }), signal: AbortSignal.timeout(15_000) });
+    assert.equal(response.status, 200);
+  }
+  const conversation = await db.conversation.findUniqueOrThrow({ where: { id: second.conversationId }, include: { rockySession: true } });
+  assert.equal(conversation.rockySession?.mode, 'COPILOT');
+  assert.equal(conversation.botEnabled, true);
+  assert.equal(conversation.status, 'AUTOMATICO');
+  assert.equal(conversation.assignedUserId, null);
   console.log(JSON.stringify({ ok: true, base, fragments: 2, answerTrigger: second.customerMessageId, customerMessagesSent: 0 }));
 } finally {
   await db.$disconnect();
