@@ -1,4 +1,5 @@
 import type { Conversation } from "@/types/messages";
+import { useState } from "react";
 import { ConversationStatus } from "./ConversationStatus";
 import { ArrowLeft, UserPlus, StopCircle, PlayCircle, CheckCircle } from "lucide-react";
 import { DynamicAvatar } from "./ConversationItem";
@@ -13,9 +14,10 @@ interface Props {
 
 export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCloseConversation, onBack }: Props) {
   const { contact, botEnabled } = conversation;
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   return (
-    <div className="chat-header">
+    <div className="chat-header" data-actions-open={actionsOpen}>
       <button aria-label="Volver a conversaciones" className="icon-btn chat-header-back" onClick={onBack} type="button">
         <ArrowLeft size={20} />
       </button>
@@ -42,7 +44,8 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
       
       <ConversationStatus conversation={conversation} />
       
-      <div className="chat-header-actions">
+      <button className="messages-mobile-actions-toggle" type="button" aria-expanded={actionsOpen} aria-controls="chat-conversation-actions" onClick={() => setActionsOpen(!actionsOpen)}>Acciones</button>
+      <div className="chat-header-actions" id="chat-conversation-actions">
         {botEnabled ? (
           <button className="btn btn-outline" onClick={onToggleBot} type="button">
             <StopCircle size={14} /> Pausar Bot

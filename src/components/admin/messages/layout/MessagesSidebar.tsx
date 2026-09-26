@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Inbox, Zap, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore } from "lucide-react";
 
 export function MessagesSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { name: "Bandeja", href: "/admin/mensajes", icon: Inbox, exact: true },
@@ -19,6 +20,9 @@ export function MessagesSidebar() {
 
   return (
     <header className="messages-app-navigation">
+      <select className="messages-mobile-section" aria-label="Sección del centro de mensajes" value={navItems.find((item) => item.exact ? pathname === item.href : pathname.startsWith(item.href))?.href ?? "/admin/mensajes"} onChange={(event) => router.push(event.target.value)}>
+        {navItems.map((item) => <option key={item.href} value={item.href}>{item.name}</option>)}
+      </select>
       <div className="messages-app-navigation-title">
         <span className="messages-app-navigation-icon" aria-hidden="true">
           <MessageCircleMore size={20} />

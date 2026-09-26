@@ -1,4 +1,4 @@
-import type { UIEvent } from "react";
+import { useState, type UIEvent } from "react";
 import type { Conversation, ConversationState } from "@/types/messages";
 import { ConversationItem } from "./ConversationItem";
 import { CalendarDays, Hash, Phone, RotateCw, Search } from "lucide-react";
@@ -63,6 +63,8 @@ export function ConversationList({
   total,
 }: Props) {
   const activeFilter = getActiveFilter(filters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const advancedCount = [filters.phone, filters.q, filters.dateFrom, filters.dateTo].filter(Boolean).length;
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const element = event.currentTarget;
@@ -75,7 +77,7 @@ export function ConversationList({
 
   return (
     <div className="messages-sidebar">
-      <div className="messages-sidebar-header">
+      <div className="messages-sidebar-header" data-filters-open={filtersOpen}>
         <div className="messages-search-row">
           <div className="messages-field messages-field-grow">
             <Search size={16} />
@@ -92,6 +94,10 @@ export function ConversationList({
           </button>
         </div>
 
+        <button className="messages-mobile-filter-toggle" type="button" aria-expanded={filtersOpen} aria-controls="conversation-advanced-filters" onClick={() => setFiltersOpen(!filtersOpen)}>
+          {filtersOpen ? "Ocultar filtros" : "Más filtros"}{advancedCount > 0 ? ` (${advancedCount})` : ""}
+        </button>
+        <div className="messages-advanced-filters" id="conversation-advanced-filters">
         <div className="messages-filter-grid">
           <div className="messages-field">
             <Phone size={15} />
@@ -137,6 +143,13 @@ export function ConversationList({
           </label>
         </div>
 
+        </div>
+        <select className="messages-mobile-status" aria-label="Estado de conversaciones" value={activeFilter} onChange={(event) => {
+          const filter = FILTERS.find((item) => item.id === event.target.value);
+          if (filter) onFiltersChange({ status: filter.status, unreadOnly: Boolean(filter.unreadOnly) });
+        }}>
+          {FILTERS.map((filter) => <option key={filter.id} value={filter.id}>{filter.label}</option>)}
+        </select>
         <div className="messages-filters">
           {FILTERS.map((filter) => (
             <button

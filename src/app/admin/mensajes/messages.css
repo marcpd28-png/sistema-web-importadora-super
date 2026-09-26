@@ -2045,3 +2045,45 @@ body[data-admin-theme="dark"] :where(.chat-messages, .message-simulator-chat) {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Mobile inbox: reserve the viewport for conversations and the active chat. */
+.messages-mobile-filter-toggle, .messages-mobile-status, .messages-mobile-actions-toggle, .messages-mobile-section { display: none; }
+.messages-advanced-filters { display: grid; gap: 12px; }
+@media (max-width: 768px) {
+  .messages-app-shell :where(.messages-app-content, .messages-inbox-page, .messages-inbox-workspace, .messages-workspace, .messages-main, .chat-header, .chat-header-info, .chat-header-info > div, .chat-input-wrapper, .chat-input-textarea) { min-width: 0; max-width: 100%; }
+  .messages-app-shell .messages-workspace { margin: 0; }
+  .messages-mobile-filter-toggle, .messages-mobile-status, .messages-mobile-actions-toggle, .messages-mobile-section { display: block; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--surface-strong); color: var(--foreground); font: inherit; }
+  .messages-mobile-status, .messages-mobile-section { font-size: 16px; width: 100%; min-width: 0; }
+  .messages-app-navigation .messages-app-sidebar-nav, .messages-app-navigation-title { display: none; }
+  .messages-app-shell .messages-app-navigation { padding: 6px 10px; }
+  .messages-page-header { padding: 8px 12px; }
+  .messages-page-header .eyebrow { display: none; }
+  .messages-page-header h1 { font-size: 18px; }
+  .messages-sidebar-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px; flex-shrink: 0; max-height: 65%; overflow-y: auto; }
+  .messages-search-row, .messages-advanced-filters, .messages-result-count { grid-column: 1 / -1; }
+  .messages-mobile-filter-toggle { grid-column: 2; grid-row: 2; font-size: 12px; }
+  .messages-mobile-status { grid-column: 1; grid-row: 2; }
+  .messages-advanced-filters { grid-row: 3; }
+  .messages-sidebar-header:not([data-filters-open="true"]) .messages-advanced-filters, .messages-sidebar-header .messages-filters { display: none; }
+  .messages-app-shell :where(input, textarea, select) { font-size: 16px; }
+  .messages-app-shell:has(.chat-open) .messages-app-navigation, .messages-inbox-page:has(.chat-open) .messages-page-header { display: none; }
+  .admin-shell:has(.chat-open) .admin-mobile-dock { display: none; }
+  .admin-shell .messages-app-shell:has(.chat-open) { height: calc(100dvh - 5.25rem); }
+  .messages-main .chat-header { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 4px 8px; padding: 8px; flex-shrink: 0; }
+  .chat-header .conversation-status-bar { grid-column: 2 / -1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; min-width: 0; }
+  .chat-header .conversation-status-bar .status-indicator { display: flex; align-items: center; gap: 4px; }
+  .messages-mobile-actions-toggle { grid-column: 3; grid-row: 1; font-size: 12px; }
+  .chat-header .chat-header-actions { grid-column: 1 / -1; flex-wrap: wrap; margin: 0; }
+  .chat-header:not([data-actions-open="true"]) .chat-header-actions { display: none; }
+  .chat-header .chat-header-actions .btn { font-size: 12px; min-height: 44px; }
+  .chat-header-info { overflow: hidden; }
+  .chat-messages { min-height: 0; }
+  .message-bubble { overflow-wrap: anywhere; min-width: 0; }
+  .message-bubble :where(audio, video, img) { max-width: 100%; }
+  .messages-main .chat-input-container { flex-shrink: 0; padding: 6px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .chat-input-wrapper { gap: 2px; padding: 4px; flex-wrap: wrap; }
+  .chat-input-wrapper .chat-input-textarea { flex: 1 1 calc(100% - 54px); order: -2; min-height: 44px; padding: 10px 6px; }
+  .chat-input-actions { order: -1; padding: 0; }
+  .chat-input-wrapper .icon-btn { width: 44px; height: 44px; flex-shrink: 0; }
+  .chat-input-help { display: none; }
+}
