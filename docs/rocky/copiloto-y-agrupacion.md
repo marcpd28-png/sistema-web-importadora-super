@@ -11,3 +11,5 @@ El Centro de Mensajes ofrece tres modos por conversación:
 El modo copiloto se controla de manera independiente con `ROCKY_COPILOT_ENABLED`. Activarlo no habilita envíos automáticos. Cuando un asesor toma la conversación, el modo pasa a manual y el bot queda pausado.
 
 La verificación `scripts/rocky/verify-supervised-batch.mjs --execute` crea exclusivamente una conversación de simulación, envía dos fragmentos, comprueba una sola respuesta y no contacta clientes reales.
+
+Despliegue: `/home/IMPORTADORA-releases/rocky-supervised-20260926`, PM2 `importadora-rocky-supervised`, puerto 4027. `ROCKY_COPILOT_ENABLED=true` y `ROCKY_AUTO_ENABLED=false`: Rocky puede preparar sugerencias en conversaciones seleccionadas, pero no puede enviar respuestas automáticas a clientes. La versión 4026 se conserva para reversión.

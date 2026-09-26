@@ -149,3 +149,5 @@ Actualización del 26/09: las API de Rocky y `/api/shop-assistant` usan `rocky-c
 Actualización posterior del 26/09: las API de Rocky y `/api/shop-assistant` usan `rocky-catalog-20260926`, PM2 `importadora-rocky-catalog`, puerto 4026. La búsqueda reconoce nombres del catálogo, errores de escritura comprobados y calificadores en mensajes sucesivos. Ver [búsqueda por nombre y contexto](busqueda-por-nombre.md). Se conserva 4025 para reversión.
 
 Etapa supervisada: Rocky agrupa fragmentos durante cinco segundos y el Centro de Mensajes permite elegir Asesor, Rocky sugiere o Rocky automático por conversación. Ver [copiloto y agrupación de mensajes](copiloto-y-agrupacion.md).
+
+Despliegue supervisado del 26/09: la bandeja, las API de Rocky y el planificador de solicitudes usan `rocky-supervised-20260926`, PM2 `importadora-rocky-supervised`, puerto 4027. El copiloto está habilitado y el envío automático permanece apagado.

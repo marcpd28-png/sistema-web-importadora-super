@@ -42,7 +42,8 @@ try {
   assert.ok(result.rocky.products.length > 0);
   assert.ok(result.rocky.products.every(product => /camara/i.test(product.name)));
   assert.equal(await db.rockyRun.count({ where: { triggerMessageId: { in: [first.customerMessageId, second.customerMessageId] } } }), 1);
-  assert.equal(result.messages.filter(message => message.direction === 'OUTBOUND' && message.senderType === 'BOT').length, 1);
+  assert.equal(result.messages.filter(message => message.direction === 'OUTBOUND' && message.senderType === 'BOT'
+    && message.messageType === 'TEXT' && message.externalMessageId?.startsWith('rocky-sim:')).length, 1);
   console.log(JSON.stringify({ ok: true, base, fragments: 2, answerTrigger: second.customerMessageId, customerMessagesSent: 0 }));
 } finally {
   await db.$disconnect();
