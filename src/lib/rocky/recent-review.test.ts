@@ -2,10 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { groupRockyReviewTurns } from "./recent-review";
 
-const at = (minute: number) => new Date(`2026-09-26T20:${String(minute).padStart(2, "0")}:00.000Z`);
-const message = (id: string, content: string, direction: "INBOUND" | "OUTBOUND", minute: number, messageType: "TEXT" | "IMAGE" = "TEXT") => ({
-  id, content, direction, messageType, createdAt: at(minute),
+const at = (second: number) => new Date(`2026-09-26T20:00:${String(second).padStart(2, "0")}.000Z`);
+const message = (id: string, content: string, direction: "INBOUND" | "OUTBOUND", second: number, messageType: "TEXT" | "IMAGE" = "TEXT") => ({
+  id, content, direction, messageType, createdAt: at(second),
   senderType: direction === "INBOUND" ? "CUSTOMER" as const : "AGENT" as const,
+});
+
+test("starts another turn after Rocky's five-second quiet period even without a recorded outbound message", () => {
+  const turns = groupRockyReviewTurns([
+    message("one", "camara", "INBOUND", 1),
+    message("two", "espia", "INBOUND", 4),
+    message("three", "precio", "INBOUND", 11),
+  ]);
+  assert.equal(turns.length, 2);
+  assert.equal(turns[0].customerText, "camara\nespia");
+  assert.equal(turns[1].customerText, "precio");
 });
 
 test("groups separated customer fragments before the recorded reply", () => {

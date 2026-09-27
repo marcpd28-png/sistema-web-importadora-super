@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { RockyResult } from "./contracts";
 
 export const ROCKY_REVIEW_HOURS = 3;
+const ROCKY_REVIEW_BATCH_GAP_MS = 5_000;
 
 type ReviewMessage = {
   id: string;
@@ -62,7 +63,9 @@ export function groupRockyReviewTurns(messages: ReviewMessage[]): RockyReviewTur
   for (const message of messages) {
     const isCustomer = message.direction === "INBOUND" && message.senderType === "CUSTOMER";
     if (isCustomer) {
-      if (outbound.length) flush();
+      const previousInbound = inbound.at(-1);
+      const startsNewBatch = previousInbound && message.createdAt.getTime() - previousInbound.createdAt.getTime() > ROCKY_REVIEW_BATCH_GAP_MS;
+      if (outbound.length || startsNewBatch) flush();
       inbound.push(message);
     } else if (message.direction === "OUTBOUND" && inbound.length) {
       outbound.push(message);
