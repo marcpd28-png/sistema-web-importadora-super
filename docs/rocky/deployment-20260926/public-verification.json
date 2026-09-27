@@ -1,0 +1,48 @@
+{
+  "base": "https://tiendavirtualsuper.com",
+  "at": "2026-09-27T01:53:46.989Z",
+  "checks": [
+    {
+      "route": "/",
+      "status": 200
+    },
+    {
+      "route": "/admin/mensajes/simulador",
+      "status": 200
+    },
+    {
+      "route": "/admin/rocky/aprendizaje",
+      "status": 200
+    },
+    {
+      "route": "/admin/mensajes/evaluacion-rocky",
+      "status": 200
+    },
+    {
+      "route": "/api/admin/rocky",
+      "status": 200
+    }
+  ],
+  "health": {
+    "service": "ROCKY",
+    "ollama": {
+      "ready": true,
+      "models": [
+        "qwen3.5:2b",
+        "qwen3-embedding:0.6b",
+        "qwen3.5:4b",
+        "qwen3.5:9b",
+        "qwen2.5:7b"
+      ]
+    },
+    "llmEnabled": true,
+    "vectorEnabled": true,
+    "pgvector": true,
+    "documents": 1679,
+    "simulatorEnabled": true,
+    "copilotEnabled": true,
+    "liveSending": false
+  },
+  "assets": 29,
+  "unauthorized": 401
+}

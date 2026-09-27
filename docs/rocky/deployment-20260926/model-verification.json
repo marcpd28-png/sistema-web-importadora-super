@@ -1,0 +1,14 @@
+{
+  "model": "qwen3.5:9b",
+  "embeddingModel": "qwen3-embedding:0.6b",
+  "llm": {
+    "ok": false,
+    "ms": 30005.957347,
+    "error": "TimeoutError"
+  },
+  "embedding": {
+    "ok": true,
+    "ms": 2242.356387,
+    "dimensions": 1024
+  }
+}

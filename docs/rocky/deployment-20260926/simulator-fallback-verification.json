@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "elapsedMs": 30555,
+  "conversationId": "cmuj613mk000dkw5n9zywqz7m",
+  "requestId": "f9f08523-d3f4-429d-b9b7-53993a6d5a38",
+  "intent": "UNKNOWN",
+  "model": "deterministic-safe-fallback",
+  "tools": [
+    "searchProducts"
+  ],
+  "reason": "MODEL_UNAVAILABLE_OR_INVALID",
+  "messages": 2,
+  "reply": "Necesito que un asesor revise esta consulta para darte información correcta."
+}
