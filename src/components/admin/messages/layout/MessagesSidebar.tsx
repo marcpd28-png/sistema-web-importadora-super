@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Inbox, Zap, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore } from "lucide-react";
+import { Inbox, Zap, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore, FlaskConical } from "lucide-react";
 
 export function MessagesSidebar() {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export function MessagesSidebar() {
     { name: "Contactos", href: "/admin/mensajes/contactos", icon: Users, exact: false },
     { name: "Actividad", href: "/admin/mensajes/actividad", icon: Activity, exact: false },
     { name: "Simulador", href: "/admin/mensajes/simulador", icon: Bug, exact: false },
+    { name: "Evaluación Rocky", href: "/admin/mensajes/evaluacion-rocky", icon: FlaskConical, exact: false },
     { name: "Configuración", href: "/admin/mensajes/configuracion", icon: Settings, exact: false },
   ];
 
