@@ -89,7 +89,7 @@ export async function loadRecentRockyReview(since: Date): Promise<RockyReviewCon
       },
     },
     orderBy: { lastMessageAt: "desc" },
-    take: 60,
+    take: 200,
   }), prisma.chatMessage.findMany({
     where: { createdAt: { gte: since }, metadata: { path: ["source"], equals: "rocky-recent-review" } },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
