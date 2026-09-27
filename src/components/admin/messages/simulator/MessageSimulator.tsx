@@ -70,7 +70,18 @@ export function MessageSimulator() {
   const [busy, setBusy] = useState(false);
   const [waitingForN8n, setWaitingForN8n] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
+  const followLatest = useRef(true);
+  const [showLatest, setShowLatest] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  function scrollToLatest() {
+    followLatest.current = true;
+    const container = messagesRef.current;
+    if (container) container.scrollTop = container.scrollHeight;
+    setShowLatest(false);
+  }
 
   useEffect(() => () => activeRequest.current?.abort(), []);
   useEffect(() => {
@@ -84,8 +95,25 @@ export function MessageSimulator() {
   const conversationLabel = useMemo(() => phone.trim() || "sin telefono", [phone]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
+    if (followLatest.current) {
+      const container = messagesRef.current;
+      if (container) container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
+
+  useEffect(() => {
+    const container = messagesRef.current;
+    const transcript = transcriptRef.current;
+    if (!container || !transcript) return;
+    // Images, notices and viewport changes can resize the chat after rendering.
+    const observer = new ResizeObserver(() => {
+      if (followLatest.current) container.scrollTop = container.scrollHeight;
+      setShowLatest(container.scrollHeight - container.scrollTop - container.clientHeight > 80);
+    });
+    observer.observe(container);
+    observer.observe(transcript);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!conversationId || !waitingForN8n) {
@@ -196,6 +224,7 @@ export function MessageSimulator() {
       if (controller.signal.aborted) return;
       if (!payload.messages) throw new Error("No se pudo simular el mensaje.");
 
+      followLatest.current = true;
       setMessages(payload.messages);
       setConversationId(payload.conversationId ?? null);
       setPendingCustomerMessageId(payload.customerMessageId ?? null);
@@ -221,6 +250,8 @@ export function MessageSimulator() {
   }
 
   function handleNewSession() {
+    followLatest.current = true;
+    setShowLatest(false);
     setRocky(null);
     setFeedback("");
     fileVersion.current += 1;
@@ -237,8 +268,11 @@ export function MessageSimulator() {
   }
 
   return (
-    <div className="message-simulator">
-      <aside className="message-simulator-panel">
+    <div className="message-simulator" data-panel-open={panelOpen}>
+      <button type="button" className="message-simulator-panel-toggle" aria-expanded={panelOpen} aria-controls="simulator-settings" onClick={() => setPanelOpen(!panelOpen)}>
+        {panelOpen ? "Ocultar configuración" : "Configuración del simulador"}
+      </button>
+      <aside className="message-simulator-panel" id="simulator-settings">
         <div className="message-simulator-title">
           <div className="message-simulator-icon">
             <Bug size={20} />
@@ -305,110 +339,121 @@ export function MessageSimulator() {
           </span>
         </div>
 
-        <div className="message-simulator-messages">
-          {messages.length === 0 ? (
-            <div className="message-simulator-empty">
-              <Bot size={44} />
-              <p>{engine === "ROCKY" ? "Escribe una consulta para probar a Rocky." : "Escribe una consulta como cliente para disparar el workflow real."}</p>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isCustomer = message.senderType === "CUSTOMER";
-              const isBot = message.senderType === "BOT";
+        <div className="message-simulator-messages" ref={messagesRef} tabIndex={0} role="region" aria-label="Historial de la conversación" onScroll={() => {
+          const container = messagesRef.current;
+          if (!container) return;
+          const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= 80;
+          followLatest.current = nearBottom;
+          setShowLatest(!nearBottom);
+        }}>
+          <div className="message-simulator-transcript" ref={transcriptRef}>
+            {messages.length === 0 ? (
+              <div className="message-simulator-empty">
+                <Bot size={44} />
+                <p>{engine === "ROCKY" ? "Escribe una consulta para probar a Rocky." : "Escribe una consulta como cliente para disparar el workflow real."}</p>
+              </div>
+            ) : (
+              messages.map((message) => {
+                const isCustomer = message.senderType === "CUSTOMER";
+                const isBot = message.senderType === "BOT";
 
-              return (
-                <div
-                  className={`simulator-bubble ${isCustomer ? "is-customer" : "is-bot"}`}
-                  key={message.id}
-                >
-                  <div className="simulator-bubble-meta">
-                    {isCustomer ? <UserRound size={13} /> : <Bot size={13} />}
-                    <span>{isCustomer ? "Cliente" : isBot ? engine === "ROCKY" ? "ROCKY" : "BC" : "Sistema"}</span>
-                  </div>
-                  {message.messageType === "IMAGE" && message.mediaUrl ? (
-                    <div className="simulator-media-message">
-                      <a href={message.mediaUrl} target="_blank" rel="noreferrer" title="Ver imagen completa">
-                        <img alt={message.content || "Imagen enviada"} src={message.mediaUrl} />
-                      </a>
-                      {message.content ? <p>{linkedMessage(message.content)}</p> : null}
+                return (
+                  <div
+                    className={`simulator-bubble ${isCustomer ? "is-customer" : "is-bot"}`}
+                    key={message.id}
+                  >
+                    <div className="simulator-bubble-meta">
+                      {isCustomer ? <UserRound size={13} /> : <Bot size={13} />}
+                      <span>{isCustomer ? "Cliente" : isBot ? engine === "ROCKY" ? "ROCKY" : "BC" : "Sistema"}</span>
                     </div>
-                  ) : message.messageType === "DOCUMENT" && message.mediaUrl ? (
-                    <a className="simulator-document-message" href={message.mediaUrl} rel="noreferrer" target="_blank">
-                      <FileDown size={22} />
-                      <span><strong>{message.content || "Documento generado"}</strong><small>Abrir documento de prueba</small></span>
-                    </a>
-                  ) : message.messageType === "AUDIO" && message.mediaUrl ? (
-                    <div><audio controls preload="none" src={message.mediaUrl} />{message.content ? <p>{linkedMessage(message.content)}</p> : null}</div>
-                  ) : (
-                    <p>{linkedMessage(message.content)}</p>
-                  )}
-                  <time>{formatTime(message.createdAt)}</time>
-                </div>
-              );
-            })
-          )}
-          <div ref={endRef} />
+                    {message.messageType === "IMAGE" && message.mediaUrl ? (
+                      <div className="simulator-media-message">
+                        <a href={message.mediaUrl} target="_blank" rel="noreferrer" title="Ver imagen completa">
+                          <img alt={message.content || "Imagen enviada"} src={message.mediaUrl} />
+                        </a>
+                        {message.content ? <p>{linkedMessage(message.content)}</p> : null}
+                      </div>
+                    ) : message.messageType === "DOCUMENT" && message.mediaUrl ? (
+                      <a className="simulator-document-message" href={message.mediaUrl} rel="noreferrer" target="_blank">
+                        <FileDown size={22} />
+                        <span><strong>{message.content || "Documento generado"}</strong><small>Abrir documento de prueba</small></span>
+                      </a>
+                    ) : message.messageType === "AUDIO" && message.mediaUrl ? (
+                      <div><audio controls preload="none" src={message.mediaUrl} />{message.content ? <p>{linkedMessage(message.content)}</p> : null}</div>
+                    ) : (
+                      <p>{linkedMessage(message.content)}</p>
+                    )}
+                    <time>{formatTime(message.createdAt)}</time>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
-        {busy && <div className="message-simulator-notice" role="status">
-          {engine === "ROCKY" ? "Rocky está consultando tu mensaje" : "Enviando el mensaje al simulador"} · {elapsed} s.
-          {elapsed >= 15 && " Está tardando más de lo habitual. La espera termina como máximo en 65 segundos."}
-          <button type="button" className="btn btn-outline" onClick={() => activeRequest.current?.abort()}>Dejar de esperar</button>
-        </div>}
-        {notice ? <div className="message-simulator-notice" role="status">{notice}</div> : null}
+        {showLatest && <button type="button" className="message-simulator-latest" onClick={scrollToLatest}>Ir al último mensaje ↓</button>}
+        <div className="message-simulator-composer">
+          {busy && <div className="message-simulator-notice" role="status">
+            {engine === "ROCKY" ? "Rocky está consultando tu mensaje" : "Enviando el mensaje al simulador"} · {elapsed} s.
+            {elapsed >= 15 && " Está tardando más de lo habitual. La espera termina como máximo en 65 segundos."}
+            <button type="button" className="btn btn-outline" onClick={() => activeRequest.current?.abort()}>Dejar de esperar</button>
+          </div>}
+          {notice ? <div className="message-simulator-notice" role="status">{notice}</div> : null}
 
-        <label className="simulator-field">
-          <span>Adjuntar foto, captura de redes o audio (hasta 4 MB)</span>
-          <input type="file" accept={SIMULATOR_MEDIA_ACCEPT} disabled={busy || readingFile} onChange={async (event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            if (!file) return;
-            if (!SIMULATOR_MEDIA_ACCEPT.split(",").includes(file.type) || file.size === 0 || file.size > SIMULATOR_MEDIA_MAX_BYTES) {
-              setNotice("Selecciona una imagen JPG, PNG, WebP o un audio compatible de hasta 4 MB.");
-              return;
-            }
-            const version = ++fileVersion.current;
-            setReadingFile(true);
-            try {
-              const dataUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result));
-                reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
-                reader.readAsDataURL(file);
-              });
-              if (version === fileVersion.current) setAttachment({ type: file.type.startsWith("image/") ? "IMAGE" : "AUDIO", dataUrl, name: file.name });
-            } catch {
-              if (version === fileVersion.current) setNotice("No se pudo leer el archivo.");
-            } finally {
-              if (version === fileVersion.current) setReadingFile(false);
-            }
-          }} />
-        </label>
-        {attachment ? <div className="message-simulator-notice">
-          {attachment.name}
-          <button type="button" className="btn btn-outline" disabled={busy} onClick={() => setAttachment(null)}>Quitar adjunto</button>
-        </div> : null}
-
-        <form className="message-simulator-input" onSubmit={handleSubmit}>
-          <textarea
-            disabled={busy}
-            maxLength={1200}
-            onChange={(event) => setContent(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                event.currentTarget.form?.requestSubmit();
+          <label className="simulator-field">
+            <span>Adjuntar foto, captura de redes o audio (hasta 4 MB)</span>
+            <input type="file" accept={SIMULATOR_MEDIA_ACCEPT} disabled={busy || readingFile} onChange={async (event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              if (!SIMULATOR_MEDIA_ACCEPT.split(",").includes(file.type) || file.size === 0 || file.size > SIMULATOR_MEDIA_MAX_BYTES) {
+                setNotice("Selecciona una imagen JPG, PNG, WebP o un audio compatible de hasta 4 MB.");
+                return;
               }
-            }}
-            placeholder="Escribe como cliente..."
-            rows={2}
-            value={content}
-          />
-          <button className="btn btn-primary" disabled={!canSend} type="submit">
-            <Send size={15} />
-            {busy ? `Procesando · ${elapsed} s` : engine === "ROCKY" ? "Enviar a Rocky" : "Enviar a BC"}
-          </button>
-        </form>
+              const version = ++fileVersion.current;
+              setReadingFile(true);
+              try {
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(String(reader.result));
+                  reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+                  reader.readAsDataURL(file);
+                });
+                if (version === fileVersion.current) setAttachment({ type: file.type.startsWith("image/") ? "IMAGE" : "AUDIO", dataUrl, name: file.name });
+              } catch {
+                if (version === fileVersion.current) setNotice("No se pudo leer el archivo.");
+              } finally {
+                if (version === fileVersion.current) setReadingFile(false);
+              }
+            }} />
+          </label>
+          {attachment ? <div className="message-simulator-notice">
+            {attachment.name}
+            <button type="button" className="btn btn-outline" disabled={busy} onClick={() => setAttachment(null)}>Quitar adjunto</button>
+          </div> : null}
+
+          <form className="message-simulator-input" onSubmit={handleSubmit}>
+            <textarea
+              aria-label="Mensaje para el simulador"
+              disabled={busy}
+              maxLength={1200}
+              onChange={(event) => setContent(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+              placeholder="Escribe como cliente..."
+              rows={2}
+              value={content}
+            />
+            <button className="btn btn-primary" disabled={!canSend} type="submit">
+              <Send size={15} />
+              {busy ? `Procesando · ${elapsed} s` : engine === "ROCKY" ? "Enviar a Rocky" : "Enviar a BC"}
+            </button>
+          </form>
+        </div>
       </section>
     </div>
   );
