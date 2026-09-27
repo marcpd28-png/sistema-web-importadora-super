@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { RockyResult } from "./contracts";
 
 export const ROCKY_REVIEW_HOURS = 3;
 
@@ -19,6 +20,7 @@ export type RockyReviewTurn = {
   createdAt: string;
   canReplay: boolean;
   mediaTypes: string[];
+  replay?: RockyResult;
 };
 
 export type RockyReviewConversation = {
@@ -71,7 +73,7 @@ export function groupRockyReviewTurns(messages: ReviewMessage[]): RockyReviewTur
 }
 
 export async function loadRecentRockyReview(since: Date): Promise<RockyReviewConversation[]> {
-  const conversations = await prisma.conversation.findMany({
+  const [conversations, reviewTriggers] = await Promise.all([prisma.conversation.findMany({
     where: {
       contact: { NOT: { externalId: { startsWith: "SIMULATOR:" } } },
       messages: { some: { createdAt: { gte: since }, direction: "INBOUND", senderType: "CUSTOMER" } },
@@ -88,12 +90,32 @@ export async function loadRecentRockyReview(since: Date): Promise<RockyReviewCon
     },
     orderBy: { lastMessageAt: "desc" },
     take: 60,
-  });
+  }), prisma.chatMessage.findMany({
+    where: { createdAt: { gte: since }, metadata: { path: ["source"], equals: "rocky-recent-review" } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, metadata: true },
+    take: 500,
+  })]);
+
+  const runs = reviewTriggers.length ? await prisma.rockyRun.findMany({
+    where: { triggerMessageId: { in: reviewTriggers.map(trigger => trigger.id) } },
+    select: { triggerMessageId: true, result: true },
+  }) : [];
+  const runsByTrigger = new Map(runs.map(run => [run.triggerMessageId, run.result as unknown as RockyResult]));
+  const replays = new Map<string, RockyResult>();
+  for (const trigger of reviewTriggers) {
+    const metadata = trigger.metadata as { sourceConversationId?: unknown; sourceMessageIds?: unknown } | null;
+    const sourceConversationId = typeof metadata?.sourceConversationId === "string" ? metadata.sourceConversationId : null;
+    const sourceMessageIds = Array.isArray(metadata?.sourceMessageIds) ? metadata.sourceMessageIds.filter((id): id is string => typeof id === "string") : [];
+    const turnKey = sourceMessageIds.at(-1);
+    const result = runsByTrigger.get(trigger.id);
+    if (sourceConversationId && turnKey && result && !replays.has(`${sourceConversationId}:${turnKey}`)) replays.set(`${sourceConversationId}:${turnKey}`, result);
+  }
 
   return conversations.map(conversation => ({
     id: conversation.id,
     contactLabel: conversation.contact.name || "Cliente",
     channel: conversation.channel,
-    turns: groupRockyReviewTurns(conversation.messages),
+    turns: groupRockyReviewTurns(conversation.messages).map(turn => ({ ...turn, replay: replays.get(`${conversation.id}:${turn.key}`) })),
   })).filter(conversation => conversation.turns.length > 0);
 }

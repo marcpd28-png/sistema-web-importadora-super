@@ -17,8 +17,10 @@ function makeReviewId() {
 }
 
 export function RockyReviewWorkspace({ conversations, since, hours }: { conversations: RockyReviewConversation[]; since: string; hours: number }) {
-  const [states, setStates] = useState<Record<string, ReplayState>>({});
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [states, setStates] = useState<Record<string, ReplayState>>(() => Object.fromEntries(conversations.flatMap(conversation => conversation.turns)
+    .filter(turn => turn.replay).map(turn => [turn.key, { status: "complete" as const, result: turn.replay }])));
+  const [drafts, setDrafts] = useState<Record<string, string>>(() => Object.fromEntries(conversations.flatMap(conversation => conversation.turns)
+    .filter(turn => turn.replay).map(turn => [turn.key, turn.replay!.reply])));
   const [notice, setNotice] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const stop = useRef(false);
