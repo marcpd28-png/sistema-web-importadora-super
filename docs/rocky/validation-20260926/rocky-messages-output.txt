@@ -1,0 +1,124 @@
+✔ learns a confirmed customer term with traceable evidence and recalls it in later conversations (3.372ms)
+✔ unknown terms require explicit correction, never a model's inferred result or a negated selection (0.7927ms)
+✔ conflicting aliases and expired memories ask for clarification instead of guessing (0.7175ms)
+✔ FAQ counts keep only structured interests and exclude canceled and unrelated requests (0.5631ms)
+✔ production scope is explicit and requires a valid activation date (0.7834ms)
+✔ scope excludes simulators and malformed recipients (0.1676ms)
+✔ legacy pilot remains limited and explicit OFF overrides it (0.1196ms)
+✔ multi-item checkout preserves each line through correction, confirmation and unverified voucher (5.1512ms)
+✔ new prices require another review and unavailable stock prevents confirmation (0.4375ms)
+✔ cancellation, exact-code removal and handoff never invent an order (0.6574ms)
+✔ ambiguous or unpriced requests cannot silently enter the cart (6.1942ms)
+✔ natural cart references preserve other lines and ambiguous or negated requests never mutate (1.3387ms)
+✔ customer corrections require review, preserve other fields, and cannot modify a confirmed order (0.5252ms)
+✔ word quantities edit the selected line and keep pricing, stock and confirmation checks (0.5838ms)
+✔ uncertain word quantities and references cannot change the reviewed cart (0.351ms)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:47:20)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:58:17)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:69:20)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:106:17)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✖ n8n conserva el enlace del audio y permite recibirlo sin texto (31.5531ms)
+✖ n8n conserva el sticker y no duplica el mensaje al reintentar (0.9404ms)
+✖ n8n conserva mediaId cuando WhatsApp no envía un enlace público (0.7851ms)
+✔ el webhook firmado de Meta persiste audio y sticker con sus identificadores (3.3952ms)
+✔ la recepción multimedia mantiene autenticación y rechaza enlaces ejecutables (0.8028ms)
+✖ el simulador cuenta la pausa desde la recepción del servidor y mantiene el orden de mensajes (2.3546ms)
+✔ el envío manual usa n8n y no llama directamente a Meta (1.3555ms)
+✔ inbound y ManyChat conservan sus puntos de entrada actuales (0.227ms)
+✔ precondiciones ManyChat y simulador fallan antes de invocar n8n y quedan fallidas (0.202ms)
+✔ no infiere manychatSubscriberId desde externalContactId (0.1701ms)
+✔ los contactos del simulador nunca se relacionan por un teléfono inferido (0.1921ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 22
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 993.8046
+
+✖ failing tests:
+
+test at src\lib\messages-incoming-media.test.ts:2:3070
+✖ n8n conserva el enlace del audio y permite recibirlo sin texto (31.5531ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:48:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\messages-incoming-media.test.ts:2:3594
+✖ n8n conserva el sticker y no duplica el mensaje al reintentar (0.9404ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\messages-incoming-media.test.ts:2:4247
+✖ n8n conserva mediaId cuando WhatsApp no envía un enlace público (0.7851ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:70:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\messages-incoming-media.test.ts:2:6025
+✖ el simulador cuenta la pausa desde la recepción del servidor y mantiene el orden de mensajes (2.3546ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:106:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

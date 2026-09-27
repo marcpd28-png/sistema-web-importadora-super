@@ -1,3 +1,7 @@
+import { autonomyDecision } from "./autonomy";
+import { learningText } from "./learning";
+import { completedEvent } from "./observability";
+import { summarizeMemory } from "./memory";
 import { matchCatalogSourceImage } from "../router-v2-catalog-image-match";
 import { identifyCatalogImageCodes, type ImageCodeMatch } from "./image-codes";
 import { Prisma } from "@prisma/client";
@@ -95,6 +99,7 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     catch { /* Invalid images are handled by clarification, never downloaded remotely. */ }
   }
   const result = checkout ?? await orchestrator.chat({ text: redactSensitiveText(customerText).slice(0, 1200), memory, history: history.reverse().map(m => redactSensitiveText(m.content)),
+    media: { type: ["TEXT", "IMAGE", "AUDIO", "VIDEO"].includes(trigger.messageType) ? trigger.messageType as "TEXT" | "IMAGE" | "AUDIO" | "VIDEO" : "DOCUMENT", productCode: resolvedProductCode },
     resolvedProductCode, ...(photoMatch && photoMatch.status !== "READY" ? { resolvedProductCodes: photoMatch.codes.slice(0, 6) } : {}),
     ...(image ? { image } : {}) });
   result.inputMessageIds = batch.messageIds;
@@ -125,6 +130,14 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
     result.requiresHuman = true; result.reasonCode = "MEDIA_ADAPTER_UNAVAILABLE";
     result.memory.stage = "HANDOFF";
   }
+  result.autonomy = autonomyDecision(result);
+  if (result.autonomy.handoff && !result.requiresHuman) {
+    result.requiresHuman = true; result.reasonCode = result.autonomy.reason; result.memory.stage = "HANDOFF";
+    result.reply = "Necesito que un asesor revise esta consulta para darte información correcta.";
+  }
+  result.memory = summarizeMemory(result.memory, result.intent, customerText);
+  result.interaction = { customerMessage: learningText(customerText), modelResponse: result.interaction?.modelResponse || null,
+    finalResponse: learningText(result.reply), createdAt: new Date().toISOString() };
   const saved = await prisma.$transaction(async tx => {
     // Never hold this lock while running inference. Recheck control, input and revision at commit.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`rocky:${conversation.id}`}))`;
@@ -145,7 +158,7 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
       const current = await tx.product.findMany({ where: { id: { in: result.products.map(p => p.id) }, isVisible: true }, select: { id: true, stockUnits: true, unitPrice: true, wholesalePrice: true, wholesaleMinQty: true } });
       if (result.products.some(p => !current.some(c => c.id === p.id && c.stockUnits === p.stockUnits && Number(c.unitPrice) === p.unitPrice && (c.wholesalePrice === null ? null : Number(c.wholesalePrice)) === p.wholesalePrice && c.wholesaleMinQty === p.wholesaleMinQty))) throw new Error("INVENTORY_CHANGED_RETRY");
     }
-    result.finalAction = result.requiresHuman ? "HANDOFF" : canSimulate ? "SIMULATE" : canQueue ? "QUEUE" : "SUGGEST";
+    result.finalAction = result.requiresHuman ? "HANDOFF" : canSimulate ? "SIMULATE" : canQueue && result.autonomy?.allowAuto ? "QUEUE" : "SUGGEST";
     await tx.rockySession.upsert({ where: { conversationId: conversation.id }, create: { conversationId: conversation.id, mode: "COPILOT", memory: json(result.memory), revision: 1 }, update: { memory: json(result.memory), revision: { increment: 1 } } });
     await tx.rockyRun.create({ data: { id: result.rockyRequestId, conversationId: conversation.id, triggerMessageId: trigger.id, intent: result.intent, skill: result.skill, result: json(result) } });
     // This service never calls an outbound provider. Simulator messages are records only.
@@ -155,13 +168,12 @@ export async function runRocky(input: { conversationId: string; triggerMessageId
       await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", ...attachment,
         externalMessageId: `rocky-media:${trigger.id}:${index}`, status: "sent", metadata: { agentId: "rocky-simulator", rockyRequestId: result.rockyRequestId } } });
     }
-    if (canQueue && !result.requiresHuman) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT", content: result.reply,
+    if (canQueue && result.autonomy?.allowAuto && !result.requiresHuman) await tx.chatMessage.create({ data: { conversationId: conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT", content: result.reply,
       externalMessageId: `rocky-outbox:${trigger.id}`, status: "bc_queued", metadata: { agentId: "rocky", requestId: result.rockyRequestId, rockyRequestId: result.rockyRequestId, triggerMessageId: trigger.id } } });
     if (result.requiresHuman && (canSimulate || canQueue)) await tx.conversation.update({ where: { id: conversation.id }, data: { botEnabled: false, status: "ATENDIENDO" } });
     return { result, duplicate: false };
   });
-  console.info(JSON.stringify({ event: "rocky.completed", rockyRequestId: saved.result.rockyRequestId, conversationId: conversation.id, intent: result.intent, skill: result.skill,
-    latency: result.latencyMs, model: result.model, tokens: result.tokens, tools: result.toolCalls, ragResults: result.sources.map(s => s.id), handoff: result.reasonCode, finalAction: result.finalAction }));
+  console.info(JSON.stringify(completedEvent(saved.result, conversation.id)));
   triggerPusherEvent(`chat-${conversation.id}`, "rocky-suggestion", { rockyRequestId: saved.result.rockyRequestId });
   return saved;
 }

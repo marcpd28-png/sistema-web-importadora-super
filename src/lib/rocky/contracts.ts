@@ -5,6 +5,12 @@ export const intents = ["GREETING", "BUSINESS_QUERY", "PRODUCT_SEARCH", "PRODUCT
 export const modeSchema = z.enum(["MANUAL", "COPILOT", "AUTO"]);
 export type RockyMode = z.infer<typeof modeSchema>;
 export const memorySchema = z.object({
+  summary: z.object({ summary: z.string().max(800), activeProducts: z.array(z.string().max(64)).max(6),
+    pendingQuestions: z.array(z.string().max(120)).max(10), customerNeeds: z.array(z.string().max(240)).max(10),
+    relevantFacts: z.array(z.string().max(240)).max(10) }).optional(),
+  sales: z.object({ purchaseStage: z.enum(["DISCOVERY", "QUALIFICATION", "COMPARISON", "OBJECTION", "CLOSING", "HANDOFF"]),
+    purchaseIntent: z.boolean(), objections: z.array(z.string().max(240)).max(5), productsConsidered: z.array(z.string().max(64)).max(8),
+    recommendedNextAction: z.enum(["HUMAN_REVIEW", "CONTINUE_VALIDATED_CHECKOUT", "RESOLVE_CUSTOMER_QUESTION", "CLARIFY_PRODUCT"]) }).optional(),
   cart: multiCartSchema.optional(),
   awaitingQuantity: z.boolean().default(false),
   pendingPurchaseQuantity: z.number().int().positive().max(100000).optional(),
@@ -38,6 +44,10 @@ export type ToolCall = { name: string; ok: boolean; latencyMs: number; resultCou
 export type CatalogDelivery = { scope: "FULL" | "FILTERED"; label: string; url: string; count: number;
   document?: { url: string; name: string }; reason?: string };
 export type RockyResult = {
+  classification?: import("./intent").IntentClassification;
+  confidenceSignals?: ReturnType<typeof import("./confidence").evaluateConfidence>["signals"];
+  autonomy?: ReturnType<typeof import("./autonomy").autonomyDecision>;
+  interaction?: { customerMessage: string; modelResponse: RockyPlan | null; finalResponse: string; createdAt: string };
   catalog?: CatalogDelivery;
   rockyRequestId: string; intent: RockyPlan["intent"]; skill: string; confidence: number;
   confidenceEvidence: string[]; toolsRequested: string[]; toolCalls: ToolCall[];
@@ -49,6 +59,7 @@ export type RockyResult = {
 export type LLMMessage = { role: "system" | "user" | "assistant" | "tool"; content: string; images?: string[] };
 export interface LLMProvider {
   readonly model: string;
+  readonly embeddingModel?: string;
   plan(messages: LLMMessage[]): Promise<{ plan: RockyPlan; tokens: { input: number; output: number } }>;
   embed(texts: string[]): Promise<number[][]>;
   health(): Promise<{ ready: boolean; models: string[] }>;

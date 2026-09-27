@@ -1,9 +1,12 @@
+import { rockyConfig } from "./config";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { planSchema, type LLMMessage, type LLMProvider } from "./contracts";
 import { redactSensitiveText } from "./guardrails";
 
 // Shared across both chat and embeddings. Ollama's own queue also bounds multiple web processes.
 let active = false;
+const embeddingCache = new Map<string, { expires: number; vector: number[] }>();
 export async function singleInference<T>(work: () => Promise<T>): Promise<T> {
   if (active) throw new Error("ROCKY_BUSY");
   active = true;
@@ -15,8 +18,8 @@ export function localOllamaUrl(value = process.env.ROCKY_OLLAMA_URL || "http://1
   return url.origin;
 }
 export class OllamaLocalProvider implements LLMProvider {
-  readonly model = process.env.ROCKY_MODEL || "qwen3.5:9b";
-  readonly embeddingModel = "qwen3-embedding:0.6b";
+  readonly model = rockyConfig().model;
+  readonly embeddingModel = rockyConfig().embeddingModel;
   private async call(path: string, body?: unknown) {
     const response = await fetch(`${localOllamaUrl()}/api/${path}`, {
       method: body ? "POST" : "GET", headers: { "content-type": "application/json" },
@@ -38,9 +41,17 @@ export class OllamaLocalProvider implements LLMProvider {
   }
   async embed(texts: string[]) {
     if (!texts.length || texts.length > 8 || texts.some(t => t.length > 3000)) throw new Error("EMBEDDING_INPUT_LIMIT");
+    const keys = texts.map(text => createHash("sha256").update(`${localOllamaUrl()}\n${this.embeddingModel}\n${text}`).digest("hex"));
+    const cached = keys.map(key => embeddingCache.get(key));
+    const missing = [...new Set(keys.filter((_, i) => !cached[i] || cached[i]!.expires <= Date.now()))];
+    if (!missing.length) return cached.map(row => [...row!.vector]);
     return singleInference(async () => {
-      const raw = await this.call("embed", { model: this.embeddingModel, input: texts, truncate: false, keep_alive: "10s", options: { num_ctx: 8192, num_thread: 2 } });
-      return z.array(z.array(z.number().finite()).length(1024)).length(texts.length).parse(raw.embeddings);
+      const raw = await this.call("embed", { model: this.embeddingModel, input: missing.map(key => texts[keys.indexOf(key)]), truncate: false, keep_alive: "10s", options: { num_ctx: 8192, num_thread: 2 } });
+      const vectors = z.array(z.array(z.number().finite()).length(1024).refine(vector => vector.some(n => n !== 0))).length(missing.length).parse(raw.embeddings);
+      missing.forEach((key, i) => embeddingCache.set(key, { vector: vectors[i], expires: Date.now() + 300000 }));
+      const result = keys.map((key, i) => [...(missing.includes(key) ? vectors[missing.indexOf(key)] : cached[i]!.vector)]);
+      while (embeddingCache.size > 128) embeddingCache.delete(embeddingCache.keys().next().value!);
+      return result;
     });
   }
   async health() {

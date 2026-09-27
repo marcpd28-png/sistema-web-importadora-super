@@ -1,0 +1,144 @@
+✖ las validaciones fallidas quedan registradas como tools fallidas (9.753ms)
+✖ el límite de tools cuenta llamadas concurrentes antes de completarse (9.7736ms)
+✖ humanEdited detecta cambios aunque la redacción produzca el mismo texto (0.6034ms)
+✖ una revocación con igual timestamp no se exporta por orden accidental (6.9562ms)
+✖ las preguntas compuestas conservan el mensaje y respuesta completos para auditoría (4.3073ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 508.0787
+
+✖ failing tests:
+
+test at src\lib\rocky\validation-regressions.test.ts:2:1465
+✖ las validaciones fallidas quedan registradas como tools fallidas (9.753ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 1
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\rocky\validation-regressions.test.ts:15:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\rocky\validation-regressions.test.ts:2:1910
+✖ el límite de tools cuenta llamadas concurrentes antes de completarse (9.7736ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  13 !== 12
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\rocky\validation-regressions.test.ts:23:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 13,
+    expected: 12,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\rocky\validation-regressions.test.ts:2:2451
+✖ humanEdited detecta cambios aunque la redacción produzca el mismo texto (0.6034ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\rocky\validation-regressions.test.ts:27:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\rocky\validation-regressions.test.ts:2:2808
+✖ una revocación con igual timestamp no se exporta por orden accidental (6.9562ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   approved: true,
+  +   humanCorrected: true,
+  +   intent: 'PRODUCT_PRICE',
+  +   messages: [
+  +     {
+  +       content: 'precio HY300',
+  +       role: 'user'
+  +     },
+  +     {
+  +       content: 'Revisado',
+  +       role: 'assistant'
+  +     }
+  +   ],
+  +   model: 'rules-and-tools',
+  +   originalResponse: '¡Claro! 😊 Esto es lo que encontré:\n' +
+  +     '\n' +
+  +     '🛍️ Proyector HY300\n' +
+  +     'Código: HY300\n' +
+  +     '💰 Precio por unidad: S/ 180.00. 📦 Stock: 7 unidades.\n' +
+  +     '\n' +
+  +     '¿Quieres comprarlo?',
+  +   reviewedAt: '1970-01-01T00:00:00.001Z',
+  +   runId: '84708113-c344-4e0d-a813-00834119d774',
+  +   sources: [],
+  +   successfulOutcome: true,
+  +   tools: [
+  +     {
+  +       name: 'getProductByCode',
+  +       ok: true
+  +     },
+  +     {
+  +       name: 'getPrice',
+  +       ok: true
+  +     }
+  +   ],
+  +   verifiedKnowledge: true,
+  +   version: 1
+  + }
+  - null
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\rocky\validation-regressions.test.ts:33:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { version: 1, runId: '84708113-c344-4e0d-a813-00834119d774', intent: 'PRODUCT_PRICE', model: 'rules-and-tools', approved: true, humanCorrected: true, successfulOutcome: true, verifiedKnowledge: true, messages: [ [Object], [Object] ], originalResponse: '¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Proyector HY300\nCódigo: HY300\n💰 Precio por unidad: S/ 180.00. 📦 Stock: 7 unidades.\n\n¿Quieres comprarlo?', sources: [], tools: [ [Object], [Object] ], reviewedAt: '1970-01-01T00:00:00.001Z' },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\rocky\validation-regressions.test.ts:2:3315
+✖ las preguntas compuestas conservan el mensaje y respuesta completos para auditoría (4.3073ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\rocky\validation-regressions.test.ts:39:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

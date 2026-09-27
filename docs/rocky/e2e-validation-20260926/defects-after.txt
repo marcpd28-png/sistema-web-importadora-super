@@ -1,0 +1,13 @@
+✔ las validaciones fallidas quedan registradas como tools fallidas (8.917ms)
+✔ el límite de tools cuenta llamadas concurrentes antes de completarse (14.5488ms)
+✔ humanEdited detecta cambios aunque la redacción produzca el mismo texto (0.5898ms)
+✔ una revocación con igual timestamp no se exporta por orden accidental (6.8196ms)
+✔ las preguntas compuestas conservan el mensaje y respuesta completos para auditoría (3.4352ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 430.3282

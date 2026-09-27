@@ -91,6 +91,6 @@ export function createToolBackend(rag: PostgresKnowledge, options: { catalogPdf?
         imageUrl: getPreferredProductImageUrl({ ...p, imageUrl: p.sourceImageUrl ?? p.imageUrl }), url: buildPublicUrl(`/producto/${p.slug}`),
         stockUnits: p.stockUnits, description: p.description, technicalSpecs: p.digitalProfile?.status === "PUBLICADA" && p.specifications.length ? p.specifications.map(s => `${s.name}: ${s.value}`).join("; ") : p.technicalSpecs, updatedAt: p.updatedAt.toISOString() };
     },
-    knowledge: (query, productId, sourceType) => rag.search({ query, productId, sourceType }),
+    knowledge: (query, productId, sourceType) => rag.search({ query, productId, sourceType, generalOnly: Boolean(sourceType && !productId) }),
   };
 }

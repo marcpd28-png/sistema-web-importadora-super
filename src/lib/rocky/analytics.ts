@@ -4,6 +4,14 @@ export function aggregateRuns(runs: RockyResult[]) {
   const counts = (values: string[]) => Object.entries(values.reduce<Record<string, number>>((all, value) => { all[value] = (all[value] || 0) + 1; return all; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 30);
   return {
     evaluatedRuns: runs.length,
+    metrics: {
+      averageLatencyMs: runs.length ? runs.reduce((sum, run) => sum + run.latencyMs, 0) / runs.length : 0,
+      ragHitRate: runs.length ? runs.filter(run => run.sources.length).length / runs.length : 0,
+      handoffRate: runs.length ? runs.filter(run => run.requiresHuman).length / runs.length : 0,
+      unknownIntentRate: runs.length ? runs.filter(run => run.intent === "UNKNOWN").length / runs.length : 0,
+      automaticResponseRate: runs.length ? runs.filter(run => run.finalAction === "QUEUE").length / runs.length : 0,
+      toolSuccessRate: runs.flatMap(run => run.toolCalls).length ? runs.flatMap(run => run.toolCalls).filter(call => call.ok).length / runs.flatMap(run => run.toolCalls).length : null,
+    },
     intents: counts(runs.map(r => r.intent)), products: counts(runs.flatMap(r => r.products.map(p => p.code))),
     comparisons: counts(runs.filter(r => r.intent === "PRODUCT_COMPARISON").map(r => r.products.map(p => p.code).sort().join(" / "))),
     noResults: counts(runs.filter(r => r.toolsRequested.includes("searchProducts") && !r.products.length).map(r => r.memory.query)),

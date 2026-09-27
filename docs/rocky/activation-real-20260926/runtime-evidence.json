@@ -1,0 +1,4704 @@
+{
+  "measuredAt": "2026-09-27T01:30:31.272Z",
+  "database": {
+    "source": "127.0.0.1:5432/importadora (read-only)",
+    "target": "127.0.0.1:5437/rocky_test",
+    "appendOnly": true
+  },
+  "flags": {
+    "llm": "true",
+    "vector": "true",
+    "auto": "false"
+  },
+  "products": [
+    {
+      "code": "ACE-001",
+      "name": "Audífonos Bluetooth TWS Importados",
+      "slug": "audifonos-bluetooth-tws-importados-ace-001",
+      "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+      "technicalSpecs": null,
+      "unitPrice": "29.9",
+      "stockUnits": 480,
+      "brand": "Shenzhen Link",
+      "category": "Tecnología"
+    },
+    {
+      "code": "ARZ-050",
+      "name": "Power Bank 10000 mAh Tipo C",
+      "slug": "power-bank-10000-mah-tipo-c-arz-050",
+      "description": "Batería portátil importada de China con doble salida USB. Presentación sellada para mostrador y reparto corporativo.",
+      "technicalSpecs": null,
+      "unitPrice": "42.9",
+      "stockUnits": 210,
+      "brand": "Guangzhou Power",
+      "category": "Tecnología"
+    },
+    {
+      "code": "ATU-110",
+      "name": "Parlante Bluetooth Mini RGB",
+      "slug": "parlante-bluetooth-mini-rgb-atu-110",
+      "description": "Parlante compacto importado de Shenzhen, China, con luz LED y entrada USB. Producto vistoso para campañas de tecnología económica.",
+      "technicalSpecs": null,
+      "unitPrice": "34.9",
+      "stockUnits": 364,
+      "brand": "NeoSound CN",
+      "category": "Tecnología"
+    }
+  ],
+  "health": {
+    "ready": true,
+    "models": [
+      "qwen3.5:9b",
+      "qwen3-embedding:0.6b"
+    ]
+  },
+  "providerCalls": [
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 2850.3403,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 25.375599999999395,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 21.185099999998783,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 29.66939999999886,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 27.63000000000102,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 34.41049999999814,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "embedding",
+      "model": "qwen3-embedding:0.6b",
+      "ms": 0.21849999999903957,
+      "dimension": 1024,
+      "ok": true
+    },
+    {
+      "phase": "llm",
+      "model": "qwen3.5:9b",
+      "ms": 10178.5091,
+      "tokens": {
+        "input": 841,
+        "output": 30
+      },
+      "ok": true
+    }
+  ],
+  "directInference": {
+    "ok": true,
+    "model": "qwen3.5:9b",
+    "response": "ROKY_OK",
+    "inputTokens": 20,
+    "outputTokens": 4,
+    "loadDurationNs": 19755358434,
+    "ms": 20206.3337
+  },
+  "directEmbedding": {
+    "ok": true,
+    "model": "qwen3-embedding:0.6b",
+    "dimensions": 1024,
+    "inputTokens": 12,
+    "loadDurationNs": 2077813737,
+    "ms": 2145.131699999998
+  },
+  "indexing": [
+    {
+      "code": "ACE-001",
+      "result": {
+        "id": "cmuj56w4h00037od0vmq7xnhs",
+        "unchanged": false,
+        "chunks": 1,
+        "embeddings": 1
+      },
+      "ms": 2893.4866
+    },
+    {
+      "code": "ARZ-050",
+      "result": {
+        "id": "cmuj56w6400067od0abgxybmf",
+        "unchanged": false,
+        "chunks": 1,
+        "embeddings": 1
+      },
+      "ms": 34.02649999999994
+    },
+    {
+      "code": "ATU-110",
+      "result": {
+        "id": "cmuj56w7d00097od0j0oaqud9",
+        "unchanged": false,
+        "chunks": 1,
+        "embeddings": 1
+      },
+      "ms": 48.44920000000275
+    }
+  ],
+  "turns": [
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "hola",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [],
+          "recommendedNextAction": "CLARIFY_PRODUCT"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "GREETING",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [],
+        "productCodes": [],
+        "awaitingQuantity": false
+      },
+      "totalMs": 43.51800000000003,
+      "result": {
+        "rockyRequestId": "b13b7f4a-140c-4a4a-a7c5-8d9fbcf8bfbc",
+        "intent": "GREETING",
+        "skill": "sales-qualification",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT"
+        ],
+        "toolsRequested": [],
+        "toolCalls": [],
+        "products": [],
+        "sources": [],
+        "reply": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "GREETING",
+          "legacyIntent": "GREETING",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [],
+          "requiresTool": false,
+          "suggestedTools": [
+            "searchProducts"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 0,
+          "retrievalScore": null,
+          "productMatch": false,
+          "toolSuccess": true,
+          "informationFreshness": "NOT_VERIFIED",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "hola",
+          "modelResponse": null,
+          "finalResponse": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+          "createdAt": "2026-09-27T01:30:57.333Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+            "activeProducts": [],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [],
+            "recommendedNextAction": "CLARIFY_PRODUCT"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "GREETING",
+          "productCodes": [],
+          "shownCodes": [],
+          "query": "",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 1,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56w7t000g7od0uakr1s4h"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 1,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "estoy buscando el ACE-001",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [],
+          "recommendedNextAction": "CLARIFY_PRODUCT"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "GREETING",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [],
+        "productCodes": [],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "estoy buscando ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRODUCT_DETAILS",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRODUCT_DETAILS. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 77.78680000000168,
+      "result": {
+        "rockyRequestId": "ef447743-319f-4afa-861b-df50f2e66395",
+        "intent": "PRODUCT_DETAILS",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "searchKnowledge"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 9,
+            "resultCount": 1
+          },
+          {
+            "name": "searchKnowledge",
+            "ok": true,
+            "latencyMs": 43,
+            "resultCount": 0
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\nNo tengo una ficha técnica verificada para ampliar esos datos.\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_INFORMATION",
+          "legacyIntent": "PRODUCT_DETAILS",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "estoy buscando el ACE-001",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\nNo tengo una ficha técnica verificada para ampliar esos datos.\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.416Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRODUCT_DETAILS. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRODUCT_DETAILS",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "estoy buscando ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 52,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56w93000k7od0357r5ise"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "cuánto cuesta?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "estoy buscando ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRODUCT_DETAILS",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRODUCT_DETAILS. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "estoy buscando ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 38.038799999998446,
+      "result": {
+        "rockyRequestId": "d8f2e85f-cf01-45a6-b751-fc9060c3e0a0",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.449Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "estoy buscando ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 7,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wbb000o7od0s448t20v"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "tiene bluetooth?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "estoy buscando ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "bluetooth",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRODUCT_DETAILS",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRODUCT_DETAILS. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 60.21589999999924,
+      "result": {
+        "rockyRequestId": "46441e08-0737-48a0-96fa-a33cd564a5df",
+        "intent": "PRODUCT_DETAILS",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "APPROVED_KNOWLEDGE",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE",
+          "RETRIEVAL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "searchKnowledge"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          },
+          {
+            "name": "searchKnowledge",
+            "ok": true,
+            "latencyMs": 33,
+            "resultCount": 2
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [
+          {
+            "id": "cmuj54pal00057ox4uzo4e2k3",
+            "sourceId": "real-1790472546943-ACE-001",
+            "sourceType": "PRODUCT",
+            "text": "ACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "productId": "cmuj4yexl00007op8h9k9n0y6",
+            "title": "Audífonos Bluetooth TWS Importados",
+            "score": 0.01639344262295082
+          },
+          {
+            "id": "cmuj56w4o00057od0b6xqy3j4",
+            "sourceId": "real-1790472654322-ACE-001",
+            "sourceType": "PRODUCT",
+            "text": "ACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "productId": "cmuj4yexl00007op8h9k9n0y6",
+            "title": "Audífonos Bluetooth TWS Importados",
+            "score": 0.016129032258064516
+          }
+        ],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\nACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_INFORMATION",
+          "legacyIntent": "PRODUCT_DETAILS",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": 0.01639344262295082,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "tiene bluetooth?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\nACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.519Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRODUCT_DETAILS. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRODUCT_DETAILS",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "bluetooth",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 36,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wcf000s7od0kp7169oj"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "hay stock?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "bluetooth",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRODUCT_DETAILS",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRODUCT_DETAILS. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "bluetooth",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "STOCK_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: STOCK_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 28.348300000001473,
+      "result": {
+        "rockyRequestId": "6344cd6d-de1d-4e15-aaa7-70a8aba33794",
+        "intent": "STOCK_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getStock"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          },
+          {
+            "name": "getStock",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_STOCK",
+          "legacyIntent": "STOCK_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "hay stock?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.550Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: STOCK_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "STOCK_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "bluetooth",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 7,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56we6000w7od0qtgq6jyi"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "cuál es la diferencia con ARZ-050?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "bluetooth",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "STOCK_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: STOCK_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [
+          "useCase"
+        ],
+        "needs": [],
+        "query": "diferencia con arz-050",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "COMPARISON",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "COMPARISON",
+        "budget": null,
+        "intent": "PRODUCT_COMPARISON",
+        "summary": {
+          "summary": "Etapa: COMPARISON. Intención: PRODUCT_COMPARISON. Productos: ACE-001, ARZ-050.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "pendingQuestions": [
+            "useCase"
+          ]
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001",
+          "ARZ-050"
+        ],
+        "productCodes": [
+          "ACE-001",
+          "ARZ-050"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 31.085399999999936,
+      "result": {
+        "rockyRequestId": "ad08a4f5-b391-412b-bf51-18094cf97726",
+        "intent": "PRODUCT_COMPARISON",
+        "skill": "product-comparison",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "compareProducts"
+        ],
+        "toolCalls": [
+          {
+            "name": "compareProducts",
+            "ok": true,
+            "latencyMs": 7,
+            "resultCount": 2
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          },
+          {
+            "id": "cmuj5348000017ox4v5qdakdj",
+            "code": "ARZ-050",
+            "name": "Power Bank 10000 mAh Tipo C",
+            "brand": "Guangzhou Power",
+            "category": "Tecnología",
+            "unitPrice": 42.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/power-bank-10000-mah-tipo-c-arz-050",
+            "stockUnits": 210,
+            "description": "Batería portátil importada de China con doble salida USB. Presentación sellada para mostrador y reparto corporativo.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.056Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\nNo hay atributos técnicos suficientes para afirmar ventajas entre estos modelos.\n\n¿Para qué uso lo necesitas? La mejor opción depende de esa necesidad.",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_COMPARISON",
+          "legacyIntent": "PRODUCT_COMPARISON",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "compareProducts",
+            "searchKnowledge",
+            "getPrice",
+            "getStock"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "NOT_VERIFIED",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuál es la diferencia con ARZ-050?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\nNo hay atributos técnicos suficientes para afirmar ventajas entre estos modelos.\n\n¿Para qué uso lo necesitas? La mejor opción depende de esa necesidad.",
+          "createdAt": "2026-09-27T01:30:57.582Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: COMPARISON. Intención: PRODUCT_COMPARISON. Productos: ACE-001, ARZ-050.",
+            "activeProducts": [
+              "ACE-001",
+              "ARZ-050"
+            ],
+            "pendingQuestions": [
+              "useCase"
+            ],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "COMPARISON",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001",
+              "ARZ-050"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRODUCT_COMPARISON",
+          "productCodes": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "shownCodes": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "query": "diferencia con arz-050",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [
+            "useCase"
+          ],
+          "stage": "COMPARISON"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 8,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wf000107od0m6bwpf97"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56w7p000e7od0kqhz4cp5",
+      "text": "quiero comprarlo",
+      "memoryBefore": {
+        "asked": [
+          "useCase"
+        ],
+        "needs": [],
+        "query": "diferencia con arz-050",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "COMPARISON",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "COMPARISON",
+        "budget": null,
+        "intent": "PRODUCT_COMPARISON",
+        "summary": {
+          "summary": "Etapa: COMPARISON. Intención: PRODUCT_COMPARISON. Productos: ACE-001, ARZ-050.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "pendingQuestions": [
+            "useCase"
+          ]
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001",
+          "ARZ-050"
+        ],
+        "productCodes": [
+          "ACE-001",
+          "ARZ-050"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [
+          "useCase"
+        ],
+        "needs": [],
+        "query": "diferencia con arz-050",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "COMPARISON",
+          "purchaseIntent": true,
+          "productsConsidered": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "COMPARISON",
+        "budget": null,
+        "intent": "PRODUCT_COMPARISON",
+        "summary": {
+          "summary": "Etapa: COMPARISON. Intención: FOLLOW_UP. Productos: ACE-001, ARZ-050.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "pendingQuestions": [
+            "useCase"
+          ]
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001",
+          "ARZ-050"
+        ],
+        "productCodes": [
+          "ACE-001",
+          "ARZ-050"
+        ],
+        "awaitingQuantity": true
+      },
+      "totalMs": 39.277900000000955,
+      "result": {
+        "rockyRequestId": "bfda6010-1897-42a3-a223-ccc1a05dc441",
+        "intent": "FOLLOW_UP",
+        "skill": "closing-sale",
+        "confidence": 1,
+        "confidenceEvidence": [
+          "VALIDATED_CART"
+        ],
+        "toolsRequested": [],
+        "toolCalls": [],
+        "products": [],
+        "sources": [],
+        "reply": "¿Qué producto eliges? Dime el código o selecciona una de las opciones.",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "memory": {
+          "summary": {
+            "summary": "Etapa: COMPARISON. Intención: FOLLOW_UP. Productos: ACE-001, ARZ-050.",
+            "activeProducts": [
+              "ACE-001",
+              "ARZ-050"
+            ],
+            "pendingQuestions": [
+              "useCase"
+            ],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "COMPARISON",
+            "purchaseIntent": true,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001",
+              "ARZ-050"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": true,
+          "version": 1,
+          "intent": "PRODUCT_COMPARISON",
+          "productCodes": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "shownCodes": [
+            "ACE-001",
+            "ARZ-050"
+          ],
+          "query": "diferencia con arz-050",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [
+            "useCase"
+          ],
+          "stage": "COMPARISON"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 0,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wfx00147od0a9khad3l"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 1,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        },
+        "interaction": {
+          "customerMessage": "quiero comprarlo",
+          "modelResponse": null,
+          "finalResponse": "¿Qué producto eliges? Dime el código o selecciona una de las opciones.",
+          "createdAt": "2026-09-27T01:30:57.618Z"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wh200197od0a2qhk30w",
+      "text": "precio ACE-001",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 28.31710000000021,
+      "result": {
+        "rockyRequestId": "be630327-2389-4efe-bb3e-0a0672f665d2",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "precio ACE-001",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.657Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 7,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wh4001b7od0kgbkeech"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wh200197od0a2qhk30w",
+      "text": "cuánto cuesta?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 44.84139999999752,
+      "result": {
+        "rockyRequestId": "e1006615-f9d1-4334-a13d-2013cb2713fa",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 8,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.714Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 12,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wic001f7od081febgis"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wl3001m7od0xjwggc52",
+      "text": "quiero hablar con una persona",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "hablar con persona",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "HANDOFF",
+          "purchaseIntent": false,
+          "productsConsidered": [],
+          "recommendedNextAction": "HUMAN_REVIEW"
+        },
+        "stage": "HANDOFF",
+        "budget": null,
+        "intent": "HUMAN_REQUEST",
+        "summary": {
+          "summary": "Etapa: HANDOFF. Intención: HUMAN_REQUEST. Productos: sin selección.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [],
+        "productCodes": [],
+        "awaitingQuantity": false
+      },
+      "totalMs": 23.513699999999517,
+      "result": {
+        "rockyRequestId": "2a542b14-1796-4128-b16b-a4badd63b981",
+        "intent": "HUMAN_REQUEST",
+        "skill": "human-handoff",
+        "confidence": 0.3,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "HUMAN_REVIEW_REQUIRED"
+        ],
+        "toolsRequested": [
+          "handoffToHuman"
+        ],
+        "toolCalls": [
+          {
+            "name": "handoffToHuman",
+            "ok": true,
+            "latencyMs": 1,
+            "resultCount": 0,
+            "reasonCode": "HUMAN_REQUEST"
+          }
+        ],
+        "products": [],
+        "sources": [],
+        "reply": "Claro 😊 Te paso con un asesor para que pueda ayudarte.",
+        "requiresHuman": true,
+        "reasonCode": "HUMAN_REQUEST",
+        "classification": {
+          "intent": "HUMAN_REQUEST",
+          "legacyIntent": "HUMAN_REQUEST",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [],
+          "requiresTool": true,
+          "suggestedTools": [
+            "handoffToHuman"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 0,
+          "retrievalScore": null,
+          "productMatch": false,
+          "toolSuccess": true,
+          "informationFreshness": "NOT_VERIFIED",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "quiero hablar con una persona",
+          "modelResponse": null,
+          "finalResponse": "Claro 😊 Te paso con un asesor para que pueda ayudarte.",
+          "createdAt": "2026-09-27T01:30:57.797Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: HANDOFF. Intención: HUMAN_REQUEST. Productos: sin selección.",
+            "activeProducts": [],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "HANDOFF",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [],
+            "recommendedNextAction": "HUMAN_REVIEW"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "HUMAN_REQUEST",
+          "productCodes": [],
+          "shownCodes": [],
+          "query": "hablar con persona",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "HANDOFF"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 1,
+        "tokens": null,
+        "finalAction": "HANDOFF",
+        "inputMessageIds": [
+          "cmuj56wl6001o7od0310qf6u7"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": false,
+          "handoff": true,
+          "decision": "HANDOFF",
+          "reason": "HUMAN_REQUEST"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wmm001z7od01jkl70kn",
+      "text": "precio ATU-110",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "atu-110",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ATU-110"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ATU-110.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ATU-110"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ATU-110"
+        ],
+        "productCodes": [
+          "ATU-110"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 40.57940000000235,
+      "result": {
+        "rockyRequestId": "9e6bed95-c195-46d0-92c3-e76fcca8dc38",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj5348800027ox497ih6hl2",
+            "code": "ATU-110",
+            "name": "Parlante Bluetooth Mini RGB",
+            "brand": "NeoSound CN",
+            "category": "Tecnología",
+            "unitPrice": 34.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/parlante-bluetooth-mini-rgb-atu-110",
+            "stockUnits": 364,
+            "description": "Parlante compacto importado de Shenzhen, China, con luz LED y entrada USB. Producto vistoso para campañas de tecnología económica.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.065Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Parlante Bluetooth Mini RGB\nCódigo: ATU-110\n💰 Precio por unidad: S/ 34.90. 📦 Stock: 364 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ATU-110"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "precio ATU-110",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Parlante Bluetooth Mini RGB\nCódigo: ATU-110\n💰 Precio por unidad: S/ 34.90. 📦 Stock: 364 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.872Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ATU-110.",
+            "activeProducts": [
+              "ATU-110"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ATU-110"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ATU-110"
+          ],
+          "shownCodes": [
+            "ATU-110"
+          ],
+          "query": "atu-110",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 7,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wms00257od02ieyi5rc"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wml001x7od054da8xbg",
+      "text": "precio ARZ-050",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "arz-050",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ARZ-050"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ARZ-050.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ARZ-050"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ARZ-050"
+        ],
+        "productCodes": [
+          "ARZ-050"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 46.94509999999718,
+      "result": {
+        "rockyRequestId": "cb47a619-9acf-40c3-9e0d-da03976c6dd9",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 2,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 3,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj5348000017ox4v5qdakdj",
+            "code": "ARZ-050",
+            "name": "Power Bank 10000 mAh Tipo C",
+            "brand": "Guangzhou Power",
+            "category": "Tecnología",
+            "unitPrice": 42.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/power-bank-10000-mah-tipo-c-arz-050",
+            "stockUnits": 210,
+            "description": "Batería portátil importada de China con doble salida USB. Presentación sellada para mostrador y reparto corporativo.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.056Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ARZ-050"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "precio ARZ-050",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.872Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ARZ-050.",
+            "activeProducts": [
+              "ARZ-050"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ARZ-050"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ARZ-050"
+          ],
+          "shownCodes": [
+            "ARZ-050"
+          ],
+          "query": "arz-050",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 6,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wms00247od0ukew5bpg"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wmb001t7od09cpmj01n",
+      "text": "precio ACE-001",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 48.97509999999966,
+      "result": {
+        "rockyRequestId": "478bf0c4-a364-4868-89ff-caf84149bfd5",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 10,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 7,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "precio ACE-001",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.871Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 17,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wms00237od050rfpy2v"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wmm001z7od01jkl70kn",
+      "text": "cuánto cuesta?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "atu-110",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ATU-110"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ATU-110.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ATU-110"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ATU-110"
+        ],
+        "productCodes": [
+          "ATU-110"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "atu-110",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ATU-110"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ATU-110.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ATU-110"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ATU-110"
+        ],
+        "productCodes": [
+          "ATU-110"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 46.41189999999915,
+      "result": {
+        "rockyRequestId": "59c71806-4100-470f-80ce-bb665c7d19f6",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 5,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj5348800027ox497ih6hl2",
+            "code": "ATU-110",
+            "name": "Parlante Bluetooth Mini RGB",
+            "brand": "NeoSound CN",
+            "category": "Tecnología",
+            "unitPrice": 34.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/parlante-bluetooth-mini-rgb-atu-110",
+            "stockUnits": 364,
+            "description": "Parlante compacto importado de Shenzhen, China, con luz LED y entrada USB. Producto vistoso para campañas de tecnología económica.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.065Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Parlante Bluetooth Mini RGB\nCódigo: ATU-110\n💰 Precio por unidad: S/ 34.90. 📦 Stock: 364 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ATU-110"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Parlante Bluetooth Mini RGB\nCódigo: ATU-110\n💰 Precio por unidad: S/ 34.90. 📦 Stock: 364 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.925Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ATU-110.",
+            "activeProducts": [
+              "ATU-110"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ATU-110"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ATU-110"
+          ],
+          "shownCodes": [
+            "ATU-110"
+          ],
+          "query": "atu-110",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 9,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wo8002h7od0x7xhem38"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wmb001t7od09cpmj01n",
+      "text": "cuánto cuesta?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "ace-001",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "productCodes": [
+          "ACE-001"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 47.17669999999998,
+      "result": {
+        "rockyRequestId": "3fa1a500-46a6-4fcd-af81-c9db21dd8c02",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.928Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 8,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wo8002f7od0m6f8qgtr"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wml001x7od054da8xbg",
+      "text": "cuánto cuesta?",
+      "memoryBefore": {
+        "asked": [],
+        "needs": [],
+        "query": "arz-050",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ARZ-050"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ARZ-050.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ARZ-050"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ARZ-050"
+        ],
+        "productCodes": [
+          "ARZ-050"
+        ],
+        "awaitingQuantity": false
+      },
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "arz-050",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [
+            "ARZ-050"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ARZ-050.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ARZ-050"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [
+          "ARZ-050"
+        ],
+        "productCodes": [
+          "ARZ-050"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 48.381900000000314,
+      "result": {
+        "rockyRequestId": "ce5f9c42-8f40-4bc1-a5ee-681a62c17ba8",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj5348000017ox4v5qdakdj",
+            "code": "ARZ-050",
+            "name": "Power Bank 10000 mAh Tipo C",
+            "brand": "Guangzhou Power",
+            "category": "Tecnología",
+            "unitPrice": 42.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/power-bank-10000-mah-tipo-c-arz-050",
+            "stockUnits": 210,
+            "description": "Batería portátil importada de China con doble salida USB. Presentación sellada para mostrador y reparto corporativo.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.056Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ARZ-050"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.929Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ARZ-050.",
+            "activeProducts": [
+              "ARZ-050"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ARZ-050"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ARZ-050"
+          ],
+          "shownCodes": [
+            "ARZ-050"
+          ],
+          "query": "arz-050",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 9,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wo8002g7od0o5m3u06e"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj56wpp002q7od0beru9hqf",
+      "text": "Me orientas por favor",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [],
+          "recommendedNextAction": "CLARIFY_PRODUCT"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "GREETING",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [],
+        "productCodes": [],
+        "awaitingQuantity": false
+      },
+      "totalMs": 10237.237599999997,
+      "result": {
+        "rockyRequestId": "b242cb4e-9798-4828-9258-e2bf2a895ecb",
+        "intent": "GREETING",
+        "skill": "sales-qualification",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT"
+        ],
+        "toolsRequested": [
+          "searchProducts"
+        ],
+        "toolCalls": [
+          {
+            "name": "searchProducts",
+            "ok": true,
+            "latencyMs": 21,
+            "resultCount": 0
+          }
+        ],
+        "products": [],
+        "sources": [],
+        "reply": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "GREETING",
+          "legacyIntent": "GREETING",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [],
+          "requiresTool": false,
+          "suggestedTools": [
+            "searchProducts"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 0,
+          "retrievalScore": null,
+          "productMatch": false,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "Me orientas por favor",
+          "modelResponse": {
+            "intent": "GREETING",
+            "codes": [],
+            "query": "Me orientas por favor",
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "finalResponse": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+          "createdAt": "2026-09-27T01:31:08.169Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+            "activeProducts": [],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [],
+            "recommendedNextAction": "CLARIFY_PRODUCT"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "GREETING",
+          "productCodes": [],
+          "shownCodes": [],
+          "query": "",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "qwen3.5:9b",
+        "latencyMs": 10204,
+        "tokens": {
+          "input": 841,
+          "output": 30
+        },
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wpr002s7od0kn9ghtwf"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 1,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    },
+    {
+      "conversationId": "cmuj574mf002z7od06hqxmj89",
+      "text": "cuánto cuesta el ZZ99999999?",
+      "memoryAfter": {
+        "asked": [],
+        "needs": [],
+        "query": "zz99999999",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "PRICE_QUERY",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ZZ99999999.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [
+            "ZZ99999999"
+          ],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [],
+        "productCodes": [
+          "ZZ99999999"
+        ],
+        "awaitingQuantity": false
+      },
+      "totalMs": 52.17349999999715,
+      "result": {
+        "rockyRequestId": "4695e63d-58b9-463a-9477-4e72897c5010",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.35,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 10,
+            "resultCount": 0
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 8,
+            "resultCount": 0
+          }
+        ],
+        "products": [],
+        "sources": [],
+        "reply": "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ZZ99999999"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 0,
+          "retrievalScore": null,
+          "productMatch": false,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta el ZZ[número]?",
+          "modelResponse": null,
+          "finalResponse": "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?",
+          "createdAt": "2026-09-27T01:31:08.238Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ZZ99999999.",
+            "activeProducts": [
+              "ZZ99999999"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ZZ99999999"
+          ],
+          "shownCodes": [],
+          "query": "zz99999999",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 18,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj574mi00317od0arwbyagl"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": false,
+          "handoff": false,
+          "decision": "CLARIFY",
+          "reason": "CONFIDENCE_BELOW_AUTO"
+        }
+      }
+    }
+  ],
+  "memory": {
+    "persistedAndReconnected": true,
+    "code": "ACE-001",
+    "result": {
+      "rockyRequestId": "e1006615-f9d1-4334-a13d-2013cb2713fa",
+      "intent": "PRICE_QUERY",
+      "skill": "product-details",
+      "confidence": 0.95,
+      "confidenceEvidence": [
+        "RULE_BASED_INTENT",
+        "EXACT_PRODUCT_MATCH",
+        "CURRENT_BACKEND_DATA",
+        "EXACT_ENTITY_MATCH",
+        "LIVE_TOOL_EVIDENCE"
+      ],
+      "toolsRequested": [
+        "getProductByCode",
+        "getPrice"
+      ],
+      "toolCalls": [
+        {
+          "name": "getProductByCode",
+          "ok": true,
+          "latencyMs": 8,
+          "resultCount": 1
+        },
+        {
+          "name": "getPrice",
+          "ok": true,
+          "latencyMs": 3,
+          "resultCount": 1
+        }
+      ],
+      "products": [
+        {
+          "id": "cmuj4yexl00007op8h9k9n0y6",
+          "code": "ACE-001",
+          "name": "Audífonos Bluetooth TWS Importados",
+          "brand": "Shenzhen Link",
+          "category": "Tecnología",
+          "unitPrice": 29.9,
+          "wholesalePrice": null,
+          "wholesaleMinQty": 3,
+          "imageUrl": null,
+          "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+          "stockUnits": 480,
+          "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+          "technicalSpecs": null,
+          "updatedAt": "2026-09-27T01:24:21.657Z"
+        }
+      ],
+      "sources": [],
+      "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+      "requiresHuman": false,
+      "reasonCode": null,
+      "classification": {
+        "intent": "PRODUCT_PRICE",
+        "legacyIntent": "PRICE_QUERY",
+        "confidence": 0.9,
+        "entities": {
+          "budget": null,
+          "quantity": 1,
+          "needs": []
+        },
+        "productReferences": [
+          "ACE-001"
+        ],
+        "requiresTool": true,
+        "suggestedTools": [
+          "getProductByCode",
+          "getStock",
+          "getPrice",
+          "searchProducts",
+          "searchKnowledge",
+          "getProduct"
+        ]
+      },
+      "confidenceSignals": {
+        "intentConfidence": 0.9,
+        "entityConfidence": 1,
+        "retrievalScore": null,
+        "productMatch": true,
+        "toolSuccess": true,
+        "informationFreshness": "LIVE_LOOKUP",
+        "ambiguity": false,
+        "contradiction": false
+      },
+      "interaction": {
+        "customerMessage": "cuánto cuesta?",
+        "modelResponse": null,
+        "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "createdAt": "2026-09-27T01:30:57.714Z"
+      },
+      "memory": {
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+          "activeProducts": [
+            "ACE-001"
+          ],
+          "pendingQuestions": [],
+          "customerNeeds": [],
+          "relevantFacts": []
+        },
+        "sales": {
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "objections": [],
+          "productsConsidered": [
+            "ACE-001"
+          ],
+          "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+        },
+        "awaitingQuantity": false,
+        "version": 1,
+        "intent": "PRICE_QUERY",
+        "productCodes": [
+          "ACE-001"
+        ],
+        "shownCodes": [
+          "ACE-001"
+        ],
+        "query": "ace-001",
+        "budget": null,
+        "quantity": 1,
+        "needs": [],
+        "asked": [],
+        "stage": "QUALIFICATION"
+      },
+      "model": "rules-and-tools",
+      "latencyMs": 12,
+      "tokens": null,
+      "finalAction": "SIMULATE",
+      "inputMessageIds": [
+        "cmuj56wic001f7od081febgis"
+      ],
+      "autonomy": {
+        "level": 2,
+        "requiredLevel": 2,
+        "allowAuto": true,
+        "handoff": false,
+        "decision": "AUTO",
+        "reason": "EVIDENCE_SUFFICIENT"
+      }
+    }
+  },
+  "rag": {
+    "query": "Audífonos Bluetooth TWS Importados bluetooth",
+    "productId": "cmuj4yexl00007op8h9k9n0y6",
+    "topK": 5,
+    "model": "qwen3-embedding:0.6b",
+    "hits": [
+      {
+        "id": "cmuj54pal00057ox4uzo4e2k3",
+        "sourceId": "real-1790472546943-ACE-001",
+        "sourceType": "PRODUCT",
+        "text": "ACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+        "productId": "cmuj4yexl00007op8h9k9n0y6",
+        "title": "Audífonos Bluetooth TWS Importados",
+        "score": 0.03278688524590164
+      },
+      {
+        "id": "cmuj56w4o00057od0b6xqy3j4",
+        "sourceId": "real-1790472654322-ACE-001",
+        "sourceType": "PRODUCT",
+        "text": "ACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+        "productId": "cmuj4yexl00007op8h9k9n0y6",
+        "title": "Audífonos Bluetooth TWS Importados",
+        "score": 0.03225806451612903
+      }
+    ],
+    "ms": 43.61700000000201
+  },
+  "vectorOnly": [
+    {
+      "id": "cmuj54pal00057ox4uzo4e2k3",
+      "sourceId": "real-1790472546943-ACE-001",
+      "sourceType": "PRODUCT",
+      "text": "ACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+      "productId": "cmuj4yexl00007op8h9k9n0y6",
+      "title": "Audífonos Bluetooth TWS Importados",
+      "score": 0.01639344262295082
+    },
+    {
+      "id": "cmuj56w4o00057od0b6xqy3j4",
+      "sourceId": "real-1790472654322-ACE-001",
+      "sourceType": "PRODUCT",
+      "text": "ACE-001\nAudífonos Bluetooth TWS Importados\nOferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+      "productId": "cmuj4yexl00007op8h9k9n0y6",
+      "title": "Audífonos Bluetooth TWS Importados",
+      "score": 0.016129032258064516
+    }
+  ],
+  "feedback": {
+    "modelResponse": null,
+    "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+    "original": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+    "final": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo? Confirmado por el asesor de validación local.",
+    "humanEdited": true,
+    "persisted": {
+      "id": "cmuj56wky001j7od0q7op91pc",
+      "runId": "e1006615-f9d1-4334-a13d-2013cb2713fa",
+      "humanResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo? Confirmado por el asesor de validación local.",
+      "outcome": null,
+      "reviewerId": "local-real-validation",
+      "status": "EDITED",
+      "createdAt": "2026-09-27T01:30:57.778Z"
+    },
+    "scope": "Real database persistence; HTTP admin authentication not exercised"
+  },
+  "handoff": {
+    "result": {
+      "rockyRequestId": "2a542b14-1796-4128-b16b-a4badd63b981",
+      "intent": "HUMAN_REQUEST",
+      "skill": "human-handoff",
+      "confidence": 0.3,
+      "confidenceEvidence": [
+        "RULE_BASED_INTENT",
+        "HUMAN_REVIEW_REQUIRED"
+      ],
+      "toolsRequested": [
+        "handoffToHuman"
+      ],
+      "toolCalls": [
+        {
+          "name": "handoffToHuman",
+          "ok": true,
+          "latencyMs": 1,
+          "resultCount": 0,
+          "reasonCode": "HUMAN_REQUEST"
+        }
+      ],
+      "products": [],
+      "sources": [],
+      "reply": "Claro 😊 Te paso con un asesor para que pueda ayudarte.",
+      "requiresHuman": true,
+      "reasonCode": "HUMAN_REQUEST",
+      "classification": {
+        "intent": "HUMAN_REQUEST",
+        "legacyIntent": "HUMAN_REQUEST",
+        "confidence": 0.9,
+        "entities": {
+          "budget": null,
+          "quantity": 1,
+          "needs": []
+        },
+        "productReferences": [],
+        "requiresTool": true,
+        "suggestedTools": [
+          "handoffToHuman"
+        ]
+      },
+      "confidenceSignals": {
+        "intentConfidence": 0.9,
+        "entityConfidence": 0,
+        "retrievalScore": null,
+        "productMatch": false,
+        "toolSuccess": true,
+        "informationFreshness": "NOT_VERIFIED",
+        "ambiguity": false,
+        "contradiction": false
+      },
+      "interaction": {
+        "customerMessage": "quiero hablar con una persona",
+        "modelResponse": null,
+        "finalResponse": "Claro 😊 Te paso con un asesor para que pueda ayudarte.",
+        "createdAt": "2026-09-27T01:30:57.797Z"
+      },
+      "memory": {
+        "summary": {
+          "summary": "Etapa: HANDOFF. Intención: HUMAN_REQUEST. Productos: sin selección.",
+          "activeProducts": [],
+          "pendingQuestions": [],
+          "customerNeeds": [],
+          "relevantFacts": []
+        },
+        "sales": {
+          "purchaseStage": "HANDOFF",
+          "purchaseIntent": false,
+          "objections": [],
+          "productsConsidered": [],
+          "recommendedNextAction": "HUMAN_REVIEW"
+        },
+        "awaitingQuantity": false,
+        "version": 1,
+        "intent": "HUMAN_REQUEST",
+        "productCodes": [],
+        "shownCodes": [],
+        "query": "hablar con persona",
+        "budget": null,
+        "quantity": 1,
+        "needs": [],
+        "asked": [],
+        "stage": "HANDOFF"
+      },
+      "model": "rules-and-tools",
+      "latencyMs": 1,
+      "tokens": null,
+      "finalAction": "HANDOFF",
+      "inputMessageIds": [
+        "cmuj56wl6001o7od0310qf6u7"
+      ],
+      "autonomy": {
+        "level": 2,
+        "requiredLevel": 2,
+        "allowAuto": false,
+        "handoff": true,
+        "decision": "HANDOFF",
+        "reason": "HUMAN_REQUEST"
+      }
+    },
+    "persisted": {
+      "status": "ATENDIENDO",
+      "botEnabled": false
+    }
+  },
+  "concurrency": {
+    "count": 3,
+    "ms": 53.052599999999074,
+    "isolated": true,
+    "results": [
+      {
+        "rockyRequestId": "3fa1a500-46a6-4fcd-af81-c9db21dd8c02",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj4yexl00007op8h9k9n0y6",
+            "code": "ACE-001",
+            "name": "Audífonos Bluetooth TWS Importados",
+            "brand": "Shenzhen Link",
+            "category": "Tecnología",
+            "unitPrice": 29.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/audifonos-bluetooth-tws-importados-ace-001",
+            "stockUnits": 480,
+            "description": "Oferta de lanzamiento importada de Shenzhen, China. Estuche cargador compacto, buena rotación para vitrinas de tecnología y venta por mayor.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:24:21.657Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ACE-001"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Audífonos Bluetooth TWS Importados\nCódigo: ACE-001\n💰 Precio por unidad: S/ 29.90. 📦 Stock: 480 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.928Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ACE-001.",
+            "activeProducts": [
+              "ACE-001"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ACE-001"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ACE-001"
+          ],
+          "shownCodes": [
+            "ACE-001"
+          ],
+          "query": "ace-001",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 8,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wo8002f7od0m6f8qgtr"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      },
+      {
+        "rockyRequestId": "ce5f9c42-8f40-4bc1-a5ee-681a62c17ba8",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj5348000017ox4v5qdakdj",
+            "code": "ARZ-050",
+            "name": "Power Bank 10000 mAh Tipo C",
+            "brand": "Guangzhou Power",
+            "category": "Tecnología",
+            "unitPrice": 42.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/power-bank-10000-mah-tipo-c-arz-050",
+            "stockUnits": 210,
+            "description": "Batería portátil importada de China con doble salida USB. Presentación sellada para mostrador y reparto corporativo.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.056Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ARZ-050"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Power Bank 10000 mAh Tipo C\nCódigo: ARZ-050\n💰 Precio por unidad: S/ 42.90. 📦 Stock: 210 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.929Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ARZ-050.",
+            "activeProducts": [
+              "ARZ-050"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ARZ-050"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ARZ-050"
+          ],
+          "shownCodes": [
+            "ARZ-050"
+          ],
+          "query": "arz-050",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 9,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wo8002g7od0o5m3u06e"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      },
+      {
+        "rockyRequestId": "59c71806-4100-470f-80ce-bb665c7d19f6",
+        "intent": "PRICE_QUERY",
+        "skill": "product-details",
+        "confidence": 0.95,
+        "confidenceEvidence": [
+          "RULE_BASED_INTENT",
+          "EXACT_PRODUCT_MATCH",
+          "CURRENT_BACKEND_DATA",
+          "EXACT_ENTITY_MATCH",
+          "LIVE_TOOL_EVIDENCE"
+        ],
+        "toolsRequested": [
+          "getProductByCode",
+          "getPrice"
+        ],
+        "toolCalls": [
+          {
+            "name": "getProductByCode",
+            "ok": true,
+            "latencyMs": 5,
+            "resultCount": 1
+          },
+          {
+            "name": "getPrice",
+            "ok": true,
+            "latencyMs": 4,
+            "resultCount": 1
+          }
+        ],
+        "products": [
+          {
+            "id": "cmuj5348800027ox497ih6hl2",
+            "code": "ATU-110",
+            "name": "Parlante Bluetooth Mini RGB",
+            "brand": "NeoSound CN",
+            "category": "Tecnología",
+            "unitPrice": 34.9,
+            "wholesalePrice": null,
+            "wholesaleMinQty": 3,
+            "imageUrl": null,
+            "url": "https://tiendavirtualsuper.com/producto/parlante-bluetooth-mini-rgb-atu-110",
+            "stockUnits": 364,
+            "description": "Parlante compacto importado de Shenzhen, China, con luz LED y entrada USB. Producto vistoso para campañas de tecnología económica.",
+            "technicalSpecs": null,
+            "updatedAt": "2026-09-27T01:28:01.065Z"
+          }
+        ],
+        "sources": [],
+        "reply": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Parlante Bluetooth Mini RGB\nCódigo: ATU-110\n💰 Precio por unidad: S/ 34.90. 📦 Stock: 364 unidades.\n\n¿Quieres comprarlo?",
+        "requiresHuman": false,
+        "reasonCode": null,
+        "classification": {
+          "intent": "PRODUCT_PRICE",
+          "legacyIntent": "PRICE_QUERY",
+          "confidence": 0.9,
+          "entities": {
+            "budget": null,
+            "quantity": 1,
+            "needs": []
+          },
+          "productReferences": [
+            "ATU-110"
+          ],
+          "requiresTool": true,
+          "suggestedTools": [
+            "getProductByCode",
+            "getStock",
+            "getPrice",
+            "searchProducts",
+            "searchKnowledge",
+            "getProduct"
+          ]
+        },
+        "confidenceSignals": {
+          "intentConfidence": 0.9,
+          "entityConfidence": 1,
+          "retrievalScore": null,
+          "productMatch": true,
+          "toolSuccess": true,
+          "informationFreshness": "LIVE_LOOKUP",
+          "ambiguity": false,
+          "contradiction": false
+        },
+        "interaction": {
+          "customerMessage": "cuánto cuesta?",
+          "modelResponse": null,
+          "finalResponse": "¡Claro! 😊 Esto es lo que encontré:\n\n🛍️ Parlante Bluetooth Mini RGB\nCódigo: ATU-110\n💰 Precio por unidad: S/ 34.90. 📦 Stock: 364 unidades.\n\n¿Quieres comprarlo?",
+          "createdAt": "2026-09-27T01:30:57.925Z"
+        },
+        "memory": {
+          "summary": {
+            "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ATU-110.",
+            "activeProducts": [
+              "ATU-110"
+            ],
+            "pendingQuestions": [],
+            "customerNeeds": [],
+            "relevantFacts": []
+          },
+          "sales": {
+            "purchaseStage": "QUALIFICATION",
+            "purchaseIntent": false,
+            "objections": [],
+            "productsConsidered": [
+              "ATU-110"
+            ],
+            "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+          },
+          "awaitingQuantity": false,
+          "version": 1,
+          "intent": "PRICE_QUERY",
+          "productCodes": [
+            "ATU-110"
+          ],
+          "shownCodes": [
+            "ATU-110"
+          ],
+          "query": "atu-110",
+          "budget": null,
+          "quantity": 1,
+          "needs": [],
+          "asked": [],
+          "stage": "QUALIFICATION"
+        },
+        "model": "rules-and-tools",
+        "latencyMs": 9,
+        "tokens": null,
+        "finalAction": "SIMULATE",
+        "inputMessageIds": [
+          "cmuj56wo8002h7od0x7xhem38"
+        ],
+        "autonomy": {
+          "level": 2,
+          "requiredLevel": 2,
+          "allowAuto": true,
+          "handoff": false,
+          "decision": "AUTO",
+          "reason": "EVIDENCE_SUFFICIENT"
+        }
+      }
+    ]
+  },
+  "modelTurn": {
+    "rockyRequestId": "b242cb4e-9798-4828-9258-e2bf2a895ecb",
+    "intent": "GREETING",
+    "skill": "sales-qualification",
+    "confidence": 0.95,
+    "confidenceEvidence": [
+      "RULE_BASED_INTENT"
+    ],
+    "toolsRequested": [
+      "searchProducts"
+    ],
+    "toolCalls": [
+      {
+        "name": "searchProducts",
+        "ok": true,
+        "latencyMs": 21,
+        "resultCount": 0
+      }
+    ],
+    "products": [],
+    "sources": [],
+    "reply": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+    "requiresHuman": false,
+    "reasonCode": null,
+    "classification": {
+      "intent": "GREETING",
+      "legacyIntent": "GREETING",
+      "confidence": 0.9,
+      "entities": {
+        "budget": null,
+        "quantity": 1,
+        "needs": []
+      },
+      "productReferences": [],
+      "requiresTool": false,
+      "suggestedTools": [
+        "searchProducts"
+      ]
+    },
+    "confidenceSignals": {
+      "intentConfidence": 0.9,
+      "entityConfidence": 0,
+      "retrievalScore": null,
+      "productMatch": false,
+      "toolSuccess": true,
+      "informationFreshness": "LIVE_LOOKUP",
+      "ambiguity": false,
+      "contradiction": false
+    },
+    "interaction": {
+      "customerMessage": "Me orientas por favor",
+      "modelResponse": {
+        "intent": "GREETING",
+        "codes": [],
+        "query": "Me orientas por favor",
+        "budget": null,
+        "quantity": 1,
+        "needs": []
+      },
+      "finalResponse": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+      "createdAt": "2026-09-27T01:31:08.169Z"
+    },
+    "memory": {
+      "summary": {
+        "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+        "activeProducts": [],
+        "pendingQuestions": [],
+        "customerNeeds": [],
+        "relevantFacts": []
+      },
+      "sales": {
+        "purchaseStage": "QUALIFICATION",
+        "purchaseIntent": false,
+        "objections": [],
+        "productsConsidered": [],
+        "recommendedNextAction": "CLARIFY_PRODUCT"
+      },
+      "awaitingQuantity": false,
+      "version": 1,
+      "intent": "GREETING",
+      "productCodes": [],
+      "shownCodes": [],
+      "query": "",
+      "budget": null,
+      "quantity": 1,
+      "needs": [],
+      "asked": [],
+      "stage": "QUALIFICATION"
+    },
+    "model": "qwen3.5:9b",
+    "latencyMs": 10204,
+    "tokens": {
+      "input": 841,
+      "output": 30
+    },
+    "finalAction": "SIMULATE",
+    "inputMessageIds": [
+      "cmuj56wpr002s7od0kn9ghtwf"
+    ],
+    "autonomy": {
+      "level": 2,
+      "requiredLevel": 1,
+      "allowAuto": true,
+      "handoff": false,
+      "decision": "AUTO",
+      "reason": "EVIDENCE_SUFFICIENT"
+    }
+  },
+  "modelFeedback": {
+    "modelResponse": {
+      "intent": "GREETING",
+      "codes": [],
+      "query": "Me orientas por favor",
+      "budget": null,
+      "quantity": 1,
+      "needs": []
+    },
+    "finalResponse": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+    "original": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+    "final": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas? ¿Buscas audífonos o un parlante?",
+    "humanEdited": true,
+    "persistedRun": {
+      "model": "qwen3.5:9b",
+      "reply": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+      "skill": "sales-qualification",
+      "intent": "GREETING",
+      "memory": {
+        "asked": [],
+        "needs": [],
+        "query": "",
+        "sales": {
+          "objections": [],
+          "purchaseStage": "QUALIFICATION",
+          "purchaseIntent": false,
+          "productsConsidered": [],
+          "recommendedNextAction": "CLARIFY_PRODUCT"
+        },
+        "stage": "QUALIFICATION",
+        "budget": null,
+        "intent": "GREETING",
+        "summary": {
+          "summary": "Etapa: QUALIFICATION. Intención: GREETING. Productos: sin selección.",
+          "customerNeeds": [],
+          "relevantFacts": [],
+          "activeProducts": [],
+          "pendingQuestions": []
+        },
+        "version": 1,
+        "quantity": 1,
+        "shownCodes": [],
+        "productCodes": [],
+        "awaitingQuantity": false
+      },
+      "tokens": {
+        "input": 841,
+        "output": 30
+      },
+      "sources": [],
+      "autonomy": {
+        "level": 2,
+        "reason": "EVIDENCE_SUFFICIENT",
+        "handoff": false,
+        "decision": "AUTO",
+        "allowAuto": true,
+        "requiredLevel": 1
+      },
+      "products": [],
+      "latencyMs": 10204,
+      "toolCalls": [
+        {
+          "ok": true,
+          "name": "searchProducts",
+          "latencyMs": 21,
+          "resultCount": 0
+        }
+      ],
+      "confidence": 0.95,
+      "reasonCode": null,
+      "finalAction": "SIMULATE",
+      "interaction": {
+        "createdAt": "2026-09-27T01:31:08.169Z",
+        "finalResponse": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas?",
+        "modelResponse": {
+          "codes": [],
+          "needs": [],
+          "query": "Me orientas por favor",
+          "budget": null,
+          "intent": "GREETING",
+          "quantity": 1
+        },
+        "customerMessage": "Me orientas por favor"
+      },
+      "requiresHuman": false,
+      "classification": {
+        "intent": "GREETING",
+        "entities": {
+          "needs": [],
+          "budget": null,
+          "quantity": 1
+        },
+        "confidence": 0.9,
+        "legacyIntent": "GREETING",
+        "requiresTool": false,
+        "suggestedTools": [
+          "searchProducts"
+        ],
+        "productReferences": []
+      },
+      "rockyRequestId": "b242cb4e-9798-4828-9258-e2bf2a895ecb",
+      "toolsRequested": [
+        "searchProducts"
+      ],
+      "inputMessageIds": [
+        "cmuj56wpr002s7od0kn9ghtwf"
+      ],
+      "confidenceSignals": {
+        "ambiguity": false,
+        "toolSuccess": true,
+        "productMatch": false,
+        "contradiction": false,
+        "retrievalScore": null,
+        "entityConfidence": 0,
+        "intentConfidence": 0.9,
+        "informationFreshness": "LIVE_LOOKUP"
+      },
+      "confidenceEvidence": [
+        "RULE_BASED_INTENT"
+      ]
+    },
+    "persistedFeedback": {
+      "id": "cmuj574m6002w7od0x0zf3tj2",
+      "runId": "b242cb4e-9798-4828-9258-e2bf2a895ecb",
+      "humanResponse": "¡Hola! Soy Rocky, de Importadora Super 😊 ¿Qué producto buscas? ¿Buscas audífonos o un parlante?",
+      "outcome": null,
+      "reviewerId": "local-real-validation",
+      "status": "EDITED",
+      "createdAt": "2026-09-27T01:31:08.191Z"
+    }
+  },
+  "missingProduct": {
+    "rockyRequestId": "4695e63d-58b9-463a-9477-4e72897c5010",
+    "intent": "PRICE_QUERY",
+    "skill": "product-details",
+    "confidence": 0.35,
+    "confidenceEvidence": [
+      "RULE_BASED_INTENT"
+    ],
+    "toolsRequested": [
+      "getProductByCode",
+      "getPrice"
+    ],
+    "toolCalls": [
+      {
+        "name": "getProductByCode",
+        "ok": true,
+        "latencyMs": 10,
+        "resultCount": 0
+      },
+      {
+        "name": "getPrice",
+        "ok": true,
+        "latencyMs": 8,
+        "resultCount": 0
+      }
+    ],
+    "products": [],
+    "sources": [],
+    "reply": "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?",
+    "requiresHuman": false,
+    "reasonCode": null,
+    "classification": {
+      "intent": "PRODUCT_PRICE",
+      "legacyIntent": "PRICE_QUERY",
+      "confidence": 0.9,
+      "entities": {
+        "budget": null,
+        "quantity": 1,
+        "needs": []
+      },
+      "productReferences": [
+        "ZZ99999999"
+      ],
+      "requiresTool": true,
+      "suggestedTools": [
+        "getProductByCode",
+        "getStock",
+        "getPrice",
+        "searchProducts",
+        "searchKnowledge",
+        "getProduct"
+      ]
+    },
+    "confidenceSignals": {
+      "intentConfidence": 0.9,
+      "entityConfidence": 0,
+      "retrievalScore": null,
+      "productMatch": false,
+      "toolSuccess": true,
+      "informationFreshness": "LIVE_LOOKUP",
+      "ambiguity": false,
+      "contradiction": false
+    },
+    "interaction": {
+      "customerMessage": "cuánto cuesta el ZZ[número]?",
+      "modelResponse": null,
+      "finalResponse": "Quiero ayudarte a encontrar el correcto 🔎 No encontré información suficiente para confirmar esa consulta. ¿Me compartes el modelo, el código o algún detalle más?",
+      "createdAt": "2026-09-27T01:31:08.238Z"
+    },
+    "memory": {
+      "summary": {
+        "summary": "Etapa: QUALIFICATION. Intención: PRICE_QUERY. Productos: ZZ99999999.",
+        "activeProducts": [
+          "ZZ99999999"
+        ],
+        "pendingQuestions": [],
+        "customerNeeds": [],
+        "relevantFacts": []
+      },
+      "sales": {
+        "purchaseStage": "QUALIFICATION",
+        "purchaseIntent": false,
+        "objections": [],
+        "productsConsidered": [],
+        "recommendedNextAction": "RESOLVE_CUSTOMER_QUESTION"
+      },
+      "awaitingQuantity": false,
+      "version": 1,
+      "intent": "PRICE_QUERY",
+      "productCodes": [
+        "ZZ99999999"
+      ],
+      "shownCodes": [],
+      "query": "zz99999999",
+      "budget": null,
+      "quantity": 1,
+      "needs": [],
+      "asked": [],
+      "stage": "QUALIFICATION"
+    },
+    "model": "rules-and-tools",
+    "latencyMs": 18,
+    "tokens": null,
+    "finalAction": "SIMULATE",
+    "inputMessageIds": [
+      "cmuj574mi00317od0arwbyagl"
+    ],
+    "autonomy": {
+      "level": 2,
+      "requiredLevel": 2,
+      "allowAuto": false,
+      "handoff": false,
+      "decision": "CLARIFY",
+      "reason": "CONFIDENCE_BELOW_AUTO"
+    }
+  },
+  "componentProbe": {
+    "measuredMs": {
+      "memoryReadAndParseMs": 1.5767999999952735,
+      "intentMs": 0.07989999999699648,
+      "confidenceMs": 0.01690000000235159
+    },
+    "note": "Separate executions, not a breakdown of a prior turn. Tool times are in each result.toolCalls; embeddings/LLM include cold/cache effects."
+  },
+  "httpFeedback": {
+    "postStatus": 200,
+    "readStatus": 200,
+    "persistedFeedbackId": "cmuj5bm2900017o684q828vkd",
+    "humanEdited": true,
+    "ms": 1692.3600000000001,
+    "readBackVerified": true
+  }
+}

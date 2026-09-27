@@ -1,0 +1,1 @@
+{"verdict":"ROKY E2E PARCIALMENTE VALIDADO","postgresReady":false,"ollamaReady":false,"cases":18,"concurrency":{"count":3,"latencyMs":2056.514799999997,"independentProductReferences":true,"scope":"IN_MEMORY_ORCHESTRATORS_REAL_BACKEND_ATTEMPTS","durableIsolation":"NOT_VALIDATED"},"output":"docs/rocky/e2e-validation-20260926/runtime-evidence.json"}

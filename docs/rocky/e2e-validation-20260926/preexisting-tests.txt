@@ -1,0 +1,264 @@
+[outbound] n8n_request {
+  requestId: 'flow-executions-6-welcome',
+  conversationId: 'conversation'
+}
+[outbound] n8n_request {
+  requestId: 'flow-executions-11-welcome',
+  conversationId: 'conversation'
+}
+[outbound] n8n_rejected { requestId: 'flow-executions-11-welcome', status: 502 }
+[automations] dispatch failed {
+  executionId: 'executions-11',
+  reason: 'El flujo de n8n falló (502).'
+}
+[outbound] n8n_request {
+  requestId: 'flow-executions-14-handoff',
+  conversationId: 'conversation'
+}
+▶ servicio de automatizaciones: borradores, publicación, aislamiento y ejecución
+  ✔ crear ya persiste el diagrama y guardar incrementa la revisión (1.3068ms)
+  ✔ dos guardados con la misma revisión no pueden sobrescribirse (0.5826ms)
+  ✔ rechaza borradores ajenos y cambios de estado mediante PATCH (1.0142ms)
+  ✔ publicación obsoleta no hace llamadas a n8n (0.5733ms)
+  ✔ rechazo de activación conserva el borrador y elimina el workflow parcial (3.3321ms)
+  ✔ una falla de base de datos también revierte la publicación (1.1447ms)
+  ✔ publicar crea una versión inmutable y un nuevo borrador, sin activar clientes (1.0445ms)
+  ✔ el modo de pruebas y el interruptor global impiden activar atención real (0.676ms)
+  ✔ un mensaje entrante viaja por n8n, se envía como bot y finaliza una sola vez (6.2905ms)
+  ✔ firma alterada y callback antiguo no modifican registros (0.5595ms)
+  ✔ BC owns its production contacts without a competing automation reply (0.4069ms)
+  ✔ simulaciones, bot apagado y atención humana no disparan flujos (0.3265ms)
+  ✔ pausar detiene una ejecución que estaba en cola sin enviar respuestas (0.6363ms)
+  ✔ otro flujo no puede activarse mientras WhatsApp tiene uno activo (1.6036ms)
+  ✔ una entrega fallida marca mensaje y ejecución sin volver a intentar (2.0167ms)
+  ✔ derivar apaga el bot y deja la conversación pendiente de asesor (3.4624ms)
+✔ servicio de automatizaciones: borradores, publicación, aislamiento y ejecución (525.7533ms)
+✔ las plantillas se pueden publicar y conservar sin cambios visuales implícitos (5.9667ms)
+✔ un saludo recorre solo la bienvenida y sustituye el nombre (1.0718ms)
+✔ la solicitud de asesor termina el flujo sin buscar productos (0.2601ms)
+✔ la búsqueda utiliza el texto entrante, el límite configurado y la respuesta del catálogo (0.2827ms)
+✔ inicio por palabras clave puede omitir un mensaje sin ejecutar acciones (0.2375ms)
+✔ palabras clave ignoran acentos pero respetan palabras completas (0.1878ms)
+✔ variables del cliente se sustituyen como texto sin interpretar código ni recursión (0.0903ms)
+✔ no permite publicar ciclos, bloques desconectados, IDs repetidos ni ramas incompletas (0.8105ms)
+✔ bloque vacío y variables desconocidas son errores antes de enviar (0.1689ms)
+✔ una falla de entrega interrumpe las siguientes acciones (0.3332ms)
+✔ n8n recibe un webhook único por versión y un ejecutor real sin claves (0.7733ms)
+✔ las firmas expiran, requieren clave y no permiten cambiar la versión ni la ejecución (2.0952ms)
+✔ learns a confirmed customer term with traceable evidence and recalls it in later conversations (6.754ms)
+✔ unknown terms require explicit correction, never a model's inferred result or a negated selection (1.4893ms)
+✔ conflicting aliases and expired memories ask for clarification instead of guessing (1.7159ms)
+✔ FAQ counts keep only structured interests and exclude canceled and unrelated requests (1.3046ms)
+✔ production scope is explicit and requires a valid activation date (1.426ms)
+✔ scope excludes simulators and malformed recipients (0.3436ms)
+✔ legacy pilot remains limited and explicit OFF overrides it (0.2305ms)
+✔ multi-item checkout preserves each line through correction, confirmation and unverified voucher (6.7781ms)
+✔ new prices require another review and unavailable stock prevents confirmation (0.6344ms)
+✔ cancellation, exact-code removal and handoff never invent an order (0.9646ms)
+✔ ambiguous or unpriced requests cannot silently enter the cart (9.0552ms)
+✔ natural cart references preserve other lines and ambiguous or negated requests never mutate (2.4995ms)
+✔ customer corrections require review, preserve other fields, and cannot modify a confirmed order (1.0821ms)
+✔ word quantities edit the selected line and keep pricing, stock and confirmation checks (1.2748ms)
+✔ uncertain word quantities and references cannot change the reviewed cart (0.6453ms)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:47:20)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:58:17)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:69:20)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+Error processing incoming message: TypeError: import_prisma.prisma.conversation.findUnique is not a function
+    at POST (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\app\api\internal\chat\incoming\route.ts:28:57)
+    at async TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:106:17)
+    at async Test.run (node:internal/test_runner/test:1389:7)
+    at async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+✖ n8n conserva el enlace del audio y permite recibirlo sin texto (16.7037ms)
+✖ n8n conserva el sticker y no duplica el mensaje al reintentar (1.1916ms)
+✖ n8n conserva mediaId cuando WhatsApp no envía un enlace público (0.959ms)
+✔ el webhook firmado de Meta persiste audio y sticker con sus identificadores (4.1126ms)
+✔ la recepción multimedia mantiene autenticación y rechaza enlaces ejecutables (1.0232ms)
+✖ el simulador cuenta la pausa desde la recepción del servidor y mantiene el orden de mensajes (1.3956ms)
+✔ el envío manual usa n8n y no llama directamente a Meta (0.9243ms)
+✔ inbound y ManyChat conservan sus puntos de entrada actuales (0.1325ms)
+✔ precondiciones ManyChat y simulador fallan antes de invocar n8n y quedan fallidas (0.1197ms)
+✔ no infiere manychatSubscriberId desde externalContactId (0.1433ms)
+✔ los contactos del simulador nunca se relacionan por un teléfono inferido (0.1826ms)
+✔ muestra ofertas activas (12.8545ms)
+✔ recomienda un regalo con presupuesto y contexto de ocasión (2.268ms)
+✔ usa fallback cuando no hay ofertas activas marcadas (0.4552ms)
+✔ resuelve categorías activas (0.2985ms)
+✔ resuelve precio por código aunque el código venga con espacios (0.3488ms)
+✖ usa el contexto para responder seguimiento de precio sin mostrar cajón (2.3256ms)
+✖ devuelve productos similares cuando el usuario lo pide (3.4994ms)
+✖ usa memoria para calcular cantidad y precio mayorista (0.5232ms)
+✔ ordena recomendaciones por presupuesto cercano (0.5877ms)
+✖ no mezcla audifonos con teclados aunque ambos tengan bluetooth (1.2884ms)
+✔ no confunde scooter electrico con hervidor electrico (0.5273ms)
+✔ sugiere scooter cuando el usuario escribe scuter (0.2492ms)
+✔ corrige errores comunes de escritura antes de buscar (0.2287ms)
+✔ sugiere correcciones cuando la palabra mal escrita no tiene resultados (0.1462ms)
+✔ prioriza teclados y evita productos irrelevantes (0.2104ms)
+✔ responde soporte y flujo de compra (0.141ms)
+✔ da fallback claro cuando no entiende (0.1479ms)
+✔ detecta regalos por temporada y perfil (0.0962ms)
+✔ redacta respuesta de regalo con contexto (0.0723ms)
+✔ devuelve palabras clave de regalo sin duplicados (0.062ms)
+✔ filtra regalos para padre y evita cocina u hogar (1.1908ms)
+ℹ tests 76
+ℹ suites 0
+ℹ pass 68
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1015.7422
+
+✖ failing tests:
+
+test at src\lib\messages-incoming-media.test.ts:2:3070
+✖ n8n conserva el enlace del audio y permite recibirlo sin texto (16.7037ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:48:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\messages-incoming-media.test.ts:2:3594
+✖ n8n conserva el sticker y no duplica el mensaje al reintentar (1.1916ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:58:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\messages-incoming-media.test.ts:2:4247
+✖ n8n conserva mediaId cuando WhatsApp no envía un enlace público (0.959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:70:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\messages-incoming-media.test.ts:2:6025
+✖ el simulador cuenta la pausa desde la recepción del servidor y mantiene el orden de mensajes (1.3956ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  500 !== 201
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\messages-incoming-media.test.ts:106:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 500,
+    expected: 201,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:6532
+✖ usa el contexto para responder seguimiento de precio sin mostrar cajón (2.3256ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'AGA-100'
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:226:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'AGA-100',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:7041
+✖ devuelve productos similares cuando el usuario lo pide (3.4994ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(containsNormalized(reply.text, "mejor alternativa"))
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:238:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:7381
+✖ usa memoria para calcular cantidad y precio mayorista (0.5232ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'AGA-100'
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:248:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'AGA-100',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:8342
+✖ no mezcla audifonos con teclados aunque ambos tengan bluetooth (1.2884ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(reply.products?.every((product) => containsNormalized(product.name, "audifono")))
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:271:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

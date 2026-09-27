@@ -1,0 +1,202 @@
+
+> catalogo-web@0.1.0 build
+> prisma generate && next build
+
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+✔ Generated Prisma Client (v6.19.3) to .\node_modules\@prisma\client in 186ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · proxyClientMaxBodySize: "25mb"
+
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./next.config.ts
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Import trace:
+  App Route:
+    ./next.config.ts
+    ./src/lib/catalog-pdf.ts
+    ./src/app/api/internal/catalogs/projectors/route.ts
+
+
+✓ Compiled successfully in 6.2s
+  Running TypeScript ...
+  Finished TypeScript in 11.1s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/53) ...
+  Generating static pages using 31 workers (13/53) 
+  Generating static pages using 31 workers (26/53) 
+  Generating static pages using 31 workers (39/53) 
+prisma:error 
+Invalid `prisma.category.findMany()` invocation:
+
+
+Can't reach database server at `127.0.0.1:5432`
+
+Please make sure your database server is running at `127.0.0.1:5432`.
+revalidating cache with key: async()=>(await d.prisma.category.findMany({orderBy:[{name:"asc"},{id:"asc"}]})).map(e.mapCategory)-category-options-key-[] Error [PrismaClientInitializationError]: 
+Invalid `prisma.category.findMany()` invocation:
+
+
+Can't reach database server at `127.0.0.1:5432`
+
+Please make sure your database server is running at `127.0.0.1:5432`.
+    at async X.revalidate (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\.next\server\chunks\ssr\src_lib_0-z7vus._.js:1:15256) {
+  clientVersion: '6.19.3',
+  errorCode: undefined,
+  retryable: undefined
+}
+✓ Generating static pages using 31 workers (53/53) in 2.3s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /acceso
+├ ƒ /admin
+├ ƒ /admin/analitica
+├ ƒ /admin/atencion
+├ ƒ /admin/banners
+├ ƒ /admin/categories
+├ ƒ /admin/collections
+├ ƒ /admin/cupones
+├ ƒ /admin/cupones/[id]
+├ ƒ /admin/cupones/new
+├ ƒ /admin/dashboard-settings
+├ ƒ /admin/erp
+├ ƒ /admin/fichas
+├ ƒ /admin/fichas/[id]
+├ ƒ /admin/fichas/print
+├ ƒ /admin/mensajes
+├ ƒ /admin/mensajes/actividad
+├ ƒ /admin/mensajes/automatizaciones
+├ ƒ /admin/mensajes/automatizaciones/[id]
+├ ƒ /admin/mensajes/configuracion
+├ ƒ /admin/mensajes/contactos
+├ ƒ /admin/mensajes/evaluacion-rocky
+├ ƒ /admin/mensajes/plantillas
+├ ƒ /admin/mensajes/simulador
+├ ƒ /admin/opiniones
+├ ƒ /admin/opiniones/[id]
+├ ƒ /admin/orders
+├ ƒ /admin/orders/[id]
+├ ƒ /admin/products
+├ ƒ /admin/products/[id]
+├ ƒ /admin/products/new
+├ ƒ /admin/quotes
+├ ƒ /admin/quotes/[id]
+├ ƒ /admin/reclamos
+├ ƒ /admin/reclamos/[id]
+├ ƒ /admin/rocky/aprendizaje
+├ ƒ /admin/settings
+├ ƒ /admin/users
+├ ƒ /admin/users/[id]
+├ ƒ /admin/users/new
+├ ƒ /api/admin/automations
+├ ƒ /api/admin/automations/[id]
+├ ƒ /api/admin/automations/[id]/publish
+├ ƒ /api/admin/automations/[id]/simulate
+├ ƒ /api/admin/automations/[id]/status
+├ ƒ /api/admin/catalog-image-audit
+├ ƒ /api/admin/conversations
+├ ƒ /api/admin/conversations/[id]
+├ ƒ /api/admin/conversations/[id]/messages
+├ ƒ /api/admin/conversations/simulate
+├ ƒ /api/admin/erp/progress
+├ ƒ /api/admin/fichas/[id]/erp
+├ ƒ /api/admin/fichas/[id]/research
+├ ƒ /api/admin/fichas/generate-qr
+├ ƒ /api/admin/fichas/save
+├ ƒ /api/admin/integrations/whatsapp/disconnect
+├ ƒ /api/admin/integrations/whatsapp/oauth/exchange
+├ ƒ /api/admin/integrations/whatsapp/status
+├ ƒ /api/admin/integrations/whatsapp/verify
+├ ƒ /api/admin/message-templates
+├ ƒ /api/admin/message-templates/[id]
+├ ƒ /api/admin/messages/[id]/cancel
+├ ƒ /api/admin/messages/[id]/media
+├ ƒ /api/admin/messages/statuses
+├ ƒ /api/admin/products/[id]/erp
+├ ƒ /api/admin/products/bulk
+├ ƒ /api/admin/quotes/[id]
+├ ƒ /api/admin/rocky
+├ ƒ /api/admin/rocky/recent-review
+├ ƒ /api/admin/uploads
+├ ƒ /api/catalog-exact
+├ ƒ /api/catalog-live
+├ ƒ /api/catalog-suggest
+├ ƒ /api/checkout
+├ ƒ /api/complaints
+├ ƒ /api/complaints/uploads
+├ ƒ /api/erp-quote
+├ ƒ /api/internal/automations/execute
+├ ƒ /api/internal/catalogs/products
+├ ƒ /api/internal/catalogs/projectors
+├ ƒ /api/internal/chat/delivery-status
+├ ƒ /api/internal/chat/incoming
+├ ƒ /api/internal/chat/manychat-outgoing
+├ ƒ /api/internal/chat/outgoing
+├ ƒ /api/internal/chat/requests
+├ ƒ /api/internal/chat/sales-state
+├ ƒ /api/internal/chat/simulate
+├ ƒ /api/internal/chat/simulator-batch
+├ ƒ /api/internal/chat/simulator-input-batch
+├ ƒ /api/internal/chat/templates
+├ ƒ /api/internal/products/discovery
+├ ƒ /api/internal/products/search
+├ ƒ /api/internal/rocky/chat
+├ ƒ /api/internal/rocky/embed
+├ ƒ /api/internal/rocky/health
+├ ƒ /api/internal/rocky/rag/index
+├ ƒ /api/internal/rocky/rag/search
+├ ƒ /api/p/analytics
+├ ƒ /api/promo/validate
+├ ƒ /api/service-feedback
+├ ƒ /api/shop-assistant
+├ ƒ /api/store-analytics
+├ ƒ /api/webhook/erp-sync
+├ ƒ /api/webhook/manychat/image-ack
+├ ƒ /api/webhook/n8n/execution-status
+├ ƒ /api/webhook/whatsapp
+├ ○ /califica-atencion
+├ ƒ /califica-atencion/qr
+├ ƒ /categoria/[slug]
+├ ƒ /cuenta
+├ ƒ /cuenta/cotizaciones/[id]
+├ ƒ /eliminacion-de-datos
+├ ○ /icon.png
+├ ○ /libro-reclamaciones
+├ ƒ /login
+├ ƒ /p/[slug]
+├ ƒ /politica-de-privacidad
+├ ƒ /producto/[slug]
+├ ƒ /qr
+├ ○ /robots.txt
+├ ƒ /sitemap.xml
+├ ƒ /terminos-y-condiciones
+└ ƒ /uploads/[...path]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

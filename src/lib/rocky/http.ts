@@ -2,6 +2,12 @@ import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 const rate = new Map<string, { at: number; count: number }>();
+export function sameOriginMutation(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return true; // Existing authenticated server clients do not send browser Origin.
+  try { return new URL(origin).origin === new URL(request.url).origin || Boolean(process.env.NEXT_PUBLIC_SITE_URL && new URL(origin).origin === new URL(process.env.NEXT_PUBLIC_SITE_URL).origin); }
+  catch { return false; }
+}
 export function internalAuthorized(request: Request) {
   const expected = process.env.N8N_INTERNAL_API_KEY;
   const supplied = request.headers.get("x-internal-api-key");

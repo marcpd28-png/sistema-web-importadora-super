@@ -419,6 +419,7 @@
     ],
     "objective": "Recuperar política vigente con fuente",
     "tools": [
+      "getProductByCode",
       "searchKnowledge"
     ],
     "requiredInformation": [

@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-09-27T01:00:08.399Z",
+  "environment": {
+    "ROCKY_MODEL": "UNSET",
+    "ROCKY_EMBEDDING_MODEL": "UNSET",
+    "OLLAMA_MODEL": "qwen2.5:7b",
+    "ROCKY_LLM_ENABLED": "UNSET",
+    "ROCKY_RAG_VECTOR_ENABLED": "UNSET",
+    "ROCKY_AUTO_ENABLED": "UNSET",
+    "ROCKY_AUTONOMY_LEVEL": "UNSET"
+  },
+  "ollama": {
+    "ok": false,
+    "error": "ECONNREFUSED",
+    "latencyMs": 16.375500000000002
+  },
+  "postgres": {
+    "ok": false,
+    "error": "PrismaClientInitializationError",
+    "latencyMs": 2043.3829000000003
+  }
+}

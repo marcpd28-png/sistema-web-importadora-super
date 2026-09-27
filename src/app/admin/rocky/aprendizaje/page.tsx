@@ -5,6 +5,7 @@ import { intents } from "@/lib/rocky/contracts";
 import { PLANNING_APPROVAL } from "@/lib/rocky/reviewed-examples";
 
 export const dynamic = "force-dynamic";
+const pendingStatuses = ["AI_FEEDBACK", "THUMBS_UP", "THUMBS_DOWN", "EDITED", "SENT_AS_IS", "HUMAN_OVERRIDE"];
 
 async function reviewIntent(form: FormData) {
   "use server";
@@ -31,13 +32,13 @@ async function reviewFeedback(form: FormData) {
   const id = String(form.get("id") || "");
   const status = String(form.get("status") || "");
   if (!id || !["APPROVED_FOR_EVALUATION", "REJECTED"].includes(status)) throw new Error("Revisión inválida");
-  await prisma.rockyFeedback.updateMany({ where: { id, status: status === "REJECTED" ? { in: ["AI_FEEDBACK", "APPROVED_FOR_EVALUATION"] } : "AI_FEEDBACK" }, data: { status } });
+  await prisma.rockyFeedback.updateMany({ where: { id, status: status === "REJECTED" ? { in: [...pendingStatuses, "APPROVED_FOR_EVALUATION"] } : { in: pendingStatuses } }, data: { status } });
   revalidatePath("/admin/rocky/aprendizaje");
 }
 
 export default async function RockyLearningPage() {
   await requireAdmin();
-  const feedback = await prisma.rockyFeedback.findMany({ where: { status: "AI_FEEDBACK" }, orderBy: { createdAt: "asc" }, take: 50,
+  const feedback = await prisma.rockyFeedback.findMany({ where: { status: { in: pendingStatuses } }, orderBy: { createdAt: "asc" }, take: 50,
     include: { run: { select: { triggerMessageId: true, result: true } } } });
   const messages = await prisma.chatMessage.findMany({ where: { id: { in: feedback.map(row => row.run.triggerMessageId) } }, select: { id: true, content: true } });
   const questions = new Map(messages.map(row => [row.id, row.content]));

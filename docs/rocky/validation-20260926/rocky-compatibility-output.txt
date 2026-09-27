@@ -1,0 +1,150 @@
+[outbound] n8n_request {
+  requestId: 'flow-executions-6-welcome',
+  conversationId: 'conversation'
+}
+[outbound] n8n_request {
+  requestId: 'flow-executions-11-welcome',
+  conversationId: 'conversation'
+}
+[outbound] n8n_rejected { requestId: 'flow-executions-11-welcome', status: 502 }
+[automations] dispatch failed {
+  executionId: 'executions-11',
+  reason: 'El flujo de n8n falló (502).'
+}
+[outbound] n8n_request {
+  requestId: 'flow-executions-14-handoff',
+  conversationId: 'conversation'
+}
+▶ servicio de automatizaciones: borradores, publicación, aislamiento y ejecución
+  ✔ crear ya persiste el diagrama y guardar incrementa la revisión (1.3145ms)
+  ✔ dos guardados con la misma revisión no pueden sobrescribirse (0.5264ms)
+  ✔ rechaza borradores ajenos y cambios de estado mediante PATCH (0.9908ms)
+  ✔ publicación obsoleta no hace llamadas a n8n (0.538ms)
+  ✔ rechazo de activación conserva el borrador y elimina el workflow parcial (3.0915ms)
+  ✔ una falla de base de datos también revierte la publicación (1.0919ms)
+  ✔ publicar crea una versión inmutable y un nuevo borrador, sin activar clientes (0.9591ms)
+  ✔ el modo de pruebas y el interruptor global impiden activar atención real (0.5994ms)
+  ✔ un mensaje entrante viaja por n8n, se envía como bot y finaliza una sola vez (6.0873ms)
+  ✔ firma alterada y callback antiguo no modifican registros (0.4849ms)
+  ✔ BC owns its production contacts without a competing automation reply (0.3342ms)
+  ✔ simulaciones, bot apagado y atención humana no disparan flujos (0.2944ms)
+  ✔ pausar detiene una ejecución que estaba en cola sin enviar respuestas (0.552ms)
+  ✔ otro flujo no puede activarse mientras WhatsApp tiene uno activo (1.0116ms)
+  ✔ una entrega fallida marca mensaje y ejecución sin volver a intentar (1.6597ms)
+  ✔ derivar apaga el bot y deja la conversación pendiente de asesor (3.1935ms)
+✔ servicio de automatizaciones: borradores, publicación, aislamiento y ejecución (1108.8353ms)
+✔ las plantillas se pueden publicar y conservar sin cambios visuales implícitos (3.552ms)
+✔ un saludo recorre solo la bienvenida y sustituye el nombre (0.5819ms)
+✔ la solicitud de asesor termina el flujo sin buscar productos (0.1798ms)
+✔ la búsqueda utiliza el texto entrante, el límite configurado y la respuesta del catálogo (0.213ms)
+✔ inicio por palabras clave puede omitir un mensaje sin ejecutar acciones (0.1405ms)
+✔ palabras clave ignoran acentos pero respetan palabras completas (0.1354ms)
+✔ variables del cliente se sustituyen como texto sin interpretar código ni recursión (0.0693ms)
+✔ no permite publicar ciclos, bloques desconectados, IDs repetidos ni ramas incompletas (0.5513ms)
+✔ bloque vacío y variables desconocidas son errores antes de enviar (0.1324ms)
+✔ una falla de entrega interrumpe las siguientes acciones (0.249ms)
+✔ n8n recibe un webhook único por versión y un ejecutor real sin claves (0.4211ms)
+✔ las firmas expiran, requieren clave y no permiten cambiar la versión ni la ejecución (0.9893ms)
+✔ muestra ofertas activas (310.437ms)
+✔ recomienda un regalo con presupuesto y contexto de ocasión (1.7565ms)
+✔ usa fallback cuando no hay ofertas activas marcadas (0.4062ms)
+✔ resuelve categorías activas (0.2509ms)
+✔ resuelve precio por código aunque el código venga con espacios (0.2991ms)
+✖ usa el contexto para responder seguimiento de precio sin mostrar cajón (1.9256ms)
+✖ devuelve productos similares cuando el usuario lo pide (2.9918ms)
+✖ usa memoria para calcular cantidad y precio mayorista (0.4641ms)
+✔ ordena recomendaciones por presupuesto cercano (0.4853ms)
+✖ no mezcla audifonos con teclados aunque ambos tengan bluetooth (0.6443ms)
+✔ no confunde scooter electrico con hervidor electrico (0.2428ms)
+✔ sugiere scooter cuando el usuario escribe scuter (0.1652ms)
+✔ corrige errores comunes de escritura antes de buscar (0.1845ms)
+✔ sugiere correcciones cuando la palabra mal escrita no tiene resultados (0.1363ms)
+✔ prioriza teclados y evita productos irrelevantes (0.1808ms)
+✔ responde soporte y flujo de compra (0.1238ms)
+✔ da fallback claro cuando no entiende (0.1254ms)
+✔ detecta regalos por temporada y perfil (0.0732ms)
+✔ redacta respuesta de regalo con contexto (0.0647ms)
+✔ devuelve palabras clave de regalo sin duplicados (0.0495ms)
+✔ filtra regalos para padre y evita cocina u hogar (0.9454ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 46
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1573.4349
+
+✖ failing tests:
+
+test at src\lib\shop-assistant.test.ts:2:6532
+✖ usa el contexto para responder seguimiento de precio sin mostrar cajón (1.9256ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'AGA-100'
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:226:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'AGA-100',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:7041
+✖ devuelve productos similares cuando el usuario lo pide (2.9918ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(containsNormalized(reply.text, "mejor alternativa"))
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:238:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:7381
+✖ usa memoria para calcular cantidad y precio mayorista (0.4641ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'AGA-100'
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:248:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'AGA-100',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src\lib\shop-assistant.test.ts:2:8342
+✖ no mezcla audifonos con teclados aunque ambos tengan bluetooth (0.6443ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(reply.products?.every((product) => containsNormalized(product.name, "audifono")))
+  
+      at TestContext.<anonymous> (C:\Users\PREDATOR\Downloads\sistema-web-importadora-super\src\lib\shop-assistant.test.ts:271:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

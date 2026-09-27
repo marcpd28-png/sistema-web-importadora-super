@@ -1,0 +1,16 @@
+{
+  "thisTurnChanged": [
+    "src/lib/rocky/orchestrator.ts",
+    "src/lib/rocky/tools.ts",
+    "src/lib/rocky/learning.ts"
+  ],
+  "globalLint": {
+    "errors": 358,
+    "warnings": 3844,
+    "errorsInThisTurnChangedFiles": 0
+  },
+  "legacyTestDependencyCheck": {
+    "files": 12,
+    "changedAgainstHEAD": []
+  }
+}

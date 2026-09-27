@@ -23,7 +23,7 @@ export function productSubject(text: string) {
     .replace(/\bpor\s+\d+\b/g, " ")
     .replace(/\b(?:buen(?:os)? dias?|buenas tardes|buenas noches|que tal|por favor|x favor|por unidad)\b/g, " ")
     .replace(/\b(?:me|puede|puedes|podria|podrias|brinda|brindas|brindar|dar|decir|saber|hola|buenas|porfa|porfavor|gracias|info|informacion|precio|precios|costo|cuanto|cuesta|cuestan|sale|salen|esta|estan|del|de|el|la|los|las|su|sus|un|una|quiero|quisiera|busco|necesito|tienes|tienen|tiene|stock|disponible|disponibilidad|producto|productos|este|esta|esto|ese|esa|eso|lo|sigue|por|favor)\b/g, " ")
-    .replace(/\b(?:que|cual|es|valor|sobre)\b/g, " ")
+    .replace(/\b(?:que|cual|es|valor|sobre|hay)\b/g, " ")
     .replace(/\b(?:fotos?|imagenes?|detalles?|caracteristicas|ficha|especificaciones)\b/g, " ")
     .replace(/\b(?:en|y|ya|si|tambien|mas|otro|otra|otros|otras|estos|estas|esos|esas|modelos?|disenos?|todos|solo|cuantos?|vale|valen|unidades?|piezas?|enviar|mandar|mandarme|manda|envia|podra|podras|podrias|buen|dia|porfabor|xfavor|xfav)\b/g, " ")
     .replace(/^\s*\d+\s*$/, "")

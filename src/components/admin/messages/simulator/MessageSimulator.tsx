@@ -317,10 +317,18 @@ export function MessageSimulator() {
           <p>Productos: {rocky.products.map(p => p.code).join(", ") || "por precisar"}</p>
           <p>Fuentes: {rocky.sources.map(s => s.title).join(", ") || "catálogo / reglas internas"}</p>
           {rocky.reasonCode && <p>Motivo: {rocky.reasonCode}</p>}
+          <div>
+            {(["THUMBS_UP", "THUMBS_DOWN"] as const).map(value => <button key={value} type="button" className="btn btn-outline" onClick={async () => {
+              try {
+                const response = await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "feedback", runId: rocky.rockyRequestId, humanResponse: rocky.reply, feedback: value }) });
+                setNotice(response.ok ? "Evaluación guardada; requiere revisión antes de usarla para entrenamiento." : "No se pudo guardar la evaluación.");
+              } catch { setNotice("No se pudo guardar la evaluación."); }
+            }}>{value === "THUMBS_UP" ? "Respuesta útil" : "Necesita mejorar"}</button>)}
+          </div>
           <details><summary>Corregir sugerencia</summary>
             <textarea aria-label="Respuesta corregida" value={feedback} maxLength={4000} onChange={event => setFeedback(event.target.value)} />
             <button type="button" className="btn btn-outline" onClick={async () => {
-              const response = await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "feedback", runId: rocky.rockyRequestId, humanResponse: feedback }) });
+              const response = await fetch("/api/admin/rocky", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "feedback", runId: rocky.rockyRequestId, humanResponse: feedback, feedback: "EDITED" }) });
               setNotice(response.ok ? "Corrección guardada para revisión humana." : "No se pudo guardar la corrección.");
             }}>Guardar corrección</button>
             <p><a href="/admin/rocky/aprendizaje">Revisar correcciones de Rocky</a></p>
