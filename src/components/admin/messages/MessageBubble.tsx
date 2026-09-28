@@ -6,7 +6,15 @@ interface Props {
 }
 
 function MediaAttachment({ message }: { message: ChatMessage }) {
-  const src = message.mediaUrl;
+  const src = message.mediaUrl && (() => {
+    try {
+      return new URL(message.mediaUrl).hostname === "api.ycloud.com"
+        ? `/api/admin/messages/${encodeURIComponent(message.id)}/media`
+        : message.mediaUrl;
+    } catch {
+      return message.mediaUrl;
+    }
+  })();
   const label = message.messageType === "VIDEO" ? "Video" : message.messageType === "AUDIO" ? "Audio" : "Documento";
   if (!src) return <span style={{ fontSize: "13px", fontStyle: "italic", opacity: 0.8 }}>{label} recibido. Archivo no disponible.</span>;
 
