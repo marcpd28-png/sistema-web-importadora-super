@@ -5,6 +5,27 @@ interface Props {
   onRetry?: (message: ChatMessage) => void;
 }
 
+function MediaAttachment({ message }: { message: ChatMessage }) {
+  const src = message.mediaUrl;
+  const label = message.messageType === "VIDEO" ? "Video" : message.messageType === "AUDIO" ? "Audio" : "Documento";
+  if (!src) return <span style={{ fontSize: "13px", fontStyle: "italic", opacity: 0.8 }}>{label} recibido. Archivo no disponible.</span>;
+
+  if (message.messageType === "VIDEO") return (
+    <div style={{ margin: "4px 0", display: "grid", gap: "6px" }}>
+      <video controls preload="metadata" src={src} style={{ borderRadius: "10px", maxHeight: "320px", maxWidth: "100%" }}>Tu navegador no permite reproducir este video.</video>
+      <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "12px", textDecoration: "underline" }}>Abrir video</a>
+      {message.content && !/^video recibido$/i.test(message.content.trim()) ? <span>{message.content}</span> : null}
+    </div>
+  );
+  if (message.messageType === "AUDIO") return (
+    <div style={{ margin: "4px 0", display: "grid", gap: "6px" }}>
+      <audio controls preload="metadata" src={src} style={{ maxWidth: "100%", width: "300px" }}>Tu navegador no permite reproducir este audio.</audio>
+      <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "12px", textDecoration: "underline" }}>Abrir audio</a>
+    </div>
+  );
+  return <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "13px", textDecoration: "underline" }}>Abrir documento adjunto</a>;
+}
+
 export function MessageBubble({ message, onRetry }: Props) {
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
@@ -76,6 +97,7 @@ export function MessageBubble({ message, onRetry }: Props) {
             <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.8 }}>Imagen sin URL disponible</span>
           </div>
         )}
+        {["VIDEO", "AUDIO", "DOCUMENT"].includes(message.messageType) && <MediaAttachment message={message} />}
       </div>
       
       <span style={{ fontSize: '10px', color: '#667781', textAlign: 'right', marginTop: '4px' }}>
