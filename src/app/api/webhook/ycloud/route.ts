@@ -1,9 +1,11 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { MessageType } from "@prisma/client";
+import { MessageType, Prisma } from "@prisma/client";
 import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
 import { processIncomingMessage } from "@/lib/messages-service";
+import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
+import { normalizeWhatsappPhone } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,7 +33,7 @@ function messageType(value: unknown): MessageType {
   }
 }
 
-function messageContent(message: JsonRecord, type: string | null) {
+function messageContent(message: JsonRecord, type: string | null, direction: "inbound" | "outbound" = "inbound") {
   if (type === "text") return text(asRecord(message.text)?.body) ?? "";
   if (type === "button") return text(asRecord(message.button)?.text) ?? "Botón recibido";
 
@@ -50,7 +52,8 @@ function messageContent(message: JsonRecord, type: string | null) {
   }
 
   const media = type ? asRecord(message[type]) : null;
-  return text(media?.caption) ?? (type ? `${type} recibido` : "Mensaje recibido");
+  const action = direction === "outbound" ? "enviado" : "recibido";
+  return text(media?.caption) ?? (type ? `${type} ${action}` : `Mensaje ${action}`);
 }
 
 function messageMediaUrl(message: JsonRecord, type: string | null) {
@@ -153,14 +156,82 @@ async function processInbound(event: JsonRecord) {
 
 async function applyStatus(event: JsonRecord) {
   const message = asRecord(event.whatsappMessage);
-  const externalMessageId = text(message?.wamid) ?? text(message?.id);
   const status = text(message?.status);
-  if (!externalMessageId || !status) return;
+  const ids = [text(message?.wamid), text(message?.id)].filter((id): id is string => Boolean(id));
+  if (!message || !ids.length || !status) return;
 
-  await prisma.chatMessage.updateMany({
-    where: { externalMessageId },
-    data: { status },
+  const existing = await prisma.chatMessage.findFirst({
+    where: { externalMessageId: { in: ids } },
   });
+
+  if (existing) {
+    await prisma.chatMessage.update({
+      where: { id: existing.id },
+      data: { status },
+    });
+    return;
+  }
+
+  const recipient = text(message.to);
+  const phoneNormalized = normalizeWhatsappPhone(recipient);
+  if (!recipient || !phoneNormalized) return;
+
+  let contact = await prisma.chatContact.findFirst({
+    where: {
+      channel: "WHATSAPP",
+      NOT: { externalId: { startsWith: "SIMULATOR:" } },
+      OR: [
+        { phoneNormalized },
+        { phone: { contains: phoneNormalized } },
+        { externalId: recipient },
+      ],
+    },
+  });
+
+  if (!contact) {
+    const profile = asRecord(message.customerProfile);
+    contact = await prisma.chatContact.create({
+      data: {
+        channel: "WHATSAPP",
+        externalId: recipient,
+        name: text(profile?.name) ?? recipient,
+        phone: recipient,
+        phoneNormalized,
+      },
+    });
+  }
+
+  let conversation = await prisma.conversation.findFirst({
+    where: { contactId: contact.id, channel: "WHATSAPP", status: { not: "CERRADO" } },
+    orderBy: { lastMessageAt: "desc" },
+  });
+
+  if (!conversation) {
+    conversation = await prisma.conversation.create({
+      data: { contactId: contact.id, channel: "WHATSAPP", status: "ATENDIENDO", botEnabled: false },
+    });
+  }
+
+  const timestamp = new Date(text(message.sendTime) ?? text(message.createTime) ?? text(event.createTime) ?? Date.now());
+  const synced = await prisma.chatMessage.create({
+    data: {
+      conversationId: conversation.id,
+      externalMessageId: ids[0],
+      direction: "OUTBOUND",
+      senderType: "AGENT",
+      messageType: messageType(message.type),
+      content: messageContent(message, text(message.type), "outbound"),
+      metadata: { provider: "ycloud", source: "ycloud_console", eventId: text(event.id), raw: message } as Prisma.InputJsonValue,
+      status,
+      createdAt: timestamp,
+    },
+  });
+
+  await prisma.conversation.update({
+    where: { id: conversation.id },
+    data: { lastMessageAt: timestamp, botEnabled: false, status: "ATENDIENDO" },
+  });
+  triggerPusherEvent(`chat-${conversation.id}`, "new-message", synced);
 }
 
 export async function POST(request: NextRequest) {
