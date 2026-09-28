@@ -93,6 +93,7 @@ export const incomingMessageSchema = z.object({
   externalMessageId: z.string().min(1).max(120),
   type: z.nativeEnum(MessageType).default("UNKNOWN"),
   content: z.string(),
+  mediaUrl: z.string().url().optional().nullable(),
   timestamp: z.string().datetime(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
 });
@@ -693,6 +694,7 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
         senderType: "CUSTOMER",
         messageType: parsed.type,
         content: parsed.content,
+        mediaUrl: parsed.mediaUrl,
         metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
         createdAt: timestamp,
         status: "delivered",

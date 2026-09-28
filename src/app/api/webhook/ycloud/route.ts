@@ -97,6 +97,7 @@ async function processInbound(event: JsonRecord) {
     content,
     externalContactId: from,
     externalMessageId,
+    mediaUrl: messageMediaUrl(message, type),
     metadata: {
       provider: "ycloud",
       eventId: text(event.id),
@@ -221,6 +222,7 @@ async function applyStatus(event: JsonRecord) {
       senderType: "AGENT",
       messageType: messageType(message.type),
       content: messageContent(message, text(message.type), "outbound"),
+      mediaUrl: messageMediaUrl(message, text(message.type)),
       metadata: { provider: "ycloud", source: "ycloud_console", eventId: text(event.id), raw: message } as Prisma.InputJsonValue,
       status,
       createdAt: timestamp,
