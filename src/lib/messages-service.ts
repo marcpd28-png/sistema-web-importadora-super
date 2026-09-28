@@ -5,9 +5,11 @@ import { normalizeWhatsappPhone } from "@/lib/utils";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import {
   N8nOutboundError,
-  sendN8nOutboundMessage,
-  type N8nOutboundMessageType,
 } from "@/lib/n8n-outbound";
+import {
+  sendYCloudOutboundMessage,
+  type YCloudOutboundMessageType,
+} from "@/lib/ycloud-outbound";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
@@ -473,7 +475,7 @@ export async function sendInternalMessage(
     throw new Error("La conversación no tiene un teléfono de WhatsApp válido.");
   }
 
-  if (!["TEXT", "IMAGE", "VIDEO", "DOCUMENT"].includes(parsed.type)) {
+  if (!["TEXT", "IMAGE", "VIDEO", "DOCUMENT", "AUDIO"].includes(parsed.type)) {
     throw new Error("El tipo de mensaje no está soportado por ahora.");
   }
 
@@ -481,7 +483,7 @@ export async function sendInternalMessage(
     throw new Error("Se requiere mediaUrl para enviar archivos multimedia.");
   }
 
-  const outboundType = parsed.type.toLowerCase() as N8nOutboundMessageType;
+  const outboundType = parsed.type.toLowerCase() as YCloudOutboundMessageType;
   const message = await prisma.chatMessage.create({
       data: {
         conversationId,
@@ -497,12 +499,17 @@ export async function sendInternalMessage(
 
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
   try {
-    const manychatSubscriberId = requireRealManychatSubscriber(conversation.contact);
+    if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+      throw new N8nOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
+        code: "SIMULATOR_CONTACT", statusCode: 400,
+      });
+    }
 
-    const sent = await sendN8nOutboundMessage({
-      agentId, channel: "WHATSAPP", content: parsed.content, conversationId,
-      manychatSubscriberId, mediaUrl: parsed.mediaUrl ?? null, recipient,
-      requestId: parsed.requestId, type: outboundType,
+    const sent = await sendYCloudOutboundMessage({
+      content: parsed.content,
+      mediaUrl: parsed.mediaUrl ?? null,
+      recipient,
+      type: outboundType,
     });
 
     return prisma.$transaction(async (tx) => {
@@ -510,7 +517,7 @@ export async function sendInternalMessage(
         where: { id: message.id },
         data: {
           externalMessageId: sent.messageId,
-          metadata: { provider: sent.provider, requestId: sent.requestId },
+          metadata: { provider: sent.provider, requestId: parsed.requestId },
           status: "sent",
         },
       });
@@ -530,7 +537,7 @@ export async function sendInternalMessage(
       return sentMessage;
     });
   } catch (error) {
-    const safeReason = error instanceof N8nOutboundError ? error.message : "No se pudo iniciar el envío hacia n8n.";
+    const safeReason = error instanceof N8nOutboundError ? error.message : "No se pudo iniciar el envío hacia YCloud.";
     const failed = await prisma.chatMessage.update({
       where: { id: message.id },
       data: { status: "failed", metadata: { requestId: parsed.requestId, error: safeReason } },
@@ -603,6 +610,9 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     contact = await prisma.chatContact.findFirst({
       where: {
         channel: parsed.channel,
+        NOT: {
+          externalId: { startsWith: "SIMULATOR:" },
+        },
         OR: [
           { phoneNormalized: normalizedPhone },
           { phone: { contains: normalizedPhone } },
