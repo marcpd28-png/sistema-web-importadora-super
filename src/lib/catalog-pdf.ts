@@ -105,8 +105,18 @@ function editDistanceAtMost(left: string, right: string, maximum: number) {
 /** True when a customer asks for the store-wide catalog rather than a category or brand. */
 export function isGeneralCatalogRequest(content: string) {
   const words = normalizedCatalogWords(content);
-  return words.includes("catalogo")
-    && words.every((word) => word.length <= 1 || CATALOG_REQUEST_FILLER_WORDS.has(word));
+  if (!words.includes("catalogo")) return false;
+
+  // A customer often introduces themself and their city before asking for the
+  // whole catalog ("soy Dimas de Arequipa, ¿me da su catálogo de productos
+  // para escoger?"). Those personal details must not turn a general catalog
+  // request into a failed category-PDF search.
+  const generalCatalogCues = new Set([
+    "producto", "productos", "escoger", "elegir", "opciones", "todos",
+    "todo", "general", "completo", "completa",
+  ]);
+  return words.every((word) => word.length <= 1 || CATALOG_REQUEST_FILLER_WORDS.has(word))
+    || words.some((word) => generalCatalogCues.has(word));
 }
 
 /** Extracts a specific catalog request, e.g. "catálogo parlantes JBL". */

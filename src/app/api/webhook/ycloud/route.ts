@@ -41,8 +41,7 @@ const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const PRODUCT_DELIVERY_MESSAGE = "Tenemos recojo en tienda (Avenida Abancay 752, Centro de Lima), envíos por Shalom a todo el Perú y delivery en Lima por inDrive. ¿En qué distrito o ciudad lo necesitas?";
 const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
-// A catalog request should receive the same complete orientation as a new chat.
-const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
+const GENERAL_CATALOG_MESSAGE = "¡Claro! Puedes revisar y escoger los productos disponibles en nuestro catálogo completo: https://tiendavirtualsuper.com\n\nCuando elijas un producto, escríbeme su nombre o código y te confirmo el precio y stock. También hacemos envíos por Shalom a todo el Perú.";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
@@ -620,21 +619,17 @@ async function processInbound(event: JsonRecord) {
   }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-    let welcomeSent = false;
-    try {
-      // Welcome is delayed until the message batch is complete, so its first
-      // answer can use the customer's full intent rather than only "hola".
-      welcomeSent = await sendWelcomeIfNeeded(result.conversationId, from);
-    } catch (error) {
-      if (error instanceof DuplicateOutboundMessageError) return result;
-      console.error("YCloud welcome message failed:", error);
-    }
-
     if (isGreeting(content)) {
-      if (welcomeSent) return result;
       try {
-        await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+        // Do not greet before intent classification. A greeting-only message
+        // receives the welcome; a greeting followed by a request is handled
+        // by that request's dedicated flow instead.
+        const welcomeSent = await sendWelcomeIfNeeded(result.conversationId, from);
+        if (!welcomeSent) {
+          await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+        }
       } catch (error) {
+        if (error instanceof DuplicateOutboundMessageError) return result;
         console.error("YCloud greeting response failed:", error);
       }
       return result;
