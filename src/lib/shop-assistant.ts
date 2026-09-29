@@ -475,12 +475,20 @@ function normalizeProductSearchText(product: AssistantProductRecord) {
 // Retrieval begins broadly to tolerate typos, but an answer may only use a
 // product that contains every meaningful word from the customer's request.
 function getRequiredSearchTerms(query: string) {
-  return Array.from(new Set(
-    normalizeAssistantText(query)
-      .split(" ")
-      .map((token) => correctSearchToken(token.trim()))
-      .filter((token) => token.length >= 3 && !STOPWORDS.has(token)),
-  ));
+  const synonymEntries = Object.entries(SEARCH_SYNONYMS);
+  const canonicalTerms = normalizeAssistantText(query)
+    .split(" ")
+    .map((token) => correctSearchToken(token.trim()))
+    .filter((token) => token.length >= 3 && !STOPWORDS.has(token))
+    .flatMap((token) => {
+      // "range extender" is a synonym phrase added for retrieval. Its two
+      // individual words must not become separate mandatory requirements.
+      if (token === "range" || token === "extender") return [];
+      const synonym = synonymEntries.find(([, alternatives]) => alternatives.includes(token));
+      return [synonym?.[0] ?? token];
+    });
+
+  return Array.from(new Set(canonicalTerms));
 }
 
 export function matchesAllRequiredSearchTerms(product: AssistantProductRecord, query: string) {

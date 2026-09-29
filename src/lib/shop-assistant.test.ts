@@ -205,6 +205,19 @@ test("no confunde una máquina de hielo con una cortadora de cabello", () => {
   assert.equal(matchesAllRequiredSearchTerms(iceMachine, "maquinade hielo"), true);
 });
 
+test("trata los sinónimos de extensor como alternativas y conserva pantalla como requisito", () => {
+  const screenExtender: AssistantProductRecord = {
+    ...products[0],
+    id: "screen-extender",
+    code: "PC401",
+    name: "Extensor de pantalla para laptop",
+    description: "Pantalla adicional de 14 pulgadas.",
+    category: "Laptop",
+  };
+
+  assert.equal(matchesAllRequiredSearchTerms(screenExtender, "extensor extensores repetidor repetidores range extender pantalla"), true);
+});
+
 test("ignora una consulta de ofertas sin producto concreto", async () => {
   const reply = await answerShopAssistant({ message: "muéstrame ofertas" });
 
