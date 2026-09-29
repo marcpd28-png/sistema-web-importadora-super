@@ -184,6 +184,17 @@ async function sendWelcomeMessage(conversationId: string, recipient: string) {
   triggerPusherEvent(`chat-${conversationId}`, "new-message", welcome);
 }
 
+async function sendWelcomeIfNeeded(conversationId: string, recipient: string) {
+  const priorBotReply = await prisma.chatMessage.findFirst({
+    where: { conversationId, senderType: "BOT" },
+    select: { id: true },
+  });
+  if (priorBotReply) return false;
+
+  await sendWelcomeMessage(conversationId, recipient);
+  return true;
+}
+
 function normalizedText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
@@ -624,20 +635,6 @@ async function processInbound(event: JsonRecord) {
     type: messageType(type),
   });
 
-  // Every new customer conversation receives the configured welcome first.
-  // Do not return here: the same first message may already contain a product
-  // request, which will be evaluated after the short message batch window.
-  if (result.ok && !result.duplicate && result.createdConversation) {
-    try {
-      await sendWelcomeMessage(result.conversationId, from);
-    } catch (error) {
-      if (error instanceof DuplicateOutboundMessageError) return result;
-      // Do not reject the provider webhook when the welcome delivery fails;
-      // YCloud can retry incoming events and duplicate the conversation.
-      console.error("YCloud welcome message failed:", error);
-    }
-  }
-
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
     if (!await isLatestCustomerMessage(result.conversationId, result.messageId)) {
       return result;
@@ -645,7 +642,18 @@ async function processInbound(event: JsonRecord) {
   }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    let welcomeSent = false;
+    try {
+      // Welcome is delayed until the message batch is complete, so its first
+      // answer can use the customer's full intent rather than only "hola".
+      welcomeSent = await sendWelcomeIfNeeded(result.conversationId, from);
+    } catch (error) {
+      if (error instanceof DuplicateOutboundMessageError) return result;
+      console.error("YCloud welcome message failed:", error);
+    }
+
     if (isGreeting(content)) {
+      if (welcomeSent) return result;
       try {
         await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
       } catch (error) {
