@@ -6,11 +6,30 @@ import { processIncomingMessage } from "@/lib/messages-service";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
+import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type JsonRecord = Record<string, unknown>;
+
+const WELCOME_MESSAGE = `¡Hola! 👋 Bienvenido a Importaciones Super.
+Soy Rocky, tu asistente virtual.
+
+Puedes ver nuestro catálogo completo en nuestra tienda virtual:
+https://tiendavirtualsuper.com
+
+Si buscas un catálogo específico en PDF, escríbeme por ejemplo: “catálogo parlantes JBL” y te lo envío.
+
+Realizamos envíos por Shalom a todo el Perú. También puedes recoger tu pedido en nuestra tienda:
+
+Avenida Abancay 752, Centro de Lima
+Lun–Sáb: 8:00 a. m. – 8:00 p. m.
+Dom: 9:00 a. m. – 8:00 p. m.
+
+Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cualquier momento de la conversación y un asesor atenderá tu chat.
+
+¿Qué producto estás buscando hoy?`;
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
@@ -59,6 +78,33 @@ function messageContent(message: JsonRecord, type: string | null, direction: "in
 function messageMediaUrl(message: JsonRecord, type: string | null) {
   if (!type) return null;
   return text(asRecord(message[type])?.link);
+}
+
+async function sendWelcomeMessage(conversationId: string, recipient: string) {
+  const sent = await sendYCloudOutboundMessage({
+    content: WELCOME_MESSAGE,
+    recipient,
+    type: "text",
+  });
+
+  const welcome = await prisma.chatMessage.create({
+    data: {
+      conversationId,
+      direction: "OUTBOUND",
+      senderType: "BOT",
+      messageType: "TEXT",
+      content: WELCOME_MESSAGE,
+      externalMessageId: sent.messageId,
+      metadata: { provider: sent.provider, source: "conversation_welcome" } as Prisma.InputJsonValue,
+      status: "sent",
+    },
+  });
+
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { lastMessageAt: welcome.createdAt },
+  });
+  triggerPusherEvent(`chat-${conversationId}`, "new-message", welcome);
 }
 
 function verifySignature(rawBody: string, signatureHeader: string | null) {
@@ -110,6 +156,18 @@ async function processInbound(event: JsonRecord) {
     timestamp: text(message.sendTime) ?? text(event.createTime) ?? new Date().toISOString(),
     type: messageType(type),
   });
+
+  if (result.ok && !result.duplicate && result.createdConversation) {
+    try {
+      await sendWelcomeMessage(result.conversationId, from);
+    } catch (error) {
+      // Do not reject the provider webhook when the welcome delivery fails;
+      // YCloud can retry incoming events and duplicate the conversation.
+      console.error("YCloud welcome message failed:", error);
+    }
+
+    return result;
+  }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
     try {

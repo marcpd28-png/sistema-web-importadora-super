@@ -593,6 +593,7 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     return {
       ok: true,
       duplicate: true,
+      createdConversation: false,
       messageId: existingMsg.id,
       conversationId: existingMsg.conversationId,
     };
@@ -674,6 +675,8 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     orderBy: { lastMessageAt: "desc" },
   });
 
+  const createdConversation = !conversation;
+
   if (!conversation) {
     conversation = await prisma.conversation.create({
       data: {
@@ -714,6 +717,7 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
   return {
     ok: true,
     duplicate: false,
+    createdConversation,
     simulation: isSimulator,
     contactId: contact.id,
     conversationId: updatedConversation.id,
