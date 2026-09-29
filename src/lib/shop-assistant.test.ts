@@ -183,12 +183,11 @@ function createMockRepository(
 
 const answerShopAssistant = createShopAssistantService(createMockRepository());
 
-test("muestra ofertas activas", async () => {
+test("ignora una consulta de ofertas sin producto concreto", async () => {
   const reply = await answerShopAssistant({ message: "muéstrame ofertas" });
 
-  assert.equal(reply.products?.length, 2);
-  assert.ok(reply.quickActions?.some((action) => action.href === "/?featured=1"));
-  assert.ok(containsNormalized(reply.text, "ofertas activas"));
+  assert.equal(reply.text, "");
+  assert.equal(reply.products, undefined);
 });
 
 test("recomienda un regalo con presupuesto y contexto de ocasión", async () => {
@@ -201,7 +200,7 @@ test("recomienda un regalo con presupuesto y contexto de ocasión", async () => 
   assert.ok(containsNormalized(reply.text, "25"));
 });
 
-test("usa fallback cuando no hay ofertas activas marcadas", async () => {
+test("ignora ofertas aunque no existan productos destacados", async () => {
   const fallbackAssistant = createShopAssistantService(
     createMockRepository({
       async getFeaturedProducts() {
@@ -212,8 +211,8 @@ test("usa fallback cuando no hay ofertas activas marcadas", async () => {
 
   const reply = await fallbackAssistant({ message: "muéstrame ofertas" });
 
-  assert.ok(reply.products?.length);
-  assert.ok(containsNormalized(reply.text, "no veo ofertas activas marcadas"));
+  assert.equal(reply.text, "");
+  assert.equal(reply.products, undefined);
 });
 
 test("resuelve categorías activas", async () => {

@@ -913,24 +913,6 @@ async function gatherProductsFromQueries(
   return filterSensitiveProducts(Array.from(seen.values()), allowSensitiveProducts);
 }
 
-async function getFallbackRecommendationProducts(
-  repository: ShopAssistantRepository,
-  allowSensitiveProducts: boolean,
-) {
-  const products = await gatherProductsFromQueries(
-    repository,
-    GIFT_SEARCH_SEEDS,
-    allowSensitiveProducts,
-  );
-
-  if (products.length) {
-    return products.slice(0, MAX_PRODUCTS);
-  }
-
-  const featured = await repository.getFeaturedProducts();
-  return filterSensitiveProducts(featured, allowSensitiveProducts).slice(0, MAX_PRODUCTS);
-}
-
 function buildGiftSearchQueries(
   message: string,
   recentConversation: string,
@@ -1240,10 +1222,13 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       null;
     const productFocus = detectProductFocus(assistantScope);
     const giftIntent = detectGiftIntent(assistantScope);
-
-    const wantsOffers = /(oferta|ofertas|promo|promocion|promociones|destacado|destacados)/.test(
-      normalized,
+    // Promotional-source words are context only. They must never divert a
+    // customer away from the product they are asking Rocky to find.
+    const productSearchTerms = extractSearchTerms(
+      assistantScope.replace(/\b(oferta|ofertas|promo|promocion|promociones|destacado|destacados|tiktok|tik tok|video)\b/gi, " "),
     );
+    const searchTerms = productSearchTerms || extractSearchTerms(assistantScope);
+
     const wantsCategories = /(categoria|categorias|rubro|rubros|seccion|secciones)/.test(
       normalized,
     );
@@ -1264,38 +1249,10 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       normalized,
     );
     const code = extractProductCode(trimmedMessage) ?? input.productContextCode ?? null;
-    const searchTerms = extractSearchTerms(assistantScope);
     const budget = extractBudget(trimmedMessage);
     const quantity = extractQuantity(trimmedMessage);
     const allowSensitiveProducts = isAdultIntent(assistantScope);
     const contextProduct = code ? await repository.findProductByCode(code) : null;
-
-    if (wantsOffers) {
-      const featuredProducts = await repository.getFeaturedProducts();
-      const products =
-        featuredProducts.length > 0
-          ? filterSensitiveProducts(featuredProducts, allowSensitiveProducts)
-          : await getFallbackRecommendationProducts(repository, allowSensitiveProducts);
-      return {
-        text: products.length
-          ? featuredProducts.length > 0
-            ? "Estas son las ofertas activas con mejor salida en el catálogo."
-            : "No veo ofertas activas marcadas ahora; te muestro opciones recomendadas por stock y rotación."
-          : "Aún no hay ofertas activas ni recomendaciones visibles en el catálogo.",
-        products: products.map((product) =>
-          mapAssistantProduct(product, baseData.settings.currencySymbol),
-        ),
-        quickActions: buildQuickActions([
-          { label: "Abrir ofertas", href: "/?featured=1", accent: true },
-          { label: "Comprar por WhatsApp", href: whatsappHref },
-        ]),
-        suggestedPrompts: [
-          "Algo para regalar por cumpleaños",
-          "Busca por código",
-          "¿Cómo envío mi pedido?",
-        ],
-      };
-    }
 
     if (matchedCategory && !wantsSupport) {
       const products = await repository.getCategoryProducts(matchedCategory.id);

@@ -39,7 +39,6 @@ const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por e
 const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const PRICES_MESSAGE = "Puedes revisar precios y stock actualizados en nuestro catálogo: https://tiendavirtualsuper.com. Para precio mayorista, indícanos el producto y la cantidad que necesitas.";
-const OFFERS_MESSAGE = "Aquí puedes ver nuestras ofertas y productos destacados: https://tiendavirtualsuper.com/?featured=1";
 const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
 // A catalog request should receive the same complete orientation as a new chat.
 const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
@@ -251,10 +250,6 @@ function isShippingRequest(content: string) {
 
 function isPriceRequest(content: string) {
   return hasIntent(content, ["precio", "precios", "cuanto cuesta", "cuanto vale", "mayorista", "costo", "lista de precios"]);
-}
-
-function isOffersRequest(content: string) {
-  return hasIntent(content, ["oferta", "ofertas", "promo", "promocion", "promociones", "descuento", "descuentos", "rebaja", "rebajas", "liquidacion", "remate"]);
 }
 
 function isHoursRequest(content: string) {
@@ -790,15 +785,6 @@ async function processInbound(event: JsonRecord) {
         await sendBotText(result.conversationId, from, HOURS_MESSAGE, "store_hours");
       } catch (error) {
         console.error("YCloud hours response failed:", error);
-      }
-      return result;
-    }
-
-    if (isOffersRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, OFFERS_MESSAGE, "store_offers");
-      } catch (error) {
-        console.error("YCloud offers response failed:", error);
       }
       return result;
     }
