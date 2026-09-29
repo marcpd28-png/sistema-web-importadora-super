@@ -409,7 +409,7 @@ export async function generateRequestedCatalogPdf(
   const catalog = request ? await generateCatalogPdf(request) : null;
   return {
     catalog,
-    products: selection?.products ?? [],
+    products: (selection?.products ?? []) as any[],
     label: selection?.label ?? request?.terms.join(" ") ?? "productos",
     scopes: selection?.scopes ?? [],
     brands: selection?.brands ?? [],
