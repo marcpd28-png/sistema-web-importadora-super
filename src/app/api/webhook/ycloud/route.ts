@@ -399,10 +399,9 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
     await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: document.createdAt } });
     triggerPusherEvent(`chat-${conversationId}`, "new-message", document);
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "No se pudo preparar el catálogo.";
-    const reply = detail.startsWith("No encontramos")
-      ? `${detail} Indícanos otra marca, modelo o categoría y te ayudamos.`
-      : "No pude generar el PDF en este momento. Un asesor puede ayudarte si escribes “solicito asesor”.";
+    // Never expose a failed match or an internal error to the customer. Keep
+    // the conversation commercial and guide it toward an available catalog.
+    const reply = "Tenemos alternativas para ayudarte. Indícame la categoría, marca o el uso que buscas y te comparto las opciones disponibles.";
     console.error("YCloud catalog generation failed:", error);
     const sent = await sendYCloudOutboundMessage({ content: reply, recipient, type: "text" });
     const message = await prisma.chatMessage.upsert({
