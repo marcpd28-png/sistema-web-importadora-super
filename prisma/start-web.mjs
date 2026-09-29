@@ -7,6 +7,17 @@ const projectRoot = process.cwd();
 const standaloneRoot = path.join(projectRoot, ".next", "standalone");
 const serverEntry = path.join(standaloneRoot, "server.js");
 
+// The standalone server runs from .next/standalone, where the project .env
+// file is not present. Load it before spawning the server so webhook secrets
+// and other runtime-only configuration survive a normal process restart.
+try {
+  process.loadEnvFile(path.join(projectRoot, ".env"));
+} catch (error) {
+  if (error?.code !== "ENOENT") {
+    throw error;
+  }
+}
+
 async function linkRuntimeDirectory(source, target) {
   await access(source);
   await mkdir(path.dirname(target), { recursive: true });
