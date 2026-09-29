@@ -392,3 +392,44 @@ export async function generateCatalogPdf(request: CatalogRequest) {
   inFlightCatalogs.set(cacheKey, generation);
   return generation;
 }
+
+// Compatibility surface used by the internal Rocky routes.  The live WhatsApp
+// webhook uses generateCatalogPdf directly, while these helpers retain the
+// structured result expected by the existing assistant flows.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export async function generateRequestedCatalogPdf(
+  content: string,
+  _includeScreenExtenders = false,
+  _catalogSnapshot?: unknown,
+  // These are intentionally permissive because the legacy assistant owns the
+  // richer product snapshot type in a separately deployed release.
+  selection?: any,
+) {
+  const request = parseCatalogRequest(content);
+  const catalog = request ? await generateCatalogPdf(request) : null;
+  return {
+    catalog,
+    products: selection?.products ?? [],
+    brands: selection?.brands ?? [],
+    categories: selection?.categories ?? [],
+    types: selection?.types ?? [],
+    terms: selection?.terms ?? request?.terms ?? [],
+    scoped: selection?.scoped ?? Boolean(request),
+    unmatchedScopes: selection?.unmatchedScopes ?? [],
+  };
+}
+
+export async function generateRequestedProductImages(
+  _content: string,
+  selection?: any,
+) {
+  return {
+    products: selection?.products ?? [],
+    outboundMessages: [] as { type: "IMAGE"; content: string; mediaUrl: string }[],
+    brands: selection?.brands ?? [],
+    categories: selection?.categories ?? [],
+    types: selection?.types ?? [],
+    terms: selection?.terms ?? [],
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
