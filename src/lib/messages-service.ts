@@ -10,9 +10,15 @@ import {
   sendYCloudOutboundMessage,
   type YCloudOutboundMessageType,
 } from "@/lib/ycloud-outbound";
+import {
+  buildAutomationConversationContext,
+  type AutomationConversationContext,
+} from "@/lib/conversation-context";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
+const AUTOMATION_CONTEXT_WINDOW_MS = 30 * 60 * 1000;
+const AUTOMATION_CONTEXT_MESSAGE_LIMIT = 12;
 
 const optionalTrimmedString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() || undefined : value),
@@ -734,4 +740,27 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
       assignedUserId: updatedConversation.assignedUserId,
     },
   };
+}
+
+/**
+ * Returns the recent customer bubbles as one intent for n8n. The raw latest
+ * message is still supplied separately by callers, so flows can use either.
+ */
+export async function getAutomationConversationContext(
+  conversationId: string,
+): Promise<AutomationConversationContext> {
+  const since = new Date(Date.now() - AUTOMATION_CONTEXT_WINDOW_MS);
+  const recentMessages = await prisma.chatMessage.findMany({
+    where: {
+      conversationId,
+      direction: "INBOUND",
+      senderType: "CUSTOMER",
+      createdAt: { gte: since },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: AUTOMATION_CONTEXT_MESSAGE_LIMIT,
+    select: { id: true, content: true, createdAt: true },
+  });
+
+  return buildAutomationConversationContext(recentMessages.reverse());
 }

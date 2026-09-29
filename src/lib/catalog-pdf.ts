@@ -49,19 +49,38 @@ export type CatalogRequest = {
   terms: string[];
 };
 
-/** Extracts a specific catalog request, e.g. "catálogo parlantes JBL". */
-export function parseCatalogRequest(content: string): CatalogRequest | null {
-  const normalized = content
+const CATALOG_REQUEST_FILLER_WORDS = new Set([
+  "catalogo", "de", "del", "la", "el", "los", "las", "para", "por", "favor",
+  "quiero", "deseo", "un", "una", "me", "puedes", "enviar", "podria", "podrias",
+  "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "mandar",
+  "mandarme", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
+]);
+
+function normalizedCatalogWords(content: string) {
+  return content
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+}
+
+/** True when a customer asks for the store-wide catalog rather than a category or brand. */
+export function isGeneralCatalogRequest(content: string) {
+  const words = normalizedCatalogWords(content);
+  return words.includes("catalogo")
+    && words.every((word) => word.length <= 1 || CATALOG_REQUEST_FILLER_WORDS.has(word));
+}
+
+/** Extracts a specific catalog request, e.g. "catálogo parlantes JBL". */
+export function parseCatalogRequest(content: string): CatalogRequest | null {
+  const normalized = normalizedCatalogWords(content).join(" ");
 
   if (!/\bcatalogo\b/.test(normalized)) return null;
 
-  const ignored = new Set(["catalogo", "de", "del", "la", "el", "los", "las", "para", "por", "favor", "quiero", "deseo", "un", "una", "me", "puedes", "enviar"]);
-  const terms = normalized.split(" ").filter((term) => term.length > 1 && !ignored.has(term)).slice(0, 4);
+  const terms = normalized.split(" ").filter((term) => term.length > 1 && !CATALOG_REQUEST_FILLER_WORDS.has(term)).slice(0, 4);
   if (!terms.length) return null;
 
   const label = terms.map((term) => term.toUpperCase()).join(" ");

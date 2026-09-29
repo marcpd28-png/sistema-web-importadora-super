@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { processIncomingMessage } from "@/lib/messages-service";
+import { getAutomationConversationContext, processIncomingMessage } from "@/lib/messages-service";
 import { prisma } from "@/lib/prisma";
 import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
 
@@ -246,6 +246,7 @@ export async function POST(request: NextRequest) {
 
         if (activeAutomation && activeAutomation.versions.length > 0) {
           const publishedVersion = activeAutomation.versions[0];
+          const conversationContext = await getAutomationConversationContext(result.conversationId);
           
           // Crear un registro de ejecución en estado RUNNING (correlation tracking)
           const execution = await prisma.automationExecution.create({
@@ -265,7 +266,11 @@ export async function POST(request: NextRequest) {
             conversationId: result.conversationId,
             messageId: result.messageId,
             executionId: execution.id,
-            content: getMessageContent(message, type),
+            // `content` is the combined intent for existing n8n flows. Keep
+            // `latestContent` so a flow can still inspect the final bubble.
+            content: conversationContext.combinedContent || getMessageContent(message, type),
+            latestContent: getMessageContent(message, type),
+            messageHistory: conversationContext.messageHistory,
             phone: from,
             metadata: message
           });

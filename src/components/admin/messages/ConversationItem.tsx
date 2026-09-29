@@ -56,6 +56,10 @@ function getPreview(conversation: Conversation) {
   return content;
 }
 
+function getStatusLabel(status: Conversation["status"]) {
+  return status === "REQUIERE_ASESOR" ? "Derivado" : status.replace("_", " ");
+}
+
 export function getInitials(name: string) {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -125,7 +129,7 @@ export function ConversationItem({ conversation, isActive, onClick }: Props) {
         </div>
 
         <div className="conversation-tags">
-          <span className={`conversation-badge badge-${status.toLowerCase()}`}>{status.replace("_", " ")}</span>
+          <span className={`conversation-badge badge-${status.toLowerCase()}`}>{getStatusLabel(status)}</span>
           <span className="conversation-owner">
             <OwnerIcon size={11} />
             {botEnabled ? "Bot" : "Asesor"}

@@ -2,13 +2,13 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { MessageType, Prisma } from "@prisma/client";
 import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
-import { processIncomingMessage } from "@/lib/messages-service";
+import { getAutomationConversationContext, processIncomingMessage } from "@/lib/messages-service";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 import { buildPublicUrl } from "@/lib/site-url";
-import { generateCatalogPdf, parseCatalogRequest } from "@/lib/catalog-pdf";
+import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "@/lib/catalog-pdf";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,6 +35,8 @@ Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cu
 
 ¿Qué producto estás buscando hoy?`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
+const GENERAL_CATALOG_MESSAGE = "¡Claro! Aquí tienes nuestro catálogo general con todos los productos disponibles: https://tiendavirtualsuper.com";
+const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores de pantalla: https://tiendavirtualsuper.com/?q=extensor+de+pantalla";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 
@@ -135,7 +137,72 @@ function isLimaDeliveryRequest(content: string) {
   return mentionsLima && mentionsDelivery;
 }
 
+function isScreenExtenderInquiry(content: string) {
+  const normalized = normalizedText(content);
+  return /\bextensor(?:es)?\b/.test(normalized)
+    && /\bpantalla(?:s)?\b/.test(normalized);
+}
+
+function isNoProductMatchReply(content: string) {
+  const normalized = normalizedText(content);
+  return normalized.includes("no encontre una coincidencia clara")
+    || normalized.includes("no encontramos productos")
+    || normalized.includes("no encontre productos");
+}
+
+async function sendScreenExtenderOptions(conversationId: string, recipient: string) {
+  const sent = await sendYCloudOutboundMessage({
+    content: SCREEN_EXTENDER_MESSAGE,
+    recipient,
+    type: "text",
+  });
+  const reply = await prisma.chatMessage.upsert({
+    where: { externalMessageId: sent.messageId },
+    create: {
+      conversationId,
+      direction: "OUTBOUND",
+      senderType: "BOT",
+      messageType: "TEXT",
+      content: SCREEN_EXTENDER_MESSAGE,
+      externalMessageId: sent.messageId,
+      metadata: { provider: sent.provider, source: "screen_extender_options" } as Prisma.InputJsonValue,
+      status: "sent",
+    },
+    update: {
+      content: SCREEN_EXTENDER_MESSAGE,
+      senderType: "BOT",
+      status: "sent",
+    },
+  });
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { lastMessageAt: reply.createdAt },
+  });
+  triggerPusherEvent(`chat-${conversationId}`, "new-message", reply);
+}
+
 async function sendCatalog(conversationId: string, recipient: string, content: string) {
+  if (isGeneralCatalogRequest(content)) {
+    const sent = await sendYCloudOutboundMessage({
+      content: GENERAL_CATALOG_MESSAGE,
+      recipient,
+      type: "text",
+    });
+    const message = await prisma.chatMessage.upsert({
+      where: { externalMessageId: sent.messageId },
+      create: {
+        conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "TEXT",
+        content: GENERAL_CATALOG_MESSAGE, externalMessageId: sent.messageId,
+        metadata: { provider: sent.provider, source: "general_catalog" } as Prisma.InputJsonValue,
+        status: "sent",
+      },
+      update: { conversationId, senderType: "BOT", messageType: "TEXT", content: GENERAL_CATALOG_MESSAGE, status: "sent" },
+    });
+    await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: message.createdAt } });
+    triggerPusherEvent(`chat-${conversationId}`, "new-message", message);
+    return true;
+  }
+
   const request = parseCatalogRequest(content);
   if (!request) return false;
 
@@ -249,6 +316,15 @@ async function processInbound(event: JsonRecord) {
   });
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    if (isScreenExtenderInquiry(content)) {
+      try {
+        await sendScreenExtenderOptions(result.conversationId, from);
+      } catch (error) {
+        console.error("YCloud screen extender response failed:", error);
+      }
+      return result;
+    }
+
     if (await sendCatalog(result.conversationId, from, content)) {
       return result;
     }
@@ -323,6 +399,7 @@ async function processInbound(event: JsonRecord) {
 
       const version = automation?.versions[0];
       if (automation && version) {
+        const conversationContext = await getAutomationConversationContext(result.conversationId);
         const execution = await prisma.automationExecution.create({
           data: {
             automationId: automation.id,
@@ -339,7 +416,9 @@ async function processInbound(event: JsonRecord) {
           conversationId: result.conversationId,
           messageId: result.messageId,
           executionId: execution.id,
-          content,
+          content: conversationContext.combinedContent || content,
+          latestContent: content,
+          messageHistory: conversationContext.messageHistory,
           phone: from,
           metadata: message,
         });
@@ -426,9 +505,18 @@ async function applyStatus(event: JsonRecord) {
     },
   });
 
+  const noProductMatch = isNoProductMatchReply(synced.content);
   await prisma.conversation.update({
     where: { id: conversation.id },
-    data: { lastMessageAt: timestamp, botEnabled: false, status: "ATENDIENDO" },
+    data: {
+      lastMessageAt: timestamp,
+      botEnabled: false,
+      // The first no-results reply takes ownership away from the automation.
+      // Subsequent customer messages stay in the advisor queue, preventing a
+      // repeated sequence of "no encontré" replies from the bot.
+      status: noProductMatch ? "REQUIERE_ASESOR" : "ATENDIENDO",
+      assignedUserId: noProductMatch ? null : undefined,
+    },
   });
   triggerPusherEvent(`chat-${conversation.id}`, "new-message", synced);
 }

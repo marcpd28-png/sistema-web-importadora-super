@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import sharp from "sharp";
-import { isProjectorCatalogRequest, prepareCatalogImage } from "@/lib/catalog-pdf";
+import { isGeneralCatalogRequest, isProjectorCatalogRequest, prepareCatalogImage } from "@/lib/catalog-pdf";
+
+test("detecta solicitudes del catálogo general aunque usen lenguaje cortés", () => {
+  assert.equal(isGeneralCatalogRequest("¿Me podría brindar el catálogo?"), true);
+  assert.equal(isGeneralCatalogRequest("Quiero el catálogo completo, por favor"), true);
+  assert.equal(isGeneralCatalogRequest("¿Tienen catálogo de parlantes JBL?"), false);
+});
 
 test("detecta solicitudes explícitas del catálogo de proyectores", () => {
   assert.equal(isProjectorCatalogRequest("Hola, catálogo de proyectores"), true);
