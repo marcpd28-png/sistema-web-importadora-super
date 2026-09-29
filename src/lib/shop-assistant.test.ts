@@ -283,6 +283,13 @@ test("no responde cuando no encuentra el producto solicitado", async () => {
   assert.equal(reply.products, undefined);
 });
 
+test("ignora confirmaciones cortas antes de una búsqueda sin resultados", async () => {
+  const reply = await answerShopAssistant({ message: "Si hidrolavadoras" });
+
+  assert.equal(reply.text, "");
+  assert.equal(reply.products, undefined);
+});
+
 test("no responde cuando no hay resultados para una palabra mal escrita", async () => {
   const reply = await answerShopAssistant({
     message: "necesito un scuter",

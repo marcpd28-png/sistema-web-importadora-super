@@ -70,6 +70,7 @@ const STOPWORDS = new Set([
   "recomiéndame",
   "recomendar",
   "recomiendas",
+  "si",
   "unidad",
   "unidades",
   "sol",
