@@ -37,6 +37,7 @@ Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cu
 ¿Qué producto estás buscando hoy?`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
+const FALLBACK_ADVISOR_MESSAGE = "Para ayudarte mejor con tu consulta, te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
 const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const PRICES_MESSAGE = "Puedes revisar precios y stock actualizados en nuestro catálogo: https://tiendavirtualsuper.com. Para precio mayorista, indícanos el producto y la cantidad que necesitas.";
@@ -717,9 +718,22 @@ async function processInbound(event: JsonRecord) {
           phone: from,
           metadata: message,
         });
+        return result;
       }
     } catch (error) {
       console.error("YCloud automation routing error:", error);
+    }
+
+    // No product or intent handler could give a reliable answer. Escalate
+    // immediately instead of sending a generic "I don't understand" reply.
+    await prisma.conversation.update({
+      where: { id: result.conversationId },
+      data: { assignedUserId: null, botEnabled: false, status: "REQUIERE_ASESOR" },
+    });
+    try {
+      await sendBotText(result.conversationId, from, FALLBACK_ADVISOR_MESSAGE, "unrecognized_query_advisor_handoff");
+    } catch (error) {
+      console.error("YCloud unrecognized query advisor handoff failed:", error);
     }
   }
 
