@@ -12,6 +12,7 @@ import {
   buildAutomationConversationContext,
   type AutomationConversationContext,
 } from "@/lib/conversation-context";
+import { buildPublicUrl } from "@/lib/site-url";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
@@ -415,7 +416,7 @@ export async function getConversationMessages(input: GetConversationMessagesInpu
 const sendMessageSchema = z.object({
   content: z.string().trim().min(1),
   type: z.nativeEnum(MessageType).default("TEXT"),
-  mediaUrl: z.string().url().optional(),
+  mediaUrl: z.string().min(1).optional(),
   requestId: z.string().uuid(),
 });
 
@@ -453,6 +454,10 @@ export async function sendInternalMessage(
   }
 
   const outboundType = parsed.type.toLowerCase() as YCloudOutboundMessageType;
+  // Local uploads are stored as /uploads paths; YCloud needs a public URL.
+  const mediaUrl = parsed.mediaUrl?.startsWith("/")
+    ? buildPublicUrl(parsed.mediaUrl)
+    : parsed.mediaUrl;
   const message = await prisma.chatMessage.create({
       data: {
         conversationId,
@@ -460,7 +465,7 @@ export async function sendInternalMessage(
         senderType: "AGENT",
         messageType: parsed.type,
         content: parsed.content,
-        mediaUrl: parsed.mediaUrl,
+        mediaUrl,
         metadata: { requestId: parsed.requestId },
         status: "pending",
       },
@@ -476,7 +481,7 @@ export async function sendInternalMessage(
 
     const sent = await sendYCloudOutboundMessage({
       content: parsed.content,
-      mediaUrl: parsed.mediaUrl ?? null,
+      mediaUrl: mediaUrl ?? null,
       recipient,
       type: outboundType,
     });

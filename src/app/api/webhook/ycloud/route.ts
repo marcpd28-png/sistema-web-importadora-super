@@ -38,11 +38,9 @@ const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, ind�
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
 const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
-const PRICES_MESSAGE = "Puedes revisar precios y stock actualizados en nuestro catálogo: https://tiendavirtualsuper.com. Para precio mayorista, indícanos el producto y la cantidad que necesitas.";
 const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
 // A catalog request should receive the same complete orientation as a new chat.
 const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
-const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores de pantalla: https://tiendavirtualsuper.com/?q=extensor+de+pantalla";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
@@ -288,11 +286,22 @@ function isNoProductMatchReply(content: string) {
   const normalized = normalizedText(content);
   return normalized.includes("no encontre una coincidencia clara")
     || normalized.includes("no encontramos productos")
-    || normalized.includes("no encontre productos");
+    || normalized.includes("no encontre productos")
+    || normalized.includes("no pude encontrar");
+}
+
+async function handOffToAdvisor(conversationId: string, recipient: string, source: string) {
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { assignedUserId: null, botEnabled: false, status: "REQUIERE_ASESOR" },
+  });
+  await sendBotText(conversationId, recipient, ADVISOR_MESSAGE, source);
 }
 
 async function sendScreenExtenderOptions(conversationId: string, recipient: string) {
-  await sendBotText(conversationId, recipient, SCREEN_EXTENDER_MESSAGE, "screen_extender_options");
+  if (!await sendProductSearchResults(conversationId, recipient, "extensor de pantalla")) {
+    await handOffToAdvisor(conversationId, recipient, "screen_extender_handoff");
+  }
 }
 
 async function sendSpeakerCatalogGuidance(conversationId: string, recipient: string) {
@@ -396,17 +405,6 @@ async function sendProductSearchResults(conversationId: string, recipient: strin
   const reply = await answerShopAssistant({ message: content });
   const products = (reply.products ?? []).slice(0, 3);
   if (!products.length) return false;
-
-  if (products.length > 2) {
-    const catalogHref = reply.quickActions?.find((action) => action.href.includes("?q="))?.href;
-    await sendBotText(
-      conversationId,
-      recipient,
-      `${reply.text || "Encontré varias opciones disponibles."}\n\nTe comparto el catálogo filtrado para que las revises: ${buildPublicUrl(catalogHref ?? "/")}`,
-      "product_search_catalog",
-    );
-    return true;
-  }
 
   if (products.length > 1 && reply.text) {
     await sendBotText(
@@ -625,12 +623,8 @@ async function processInbound(event: JsonRecord) {
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
     if (isAdvisorRequest(content)) {
-      await prisma.conversation.update({
-        where: { id: result.conversationId },
-        data: { assignedUserId: null, botEnabled: false, status: "REQUIERE_ASESOR" },
-      });
       try {
-        await sendBotText(result.conversationId, from, ADVISOR_MESSAGE, "advisor_handoff");
+        await handOffToAdvisor(result.conversationId, from, "advisor_handoff");
       } catch (error) {
         console.error("YCloud advisor handoff response failed:", error);
       }
@@ -789,15 +783,6 @@ async function processInbound(event: JsonRecord) {
       return result;
     }
 
-    if (isPriceRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, PRICES_MESSAGE, "store_prices");
-      } catch (error) {
-        console.error("YCloud prices response failed:", error);
-      }
-      return result;
-    }
-
     if (isLimaDeliveryRequest(content)) {
       await prisma.conversationSalesState.upsert({
         where: { conversationId: result.conversationId },
@@ -859,16 +844,7 @@ async function processInbound(event: JsonRecord) {
     }
 
     try {
-      await prisma.conversation.update({
-        where: { id: result.conversationId },
-        data: { status: "ESPERANDO_CLIENTE" },
-      });
-      await sendBotText(
-        result.conversationId,
-        from,
-        "Quiero ayudarte a encontrarlo. Escríbeme el nombre, marca, código o para qué lo necesitas; también puedes enviarme el producto en varios mensajes.",
-        "rocky_clarification",
-      );
+      await handOffToAdvisor(result.conversationId, from, "catalog_match_handoff");
     } catch (error) {
       console.error("Rocky clarification response failed:", error);
     }

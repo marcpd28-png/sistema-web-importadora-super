@@ -44,7 +44,11 @@ export default async function AdminLayout({
             <div className="brand-logo-container">
               <BrandLogo href="/admin" priority size="sm" />
             </div>
-            <div className="admin-sidebar-controls">
+            <div
+              aria-label="Controles de navegación"
+              className="admin-sidebar-controls"
+              role="toolbar"
+            >
               <SidebarToggle />
               <div className="admin-sidebar-utilities">
                 <DarkModeToggle />

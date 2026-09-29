@@ -16957,6 +16957,8 @@ body.admin-sidebar-collapsed .admin-nav-button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: 0 0 auto;
+  min-width: 0;
   padding: 4px;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.03);
@@ -16969,7 +16971,27 @@ body[data-admin-theme="dark"] .admin-sidebar-controls {
 .admin-sidebar-utilities {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   gap: 4px;
+}
+
+/* These are global navigation controls, not page actions. Reserve their space
+   in the shared admin layout so route-specific content can never clip them. */
+.admin-sidebar-controls > .admin-shell-icon-button,
+.admin-sidebar-utilities > .admin-shell-icon-button,
+.admin-sidebar-utilities > form {
+  display: inline-flex;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  visibility: visible;
+  opacity: 1;
+}
+
+.admin-sidebar-utilities > form {
+  align-items: center;
+  justify-content: center;
 }
 body.admin-sidebar-collapsed .admin-nav-links.is-accordion-closed {
   display: grid !important; /* Force show when sidebar is icon-only */
@@ -17294,7 +17316,7 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
     height: auto !important;
     padding: 0.5rem !important;
     border-radius: 0 0 16px 16px !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   .admin-sidebar-main {
@@ -17306,6 +17328,7 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
   .admin-sidebar-brand {
     flex: 0 0 auto;
     margin: 0 !important;
+    min-width: 0;
   }
 
   body.admin-sidebar-collapsed .admin-sidebar-brand {
@@ -17345,6 +17368,12 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
     overflow-x: auto !important;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
+  }
+
+  .admin-sidebar-controls {
+    flex-wrap: nowrap;
+    min-width: 156px;
+    overflow: visible;
   }
 
   .admin-nav::-webkit-scrollbar {
@@ -17408,7 +17437,8 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
   }
 
   .admin-sidebar-controls > .admin-shell-icon-button,
-  .admin-sidebar-utilities > .admin-shell-icon-button {
+  .admin-sidebar-utilities > .admin-shell-icon-button,
+  .admin-sidebar-utilities > form {
     display: inline-flex !important;
     flex: 0 0 44px;
     visibility: visible !important;

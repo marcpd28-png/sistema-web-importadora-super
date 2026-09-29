@@ -1,124 +1,53 @@
+import { useState } from "react";
+import { Expand, X } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
 
-interface Props {
-  message: ChatMessage;
-  onRetry?: (message: ChatMessage) => void;
+interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void; }
+
+function getMediaSource(message: ChatMessage) {
+  return message.mediaUrl && (() => {
+    try { return new URL(message.mediaUrl).hostname === "api.ycloud.com" ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
+    catch { return message.mediaUrl; }
+  })();
 }
 
-function MediaAttachment({ message }: { message: ChatMessage }) {
-  const src = message.mediaUrl && (() => {
-    try {
-      return new URL(message.mediaUrl).hostname === "api.ycloud.com"
-        ? `/api/admin/messages/${encodeURIComponent(message.id)}/media`
-        : message.mediaUrl;
-    } catch {
-      return message.mediaUrl;
-    }
-  })();
+function MediaAttachment({ message, onOpen }: { message: ChatMessage; onOpen: () => void }) {
+  const src = getMediaSource(message);
   const label = message.messageType === "VIDEO" ? "Video" : message.messageType === "AUDIO" ? "Audio" : "Documento";
-  if (!src) return <span style={{ fontSize: "13px", fontStyle: "italic", opacity: 0.8 }}>{label} recibido. Archivo no disponible.</span>;
-
-  if (message.messageType === "VIDEO") return (
-    <div style={{ margin: "4px 0", display: "grid", gap: "6px" }}>
-      <video controls preload="metadata" src={src} style={{ borderRadius: "10px", maxHeight: "320px", maxWidth: "100%" }}>Tu navegador no permite reproducir este video.</video>
-      <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "12px", textDecoration: "underline" }}>Abrir video</a>
-      {message.content && !/^video recibido$/i.test(message.content.trim()) ? <span>{message.content}</span> : null}
-    </div>
-  );
-  if (message.messageType === "AUDIO") return (
-    <div style={{ margin: "4px 0", display: "grid", gap: "6px" }}>
-      <audio controls preload="metadata" src={src} style={{ maxWidth: "100%", width: "300px" }}>Tu navegador no permite reproducir este audio.</audio>
-      <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "12px", textDecoration: "underline" }}>Abrir audio</a>
-    </div>
-  );
-  return <a href={src} target="_blank" rel="noreferrer" style={{ fontSize: "13px", textDecoration: "underline" }}>Abrir documento adjunto</a>;
+  if (!src) return <span className="message-media-unavailable">{label} recibido. Archivo no disponible.</span>;
+  if (message.messageType === "VIDEO") return <div className="message-media-attachment"><video controls preload="metadata" src={src}>Tu navegador no permite reproducir este video.</video><button className="message-media-open" onClick={onOpen} type="button"><Expand size={14} /> Ver video</button>{message.content && !/^video recibido$/i.test(message.content.trim()) ? <span>{message.content}</span> : null}</div>;
+  if (message.messageType === "AUDIO") return <div className="message-media-attachment"><audio controls preload="metadata" src={src}>Tu navegador no permite reproducir este audio.</audio><button className="message-media-open" onClick={onOpen} type="button"><Expand size={14} /> Abrir audio</button></div>;
+  return <a href={src} rel="noreferrer" target="_blank">Abrir documento adjunto</a>;
 }
 
 export function MessageBubble({ message, onRetry }: Props) {
+  const [isMediaOpen, setIsMediaOpen] = useState(false);
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
   const isAgent = message.senderType === "AGENT";
   const isSending = message.status === "sending" || message.status === "pending";
   const isFailed = message.status === "failed";
-  const isAcceptedForDelivery = isAgent && message.status === "sent";
-  const failureReason = isFailed && message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
-    ? String((message.metadata as Record<string, unknown>).error || "No se pudo enviar el mensaje.")
-    : null;
-  
-  let bubbleClass = "message-customer";
-  if (isBot) bubbleClass = "message-bot";
-  if (isAgent) bubbleClass = "message-agent";
-
+  const failureReason = isFailed && message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata) ? String((message.metadata as Record<string, unknown>).error || "No se pudo enviar el mensaje.") : null;
+  const mediaSource = getMediaSource(message);
+  const bubbleClass = isAgent ? "message-agent" : isBot ? "message-bot" : "message-customer";
   const senderName = isCustomer ? "Cliente" : isBot ? "Bot" : "Asesor";
-
   const dateObj = new Date(message.createdAt);
-  const timeStr = `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-
-  // If it's UNKNOWN or TEXT, we just render the content as text.
+  const timeStr = `${dateObj.getHours().toString().padStart(2, "0")}:${dateObj.getMinutes().toString().padStart(2, "0")}`;
   const isTextLike = message.messageType === "TEXT" || message.messageType === "UNKNOWN";
 
-  return (
-    <div className={`message-bubble ${bubbleClass}`} style={{
-      maxWidth: '75%',
-      padding: '8px 12px',
-      borderRadius: '12px',
-      fontSize: '14px',
-      position: 'relative',
-      alignSelf: isCustomer ? 'flex-start' : 'flex-end',
-      backgroundColor: isFailed ? '#fee2e2' : isCustomer ? '#ffffff' : isBot ? '#f0fdf4' : '#dcf8c6', // WhatsApp-like colors
-      color: '#111b21',
-      border: isFailed ? '1px solid #fca5a5' : isCustomer ? '1px solid #e5e7eb' : '1px solid transparent',
-      borderTopLeftRadius: isCustomer ? '0' : '12px',
-      borderTopRightRadius: isCustomer ? '12px' : '0',
-      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '2px',
-    }}>
-      <div style={{ fontSize: '11px', fontWeight: 600, color: isCustomer ? '#6b7280' : '#166534', marginBottom: '2px' }}>
-        {senderName} {isBot && <span style={{ marginLeft: "4px", background: "#dcfce7", color: "#15803d", padding: "2px 4px", borderRadius: "4px", fontSize: "9px" }}>🤖 n8n Auto</span>}
-      </div>
-      
-      <div className="message-content" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
-        {isTextLike && <span>{message.content}</span>}
-        {message.messageType === "IMAGE" && message.mediaUrl && (
-          <div style={{ margin: '4px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <img
-              alt={message.content || "Imagen enviada"}
-              src={message.mediaUrl}
-              style={{
-                borderRadius: '10px',
-                display: 'block',
-                height: 'auto',
-                maxHeight: '260px',
-                maxWidth: '100%',
-                objectFit: 'cover',
-              }}
-            />
-            {message.content ? (
-              <span style={{ fontSize: '13px', whiteSpace: 'pre-wrap' }}>{message.content}</span>
-            ) : null}
-          </div>
-        )}
-        {message.messageType === "IMAGE" && !message.mediaUrl && (
-          <div style={{ margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.8 }}>Imagen sin URL disponible</span>
-          </div>
-        )}
-        {["VIDEO", "AUDIO", "DOCUMENT"].includes(message.messageType) && <MediaAttachment message={message} />}
-      </div>
-      
-      <span style={{ fontSize: '10px', color: '#667781', textAlign: 'right', marginTop: '4px' }}>
-        {timeStr}
-      </span>
-      {isAcceptedForDelivery && <span style={{ fontSize: '10px', color: '#667781' }}>Aceptado; entrega no confirmada.</span>}
-      {isSending && <span style={{ fontSize: '10px', color: '#92400e' }}>Enviando...</span>}
-      {isFailed && <span style={{ fontSize: '10px', color: '#b91c1c' }}>{failureReason}</span>}
-      {isFailed && onRetry && (
-        <button type="button" onClick={() => onRetry(message)} style={{ alignSelf: "flex-end", color: "#b91c1c", fontSize: "11px", fontWeight: 700 }}>
-          Reintentar
-        </button>
-      )}
+  return <div className={`message-bubble ${bubbleClass} ${isFailed ? "message-failed" : ""}`}>
+    <div className="message-sender">{senderName} {isBot ? <span className="message-bot-badge">🤖 n8n Auto</span> : null}</div>
+    <div className="message-content">
+      {isTextLike ? <span>{message.content}</span> : null}
+      {message.messageType === "IMAGE" && mediaSource ? <div className="message-media-attachment"><button className="message-image-preview" onClick={() => setIsMediaOpen(true)} type="button"><img alt={message.content || "Imagen enviada"} src={mediaSource} /><span><Expand size={16} /> Ampliar imagen</span></button>{message.content ? <span>{message.content}</span> : null}</div> : null}
+      {message.messageType === "IMAGE" && !mediaSource ? <span className="message-media-unavailable">Imagen sin URL disponible</span> : null}
+      {["VIDEO", "AUDIO", "DOCUMENT"].includes(message.messageType) ? <MediaAttachment message={message} onOpen={() => setIsMediaOpen(true)} /> : null}
     </div>
-  );
+    <span className="message-time">{timeStr}</span>
+    {isAgent && message.status === "sent" ? <span className="message-delivery-status">Aceptado; entrega no confirmada.</span> : null}
+    {isSending ? <span className="message-sending-status">Enviando...</span> : null}
+    {isFailed ? <span className="message-failure-status">{failureReason}</span> : null}
+    {isFailed && onRetry ? <button className="message-retry" onClick={() => onRetry(message)} type="button">Reintentar</button> : null}
+    {isMediaOpen && mediaSource ? <div aria-label="Vista ampliada del archivo" aria-modal="true" className="message-media-modal" onClick={() => setIsMediaOpen(false)} role="dialog"><div className="message-media-modal-content" onClick={(event) => event.stopPropagation()}><button aria-label="Cerrar vista ampliada" className="message-media-close" onClick={() => setIsMediaOpen(false)} type="button"><X size={20} /></button>{message.messageType === "IMAGE" ? <img alt={message.content || "Imagen enviada"} src={mediaSource} /> : null}{message.messageType === "VIDEO" ? <video autoPlay controls src={mediaSource}>Tu navegador no permite reproducir este video.</video> : null}{message.messageType === "AUDIO" ? <audio autoPlay controls src={mediaSource}>Tu navegador no permite reproducir este audio.</audio> : null}{message.messageType === "DOCUMENT" ? <a href={mediaSource} rel="noreferrer" target="_blank">Abrir documento en otra pestaña</a> : null}</div></div> : null}
+  </div>;
 }

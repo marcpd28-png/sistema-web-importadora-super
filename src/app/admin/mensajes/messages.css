@@ -836,6 +836,28 @@
   position: relative;
 }
 
+.message-failed { border-color: #fca5a5; background: #fee2e2; }
+.message-bot-badge { margin-left: 4px; padding: 2px 4px; border-radius: 4px; color: #15803d; background: #dcfce7; font-size: 9px; }
+.message-media-attachment { display: grid; gap: 6px; margin: 4px 0; }
+.message-media-attachment video { max-width: 100%; max-height: 320px; border-radius: 10px; }
+.message-media-attachment audio { width: min(300px, 100%); max-width: 100%; }
+.message-media-unavailable { font-size: 13px; font-style: italic; opacity: .8; }
+.message-delivery-status, .message-sending-status, .message-failure-status { font-size: 10px; }
+.message-sending-status { color: #92400e; }
+.message-failure-status, .message-retry { color: #b91c1c; }
+.message-retry { align-self: end; font-size: 11px; font-weight: 700; }
+.message-image-preview, .message-media-open, .message-media-close { border: 0; cursor: pointer; }
+.message-image-preview { position: relative; display: block; max-width: 100%; overflow: hidden; padding: 0; border-radius: 10px; background: #0f172a; }
+.message-image-preview img { display: block; max-width: 100%; max-height: 260px; object-fit: cover; }
+.message-image-preview span { position: absolute; right: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 7px; color: white; background: rgb(15 23 42 / 78%); font-size: 11px; }
+.message-media-open { display: inline-flex; align-items: center; justify-self: start; gap: 4px; padding: 0; color: inherit; background: transparent; font-size: 12px; text-decoration: underline; }
+.message-media-modal { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; padding: 24px; background: rgb(2 6 23 / 82%); }
+.message-media-modal-content { position: relative; display: grid; place-items: center; width: min(960px, 100%); max-height: calc(100vh - 48px); padding: 28px; border-radius: 16px; background: #111827; }
+.message-media-modal-content img, .message-media-modal-content video { display: block; max-width: 100%; max-height: calc(100vh - 104px); border-radius: 8px; }
+.message-media-modal-content audio { width: min(560px, 100%); }
+.message-media-modal-content a { color: white; text-decoration: underline; }
+.message-media-close { position: absolute; z-index: 1; top: 8px; right: 8px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: white; background: rgb(15 23 42 / 82%); }
+
 .message-customer {
   background: white;
   border: 1px solid var(--border-color);

@@ -58,7 +58,7 @@ export function MessageInput({ onSendMessage }: Props) {
       let type = "DOCUMENT";
       if (file.type.startsWith("image/")) type = "IMAGE";
       else if (file.type.startsWith("video/")) type = "VIDEO";
-      else if (file.type === "application/pdf") type = "DOCUMENT";
+      else if (file.type.startsWith("audio/")) type = "AUDIO";
       
       const textContent = message.trim() || `Archivo adjunto: ${file.name}`;
       await onSendMessage(textContent, data.url, type);
@@ -83,7 +83,7 @@ export function MessageInput({ onSendMessage }: Props) {
           ref={fileInputRef} 
           style={{ display: "none" }} 
           onChange={handleFileChange}
-          accept="image/*,video/*,application/pdf"
+          accept="image/*,video/*,audio/*,application/pdf"
         />
         <button 
           aria-label="Adjuntar archivo"

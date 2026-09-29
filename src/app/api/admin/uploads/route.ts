@@ -17,6 +17,13 @@ const allowedMimeTypes = new Set([
   "video/mp4",
   "video/webm",
   "video/quicktime",
+  "audio/aac",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+  "audio/x-m4a",
   "application/pdf",
 ]);
 const uploadRateWindowMs = 10 * 60 * 1000;
@@ -54,6 +61,16 @@ function getExtension(file: File) {
     if (file.type === "video/webm") return ".webm";
     if (file.type === "video/quicktime") return ".mov";
     return ".video";
+  }
+
+  if (file.type.startsWith("audio/")) {
+    if (file.type === "audio/mpeg") return ".mp3";
+    if (file.type === "audio/mp4" || file.type === "audio/x-m4a") return ".m4a";
+    if (file.type === "audio/ogg") return ".ogg";
+    if (file.type === "audio/wav") return ".wav";
+    if (file.type === "audio/aac") return ".aac";
+    if (file.type === "audio/webm") return ".webm";
+    return ".audio";
   }
 
   if (file.type === "application/pdf") return ".pdf";
@@ -138,7 +155,7 @@ export async function POST(request: Request) {
 
   if (!allowedMimeTypes.has(fileEntry.type)) {
     return NextResponse.json(
-      { error: "Formato no permitido. Usa una imagen o video válido." },
+      { error: "Formato no permitido. Usa una imagen, video, audio o PDF válido." },
       { status: 400 },
     );
   }
