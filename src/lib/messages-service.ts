@@ -17,6 +17,10 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
 const AUTOMATION_CONTEXT_WINDOW_MS = 30 * 60 * 1000;
 const AUTOMATION_CONTEXT_MESSAGE_LIMIT = 12;
+// A console-originated outbound message can temporarily mark a conversation as
+// human-attended. Resume the bot after a quiet period, but never override an
+// explicit advisor handoff (REQUIERE_ASESOR) or a conversation owned by an agent.
+const BOT_REENGAGE_AFTER_MS = 60 * 60 * 1000;
 
 const optionalTrimmedString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() || undefined : value),
@@ -637,6 +641,13 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
   });
 
   const createdConversation = !conversation;
+  const shouldReengageBot = Boolean(
+    conversation &&
+      !conversation.botEnabled &&
+      !conversation.assignedUserId &&
+      conversation.status === "ATENDIENDO" &&
+      Date.now() - conversation.lastMessageAt.getTime() >= BOT_REENGAGE_AFTER_MS,
+  );
 
   if (!conversation) {
     conversation = await prisma.conversation.create({
@@ -669,6 +680,9 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
       data: {
         lastMessageAt: timestamp,
         unreadCount: { increment: 1 },
+        ...(shouldReengageBot
+          ? { botEnabled: true, status: "AUTOMATICO" as const }
+          : {}),
       },
     }),
   ]);

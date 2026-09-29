@@ -9,6 +9,7 @@ import { normalizeWhatsappPhone } from "@/lib/utils";
 import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 import { buildPublicUrl } from "@/lib/site-url";
 import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "@/lib/catalog-pdf";
+import { answerShopAssistant } from "@/lib/shop-assistant";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -46,6 +47,7 @@ const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
 const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores de pantalla: https://tiendavirtualsuper.com/?q=extensor+de+pantalla";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
+const PRODUCT_CATALOG_MESSAGE = "Encontré varias opciones con stock. Te comparto el catálogo filtrado para que puedas verlas y elegir la que prefieras:";
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
@@ -211,6 +213,13 @@ function isPaymentRequest(content: string) {
   return hasIntent(content, ["pago", "pagos", "pagar", "cuenta", "cuentas", "transferencia", "yape", "plin", "deposito", "banco", "datos para transferir"]);
 }
 
+function extractRequestedQuantity(content: string) {
+  const match = normalizedText(content).match(/\b(\d{1,4})\s*(?:unidad|unidades|und|unds)?\b/);
+  if (!match) return null;
+  const quantity = Number(match[1]);
+  return Number.isInteger(quantity) && quantity > 0 ? quantity : null;
+}
+
 function isNoProductMatchReply(content: string) {
   const normalized = normalizedText(content);
   return normalized.includes("no encontre una coincidencia clara")
@@ -247,6 +256,99 @@ async function sendBotText(conversationId: string, recipient: string, content: s
     data: { lastMessageAt: reply.createdAt },
   });
   triggerPusherEvent(`chat-${conversationId}`, "new-message", reply);
+}
+
+async function sendBotImage(
+  conversationId: string,
+  recipient: string,
+  mediaUrl: string,
+  caption: string,
+  source: string,
+) {
+  const sent = await sendYCloudOutboundMessage({ content: caption, mediaUrl, recipient, type: "image" });
+  const reply = await prisma.chatMessage.upsert({
+    where: { externalMessageId: sent.messageId },
+    create: {
+      conversationId,
+      direction: "OUTBOUND",
+      senderType: "BOT",
+      messageType: "IMAGE",
+      content: caption,
+      mediaUrl,
+      externalMessageId: sent.messageId,
+      metadata: { provider: sent.provider, source } as Prisma.InputJsonValue,
+      status: "sent",
+    },
+    update: { content: caption, mediaUrl, senderType: "BOT", status: "sent" },
+  });
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { lastMessageAt: reply.createdAt },
+  });
+  triggerPusherEvent(`chat-${conversationId}`, "new-message", reply);
+}
+
+function productCaption(product: {
+  code: string;
+  name: string;
+  unitPrice: string;
+  wholesalePrice: string | null;
+  wholesaleMinQty: number;
+}) {
+  const wholesale = product.wholesalePrice
+    ? `\nPrecio mayorista desde ${product.wholesaleMinQty} unidades: ${product.wholesalePrice}.`
+    : "";
+  return `${product.name} (${product.code})\nPrecio unitario: ${product.unitPrice}.${wholesale}\n\n¿Cuántas unidades deseas?`;
+}
+
+async function answerProductPriceInquiry(conversationId: string, recipient: string, content: string) {
+  const reply = await answerShopAssistant({ message: content });
+  const products = reply.products ?? [];
+  if (!products.length) return false;
+
+  if (products.length > 1) {
+    const search = encodeURIComponent(content);
+    await sendBotText(
+      conversationId,
+      recipient,
+      `${PRODUCT_CATALOG_MESSAGE}\n${buildPublicUrl(`/?q=${search}`)}`,
+      "product_price_catalog",
+    );
+    return true;
+  }
+
+  const product = products[0];
+  if (!product.imageUrl) return false;
+  const imageUrl = product.imageUrl.startsWith("http")
+    ? product.imageUrl
+    : buildPublicUrl(product.imageUrl);
+
+  await prisma.conversationSalesState.upsert({
+    where: { conversationId },
+    create: {
+      conversationId,
+      stage: "AWAITING_QUANTITY",
+      selectedProductCode: product.code,
+      unitPrice: product.unitPriceValue,
+      priceTier: "Unitario",
+    },
+    update: {
+      stage: "AWAITING_QUANTITY",
+      selectedProductCode: product.code,
+      quantity: null,
+      unitPrice: product.unitPriceValue,
+      priceTier: "Unitario",
+      total: null,
+    },
+  });
+  await sendBotImage(
+    conversationId,
+    recipient,
+    imageUrl,
+    productCaption(product),
+    "product_price_exact_match",
+  );
+  return true;
 }
 
 async function sendCatalog(conversationId: string, recipient: string, content: string) {
@@ -412,7 +514,7 @@ async function processInbound(event: JsonRecord) {
 
     const salesState = await prisma.conversationSalesState.findUnique({
       where: { conversationId: result.conversationId },
-      select: { deliveryData: true, stage: true },
+      select: { deliveryData: true, selectedProductCode: true, stage: true, unitPrice: true },
     });
     const awaitingAddress = salesState?.stage === "AWAITING_DELIVERY_DETAILS"
       && Boolean((salesState.deliveryData as JsonRecord | null)?.awaitingLimaAddress);
@@ -431,6 +533,39 @@ async function processInbound(event: JsonRecord) {
         console.error("YCloud payment notice failed:", error);
       }
       return result;
+    }
+
+    const requestedQuantity = extractRequestedQuantity(content);
+    if (
+      salesState?.stage === "AWAITING_QUANTITY" &&
+      salesState.selectedProductCode &&
+      requestedQuantity
+    ) {
+      const unitPrice = salesState.unitPrice ? Number(salesState.unitPrice) : null;
+      await prisma.conversationSalesState.update({
+        where: { conversationId: result.conversationId },
+        data: {
+          stage: "AWAITING_PAYMENT_METHOD",
+          quantity: requestedQuantity,
+          total: unitPrice === null ? null : unitPrice * requestedQuantity,
+        },
+      });
+      try {
+        await sendPaymentNotice(result.conversationId, from);
+      } catch (error) {
+        console.error("YCloud product quantity payment notice failed:", error);
+      }
+      return result;
+    }
+
+    if (isPriceRequest(content)) {
+      try {
+        if (await answerProductPriceInquiry(result.conversationId, from, content)) {
+          return result;
+        }
+      } catch (error) {
+        console.error("YCloud product price inquiry failed:", error);
+      }
     }
 
     if (isPaymentRequest(content)) {
