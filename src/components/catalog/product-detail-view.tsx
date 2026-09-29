@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { CircleX, ImageIcon, Minus, Plus, ShoppingCart, ZoomIn } from "lucide-react";
 import { CartStoreBootstrap } from "@/components/catalog/cart-store-bootstrap";
 import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "@/components/catalog/cart-store";
@@ -415,42 +416,45 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
         </article>
       </div>
 
-      {fullscreenMedia && fullscreenMediaUrl ? (
-        <div
-          aria-modal="true"
-          className="product-detail-lightbox"
-          onClick={() => setFullScreenMediaId(null)}
-          role="dialog"
-        >
-          <div className="product-detail-lightbox-panel" onClick={(event) => event.stopPropagation()}>
-            <button
-              aria-label="Cerrar imagen ampliada"
-              className="icon-button icon-button-close product-detail-lightbox-close"
+      {fullscreenMedia && fullscreenMediaUrl && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              aria-modal="true"
+              className="product-detail-lightbox"
               onClick={() => setFullScreenMediaId(null)}
-              type="button"
+              role="dialog"
             >
-              <CircleX size={18} />
-            </button>
-            {fullscreenMedia.type === "IMAGE" ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                alt={fullscreenMedia.altText ?? displayName}
-                className="product-detail-lightbox-media"
-                src={getOptimizedImageUrl(fullscreenMediaUrl, 1200) ?? undefined}
-              />
-            ) : (
-              <video
-                autoPlay
-                className="product-detail-lightbox-media"
-                controls
-                playsInline
-                preload="metadata"
-                src={fullscreenMediaUrl}
-              />
-            )}
-          </div>
-        </div>
-      ) : null}
+              <div className="product-detail-lightbox-panel" onClick={(event) => event.stopPropagation()}>
+                <button
+                  aria-label="Cerrar imagen ampliada"
+                  className="icon-button icon-button-close product-detail-lightbox-close"
+                  onClick={() => setFullScreenMediaId(null)}
+                  type="button"
+                >
+                  <CircleX size={18} />
+                </button>
+                {fullscreenMedia.type === "IMAGE" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    alt={fullscreenMedia.altText ?? displayName}
+                    className="product-detail-lightbox-media"
+                    src={fullscreenMediaUrl}
+                  />
+                ) : (
+                  <video
+                    autoPlay
+                    className="product-detail-lightbox-media"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    src={fullscreenMediaUrl}
+                  />
+                )}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </section>
   );
 }
