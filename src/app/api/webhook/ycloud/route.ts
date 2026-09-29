@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 import { buildPublicUrl } from "@/lib/site-url";
-import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "@/lib/catalog-pdf";
+import { generateRequestedCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "@/lib/catalog-pdf";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -207,7 +207,11 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
   if (!request) return false;
 
   try {
-    const catalog = await generateCatalogPdf(request);
+    const generated = await generateRequestedCatalogPdf(content);
+    if (!generated.catalog) {
+      throw new Error("No encontramos productos publicados para este catálogo.");
+    }
+    const catalog = generated.catalog;
     const caption = `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos).`;
     const sent = await sendYCloudOutboundMessage({ content: caption, mediaUrl: catalog.absoluteUrl, recipient, type: "document" });
     const document = await prisma.chatMessage.upsert({
@@ -301,7 +305,7 @@ async function processInbound(event: JsonRecord) {
     content,
     externalContactId: from,
     externalMessageId,
-    mediaUrl: messageMediaUrl(message, type),
+    mediaUrl: messageMediaUrl(message, type) ?? undefined,
     metadata: {
       provider: "ycloud",
       eventId: text(event.id),

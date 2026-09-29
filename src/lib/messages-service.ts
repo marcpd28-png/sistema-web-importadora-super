@@ -11,11 +11,9 @@ import { sendManychatImageFromInbox } from "@/lib/manychat-image-dispatch";
 import { enqueueManychatImage } from "@/lib/manychat-image-queue";
 import {
   N8nOutboundError,
+  sendN8nOutboundMessage,
+  type N8nOutboundMessageType,
 } from "@/lib/n8n-outbound";
-import {
-  sendYCloudOutboundMessage,
-  type YCloudOutboundMessageType,
-} from "@/lib/ycloud-outbound";
 import {
   buildAutomationConversationContext,
   type AutomationConversationContext,
@@ -545,6 +543,7 @@ export async function sendInternalMessage(
 
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
   try {
+    const manychatSubscriberId = requireRealManychatSubscriber(conversation.contact);
     if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
       throw new N8nOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
         code: "SIMULATOR_CONTACT", statusCode: 400,

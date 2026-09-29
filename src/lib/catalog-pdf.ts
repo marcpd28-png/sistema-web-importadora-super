@@ -14,6 +14,7 @@ import { getBotProductImageUrls, isBotProductAvailable } from "@/lib/bot-product
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
+const MAX_CATALOG_PRODUCTS = 40;
 const BRAND_PRIMARY = "#2320DA";
 const CATALOG_LAYOUT_VERSION = "all-catalogs-mobile-borderless-v8";
 
