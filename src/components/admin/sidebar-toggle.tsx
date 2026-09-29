@@ -5,11 +5,9 @@ import { useEffect, useState } from "react";
 
 export function SidebarToggle() {
   const [collapsed, setCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      setMounted(true);
       const saved = localStorage.getItem("admin-sidebar-collapsed");
       if (saved === "true") {
         setCollapsed(true);
@@ -30,8 +28,6 @@ export function SidebarToggle() {
       document.body.classList.remove("admin-sidebar-collapsed");
     }
   };
-
-  if (!mounted) return <div style={{ width: "36px", height: "36px" }} />;
 
   return (
     <button 

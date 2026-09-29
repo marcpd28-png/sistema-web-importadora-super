@@ -5982,7 +5982,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 .product-detail-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: 3000;
   display: grid;
   place-items: center;
   padding: 1.15rem;
@@ -5994,10 +5994,9 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   position: relative;
   display: grid;
   place-items: center;
-  width: min(96vw, 92rem);
-  max-width: 96vw;
-  max-height: 94vh;
-  height: auto;
+  width: fit-content;
+  max-width: calc(100vw - 2.3rem);
+  max-height: calc(100vh - 2.3rem);
   padding: 1rem;
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.96);
@@ -6005,9 +6004,10 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 }
 
 .product-detail-lightbox-media {
-  width: 100%;
+  width: auto;
   height: auto;
-  max-height: calc(94vh - 2rem);
+  max-width: calc(100vw - 4.3rem);
+  max-height: calc(100vh - 4.3rem);
   object-fit: contain;
   object-position: center;
   display: block;

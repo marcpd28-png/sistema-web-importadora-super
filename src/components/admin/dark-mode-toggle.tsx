@@ -5,11 +5,9 @@ import { useEffect, useState } from "react";
 
 export function DarkModeToggle() {
   const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      setMounted(true);
       const saved = localStorage.getItem("admin-theme");
       if (saved === "dark") {
         setIsDark(true);
@@ -31,8 +29,6 @@ export function DarkModeToggle() {
       localStorage.setItem("admin-theme", "light");
     }
   };
-
-  if (!mounted) return <div style={{ width: "36px", height: "36px" }} />;
 
   return (
     <button 
