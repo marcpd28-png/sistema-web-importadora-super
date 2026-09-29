@@ -17400,8 +17400,23 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
     gap: 0 !important;
   }
 
-  .admin-sidebar-brand .admin-shell-icon-button:first-child {
-    display: none;
+  /* The navigation, theme and sign-out controls are primary actions. Keep all
+     three accessible on narrow admin views instead of hiding the first one. */
+  .admin-sidebar-controls {
+    width: 100%;
+    min-height: 52px;
+  }
+
+  .admin-sidebar-controls > .admin-shell-icon-button,
+  .admin-sidebar-utilities > .admin-shell-icon-button {
+    display: inline-flex !important;
+    flex: 0 0 44px;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .admin-sidebar-utilities {
+    margin-left: auto;
   }
 
   .admin-nav-label {
