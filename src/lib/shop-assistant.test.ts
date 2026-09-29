@@ -6,7 +6,7 @@ import type {
   AssistantSettingsRecord,
   ShopAssistantRepository,
 } from "@/lib/shop-assistant";
-import { createShopAssistantService } from "@/lib/shop-assistant";
+import { createShopAssistantService, matchesAllRequiredSearchTerms } from "@/lib/shop-assistant";
 import { buildGiftReply, detectGiftIntent, getGiftKeywords } from "@/lib/shop-gift-intent";
 
 const settings: AssistantSettingsRecord = {
@@ -182,6 +182,28 @@ function createMockRepository(
 }
 
 const answerShopAssistant = createShopAssistantService(createMockRepository());
+
+test("no confunde una máquina de hielo con una cortadora de cabello", () => {
+  const hairClipper: AssistantProductRecord = {
+    ...products[0],
+    id: "clipper",
+    code: "CLIP-1",
+    name: "Máquina cortadora de cabello",
+    description: "Cortadora eléctrica para barbería.",
+    category: "Cuidado personal",
+  };
+  const iceMachine: AssistantProductRecord = {
+    ...products[0],
+    id: "ice-machine",
+    code: "ICE-1",
+    name: "Máquina de hielo",
+    description: "Produce cubos de hielo.",
+    category: "Electrodomésticos",
+  };
+
+  assert.equal(matchesAllRequiredSearchTerms(hairClipper, "maquinade hielo"), false);
+  assert.equal(matchesAllRequiredSearchTerms(iceMachine, "maquinade hielo"), true);
+});
 
 test("ignora una consulta de ofertas sin producto concreto", async () => {
   const reply = await answerShopAssistant({ message: "muéstrame ofertas" });

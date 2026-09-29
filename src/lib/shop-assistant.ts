@@ -145,6 +145,7 @@ const SEARCH_CORRECTIONS: Record<string, string> = {
   cosina: "cocina",
   cosinas: "cocina",
   mause: "mouse",
+  maquinade: "maquina",
   repedidor: "repetidor",
   repetdor: "repetidor",
   repetidorw: "repetidor",
@@ -469,6 +470,27 @@ function normalizeProductSearchText(product: AssistantProductRecord) {
       .filter(Boolean)
       .join(" "),
   );
+}
+
+// Retrieval begins broadly to tolerate typos, but an answer may only use a
+// product that contains every meaningful word from the customer's request.
+function getRequiredSearchTerms(query: string) {
+  return Array.from(new Set(
+    normalizeAssistantText(query)
+      .split(" ")
+      .map((token) => correctSearchToken(token.trim()))
+      .filter((token) => token.length >= 3 && !STOPWORDS.has(token)),
+  ));
+}
+
+export function matchesAllRequiredSearchTerms(product: AssistantProductRecord, query: string) {
+  const requiredTerms = getRequiredSearchTerms(query);
+  const productText = normalizeProductSearchText(product);
+
+  return requiredTerms.length > 0 && requiredTerms.every((term) => {
+    const acceptedTerms = SEARCH_SYNONYMS[term] ?? [term];
+    return acceptedTerms.some((acceptedTerm) => productText.includes(acceptedTerm));
+  });
 }
 
 function productMatchesFocus(product: AssistantProductRecord, focus: ProductFocus) {
@@ -1119,9 +1141,11 @@ function createRealRepository(): ShopAssistantRepository {
         }
       }
 
-      return products.sort(
+      return products
+        .filter((product) => matchesAllRequiredSearchTerms(product, query))
+        .sort(
         (left, right) => scoreAssistantProduct(right, query) - scoreAssistantProduct(left, query),
-      );
+        );
     },
 
     async getFeaturedProducts() {

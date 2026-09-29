@@ -46,6 +46,7 @@ const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizada
 const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
 const OUTBOUND_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+const BOT_REPLY_DEDUPLICATE_WINDOW_MS = 30 * 60 * 1000;
 const ROCKY_MESSAGE_BATCH_WAIT_MS = 1_500;
 
 class DuplicateOutboundMessageError extends Error {
@@ -310,6 +311,21 @@ async function sendSpeakerCatalogGuidance(conversationId: string, recipient: str
 }
 
 async function sendBotText(conversationId: string, recipient: string, content: string, source: string) {
+  const duplicateCutoff = new Date(Date.now() - BOT_REPLY_DEDUPLICATE_WINDOW_MS);
+  const recentEquivalentReply = await prisma.chatMessage.findFirst({
+    where: {
+      conversationId,
+      senderType: "BOT",
+      createdAt: { gte: duplicateCutoff },
+      content,
+    },
+    select: { id: true },
+  });
+  if (recentEquivalentReply) {
+    console.info("[rocky] repeated reply suppressed", { conversationId, source });
+    return;
+  }
+
   const sent = await sendYCloudOutboundMessage({ content, recipient, type: "text" });
   const reply = await prisma.chatMessage.upsert({
     where: { externalMessageId: sent.messageId },
