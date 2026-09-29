@@ -35,7 +35,8 @@ Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cu
 
 ¿Qué producto estás buscando hoy?`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
-const GENERAL_CATALOG_MESSAGE = "¡Claro! Aquí tienes nuestro catálogo general con todos los productos disponibles: https://tiendavirtualsuper.com";
+// A catalog request should receive the same complete orientation as a new chat.
+const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
 const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores de pantalla: https://tiendavirtualsuper.com/?q=extensor+de+pantalla";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
