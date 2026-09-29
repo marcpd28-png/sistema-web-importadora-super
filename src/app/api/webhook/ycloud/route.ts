@@ -36,6 +36,7 @@ Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cu
 ¿Qué producto estás buscando hoy?`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
+const PRODUCT_PROMPT_MESSAGE = "¡Hola! Con gusto te ayudo. ¿Qué producto del catálogo te interesa? Puedes escribirme el nombre, marca o código y te indico las opciones y precios disponibles.";
 const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
@@ -233,6 +234,11 @@ function isScreenExtenderInquiry(content: string) {
 
 function isSpeakerInquiry(content: string) {
   return /\b(parlante(?:s)?|altavoz(?:es)?|speaker(?:s)?)\b/.test(normalizedText(content));
+}
+
+function isGreeting(content: string) {
+  const normalized = normalizedText(content).replace(/[!¡?.:,;]/g, "").replace(/\s+/g, " ").trim();
+  return /^(hola|buenos dias|buenas tardes|buenas noches|buen dia|saludos|hey)(?:\s+(?:rocky|amigo|amiga))?$/.test(normalized);
 }
 
 function isAdvisorRequest(content: string) {
@@ -638,6 +644,15 @@ async function processInbound(event: JsonRecord) {
   }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    if (isGreeting(content)) {
+      try {
+        await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+      } catch (error) {
+        console.error("YCloud greeting response failed:", error);
+      }
+      return result;
+    }
+
     if (isAdvisorRequest(content)) {
       try {
         await handOffToAdvisor(result.conversationId, from, "advisor_handoff");
