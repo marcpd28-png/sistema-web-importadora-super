@@ -410,6 +410,8 @@ export async function generateRequestedCatalogPdf(
   return {
     catalog,
     products: selection?.products ?? [],
+    label: selection?.label ?? request?.terms.join(" ") ?? "productos",
+    scopes: selection?.scopes ?? [],
     brands: selection?.brands ?? [],
     categories: selection?.categories ?? [],
     types: selection?.types ?? [],
