@@ -48,6 +48,7 @@ const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 const PRODUCT_CATALOG_MESSAGE = "Encontré varias opciones con stock. Te comparto el catálogo filtrado para que puedas verlas y elegir la que prefieras:";
+const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
@@ -353,6 +354,11 @@ async function answerProductPriceInquiry(conversationId: string, recipient: stri
 
 async function sendCatalog(conversationId: string, recipient: string, content: string) {
   if (isGeneralCatalogRequest(content)) {
+    await prisma.conversationSalesState.upsert({
+      where: { conversationId },
+      create: { conversationId, stage: "AWAITING_CATALOG_SCOPE" },
+      update: { stage: "AWAITING_CATALOG_SCOPE" },
+    });
     const sent = await sendYCloudOutboundMessage({
       content: GENERAL_CATALOG_MESSAGE,
       recipient,
@@ -514,8 +520,28 @@ async function processInbound(event: JsonRecord) {
 
     const salesState = await prisma.conversationSalesState.findUnique({
       where: { conversationId: result.conversationId },
-      select: { deliveryData: true, selectedProductCode: true, stage: true, unitPrice: true },
+      select: { deliveryData: true, selectedProductCode: true, stage: true, unitPrice: true, updatedAt: true },
     });
+
+    const awaitingCatalogScope =
+      salesState?.stage === "AWAITING_CATALOG_SCOPE" &&
+      Date.now() - salesState.updatedAt.getTime() <= CATALOG_SCOPE_WAIT_MS &&
+      content.trim().split(/\s+/).length <= 4;
+    if (awaitingCatalogScope) {
+      try {
+        // The customer may answer the general-catalog prompt with only a
+        // category or brand, e.g. "audífonos" or "JBL".
+        if (await sendCatalog(result.conversationId, from, `catálogo ${content}`)) {
+          await prisma.conversationSalesState.update({
+            where: { conversationId: result.conversationId },
+            data: { stage: "AWAITING_PRODUCT_QUERY" },
+          });
+          return result;
+        }
+      } catch (error) {
+        console.error("YCloud catalog scope response failed:", error);
+      }
+    }
     const awaitingAddress = salesState?.stage === "AWAITING_DELIVERY_DETAILS"
       && Boolean((salesState.deliveryData as JsonRecord | null)?.awaitingLimaAddress);
 

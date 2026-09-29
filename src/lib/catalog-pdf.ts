@@ -67,8 +67,37 @@ function normalizedCatalogWords(content: string) {
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .split(" ")
-    .map((word) => ["catalog", "catalgo", "catalago", "catalogue"].includes(word) ? "catalogo" : word)
+    .map((word) => isCatalogKeyword(word) ? "catalogo" : word)
     .filter(Boolean);
+}
+
+/** Accepts common spelling errors and plural forms without treating another
+ * product word as a catalog request. */
+function isCatalogKeyword(word: string) {
+  const candidates = ["catalogo", "catalogos", "catalog", "catalogue"];
+  return candidates.some((candidate) => editDistanceAtMost(word, candidate, 3));
+}
+
+function editDistanceAtMost(left: string, right: string, maximum: number) {
+  if (Math.abs(left.length - right.length) > maximum) return false;
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    let diagonal = previous[0];
+    previous[0] = row;
+    let smallest = previous[0];
+    for (let column = 1; column <= right.length; column += 1) {
+      const saved = previous[column];
+      previous[column] = Math.min(
+        previous[column] + 1,
+        previous[column - 1] + 1,
+        diagonal + (left[row - 1] === right[column - 1] ? 0 : 1),
+      );
+      diagonal = saved;
+      smallest = Math.min(smallest, previous[column]);
+    }
+    if (smallest > maximum) return false;
+  }
+  return previous[right.length] <= maximum;
 }
 
 /** True when a customer asks for the store-wide catalog rather than a category or brand. */
@@ -99,6 +128,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
   const products = await prisma.product.findMany({
     where: {
       isVisible: true,
+      stockUnits: { gt: 0 },
       OR: [
         { name: { contains: "proyector", mode: "insensitive" } },
         { category: { contains: "proyector", mode: "insensitive" } },
@@ -141,13 +171,16 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
   const products = await prisma.product.findMany({
     where: {
       isVisible: true,
+      stockUnits: { gt: 0 },
       AND: terms.map((term) => ({
         OR: [
-          { name: { contains: term, mode: "insensitive" } },
-          { brand: { contains: term, mode: "insensitive" } },
-          { category: { contains: term, mode: "insensitive" } },
-          { description: { contains: term, mode: "insensitive" } },
-          { code: { contains: term, mode: "insensitive" } },
+          ...getCatalogTermVariants(term).flatMap((variant) => [
+            { name: { contains: variant, mode: "insensitive" as const } },
+            { brand: { contains: variant, mode: "insensitive" as const } },
+            { category: { contains: variant, mode: "insensitive" as const } },
+            { description: { contains: variant, mode: "insensitive" as const } },
+            { code: { contains: variant, mode: "insensitive" as const } },
+          ]),
         ],
       })),
     },
@@ -166,6 +199,18 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
     ].filter((value): value is string => Boolean(value?.trim()))));
     return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
   });
+}
+
+function getCatalogTermVariants(term: string) {
+  const variants = new Set([term]);
+  if (term.endsWith("s") && term.length > 4) variants.add(term.slice(0, -1));
+  if (term === "audifono" || term === "audifonos") {
+    variants.add("audifono");
+    variants.add("audifonos");
+    variants.add("auricular");
+    variants.add("auriculares");
+  }
+  return [...variants];
 }
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {

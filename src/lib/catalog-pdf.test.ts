@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import sharp from "sharp";
-import { isGeneralCatalogRequest, isProjectorCatalogRequest, prepareCatalogImage } from "@/lib/catalog-pdf";
+import {
+  isGeneralCatalogRequest,
+  isProjectorCatalogRequest,
+  parseCatalogRequest,
+  prepareCatalogImage,
+} from "@/lib/catalog-pdf";
 
 test("detecta solicitudes del catálogo general aunque usen lenguaje cortés", () => {
   assert.equal(isGeneralCatalogRequest("¿Me podría brindar el catálogo?"), true);
@@ -19,6 +24,12 @@ test("detecta solicitudes explícitas del catálogo de proyectores", () => {
   assert.equal(isProjectorCatalogRequest("Hola, catálogo de proyectores"), true);
   assert.equal(isProjectorCatalogRequest("CATALOGO PROYECTOR"), true);
   assert.equal(isProjectorCatalogRequest("¿Me mandas el catálogo de proyectores?"), true);
+});
+
+test("acepta plural y errores frecuentes al pedir catálogos por categoría y marca", () => {
+  assert.deepEqual(parseCatalogRequest("catalogos audifonos jbl")?.terms, ["audifonos", "jbl"]);
+  assert.deepEqual(parseCatalogRequest("catalgoo de audifonos")?.terms, ["audifonos"]);
+  assert.deepEqual(parseCatalogRequest("cataglafo audifonos jbl")?.terms, ["audifonos", "jbl"]);
 });
 
 test("quita márgenes transparentes sin convertir la foto rectangular en un cuadrado", async () => {
