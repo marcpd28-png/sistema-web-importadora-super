@@ -1,4 +1,22 @@
-import { N8nOutboundError } from "@/lib/n8n-outbound";
+export class YCloudOutboundError extends Error {
+  readonly code: string;
+  readonly statusCode: number;
+  requestId?: string;
+  messageId?: string;
+
+  constructor(message: string, options: { code: string; statusCode: number }) {
+    super(message);
+    this.name = "YCloudOutboundError";
+    this.code = options.code;
+    this.statusCode = options.statusCode;
+  }
+
+  withContext(context: { requestId: string; messageId: string }) {
+    this.requestId = context.requestId;
+    this.messageId = context.messageId;
+    return this;
+  }
+}
 
 export type YCloudOutboundMessageType = "text" | "image" | "video" | "document" | "audio";
 
@@ -19,10 +37,10 @@ const Y_CLOUD_SEND_URL = "https://api.ycloud.com/v2/whatsapp/messages";
 
 function requiredConfig() {
   const apiKey = process.env.YCLOUD_API_KEY?.trim();
-  const from = process.env.YCLOUD_WHATSAPP_FROM?.trim();
+  const from = normalizeYCloudPhone(process.env.YCLOUD_WHATSAPP_FROM);
 
   if (!apiKey || !from) {
-    throw new N8nOutboundError(
+    throw new YCloudOutboundError(
       "YCloud no está configurado para envíos. Falta YCLOUD_API_KEY o YCLOUD_WHATSAPP_FROM.",
       { code: "YCLOUD_CONFIGURATION_MISSING", statusCode: 503 },
     );
@@ -31,13 +49,18 @@ function requiredConfig() {
   return { apiKey, from };
 }
 
+export function normalizeYCloudPhone(value: string | null | undefined) {
+  const digits = value?.replace(/[^\d]/g, "") ?? "";
+  return /^\d{8,15}$/.test(digits) ? `+${digits}` : null;
+}
+
 function buildMessage(input: YCloudOutboundMessageInput) {
   if (input.type === "text") {
     return { type: "text", text: { body: input.content } };
   }
 
   if (!input.mediaUrl) {
-    throw new N8nOutboundError("Se requiere una URL pública para enviar este archivo.", {
+    throw new YCloudOutboundError("Se requiere una URL pública para enviar este archivo.", {
       code: "YCLOUD_MEDIA_URL_MISSING", statusCode: 422,
     });
   }
@@ -53,6 +76,13 @@ export async function sendYCloudOutboundMessage(
   input: YCloudOutboundMessageInput,
 ): Promise<YCloudOutboundMessageResult> {
   const { apiKey, from } = requiredConfig();
+  const to = normalizeYCloudPhone(input.recipient);
+  if (!to) {
+    throw new YCloudOutboundError("El destinatario no tiene un número internacional válido para YCloud.", {
+      code: "INVALID_RECIPIENT",
+      statusCode: 400,
+    });
+  }
   let response: Response;
 
   try {
@@ -62,19 +92,26 @@ export async function sendYCloudOutboundMessage(
         "Content-Type": "application/json",
         "X-API-Key": apiKey,
       },
-      body: JSON.stringify({ from, to: input.recipient, ...buildMessage(input) }),
+      body: JSON.stringify({ from, to, ...buildMessage(input) }),
       signal: AbortSignal.timeout(15_000),
     });
   } catch {
-    throw new N8nOutboundError("No se pudo conectar con YCloud para enviar el mensaje.", {
+    throw new YCloudOutboundError("No se pudo conectar con YCloud para enviar el mensaje.", {
       code: "YCLOUD_UNAVAILABLE", statusCode: 502,
     });
   }
 
   const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
   if (!response.ok) {
-    const detail = typeof payload?.message === "string" ? payload.message : "YCloud rechazó el envío.";
-    throw new N8nOutboundError(detail, {
+    const nestedError = payload?.error && typeof payload.error === "object"
+      ? payload.error as Record<string, unknown>
+      : null;
+    const detail = typeof payload?.message === "string"
+      ? payload.message
+      : typeof nestedError?.message === "string"
+        ? nestedError.message
+        : "YCloud rechazó el envío.";
+    throw new YCloudOutboundError(detail, {
       code: "YCLOUD_REJECTED", statusCode: 502,
     });
   }
@@ -86,7 +123,7 @@ export async function sendYCloudOutboundMessage(
       : null;
 
   if (!messageId) {
-    throw new N8nOutboundError("YCloud respondió sin identificador de mensaje.", {
+    throw new YCloudOutboundError("YCloud respondió sin identificador de mensaje.", {
       code: "YCLOUD_INVALID_RESPONSE", statusCode: 502,
     });
   }

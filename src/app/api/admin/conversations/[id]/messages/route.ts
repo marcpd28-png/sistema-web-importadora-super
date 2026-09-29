@@ -5,7 +5,7 @@ import {
   getConversationMessagesSchema,
   sendInternalMessage,
 } from "@/lib/messages-service";
-import { N8nOutboundError } from "@/lib/n8n-outbound";
+import { YCloudOutboundError } from "@/lib/ycloud-outbound";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +66,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }
 
-    if (error instanceof N8nOutboundError) {
+    if (error instanceof YCloudOutboundError) {
       return NextResponse.json(
         {
           code: error.code,

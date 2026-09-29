@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { WhatsAppMetaConnect } from "@/components/admin/messages/WhatsAppMetaConnect";
+import { YCloudConnectionStatus } from "@/components/admin/messages/YCloudConnectionStatus";
 import { MessagingSettingsForm } from "@/components/admin/messages/MessagingSettingsForm";
 import { Bot, CheckCircle2, PauseCircle } from "lucide-react";
 import { toggleBotAction } from "./actions";
@@ -27,7 +27,7 @@ export default async function ConfiguracionPage() {
       </div>
 
       <div className="messaging-settings-stack">
-        <WhatsAppMetaConnect />
+        <YCloudConnectionStatus />
 
         <section className="messaging-settings-card">
           <div className="messaging-settings-toggle-row">

@@ -4,10 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import {
-  N8nOutboundError,
-} from "@/lib/n8n-outbound";
-import {
   sendYCloudOutboundMessage,
+  YCloudOutboundError,
   type YCloudOutboundMessageType,
 } from "@/lib/ycloud-outbound";
 import {
@@ -91,9 +89,6 @@ export type GetConversationMessagesInput = z.infer<typeof getConversationMessage
 export const incomingMessageSchema = z.object({
   channel: z.nativeEnum(Channel),
   externalContactId: z.string().min(1).max(120),
-  // n8n sends an empty value when ManyChat cannot resolve the phone. Treat it
-  // as absent so the inbound message is still recorded and can be retried later.
-  manychatSubscriberId: optionalTrimmedString.pipe(z.string().min(1).max(120).optional()),
   phone: z.string().max(32).optional(),
   name: z.string().max(180),
   externalMessageId: z.string().min(1).max(120),
@@ -421,44 +416,6 @@ const sendMessageSchema = z.object({
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
-export function getManychatSubscriberIdFromMetadata(metadata: Record<string, unknown>) {
-  const candidate =
-    metadata.manychatSubscriberId ??
-    metadata.manychat_subscriber_id ??
-    metadata.subscriberId ??
-    metadata.subscriber_id;
-
-  if (typeof candidate === "number" && Number.isSafeInteger(candidate) && candidate > 0) {
-    return String(candidate);
-  }
-
-  if (typeof candidate === "string" && /^\d{1,120}$/.test(candidate.trim())) {
-    return candidate.trim();
-  }
-
-  return null;
-}
-
-export function requireRealManychatSubscriber(contact: {
-  externalId: string | null;
-  manychatSubscriberId: string | null;
-}) {
-  if (contact.externalId?.startsWith("SIMULATOR:")) {
-    throw new N8nOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
-      code: "SIMULATOR_CONTACT", statusCode: 400,
-    });
-  }
-
-  const manychatSubscriberId = contact.manychatSubscriberId?.trim();
-  if (!manychatSubscriberId) {
-    throw new N8nOutboundError("El contacto no tiene identificador ManyChat.", {
-      code: "MANYCHAT_SUBSCRIBER_ID_MISSING", statusCode: 422,
-    });
-  }
-
-  return manychatSubscriberId;
-}
-
 export async function sendInternalMessage(
   conversationId: string,
   input: SendMessageInput,
@@ -507,7 +464,7 @@ export async function sendInternalMessage(
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
   try {
     if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
-      throw new N8nOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
+      throw new YCloudOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
         code: "SIMULATOR_CONTACT", statusCode: 400,
       });
     }
@@ -544,17 +501,17 @@ export async function sendInternalMessage(
       return sentMessage;
     });
   } catch (error) {
-    const safeReason = error instanceof N8nOutboundError ? error.message : "No se pudo iniciar el envío hacia YCloud.";
+    const safeReason = error instanceof YCloudOutboundError ? error.message : "No se pudo iniciar el envío hacia YCloud.";
     const failed = await prisma.chatMessage.update({
       where: { id: message.id },
       data: { status: "failed", metadata: { requestId: parsed.requestId, error: safeReason } },
     });
     triggerPusherEvent(`chat-${conversationId}`, "new-message", failed);
     console.warn("[outbound] failed", { requestId: parsed.requestId, conversationId, messageId: message.id });
-    if (error instanceof N8nOutboundError) {
+    if (error instanceof YCloudOutboundError) {
       throw error.withContext({ requestId: parsed.requestId, messageId: message.id });
     }
-    throw new N8nOutboundError(safeReason, {
+    throw new YCloudOutboundError(safeReason, {
       code: "OUTBOUND_DELIVERY_FAILED", statusCode: 502,
     }).withContext({ requestId: parsed.requestId, messageId: message.id });
   }
@@ -593,9 +550,6 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
   const isSimulator = parsed.externalContactId.startsWith("SIMULATOR:");
   const normalizedPhone = normalizeMessagePhone(parsed.phone ?? (isSimulator ? "" : parsed.externalContactId));
   const phone = parsed.phone?.trim() || (isSimulator ? null : normalizedPhone) || null;
-  const manychatSubscriberId = isSimulator
-    ? null
-    : parsed.manychatSubscriberId ?? getManychatSubscriberIdFromMetadata(parsed.metadata);
 
   const existingMsg = await prisma.chatMessage.findUnique({
     where: { externalMessageId: parsed.externalMessageId },
@@ -655,10 +609,6 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
       dataToUpdate.externalId = parsed.externalContactId;
     }
 
-    if (manychatSubscriberId && manychatSubscriberId !== contact.manychatSubscriberId) {
-      dataToUpdate.manychatSubscriberId = manychatSubscriberId;
-    }
-
     if (Object.keys(dataToUpdate).length > 0) {
       contact = await prisma.chatContact.update({
         where: { id: contact.id },
@@ -673,7 +623,6 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
         name: parsed.name,
         phone,
         phoneNormalized: normalizedPhone,
-        manychatSubscriberId,
       },
     });
   }

@@ -1,5 +1,5 @@
 import { cleanWhatsappNumber } from "@/lib/utils";
-import { resolveWhatsappCredentials } from "@/lib/whatsapp-credentials";
+import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 
 type QuotePdfNotificationInput = {
   bodyText: string;
@@ -13,7 +13,7 @@ type QuotePdfNotificationInput = {
 export type WhatsappSendResult = {
   messageId: string | null;
   ok: boolean;
-  provider: "manychat" | "meta-cloud";
+  provider: "ycloud";
   response: unknown;
 };
 
@@ -34,47 +34,25 @@ export function getWhatsappAlertTarget(defaultNumber?: string | null) {
 }
 
 export function isWhatsappApiConfigured() {
-  const provider = process.env.WHATSAPP_PROVIDER?.trim();
-
-  if (provider === "manychat") {
-    return Boolean(process.env.MANYCHAT_API_KEY?.trim());
-  }
-
-  return Boolean(
-    provider === "meta-cloud" &&
-      process.env.WHATSAPP_ACCESS_TOKEN?.trim() &&
-      process.env.WHATSAPP_PHONE_NUMBER_ID?.trim(),
-  );
+  return Boolean(process.env.YCLOUD_API_KEY?.trim() && process.env.YCLOUD_WHATSAPP_FROM?.trim());
 }
 
 export async function sendWhatsappTextMessage(
   input: WhatsappTextMessageInput,
 ): Promise<WhatsappSendResult> {
-  const { accessToken, phoneNumberId } = await resolveWhatsappCredentials();
-
-  const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
   const to = normalizeWhatsappRecipient(input.to);
 
   if (!to) {
     throw new Error("No hay un número destino válido para WhatsApp API.");
   }
 
-  const response = await postMetaMessage(graphVersion, phoneNumberId, accessToken, {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to,
-    type: "text",
-    text: {
-      body: input.body,
-      preview_url: input.previewUrl ?? false,
-    },
-  });
+  const sent = await sendYCloudOutboundMessage({ content: input.body, recipient: to, type: "text" });
 
   return {
-    messageId: getMetaMessageId(response),
+    messageId: sent.messageId,
     ok: true,
-    provider: "meta-cloud",
-    response,
+    provider: "ycloud",
+    response: sent,
   };
 }
 
@@ -89,70 +67,27 @@ export type WhatsappMediaMessageInput = {
 export async function sendWhatsappMediaMessage(
   input: WhatsappMediaMessageInput,
 ): Promise<WhatsappSendResult> {
-  const { accessToken, phoneNumberId } = await resolveWhatsappCredentials();
-
-  const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
   const to = normalizeWhatsappRecipient(input.to);
   if (!to) {
     throw new Error("No hay un número destino válido para WhatsApp API.");
   }
 
   const mediaType = input.type === "IMAGE" ? "image" : input.type === "VIDEO" ? "video" : "document";
-  
-  // Resolve relative URLs to absolute URLs if needed for WhatsApp API (which requires absolute URLs)
-  // Assuming the host URL is required, we use the BASE_URL or just send it as is if it's already absolute.
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000";
   const absoluteUrl = input.mediaUrl.startsWith("http") ? input.mediaUrl : `${baseUrl}${input.mediaUrl}`;
-
-  const mediaPayload: { link: string; caption?: string; filename?: string } = {
-    link: absoluteUrl,
-  };
-  
-  if (input.caption) {
-    mediaPayload.caption = input.caption;
-  }
-  
-  if (mediaType === "document" && input.filename) {
-    mediaPayload.filename = input.filename;
-  }
-
-  const response = await postMetaMessage(graphVersion, phoneNumberId, accessToken, {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to,
-    type: mediaType,
-    [mediaType]: mediaPayload,
-  });
+  const sent = await sendYCloudOutboundMessage({ content: input.caption ?? "", mediaUrl: absoluteUrl, recipient: to, type: mediaType });
 
   return {
-    messageId: getMetaMessageId(response),
+    messageId: sent.messageId,
     ok: true,
-    provider: "meta-cloud",
-    response,
+    provider: "ycloud",
+    response: sent,
   };
 }
 
 export async function sendQuotePdfToWhatsapp(
   input: QuotePdfNotificationInput,
 ): Promise<WhatsappSendResult> {
-  const provider = process.env.WHATSAPP_PROVIDER?.trim();
-
-  if (provider === "manychat") {
-    return sendQuotePdfToManychat(input);
-  }
-
-  if (provider !== "meta-cloud") {
-    throw new Error("No hay un proveedor de WhatsApp API soportado configurado.");
-  }
-
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
-
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("Faltan WHATSAPP_ACCESS_TOKEN o WHATSAPP_PHONE_NUMBER_ID para enviar por WhatsApp API.");
-  }
-
-  const graphVersion = process.env.WHATSAPP_GRAPH_VERSION?.trim() || "v22.0";
   const to = normalizeWhatsappRecipient(input.to);
 
   if (!to) {
@@ -160,491 +95,28 @@ export async function sendQuotePdfToWhatsapp(
   }
 
   try {
-    const documentResponse = await postMetaMessage(graphVersion, phoneNumberId, accessToken, {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to,
-      type: "document",
-      document: {
-        link: input.pdfUrl,
-        caption: input.bodyText,
-        filename: input.filename,
-      },
-    });
+    const sent = await sendYCloudOutboundMessage({ content: input.bodyText, mediaUrl: input.pdfUrl, recipient: to, type: "document" });
 
     return {
-      messageId: getMetaMessageId(documentResponse),
+      messageId: sent.messageId,
       ok: true,
-      provider: "meta-cloud",
-      response: documentResponse,
+      provider: "ycloud",
+      response: sent,
     };
   } catch (error) {
     if (!input.fallbackText) {
       throw error;
     }
 
-    const textResponse = await postMetaMessage(graphVersion, phoneNumberId, accessToken, {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to,
-      type: "text",
-      text: {
-        body: input.fallbackText,
-        preview_url: false,
-      },
-    });
+    const sent = await sendYCloudOutboundMessage({ content: input.fallbackText, recipient: to, type: "text" });
 
     return {
-      messageId: getMetaMessageId(textResponse),
+      messageId: sent.messageId,
       ok: true,
-      provider: "meta-cloud",
-      response: textResponse,
+      provider: "ycloud",
+      response: sent,
     };
   }
-}
-
-async function sendQuotePdfToManychat(
-  input: QuotePdfNotificationInput,
-): Promise<WhatsappSendResult> {
-  const apiKey = process.env.MANYCHAT_API_KEY?.trim();
-  const apiBaseUrl = process.env.MANYCHAT_API_BASE_URL?.trim() || "https://api.manychat.com";
-
-  if (!apiKey) {
-    throw new Error("Falta configurar MANYCHAT_API_KEY para usar ManyChat.");
-  }
-
-  const to = normalizeWhatsappRecipient(input.to);
-
-  if (!to) {
-    throw new Error("No hay un número destino válido para la alerta de ManyChat.");
-  }
-
-  const firstName = splitContactName(input.contactName).firstName;
-  const lastName = splitContactName(input.contactName).lastName;
-  const consentPhrase = "Solicitud de cotización desde Importaciones Super";
-  const subscriber = await createManychatSubscriber(apiBaseUrl, apiKey, {
-    consentPhrase,
-    email: null,
-    firstName,
-    lastName,
-    phone: to,
-    whatsappPhone: to,
-  });
-
-  const subscriberId = getManychatSubscriberId(subscriber);
-
-  if (!subscriberId) {
-    throw new Error("Manychat no devolvió un subscriber_id válido para el contacto.");
-  }
-
-  const flowNs = await resolveManychatFlowNs(apiBaseUrl, apiKey);
-
-  if (flowNs) {
-    const flowResponse = await postManychatFlow(apiBaseUrl, apiKey, {
-      flow_ns: flowNs,
-      subscriber_id: Number(subscriberId),
-    });
-
-    return {
-      messageId: getManychatMessageId(flowResponse),
-      ok: true,
-      provider: "manychat",
-      response: {
-        flowResponse,
-        subscriber,
-      },
-    };
-  }
-
-  const messageTag = process.env.MANYCHAT_MESSAGE_TAG?.trim() || "POST_PURCHASE_UPDATE";
-  const contentResponse = await postManychatMessage(apiBaseUrl, apiKey, {
-    message_tag: messageTag,
-    subscriber_id: Number(subscriberId),
-    data: {
-      version: "v2",
-      content: {
-        actions: [],
-        messages: [
-          {
-            text: `${input.bodyText}\nPDF: ${input.pdfUrl}`,
-            type: "text",
-          },
-        ],
-        quick_replies: [],
-      },
-    },
-  });
-
-  return {
-    messageId: getManychatMessageId(contentResponse),
-    ok: true,
-    provider: "manychat",
-    response: {
-      subscriber,
-      contentResponse,
-    },
-  };
-}
-
-async function resolveManychatFlowNs(apiBaseUrl: string, apiKey: string) {
-  const configured = process.env.MANYCHAT_FLOW_NS?.trim();
-
-  if (configured) {
-    return configured;
-  }
-
-  const response = await fetch(`${apiBaseUrl}/fb/page/getFlows`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-  });
-
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (!response.ok || !payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const data = (payload as { data?: unknown }).data;
-  const rawFlows = Array.isArray(data)
-    ? data
-    : Array.isArray((data as { flows?: unknown } | null)?.flows)
-      ? (data as { flows: unknown[] }).flows
-      : [];
-
-  if (!rawFlows.length) {
-    return null;
-  }
-
-  const flows = rawFlows
-    .map((flow) => {
-      if (!flow || typeof flow !== "object") {
-        return null;
-      }
-
-      const record = flow as Record<string, unknown>;
-      const ns = typeof record.ns === "string" ? record.ns.trim() : "";
-      const name = typeof record.name === "string" ? record.name.trim() : "";
-
-      if (!ns || !name) {
-        return null;
-      }
-
-      return { name, ns };
-    })
-    .filter((flow): flow is { name: string; ns: string } => Boolean(flow));
-
-  const prioritized =
-    flows.find((flow) => /cotiz|quote|pre\s*venta|preventa/i.test(flow.name)) ??
-    flows.find((flow) => /whats|pdf|asesor|venta/i.test(flow.name)) ??
-    null;
-
-  return prioritized?.ns ?? null;
-}
-
-async function postMetaMessage(
-  graphVersion: string,
-  phoneNumberId: string,
-  accessToken: string,
-  body: Record<string, unknown>,
-) {
-  const response = await fetch(`https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (!response.ok) {
-    const message =
-      payload && typeof payload === "object" && "error" in payload
-        ? extractMetaErrorMessage((payload as { error?: unknown }).error)
-        : `WhatsApp API respondió HTTP ${response.status}.`;
-    throw new Error(message);
-  }
-
-  return payload;
-}
-
-function extractMetaErrorMessage(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return "No se pudo enviar el mensaje por WhatsApp API.";
-  }
-
-  const record = error as Record<string, unknown>;
-
-  if (typeof record.message === "string" && record.message.trim()) {
-    return record.message.trim();
-  }
-
-  return "No se pudo enviar el mensaje por WhatsApp API.";
-}
-
-function getMetaMessageId(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const messages = (payload as { messages?: unknown }).messages;
-
-  if (!Array.isArray(messages) || !messages.length) {
-    return null;
-  }
-
-  const first = messages[0];
-
-  if (!first || typeof first !== "object") {
-    return null;
-  }
-
-  return typeof (first as { id?: unknown }).id === "string" ? (first as { id: string }).id : null;
-}
-
-async function createManychatSubscriber(
-  apiBaseUrl: string,
-  apiKey: string,
-  input: {
-    consentPhrase: string;
-    email: string | null;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    whatsappPhone: string;
-  },
-) {
-  const response = await fetch(`${apiBaseUrl}/fb/subscriber/createSubscriber`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      consent_phrase: input.consentPhrase,
-      email: input.email ?? undefined,
-      first_name: input.firstName || undefined,
-      last_name: input.lastName || undefined,
-      phone: input.phone || undefined,
-      whatsapp_phone: input.whatsappPhone,
-      has_opt_in_email: Boolean(input.email),
-      has_opt_in_sms: false,
-    }),
-  });
-
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (response.ok) {
-    return payload;
-  }
-
-  const existingSubscriberId = await findManychatSubscriberIdByPhone(apiBaseUrl, apiKey, input.phone);
-
-  if (existingSubscriberId) {
-    return { data: [{ id: existingSubscriberId }] };
-  }
-
-  const validationMessage = extractManychatValidationMessage(payload);
-
-  if (validationMessage?.includes("Permission denied to import phone")) {
-    throw new Error(
-      "ManyChat bloqueó la importación del número por API. El contacto debe escribir primero al WhatsApp conectado o ManyChat debe habilitar la importación de contactos.",
-    );
-  }
-
-  if (validationMessage?.includes("This WhatsApp ID already exists")) {
-    throw new Error(
-      "ManyChat informó que el número ya existe, pero no quedó accesible por API. Necesitas que ese contacto haya interactuado antes con el WhatsApp conectado o que ManyChat habilite su importación.",
-    );
-  }
-
-  const message =
-    payload && typeof payload === "object" && "error" in payload
-      ? extractMetaErrorMessage((payload as { error?: unknown }).error)
-      : `Manychat respondió HTTP ${response.status}.`;
-
-  throw new Error(message);
-}
-
-async function findManychatSubscriberIdByPhone(apiBaseUrl: string, apiKey: string, phone: string) {
-  const response = await fetch(
-    `${apiBaseUrl}/fb/subscriber/findBySystemField?phone=${encodeURIComponent(phone)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    },
-  );
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (!response.ok || !payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const data = (payload as { data?: unknown }).data;
-
-  if (!Array.isArray(data) || !data.length) {
-    return null;
-  }
-
-  const first = data[0];
-
-  if (!first || typeof first !== "object") {
-    return null;
-  }
-
-  const id = (first as { id?: unknown }).id;
-
-  return typeof id === "number" || typeof id === "string" ? String(id) : null;
-}
-
-async function postManychatMessage(
-  apiBaseUrl: string,
-  apiKey: string,
-  body: Record<string, unknown>,
-) {
-  const response = await fetch(`${apiBaseUrl}/fb/sending/sendContent`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (!response.ok) {
-    const message =
-      payload && typeof payload === "object" && "error" in payload
-        ? extractMetaErrorMessage((payload as { error?: unknown }).error)
-        : `Manychat respondió HTTP ${response.status}.`;
-    throw new Error(message);
-  }
-
-  return payload;
-}
-
-async function postManychatFlow(
-  apiBaseUrl: string,
-  apiKey: string,
-  body: Record<string, unknown>,
-) {
-  const response = await fetch(`${apiBaseUrl}/fb/sending/sendFlow`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  const payload = (await response.json().catch(() => null)) as unknown;
-
-  if (!response.ok) {
-    const message =
-      payload && typeof payload === "object" && "error" in payload
-        ? extractMetaErrorMessage((payload as { error?: unknown }).error)
-        : `Manychat respondió HTTP ${response.status}.`;
-    throw new Error(message);
-  }
-
-  return payload;
-}
-
-function getManychatSubscriberId(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const directId = (payload as { id?: unknown }).id;
-
-  if (typeof directId === "number" || typeof directId === "string") {
-    return String(directId);
-  }
-
-  const data = (payload as { data?: unknown }).data;
-
-  if (Array.isArray(data) && data.length) {
-    const first = data[0];
-
-    if (first && typeof first === "object") {
-      const id = (first as { id?: unknown }).id;
-      if (typeof id === "number" || typeof id === "string") {
-        return String(id);
-      }
-    }
-  }
-
-  return null;
-}
-
-function getManychatMessageId(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const directId = (payload as { message_id?: unknown; id?: unknown }).message_id ?? (payload as { id?: unknown }).id;
-
-  if (typeof directId === "number" || typeof directId === "string") {
-    return String(directId);
-  }
-
-  return null;
-}
-
-function extractManychatValidationMessage(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const details = (payload as { details?: unknown }).details;
-
-  if (!details || typeof details !== "object") {
-    return null;
-  }
-
-  const messages = (details as { messages?: unknown }).messages;
-
-  if (!messages || typeof messages !== "object") {
-    return null;
-  }
-
-  const waId = (messages as { wa_id?: unknown }).wa_id;
-
-  if (waId && typeof waId === "object") {
-    const text = (waId as { message?: unknown }).message;
-    if (Array.isArray(text) && text.length && typeof text[0] === "string") {
-      return text[0];
-    }
-  }
-
-  const warning = (messages as { warning?: unknown }).warning;
-
-  if (warning && typeof warning === "object") {
-    const text = (warning as { message?: unknown }).message;
-    if (Array.isArray(text) && text.length && typeof text[0] === "string") {
-      return text[0];
-    }
-  }
-
-  return null;
-}
-
-function splitContactName(value?: string | null) {
-  const normalized = value?.trim() || "";
-
-  if (!normalized) {
-    return { firstName: "", lastName: "" };
-  }
-
-  const [firstName, ...rest] = normalized.split(/\s+/);
-
-  return {
-    firstName,
-    lastName: rest.join(" ").trim(),
-  };
 }
 
 function normalizeWhatsappRecipient(value: string) {

@@ -27,7 +27,7 @@ test("registra el rechazo de un PDF como failed y conserva la razón segura y re
   const response = await POST(new Request("http://localhost/api/internal/chat/outgoing", {
     method: "POST",
     headers: { "x-internal-api-key": "test-only", "content-type": "application/json" },
-    body: JSON.stringify({ conversationId: "conversation-test", content: "Catálogo", type: "DOCUMENT", provider: "meta-cloud", requestId: "catalog:test", status: "failed" }),
+    body: JSON.stringify({ conversationId: "conversation-test", content: "Catálogo", type: "DOCUMENT", provider: "ycloud", requestId: "catalog:test", status: "failed" }),
   }));
   assert.equal(response.status, 200);
   assert.equal(saved.status, "failed");

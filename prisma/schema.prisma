@@ -789,7 +789,6 @@ model ChatContact {
   name            String         @db.VarChar(180)
   phone           String?        @db.VarChar(32)
   phoneNormalized String?        @db.VarChar(32)
-  manychatSubscriberId String?   @unique @db.VarChar(120)
   avatar          String?        @db.Text
   tags            String[]       @default([])
   createdAt       DateTime       @default(now())

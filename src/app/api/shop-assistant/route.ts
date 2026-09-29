@@ -102,20 +102,22 @@ export async function POST(request: Request) {
       recentMessages,
     });
 
-    const ollamaResult = await rewriteAssistantReplyWithOllama({
-      userMessage: message,
-      baseReply: reply.text,
-      products: (reply.products ?? []).map((product) => ({
-        id: product.id,
-        name: product.name,
-        code: product.code,
-        price: product.unitPriceValue,
-        wholesalePrice: product.wholesalePriceValue,
-        stock: product.stockUnits,
-        category: product.category,
-        specs: product.technicalSpecs ?? null,
-      })),
-    });
+    const ollamaResult = reply.text.trim()
+      ? await rewriteAssistantReplyWithOllama({
+          userMessage: message,
+          baseReply: reply.text,
+          products: (reply.products ?? []).map((product) => ({
+            id: product.id,
+            name: product.name,
+            code: product.code,
+            price: product.unitPriceValue,
+            wholesalePrice: product.wholesalePriceValue,
+            stock: product.stockUnits,
+            category: product.category,
+            specs: product.technicalSpecs ?? null,
+          })),
+        })
+      : { text: "", usedOllama: false };
 
     const finalReply = ollamaResult.text;
     const intent = detectAssistantIntent({

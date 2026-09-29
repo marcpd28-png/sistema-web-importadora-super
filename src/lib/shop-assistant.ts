@@ -391,23 +391,6 @@ function extractSearchTerms(message: string) {
   return Array.from(new Set(expandedTokens)).join(" ").trim();
 }
 
-function getSearchCorrections(message: string) {
-  const normalized = normalizeAssistantText(removeBudgetText(message));
-  const corrections = normalized
-    .split(" ")
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 2)
-    .map((token) => {
-      const correction = SEARCH_CORRECTIONS[token];
-      return correction && correction !== token ? { from: token, to: correction } : null;
-    })
-    .filter((item): item is { from: string; to: string } => Boolean(item));
-
-  return Array.from(
-    new Map(corrections.map((correction) => [correction.from, correction])).values(),
-  );
-}
-
 type ProductFocus = {
   canonical: string;
   aliases: string[];
@@ -1201,10 +1184,8 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const wantsContinuation = /(mas|más|otra|otro|otras|otros|ver mas|ver más|muestrame mas|muestrame más)/.test(
       normalized,
     );
-    const code =
-      extractProductCode(trimmedMessage) ?? (useConversationContext ? input.productContextCode : null) ?? null;
+    const code = extractProductCode(trimmedMessage) ?? input.productContextCode ?? null;
     const searchTerms = extractSearchTerms(assistantScope);
-    const searchCorrections = getSearchCorrections(trimmedMessage);
     const budget = extractBudget(trimmedMessage);
     const quantity = extractQuantity(trimmedMessage);
     const allowSensitiveProducts = isAdultIntent(assistantScope);
@@ -1615,7 +1596,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       };
     }
 
-    if (searchTerms) {
+    if (searchTerms && !contextProduct) {
       const products = filterSensitiveProducts(
         await repository.searchVisibleProducts(searchTerms),
         allowSensitiveProducts,
@@ -1624,27 +1605,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         productFocus && products.length
           ? products.filter((product) => productMatchesFocus(product, productFocus))
           : products;
-      if (productFocus && !focusedProducts.length) {
-        const correctionSuggestions = Array.from(
-          new Set(searchCorrections.map((correction) => correction.to)),
-        );
+      if (productFocus && !products.length) {
         return {
-          text:
-            `No encontré una coincidencia clara para “${productFocus.canonical}”. ` +
-            (correctionSuggestions.length
-              ? `Quizá quisiste decir: ${correctionSuggestions.join(", ")}. `
-              : "") +
-            "Si quieres, puedo buscarte una alternativa cercana o ayudarte por WhatsApp.",
-          quickActions: buildQuickActions([
-            { label: "Buscar alternativa", href: "/?focus=search", accent: true },
-            { label: "WhatsApp", href: whatsappHref },
-            { label: "Ver ofertas", href: "/?featured=1" },
-          ]),
-          suggestedPrompts: [
-            `Busca ${productFocus.canonical} por código`,
-            "Muéstrame otro producto similar",
-            "¿Cómo compro por WhatsApp?",
-          ],
+          // A miss should not create an automated sales message. The customer
+          // can continue with another query or wait for a human response.
+          text: "",
         };
       }
 
@@ -1727,18 +1692,8 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     }
 
     return {
-      text:
-        `No encontré una coincidencia clara para “${trimmedMessage}”. ` +
-        (searchCorrections.length
-          ? `Quizá quisiste decir: ${searchCorrections.map((correction) => correction.to).join(", ")}. `
-          : "") +
-        "Prueba con un código, un nombre corto, una categoría o pídele ofertas activas.",
-      quickActions: buildQuickActions([
-        { label: "Buscar catálogo", href: "/?focus=search", accent: true },
-        { label: "Ver ofertas", href: "/?featured=1" },
-        { label: "WhatsApp", href: whatsappHref },
-      ]),
-      suggestedPrompts: buildDefaultPrompts(),
+      // Do not reply automatically when the catalog has no answer.
+      text: "",
     };
   };
 }

@@ -1,6 +1,6 @@
 # Meta WhatsApp local integration
 
-This local implementation covers Facebook Login for Business / WhatsApp Embedded Signup and the admin Message Center only. It does not change checkout, payments, promotions, orders, catalog, or the legacy ManyChat quote flow.
+This local implementation covers Facebook Login for Business / WhatsApp Embedded Signup and the admin Message Center only. Outbound messages are delivered through YCloud.
 
 ## Credential resolution
 
@@ -8,8 +8,6 @@ Message Center sends resolve credentials in this order:
 
 1. An `ACTIVE` `WhatsappIntegration` row in PostgreSQL.
 2. Temporary fallback to `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID`.
-
-ManyChat is intentionally not part of this resolver. Existing ManyChat code remains available to its previous callers.
 
 ## Encryption
 
@@ -33,7 +31,7 @@ This implementation uses the Facebook JavaScript SDK `FB.login` popup with `resp
 
 ## Local disconnect
 
-`POST /api/admin/integrations/whatsapp/disconnect` deletes only the selected `WhatsappIntegration` row from PostgreSQL. It does not call Meta, deregister a number, remove subscriptions, modify a WABA, modify a phone number, or touch ManyChat. Reconnecting the same Business/WABA/Phone tuple uses the composite unique key and updates the existing local row.
+`POST /api/admin/integrations/whatsapp/disconnect` deletes only the selected `WhatsappIntegration` row from PostgreSQL. It does not call Meta, deregister a number, remove subscriptions, modify a WABA, or modify a phone number. Reconnecting the same Business/WABA/Phone tuple uses the composite unique key and updates the existing local row.
 
 If Embedded Signup returns `business_id` and `waba_id` without `phone_number_id`, the server reads the WABA phone list. Exactly one authorized phone is resolved; zero phones returns an error state; multiple phones returns `PHONE_SELECTION_REQUIRED` with no arbitrary selection.
 

@@ -720,6 +720,9 @@ export function StoreAssistantPanel({
         contextCategorySlugRef.current = reply.contextCategorySlug ?? null;
         lastProductIdRef.current = reply.products?.[0]?.id ?? null;
         lastIntentRef.current = reply.meta?.intent ?? intentFromMessage;
+        if (!reply.text.trim()) {
+          return;
+        }
         setMessages((current) => [
           ...current,
           {

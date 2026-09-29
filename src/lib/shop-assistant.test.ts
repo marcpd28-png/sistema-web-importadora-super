@@ -268,26 +268,27 @@ test("no mezcla audifonos con teclados aunque ambos tengan bluetooth", async () 
   });
 
   assert.ok(reply.products?.length);
-  assert.ok(reply.products?.every((product) => containsNormalized(product.name, "audifono")));
+  assert.ok(reply.products?.every((product) =>
+    containsNormalized(product.name, "audifono") || containsNormalized(product.name, "auricular"),
+  ));
   assert.ok(!reply.products?.some((product) => containsNormalized(product.name, "teclado")));
 });
 
-test("no confunde scooter electrico con hervidor electrico", async () => {
+test("no responde cuando no encuentra el producto solicitado", async () => {
   const reply = await answerShopAssistant({
     message: "necesito un scoter electrico que opciones me recomiendas",
   });
 
-  assert.ok(containsNormalized(reply.text, "no encontré una coincidencia clara"));
-  assert.ok(!reply.products?.some((product) => containsNormalized(product.name, "hervidor")));
+  assert.equal(reply.text, "");
+  assert.equal(reply.products, undefined);
 });
 
-test("sugiere scooter cuando el usuario escribe scuter", async () => {
+test("no responde cuando no hay resultados para una palabra mal escrita", async () => {
   const reply = await answerShopAssistant({
     message: "necesito un scuter",
   });
 
-  assert.ok(containsNormalized(reply.text, "quizá quisiste decir"));
-  assert.ok(containsNormalized(reply.text, "scooter"));
+  assert.equal(reply.text, "");
 });
 
 test("corrige errores comunes de escritura antes de buscar", async () => {
@@ -298,13 +299,12 @@ test("corrige errores comunes de escritura antes de buscar", async () => {
   assert.ok(reply.products?.some((product) => product.code === "AUD-025"));
 });
 
-test("sugiere correcciones cuando la palabra mal escrita no tiene resultados", async () => {
+test("no responde aunque una consulta sin resultados tenga una posible corrección", async () => {
   const reply = await answerShopAssistant({
     message: "busco mause gamer",
   });
 
-  assert.ok(containsNormalized(reply.text, "quizá quisiste decir"));
-  assert.ok(containsNormalized(reply.text, "mouse"));
+  assert.equal(reply.text, "");
 });
 
 test("prioriza teclados y evita productos irrelevantes", async () => {
@@ -325,11 +325,11 @@ test("responde soporte y flujo de compra", async () => {
   assert.ok(reply.quickActions?.some((action) => action.href.startsWith("https://wa.me/")));
 });
 
-test("da fallback claro cuando no entiende", async () => {
+test("no responde cuando no entiende la consulta", async () => {
   const reply = await answerShopAssistant({ message: "necesito algo rarisimo sin contexto" });
 
-  assert.ok(containsNormalized(reply.text, "no encontré una coincidencia clara"));
-  assert.ok(reply.suggestedPrompts?.length);
+  assert.equal(reply.text, "");
+  assert.equal(reply.suggestedPrompts, undefined);
 });
 
 test("detecta regalos por temporada y perfil", () => {

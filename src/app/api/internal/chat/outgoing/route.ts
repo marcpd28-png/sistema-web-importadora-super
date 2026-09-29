@@ -10,7 +10,7 @@ const outgoingMessageSchema = z.object({
   content: z.string().trim().min(1).max(4000),
   conversationId: z.string().trim().min(1).max(191),
   externalMessageId: z.string().trim().min(1).max(120).optional(),
-  provider: z.enum(["manychat", "meta-cloud"]).default("manychat"),
+  provider: z.literal("ycloud").default("ycloud"),
   mediaUrl: z.string().trim().url().nullable().optional(),
   requestId: z.string().trim().min(1).max(120).optional(),
   type: z.nativeEnum(MessageType).default("TEXT"),

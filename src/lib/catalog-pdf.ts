@@ -54,6 +54,7 @@ const CATALOG_REQUEST_FILLER_WORDS = new Set([
   "quiero", "deseo", "un", "una", "me", "puedes", "enviar", "podria", "podrias",
   "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "mandar",
   "mandarme", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
+  "hola", "consultar", "consulta", "consultas", "informacion", "informarme", "saber",
 ]);
 
 function normalizedCatalogWords(content: string) {

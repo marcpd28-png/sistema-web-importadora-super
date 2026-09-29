@@ -47,7 +47,6 @@ export async function POST(request: Request) {
         contact: {
           select: {
             externalId: true,
-            manychatSubscriberId: true,
             phone: true,
             phoneNormalized: true,
           },
@@ -85,12 +84,10 @@ export async function POST(request: Request) {
         conversation.contact.phoneNormalized ??
         conversation.contact.externalId,
     );
-    const manychatSubscriberId = conversation.contact.manychatSubscriberId?.trim();
-
-    if (!simulation && (!recipient || !manychatSubscriberId)) {
+    if (!simulation && !recipient) {
       return NextResponse.json(
         {
-          error: !recipient ? "INVALID_RECIPIENT" : "MANYCHAT_SUBSCRIBER_ID_MISSING",
+          error: "INVALID_RECIPIENT",
           matched: true,
           ok: false,
           requestId,
@@ -119,7 +116,6 @@ export async function POST(request: Request) {
       },
       content: "Aquí tienes el catálogo de proyectores en PDF:",
       conversationId: conversation.id,
-      manychatSubscriberId: simulation ? null : manychatSubscriberId,
       matched: true,
       mediaUrl: catalog.absoluteUrl,
       ok: true,
