@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 import { buildPublicUrl } from "@/lib/site-url";
+import { generateCatalogPdf, parseCatalogRequest } from "@/lib/catalog-pdf";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -129,8 +130,46 @@ function normalizedText(value: string) {
 
 function isLimaDeliveryRequest(content: string) {
   const normalized = normalizedText(content);
-  return /\b(lima|delivery|entrega|envio|costo)\b/.test(normalized)
-    && /(lima|delivery|entrega|envio|costo)/.test(normalized);
+  const mentionsLima = /\blima\b/.test(normalized);
+  const mentionsDelivery = /\b(delivery|entrega|envio|costo)\b/.test(normalized);
+  return mentionsLima && mentionsDelivery;
+}
+
+async function sendCatalog(conversationId: string, recipient: string, content: string) {
+  const request = parseCatalogRequest(content);
+  if (!request) return false;
+
+  try {
+    const catalog = await generateCatalogPdf(request);
+    const caption = `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos).`;
+    const sent = await sendYCloudOutboundMessage({ content: caption, mediaUrl: catalog.absoluteUrl, recipient, type: "document" });
+    const document = await prisma.chatMessage.upsert({
+      where: { externalMessageId: sent.messageId },
+      create: {
+        conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "DOCUMENT", content: caption,
+        mediaUrl: catalog.absoluteUrl, externalMessageId: sent.messageId,
+        metadata: { provider: sent.provider, source: "requested_catalog", catalog: request.slug } as Prisma.InputJsonValue,
+        status: "sent",
+      },
+      update: { conversationId, senderType: "BOT", messageType: "DOCUMENT", content: caption, mediaUrl: catalog.absoluteUrl, status: "sent" },
+    });
+    await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: document.createdAt } });
+    triggerPusherEvent(`chat-${conversationId}`, "new-message", document);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "No se pudo preparar el catálogo.";
+    const reply = detail.startsWith("No encontramos")
+      ? `${detail} Indícanos otra marca, modelo o categoría y te ayudamos.`
+      : "No pude generar el PDF en este momento. Un asesor puede ayudarte si escribes “solicito asesor”.";
+    console.error("YCloud catalog generation failed:", error);
+    const sent = await sendYCloudOutboundMessage({ content: reply, recipient, type: "text" });
+    const message = await prisma.chatMessage.upsert({
+      where: { externalMessageId: sent.messageId },
+      create: { conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "TEXT", content: reply, externalMessageId: sent.messageId, metadata: { provider: sent.provider, source: "requested_catalog_error" } as Prisma.InputJsonValue, status: "sent" },
+      update: { content: reply, senderType: "BOT", status: "sent" },
+    });
+    triggerPusherEvent(`chat-${conversationId}`, "new-message", message);
+  }
+  return true;
 }
 
 async function sendPaymentNotice(conversationId: string, recipient: string) {
@@ -210,6 +249,10 @@ async function processInbound(event: JsonRecord) {
   });
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    if (await sendCatalog(result.conversationId, from, content)) {
+      return result;
+    }
+
     const salesState = await prisma.conversationSalesState.findUnique({
       where: { conversationId: result.conversationId },
       select: { deliveryData: true, stage: true },
