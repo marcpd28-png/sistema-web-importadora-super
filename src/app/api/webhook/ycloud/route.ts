@@ -27,6 +27,8 @@ Avenida Abancay 752, Centro de Lima
 Lun–Sáb: 8:00 a. m. – 8:00 p. m.
 Dom: 9:00 a. m. – 8:00 p. m.
 
+Si estás en Lima, también podemos coordinar el envío de tu pedido a domicilio por inDrive. El costo del delivery se coordina directamente contigo para que elijas la opción que más te convenga.
+
 Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cualquier momento de la conversación y un asesor atenderá tu chat.
 
 ¿Qué producto estás buscando hoy?`;
