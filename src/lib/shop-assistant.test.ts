@@ -120,6 +120,22 @@ const products: AssistantProductRecord[] = [
     unitsPerBox: null,
     stockUnits: 28,
   },
+  {
+    id: "p7",
+    slug: "repetidor-wifi-300mbps-net-300",
+    code: "NET-300",
+    name: "Repetidor WiFi 300 Mbps",
+    description: "Extensor de señal inalámbrica para ampliar la cobertura de internet.",
+    brand: "Net Pro",
+    category: "Redes",
+    categoryId: null,
+    unitPrice: 49.9,
+    wholesalePrice: null,
+    wholesaleMinQty: 1,
+    boxPrice: null,
+    unitsPerBox: null,
+    stockUnits: 18,
+  },
 ];
 
 function containsNormalized(haystack: string, needle: string) {
@@ -304,6 +320,14 @@ test("corrige errores comunes de escritura antes de buscar", async () => {
   });
 
   assert.ok(reply.products?.some((product) => product.code === "AUD-025"));
+});
+
+test("encuentra repetidores WiFi aunque el cliente escriba la consulta con errores", async () => {
+  const reply = await answerShopAssistant({
+    message: "estoy buscando un repedidor wfi",
+  });
+
+  assert.equal(reply.products?.[0].code, "NET-300");
 });
 
 test("no responde aunque una consulta sin resultados tenga una posible corrección", async () => {

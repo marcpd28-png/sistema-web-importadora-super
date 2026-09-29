@@ -9,6 +9,7 @@ export type ShopAssistantProductCard = {
   slug: string;
   code: string;
   name: string;
+  description?: string | null;
   brand: string | null;
   category: string | null;
   imageUrl: string | null;

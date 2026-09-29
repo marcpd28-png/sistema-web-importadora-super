@@ -51,12 +51,14 @@ export type CatalogRequest = {
 
 const CATALOG_REQUEST_FILLER_WORDS = new Set([
   "catalogo", "de", "del", "la", "el", "los", "las", "para", "por", "favor",
-  "quiero", "deseo", "un", "una", "me", "puedes", "enviar", "podria", "podrias",
+  "quiero", "deseo", "un", "una", "me", "su", "puedes", "enviar", "podria", "podrias",
   "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "pasame", "mandar", "mandas",
   "mandarme", "mandame", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
   "hola", "consultar", "consulta", "consultas", "informacion", "informarme", "saber",
   "virtual", "tienda", "web", "online", "pagina", "link", "enlace", "ver", "veo", "revisar",
   "acceder", "entrar", "necesito", "donde",
+  // Saludos habituales que no deben convertirse en términos del catálogo.
+  "buenos", "buenas", "dia", "dias", "tardes", "noches", "que", "tal",
 ]);
 
 function normalizedCatalogWords(content: string) {

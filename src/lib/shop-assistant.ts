@@ -31,6 +31,7 @@ const STOPWORDS = new Set([
   "baratos",
   "busca",
   "busco",
+  "buscando",
   "como",
   "con",
   "cual",
@@ -81,6 +82,7 @@ const STOPWORDS = new Set([
   "tiene",
   "tienen",
   "tienes",
+  "estoy",
   "tu",
   "un",
   "una",
@@ -107,6 +109,10 @@ const SEARCH_SYNONYMS: Record<string, string[]> = {
   scoter: ["scooter", "scoter", "patineta"],
   scuter: ["scooter", "scuter", "patineta"],
   scooter: ["scooter", "scoter", "patineta"],
+  repetidor: ["repetidor", "repetidores", "extensor", "extensores", "range extender"],
+  repetidores: ["repetidor", "repetidores", "extensor", "extensores", "range extender"],
+  extensor: ["extensor", "extensores", "repetidor", "repetidores", "range extender"],
+  extensores: ["extensor", "extensores", "repetidor", "repetidores", "range extender"],
 };
 
 const CATEGORY_FOCUS_ALIASES: Record<string, string[]> = {
@@ -115,6 +121,7 @@ const CATEGORY_FOCUS_ALIASES: Record<string, string[]> = {
   audifonos: ["audifono", "audifonos", "auricular", "auriculares", "headset"],
   auriculares: ["audifono", "audifonos", "auricular", "auriculares", "headset"],
   scooter: ["scooter", "scoter", "scuter", "patineta"],
+  repetidor_wifi: ["repetidor", "repetidores", "extensor", "extensores", "range extender"],
 };
 
 const CATEGORY_FOCUS_EXCLUSIONS: Record<string, string[]> = {
@@ -138,6 +145,11 @@ const SEARCH_CORRECTIONS: Record<string, string> = {
   cosina: "cocina",
   cosinas: "cocina",
   mause: "mouse",
+  repedidor: "repetidor",
+  repetdor: "repetidor",
+  repetidorw: "repetidor",
+  wfi: "wifi",
+  "wi-fi": "wifi",
   maus: "mouse",
   teklado: "teclado",
   teklados: "teclado",
@@ -151,6 +163,32 @@ const SEARCH_CORRECTIONS: Record<string, string> = {
   wach: "watch",
   utilez: "utiles",
 };
+
+function editDistanceAtMost(left: string, right: string, maximum: number) {
+  if (Math.abs(left.length - right.length) > maximum) return false;
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    let diagonal = previous[0];
+    previous[0] = row;
+    let smallest = previous[0];
+    for (let column = 1; column <= right.length; column += 1) {
+      const saved = previous[column];
+      previous[column] = Math.min(previous[column] + 1, previous[column - 1] + 1, diagonal + (left[row - 1] === right[column - 1] ? 0 : 1));
+      diagonal = saved;
+      smallest = Math.min(smallest, previous[column]);
+    }
+    if (smallest > maximum) return false;
+  }
+  return previous[right.length] <= maximum;
+}
+
+function correctSearchToken(token: string) {
+  if (SEARCH_CORRECTIONS[token]) return SEARCH_CORRECTIONS[token];
+  if (token.length < 5) return token;
+  const vocabulary = Array.from(new Set([...Object.keys(SEARCH_SYNONYMS), ...Object.values(CATEGORY_FOCUS_ALIASES).flat()]));
+  const match = vocabulary.find((candidate) => editDistanceAtMost(token, candidate, token.length >= 8 ? 2 : 1));
+  return match ?? token;
+}
 
 const GIFT_SEARCH_SEEDS = [
   "audifonos",
@@ -283,6 +321,7 @@ function mapAssistantProduct(
     slug: product.slug,
     code: product.code,
     name: product.name,
+    description: product.description,
     brand: product.brand,
     category: product.category,
     imageUrl: image.imageUrl,
@@ -379,7 +418,7 @@ function extractSearchTerms(message: string) {
     .map((token) => token.trim())
     .filter((token) => token.length >= 2 && !STOPWORDS.has(token));
 
-  const correctedTokens = tokens.map((token) => SEARCH_CORRECTIONS[token] ?? token);
+  const correctedTokens = tokens.map(correctSearchToken);
   const fallbackTokens = correctedTokens.flatMap((token) => {
     if (token.endsWith("s") && token.length > 4) {
       return [token, token.slice(0, -1)];
@@ -1039,7 +1078,7 @@ function createRealRepository(): ShopAssistantRepository {
         { category: { contains: token, mode: "insensitive" as const } },
       ]);
 
-      const products = await prisma.product.findMany({
+      let products = await prisma.product.findMany({
         where: {
           isVisible: true,
           stockUnits: { gt: 0 },
@@ -1058,6 +1097,45 @@ function createRealRepository(): ShopAssistantRepository {
         take: MAX_SEARCH_CANDIDATES,
         select: ASSISTANT_PRODUCT_SELECT,
       });
+
+      // The catalog already enables PostgreSQL trigram indexes. Use them only
+      // when the normal token search misses, so a typo such as "parlnte jbl"
+      // can still resolve to catalog data without weakening exact searches.
+      if (!products.length && query.trim().length >= 4) {
+        try {
+          const fuzzyMatches = await prisma.$queryRaw<Array<{ id: string }>>`
+            SELECT "id"
+            FROM "Product"
+            WHERE "isVisible" = true
+              AND "stockUnits" > 0
+              AND GREATEST(
+                similarity(lower("name"), lower(${query})),
+                similarity(lower(COALESCE("brand", '')), lower(${query})),
+                similarity(lower(COALESCE("category", '')), lower(${query})),
+                similarity(lower(COALESCE("description", '')), lower(${query}))
+              ) >= 0.28
+            ORDER BY GREATEST(
+              similarity(lower("name"), lower(${query})),
+              similarity(lower(COALESCE("brand", '')), lower(${query})),
+              similarity(lower(COALESCE("category", '')), lower(${query})),
+              similarity(lower(COALESCE("description", '')), lower(${query}))
+            ) DESC
+            LIMIT 40
+          `;
+          if (fuzzyMatches.length) {
+            const rank = new Map(fuzzyMatches.map((item, index) => [item.id, index]));
+            products = await prisma.product.findMany({
+              where: { id: { in: fuzzyMatches.map((item) => item.id) }, isVisible: true, stockUnits: { gt: 0 }, AND: [buildRealProductPhotoWhere()] },
+              select: ASSISTANT_PRODUCT_SELECT,
+            });
+            products.sort((left, right) => (rank.get(left.id) ?? 99) - (rank.get(right.id) ?? 99));
+          }
+        } catch (error) {
+          // A deployment without pg_trgm remains functional through the
+          // normal search path; do not turn a typo into a chat failure.
+          console.warn("Rocky fuzzy catalog search unavailable:", error);
+        }
+      }
 
       return products.sort(
         (left, right) => scoreAssistantProduct(right, query) - scoreAssistantProduct(left, query),
@@ -1171,7 +1249,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     );
     const wantsSupport =
       !productFocus &&
-      /(whatsapp|contacto|horario|hora|pedido|comprar|compra|envio|entrega|delivery|pago|cotizacion|cotizar)/.test(
+      /\b(whatsapp|contacto|horario|hora|pedido|comprar|compra|envio|entrega|delivery|pago|cotizacion|cotizar)\b/.test(
         normalized,
       );
     const wantsGift = !productFocus && giftIntent.isGiftIntent;

@@ -1,7 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { MessageType, Prisma } from "@prisma/client";
-import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
 import { getAutomationConversationContext, processIncomingMessage } from "@/lib/messages-service";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
@@ -37,7 +36,6 @@ Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cu
 ¿Qué producto estás buscando hoy?`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
-const FALLBACK_ADVISOR_MESSAGE = "Para ayudarte mejor con tu consulta, te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
 const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const PRICES_MESSAGE = "Puedes revisar precios y stock actualizados en nuestro catálogo: https://tiendavirtualsuper.com. Para precio mayorista, indícanos el producto y la cantidad que necesitas.";
@@ -48,9 +46,10 @@ const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
 const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores de pantalla: https://tiendavirtualsuper.com/?q=extensor+de+pantalla";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
-const PRODUCT_CATALOG_MESSAGE = "Encontré varias opciones con stock. Te comparto el catálogo filtrado para que puedas verlas y elegir la que prefieras:";
+const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
 const OUTBOUND_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+const ROCKY_MESSAGE_BATCH_WAIT_MS = 1_500;
 
 class DuplicateOutboundMessageError extends Error {
   constructor() {
@@ -234,6 +233,10 @@ function isScreenExtenderInquiry(content: string) {
     && /\bpantalla(?:s)?\b/.test(normalized);
 }
 
+function isSpeakerInquiry(content: string) {
+  return /\b(parlante(?:s)?|altavoz(?:es)?|speaker(?:s)?)\b/.test(normalizedText(content));
+}
+
 function isAdvisorRequest(content: string) {
   return hasIntent(content, ["asesor", "asesora", "agente", "humano", "representante", "vendedor", "vendedora", "atencion humana", "hablar con alguien", "comunicarme"]);
 }
@@ -269,6 +272,23 @@ function extractRequestedQuantity(content: string) {
   return Number.isInteger(quantity) && quantity > 0 ? quantity : null;
 }
 
+function extractExplicitQuantity(content: string) {
+  const match = normalizedText(content).match(/\b(\d{1,4})\s*(?:unidad|unidades|und|unds|piezas|pieza)\b/);
+  return match ? Number(match[1]) : null;
+}
+
+function selectedShownProduct(content: string, shownProducts: unknown) {
+  if (!Array.isArray(shownProducts)) return null;
+  const normalized = normalizedText(content);
+  const ordinal = normalized.match(/\b(?:opcion|modelo|el|la)\s*(primero|primera|segundo|segunda|tercero|tercera|[1-3])\b/)?.[1];
+  const positions: Record<string, number> = { primero: 1, primera: 1, segundo: 2, segunda: 2, tercero: 3, tercera: 3, "1": 1, "2": 2, "3": 3 };
+  return shownProducts.find((product) => {
+    const item = asRecord(product);
+    const code = text(item?.code);
+    return (code && normalized.includes(normalizedText(code))) || (ordinal && Number(item?.position) === positions[ordinal]);
+  }) as JsonRecord | undefined ?? null;
+}
+
 function isNoProductMatchReply(content: string) {
   const normalized = normalizedText(content);
   return normalized.includes("no encontre una coincidencia clara")
@@ -278,6 +298,11 @@ function isNoProductMatchReply(content: string) {
 
 async function sendScreenExtenderOptions(conversationId: string, recipient: string) {
   await sendBotText(conversationId, recipient, SCREEN_EXTENDER_MESSAGE, "screen_extender_options");
+}
+
+async function sendSpeakerCatalogGuidance(conversationId: string, recipient: string) {
+  await sendBotText(conversationId, recipient, SPEAKER_CATALOG_MESSAGE, "speaker_catalog_guidance");
+  return sendCatalog(conversationId, recipient, "catálogo parlantes");
 }
 
 async function sendBotText(conversationId: string, recipient: string, content: string, source: string) {
@@ -337,65 +362,108 @@ async function sendBotImage(
   triggerPusherEvent(`chat-${conversationId}`, "new-message", reply);
 }
 
-function productCaption(product: {
+async function isLatestCustomerMessage(conversationId: string, messageId: string) {
+  // WhatsApp customers often split a request into several bubbles. Give the
+  // next bubble a short window to arrive, then only the newest webhook gets
+  // to answer using the complete recent context.
+  await new Promise<void>((resolve) => setTimeout(resolve, ROCKY_MESSAGE_BATCH_WAIT_MS));
+  const latest = await prisma.chatMessage.findFirst({
+    where: { conversationId, direction: "INBOUND", senderType: "CUSTOMER" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true },
+  });
+  return latest?.id === messageId;
+}
+
+async function answerProductPriceInquiry(conversationId: string, recipient: string, content: string) {
+  return sendProductSearchResults(conversationId, recipient, content);
+}
+
+function productSearchCaption(product: {
   code: string;
   name: string;
   unitPrice: string;
   wholesalePrice: string | null;
   wholesaleMinQty: number;
+  availabilityLabel: string;
+  description?: string | null;
 }) {
   const wholesale = product.wholesalePrice
     ? `\nPrecio mayorista desde ${product.wholesaleMinQty} unidades: ${product.wholesalePrice}.`
     : "";
-  return `${product.name} (${product.code})\nPrecio unitario: ${product.unitPrice}.${wholesale}\n\n¿Cuántas unidades deseas?`;
+  return `${product.name} (${product.code})\nPrecio unitario: ${product.unitPrice}.${wholesale}\nDisponibilidad: ${product.availabilityLabel}.`;
 }
 
-async function answerProductPriceInquiry(conversationId: string, recipient: string, content: string) {
+/** Responds to any product request with the available product information.
+ * Unlike the old price-only path, this is also used for requests such as
+ * "busco un repetidor wifi" or "tienen parlantes". */
+async function sendProductSearchResults(conversationId: string, recipient: string, content: string) {
   const reply = await answerShopAssistant({ message: content });
-  const products = reply.products ?? [];
+  const products = (reply.products ?? []).slice(0, 3);
   if (!products.length) return false;
 
-  if (products.length > 1) {
-    const search = encodeURIComponent(content);
+  if (products.length > 2) {
+    const catalogHref = reply.quickActions?.find((action) => action.href.includes("?q="))?.href;
     await sendBotText(
       conversationId,
       recipient,
-      `${PRODUCT_CATALOG_MESSAGE}\n${buildPublicUrl(`/?q=${search}`)}`,
-      "product_price_catalog",
+      `${reply.text || "Encontré varias opciones disponibles."}\n\nTe comparto el catálogo filtrado para que las revises: ${buildPublicUrl(catalogHref ?? "/")}`,
+      "product_search_catalog",
     );
     return true;
   }
 
-  const product = products[0];
-  if (!product.imageUrl) return false;
-  const imageUrl = product.imageUrl.startsWith("http")
-    ? product.imageUrl
-    : buildPublicUrl(product.imageUrl);
+  if (products.length > 1 && reply.text) {
+    await sendBotText(
+      conversationId,
+      recipient,
+      reply.text,
+      "product_search_results_intro",
+    );
+  }
+
+  for (const product of products) {
+    const caption = productSearchCaption(product);
+    if (product.imageUrl) {
+      const imageUrl = product.imageUrl.startsWith("http")
+        ? product.imageUrl
+        : buildPublicUrl(product.imageUrl);
+      await sendBotImage(conversationId, recipient, imageUrl, caption, "product_search_result");
+    } else {
+      await sendBotText(conversationId, recipient, caption, "product_search_result_without_image");
+    }
+    if (product.description?.trim()) {
+      await sendBotText(
+        conversationId,
+        recipient,
+        `Descripción de ${product.name}: ${product.description.trim()}`,
+        "product_search_result_description",
+      );
+    }
+  }
+
+  if (products.length === 1) {
+    const product = products[0];
+    await prisma.conversationSalesState.upsert({
+      where: { conversationId },
+      create: { conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: product.code, unitPrice: product.unitPriceValue, priceTier: "Unitario" },
+      update: { stage: "AWAITING_QUANTITY", selectedProductCode: product.code, quantity: null, unitPrice: product.unitPriceValue, priceTier: "Unitario", total: null },
+    });
+    await sendBotText(conversationId, recipient, "¿Deseas comprar este modelo? Indícame cuántas unidades necesitas y te envío los medios de pago.", "product_search_quantity");
+    return true;
+  }
 
   await prisma.conversationSalesState.upsert({
     where: { conversationId },
-    create: {
-      conversationId,
-      stage: "AWAITING_QUANTITY",
-      selectedProductCode: product.code,
-      unitPrice: product.unitPriceValue,
-      priceTier: "Unitario",
-    },
-    update: {
-      stage: "AWAITING_QUANTITY",
-      selectedProductCode: product.code,
-      quantity: null,
-      unitPrice: product.unitPriceValue,
-      priceTier: "Unitario",
-      total: null,
-    },
+    create: { conversationId, stage: "AWAITING_MODEL_SELECTION", shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
+    update: { stage: "AWAITING_MODEL_SELECTION", selectedProductCode: null, quantity: null, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
   });
-  await sendBotImage(
+
+  await sendBotText(
     conversationId,
     recipient,
-    imageUrl,
-    productCaption(product),
-    "product_price_exact_match",
+    "¿Cuál deseas comprar? Respóndeme con el código o nombre del modelo e indícame cuántas unidades necesitas para enviarte los medios de pago.",
+    "product_search_result_selection",
   );
   return true;
 }
@@ -539,6 +607,27 @@ async function processInbound(event: JsonRecord) {
     type: messageType(type),
   });
 
+  // Every new customer conversation starts with the configured welcome. Do
+  // this before evaluating catalog, product, or automation intents so a
+  // keyword in the first bubble can never skip the default response.
+  if (result.ok && !result.duplicate && result.createdConversation) {
+    try {
+      await sendWelcomeMessage(result.conversationId, from);
+    } catch (error) {
+      if (error instanceof DuplicateOutboundMessageError) return result;
+      // Do not reject the provider webhook when the welcome delivery fails;
+      // YCloud can retry incoming events and duplicate the conversation.
+      console.error("YCloud welcome message failed:", error);
+    }
+    return result;
+  }
+
+  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    if (!await isLatestCustomerMessage(result.conversationId, result.messageId)) {
+      return result;
+    }
+  }
+
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
     if (isAdvisorRequest(content)) {
       await prisma.conversation.update({
@@ -562,13 +651,28 @@ async function processInbound(event: JsonRecord) {
       return result;
     }
 
+    // Do not hand off speaker searches just because the exact wording did not
+    // match a product. Give the customer the broad catalog and a short example
+    // of how to narrow the request on their next message.
+    if (isSpeakerInquiry(content)) {
+      try {
+        if (await sendProductSearchResults(result.conversationId, from, content)) {
+          return result;
+        }
+        await sendSpeakerCatalogGuidance(result.conversationId, from);
+      } catch (error) {
+        console.error("YCloud speaker catalog response failed:", error);
+      }
+      return result;
+    }
+
     if (await sendCatalog(result.conversationId, from, content)) {
       return result;
     }
 
     const salesState = await prisma.conversationSalesState.findUnique({
       where: { conversationId: result.conversationId },
-      select: { deliveryData: true, selectedProductCode: true, stage: true, unitPrice: true, updatedAt: true },
+      select: { deliveryData: true, selectedProductCode: true, shownProducts: true, stage: true, unitPrice: true, updatedAt: true },
     });
 
     const awaitingCatalogScope =
@@ -610,6 +714,27 @@ async function processInbound(event: JsonRecord) {
     }
 
     const requestedQuantity = extractRequestedQuantity(content);
+    const selectedProduct = salesState?.stage === "AWAITING_MODEL_SELECTION"
+      ? selectedShownProduct(content, salesState.shownProducts)
+      : null;
+    if (selectedProduct) {
+      const code = text(selectedProduct.code);
+      const unitPrice = Number(selectedProduct.unitPrice);
+      const quantity = extractExplicitQuantity(content);
+      if (code && Number.isFinite(unitPrice) && quantity && quantity > 0) {
+        await prisma.conversationSalesState.update({
+          where: { conversationId: result.conversationId },
+          data: { stage: "AWAITING_PAYMENT_METHOD", selectedProductCode: code, quantity, unitPrice, total: unitPrice * quantity },
+        });
+        await sendPaymentNotice(result.conversationId, from);
+        return result;
+      }
+      if (code && Number.isFinite(unitPrice)) {
+        await prisma.conversationSalesState.update({ where: { conversationId: result.conversationId }, data: { stage: "AWAITING_QUANTITY", selectedProductCode: code, unitPrice } });
+        await sendBotText(result.conversationId, from, "Perfecto. ¿Cuántas unidades necesitas para enviarte los medios de pago?", "product_selection_quantity");
+        return result;
+      }
+    }
     if (
       salesState?.stage === "AWAITING_QUANTITY" &&
       salesState.selectedProductCode &&
@@ -714,75 +839,52 @@ async function processInbound(event: JsonRecord) {
       }
       return result;
     }
-  }
 
-  if (result.ok && !result.duplicate && result.createdConversation) {
+    // Product requests do not need to mention a price. Resolve them against
+    // the catalog before handing the message to n8n or an advisor.
     try {
-      await sendWelcomeMessage(result.conversationId, from);
+      if (await sendProductSearchResults(result.conversationId, from, content)) {
+        return result;
+      }
     } catch (error) {
-      if (error instanceof DuplicateOutboundMessageError) return result;
-      // Do not reject the provider webhook when the welcome delivery fails;
-      // YCloud can retry incoming events and duplicate the conversation.
-      console.error("YCloud welcome message failed:", error);
+      console.error("YCloud general product search failed:", error);
     }
-
-    return result;
   }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
     try {
-      const automation = await prisma.automation.findFirst({
-        where: { channel: "WHATSAPP", status: "ACTIVE" },
-        include: {
-          versions: {
-            where: { status: "PUBLISHED" },
-            orderBy: { version: "desc" },
-            take: 1,
-          },
-        },
-      });
+      const conversationContext = await getAutomationConversationContext(result.conversationId);
+      const rockyContent = conversationContext.combinedContent || content;
 
-      const version = automation?.versions[0];
-      if (automation && version) {
-        const conversationContext = await getAutomationConversationContext(result.conversationId);
-        const execution = await prisma.automationExecution.create({
-          data: {
-            automationId: automation.id,
-            automationVersionId: version.id,
-            conversationId: result.conversationId,
-            messageId: result.messageId,
-            status: "RUNNING",
-            correlationId: `${result.conversationId}-${result.messageId}`,
-          },
-        });
+      // Rocky owns interpretation. It receives the customer's recent bubbles
+      // as one request, so it can resolve incomplete or split messages using
+      // the real product catalog before any escalation is considered.
+      if (await sendProductSearchResults(result.conversationId, from, rockyContent)) {
+        return result;
+      }
 
-        await N8nAutomationProvider.triggerWebhook("wh-1", {
-          contactId: result.contactId,
-          conversationId: result.conversationId,
-          messageId: result.messageId,
-          executionId: execution.id,
-          content: conversationContext.combinedContent || content,
-          latestContent: content,
-          messageHistory: conversationContext.messageHistory,
-          phone: from,
-          metadata: message,
-        });
+      const rockyReply = await answerShopAssistant({ message: rockyContent });
+      if (rockyReply.text) {
+        await sendBotText(result.conversationId, from, rockyReply.text, "rocky_catalog_interpretation");
         return result;
       }
     } catch (error) {
-      console.error("YCloud automation routing error:", error);
+      console.error("Rocky catalog interpretation failed:", error);
     }
 
-    // No product or intent handler could give a reliable answer. Escalate
-    // immediately instead of sending a generic "I don't understand" reply.
-    await prisma.conversation.update({
-      where: { id: result.conversationId },
-      data: { assignedUserId: null, botEnabled: false, status: "REQUIERE_ASESOR" },
-    });
     try {
-      await sendBotText(result.conversationId, from, FALLBACK_ADVISOR_MESSAGE, "unrecognized_query_advisor_handoff");
+      await prisma.conversation.update({
+        where: { id: result.conversationId },
+        data: { status: "ESPERANDO_CLIENTE" },
+      });
+      await sendBotText(
+        result.conversationId,
+        from,
+        "Quiero ayudarte a encontrarlo. Escríbeme el nombre, marca, código o para qué lo necesitas; también puedes enviarme el producto en varios mensajes.",
+        "rocky_clarification",
+      );
     } catch (error) {
-      console.error("YCloud unrecognized query advisor handoff failed:", error);
+      console.error("Rocky clarification response failed:", error);
     }
   }
 
