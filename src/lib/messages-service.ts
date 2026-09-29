@@ -11,12 +11,20 @@ import { sendManychatImageFromInbox } from "@/lib/manychat-image-dispatch";
 import { enqueueManychatImage } from "@/lib/manychat-image-queue";
 import {
   N8nOutboundError,
-  sendN8nOutboundMessage,
-  type N8nOutboundMessageType,
 } from "@/lib/n8n-outbound";
+import {
+  sendYCloudOutboundMessage,
+  type YCloudOutboundMessageType,
+} from "@/lib/ycloud-outbound";
+import {
+  buildAutomationConversationContext,
+  type AutomationConversationContext,
+} from "@/lib/conversation-context";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
+const AUTOMATION_CONTEXT_WINDOW_MS = 30 * 60 * 1000;
+const AUTOMATION_CONTEXT_MESSAGE_LIMIT = 12;
 
 const optionalTrimmedString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() || undefined : value),
@@ -489,7 +497,7 @@ export async function sendInternalMessage(
     throw new Error("La conversación no tiene un teléfono de WhatsApp válido.");
   }
 
-  if (!["TEXT", "IMAGE", "VIDEO", "DOCUMENT"].includes(parsed.type)) {
+  if (!["TEXT", "IMAGE", "VIDEO", "DOCUMENT", "AUDIO"].includes(parsed.type)) {
     throw new Error("El tipo de mensaje no está soportado por ahora.");
   }
 
@@ -537,7 +545,11 @@ export async function sendInternalMessage(
 
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
   try {
-    const manychatSubscriberId = requireRealManychatSubscriber(conversation.contact);
+    if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+      throw new N8nOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
+        code: "SIMULATOR_CONTACT", statusCode: 400,
+      });
+    }
 
     const sent = await sendN8nOutboundMessage({
       agentId, channel: "WHATSAPP", content: parsed.content, conversationId,
@@ -570,7 +582,7 @@ export async function sendInternalMessage(
       return sentMessage;
     });
   } catch (error) {
-    const safeReason = error instanceof N8nOutboundError ? error.message : "No se pudo iniciar el envío hacia n8n.";
+    const safeReason = error instanceof N8nOutboundError ? error.message : "No se pudo iniciar el envío hacia YCloud.";
     const failed = await prisma.chatMessage.update({
       where: { id: message.id },
       data: { status: "failed", metadata: { ...metadata, error: safeReason } },
@@ -633,6 +645,7 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     return {
       ok: true,
       duplicate: true,
+      createdConversation: false,
       messageId: existingMsg.id,
       conversationId: existingMsg.conversationId,
     };
@@ -651,6 +664,9 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     contact = await prisma.chatContact.findFirst({
       where: {
         channel: parsed.channel,
+        NOT: {
+          externalId: { startsWith: "SIMULATOR:" },
+        },
         OR: [
           { phoneNormalized: normalizedPhone },
           { phone: { contains: normalizedPhone } },
@@ -711,6 +727,8 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
     orderBy: { lastMessageAt: "desc" },
   });
 
+  const createdConversation = !conversation;
+
   if (!conversation) {
     conversation = await prisma.conversation.create({
       data: {
@@ -760,6 +778,7 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
   return {
     ok: true,
     duplicate: false,
+    createdConversation,
     simulation: isSimulator,
     contactId: contact.id,
     conversationId: updatedConversation.id,
@@ -770,4 +789,27 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
       assignedUserId: updatedConversation.assignedUserId,
     },
   };
+}
+
+/**
+ * Returns the recent customer bubbles as one intent for n8n. The raw latest
+ * message is still supplied separately by callers, so flows can use either.
+ */
+export async function getAutomationConversationContext(
+  conversationId: string,
+): Promise<AutomationConversationContext> {
+  const since = new Date(Date.now() - AUTOMATION_CONTEXT_WINDOW_MS);
+  const recentMessages = await prisma.chatMessage.findMany({
+    where: {
+      conversationId,
+      direction: "INBOUND",
+      senderType: "CUSTOMER",
+      createdAt: { gte: since },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: AUTOMATION_CONTEXT_MESSAGE_LIMIT,
+    select: { id: true, content: true, createdAt: true },
+  });
+
+  return buildAutomationConversationContext(recentMessages.reverse());
 }

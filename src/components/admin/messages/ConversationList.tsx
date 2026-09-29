@@ -35,7 +35,7 @@ const FILTERS: Array<{
 }> = [
   { id: "all", label: "Todos", status: "" },
   { id: "unread", label: "No leídos", status: "", unreadOnly: true },
-  { id: "requiere_asesor", label: "Requiere asesor", status: "REQUIERE_ASESOR" },
+  { id: "requiere_asesor", label: "Derivados", status: "REQUIERE_ASESOR" },
   { id: "automatico", label: "Automático", status: "AUTOMATICO" },
   { id: "atendiendo", label: "Atendiendo", status: "ATENDIENDO" },
   { id: "cerrados", label: "Cerrados", status: "CERRADO" },

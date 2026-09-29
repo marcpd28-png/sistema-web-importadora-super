@@ -47,6 +47,54 @@ export function isProjectorCatalogRequest(content: string) {
   return /\bcatalogo\b/.test(normalized) && /\bproyector(?:es)?\b/.test(normalized);
 }
 
+export type CatalogRequest = {
+  slug: string;
+  title: string;
+  terms: string[];
+};
+
+const CATALOG_REQUEST_FILLER_WORDS = new Set([
+  "catalogo", "de", "del", "la", "el", "los", "las", "para", "por", "favor",
+  "quiero", "deseo", "un", "una", "me", "puedes", "enviar", "podria", "podrias",
+  "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "mandar",
+  "mandarme", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
+]);
+
+function normalizedCatalogWords(content: string) {
+  return content
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+}
+
+/** True when a customer asks for the store-wide catalog rather than a category or brand. */
+export function isGeneralCatalogRequest(content: string) {
+  const words = normalizedCatalogWords(content);
+  return words.includes("catalogo")
+    && words.every((word) => word.length <= 1 || CATALOG_REQUEST_FILLER_WORDS.has(word));
+}
+
+/** Extracts a specific catalog request, e.g. "catálogo parlantes JBL". */
+export function parseCatalogRequest(content: string): CatalogRequest | null {
+  const normalized = normalizedCatalogWords(content).join(" ");
+
+  if (!/\bcatalogo\b/.test(normalized)) return null;
+
+  const terms = normalized.split(" ").filter((term) => term.length > 1 && !CATALOG_REQUEST_FILLER_WORDS.has(term)).slice(0, 4);
+  if (!terms.length) return null;
+
+  const label = terms.map((term) => term.toUpperCase()).join(" ");
+  return {
+    terms,
+    slug: terms.join("-").slice(0, 80),
+    title: `CATÁLOGO DE ${label}`,
+  };
+}
+
 async function findProjectorImages(): Promise<CatalogProductImage[]> {
   const products = await prisma.product.findMany({
     where: {
@@ -78,6 +126,37 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
   return products.flatMap((product) => {
     const imageUrls = getBotProductImageUrls(product);
 
+    return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
+  });
+}
+
+async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]> {
+  const products = await prisma.product.findMany({
+    where: {
+      isVisible: true,
+      AND: terms.map((term) => ({
+        OR: [
+          { name: { contains: term, mode: "insensitive" } },
+          { brand: { contains: term, mode: "insensitive" } },
+          { category: { contains: term, mode: "insensitive" } },
+          { description: { contains: term, mode: "insensitive" } },
+          { code: { contains: term, mode: "insensitive" } },
+        ],
+      })),
+    },
+    orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
+    take: MAX_CATALOG_PRODUCTS,
+    select: {
+      id: true, name: true, code: true, imageUrl: true, localImageUrl: true,
+      media: { orderBy: { sortOrder: "asc" }, select: { url: true } },
+      sourceImageUrl: true, updatedAt: true,
+    },
+  });
+
+  return products.flatMap((product) => {
+    const imageUrls = Array.from(new Set([
+      product.localImageUrl, ...product.media.map((media) => media.url), product.sourceImageUrl, product.imageUrl,
+    ].filter((value): value is string => Boolean(value?.trim()))));
     return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
   });
 }
@@ -182,8 +261,8 @@ export function renderCatalogImagePdf(images: { image: Buffer | null; name: stri
   return renderScopedCatalogPdf(images.map(product => ({ ...product, brand: "" })), title);
 }
 
-async function createProjectorCatalogPdf(products: CatalogProductImage[], fingerprint: string) {
-  const filename = `catalogo-proyectores-${fingerprint}.pdf`;
+async function createCatalogPdf(products: CatalogProductImage[], slug: string, title: string, fingerprint: string) {
+  const filename = `catalogo-${slug}-${fingerprint}.pdf`;
   const relativeUrl = `/uploads/catalogs/${filename}`;
   const outputPath = path.join(CATALOG_DIRECTORY, filename);
 
@@ -216,7 +295,7 @@ async function createProjectorCatalogPdf(products: CatalogProductImage[], finger
     console.warn("[catalog-pdf] product_images_unavailable", { unavailableCount });
   }
 
-  const pdf = await renderCatalogImagePdf(images);
+  const pdf = await renderCatalogImagePdf(images, title);
   const temporaryPath = `${outputPath}.${process.pid}.tmp`;
 
   try {
@@ -249,7 +328,7 @@ export async function generateProjectorCatalogPdf() {
     return existing;
   }
 
-  const generation = createProjectorCatalogPdf(products, fingerprint).finally(() => {
+  const generation = createCatalogPdf(products, "proyectores", "CATÁLOGO DE PROYECTORES", fingerprint).finally(() => {
     inFlightCatalogs.delete(fingerprint);
   });
   inFlightCatalogs.set(fingerprint, generation);
