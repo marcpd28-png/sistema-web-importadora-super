@@ -39,6 +39,7 @@ const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por e
 const PRODUCT_PROMPT_MESSAGE = "¡Hola! Con gusto te ayudo. ¿Qué producto del catálogo te interesa? Puedes escribirme el nombre, marca o código y te indico las opciones y precios disponibles.";
 const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
+const PRODUCT_DELIVERY_MESSAGE = "Tenemos recojo en tienda (Avenida Abancay 752, Centro de Lima), envíos por Shalom a todo el Perú y delivery en Lima por inDrive. ¿En qué distrito o ciudad lo necesitas?";
 const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
 // A catalog request should receive the same complete orientation as a new chat.
 const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
@@ -438,61 +439,32 @@ function productSearchCaption(product: {
  * "busco un repetidor wifi" or "tienen parlantes". */
 async function sendProductSearchResults(conversationId: string, recipient: string, content: string) {
   const reply = await answerShopAssistant({ message: content });
-  const products = (reply.products ?? []).slice(0, 3);
+  // Two precise alternatives are easier to compare and prevent a catalog
+  // search from turning into a sequence of repetitive bot bubbles.
+  const products = (reply.products ?? []).slice(0, 2);
   if (!products.length) return false;
-
-  if (products.length > 1 && reply.text) {
-    await sendBotText(
-      conversationId,
-      recipient,
-      reply.text,
-      "product_search_results_intro",
-    );
-  }
 
   for (const product of products) {
     const caption = productSearchCaption(product);
-    if (product.imageUrl) {
-      const imageUrl = product.imageUrl.startsWith("http")
-        ? product.imageUrl
-        : buildPublicUrl(product.imageUrl);
+    const outboundImage = product.outboundImageUrl ?? product.imageUrl;
+    if (outboundImage) {
+      const imageUrl = outboundImage.startsWith("http")
+        ? outboundImage
+        : buildPublicUrl(outboundImage);
       await sendBotImage(conversationId, recipient, imageUrl, caption, "product_search_result");
     } else {
       await sendBotText(conversationId, recipient, caption, "product_search_result_without_image");
     }
-    if (product.description?.trim()) {
-      await sendBotText(
-        conversationId,
-        recipient,
-        `Descripción de ${product.name}: ${product.description.trim()}`,
-        "product_search_result_description",
-      );
-    }
-  }
-
-  if (products.length === 1) {
-    const product = products[0];
-    await prisma.conversationSalesState.upsert({
-      where: { conversationId },
-      create: { conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: product.code, unitPrice: product.unitPriceValue, priceTier: "Unitario" },
-      update: { stage: "AWAITING_QUANTITY", selectedProductCode: product.code, quantity: null, unitPrice: product.unitPriceValue, priceTier: "Unitario", total: null },
-    });
-    await sendBotText(conversationId, recipient, "¿Deseas comprar este modelo? Indícame cuántas unidades necesitas y te envío los medios de pago.", "product_search_quantity");
-    return true;
   }
 
   await prisma.conversationSalesState.upsert({
     where: { conversationId },
-    create: { conversationId, stage: "AWAITING_MODEL_SELECTION", shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
-    update: { stage: "AWAITING_MODEL_SELECTION", selectedProductCode: null, quantity: null, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
+    create: { conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true }, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
+    update: { stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, quantity: null, deliveryData: { awaitingLimaAddress: true }, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
   });
 
-  await sendBotText(
-    conversationId,
-    recipient,
-    "¿Cuál deseas comprar? Respóndeme con el código o nombre del modelo e indícame cuántas unidades necesitas para enviarte los medios de pago.",
-    "product_search_result_selection",
-  );
+  await sendBotText(conversationId, recipient, PRODUCT_DELIVERY_MESSAGE, "product_search_delivery_options");
+  await sendPaymentNotice(conversationId, recipient);
   return true;
 }
 
@@ -553,6 +525,19 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
 }
 
 async function sendPaymentNotice(conversationId: string, recipient: string) {
+  const recentEquivalentNotice = await prisma.chatMessage.findFirst({
+    where: {
+      conversationId,
+      direction: "OUTBOUND",
+      senderType: "BOT",
+      messageType: "IMAGE",
+      mediaUrl: PAYMENT_NOTICE_URL,
+      createdAt: { gte: new Date(Date.now() - BOT_REPLY_DEDUPLICATE_WINDOW_MS) },
+    },
+    select: { id: true },
+  });
+  if (recentEquivalentNotice) return;
+
   const sent = await sendYCloudOutboundMessage({
     content: PAYMENT_NOTICE_MESSAGE,
     mediaUrl: PAYMENT_NOTICE_URL,

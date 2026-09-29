@@ -13,6 +13,9 @@ export type ShopAssistantProductCard = {
   brand: string | null;
   category: string | null;
   imageUrl: string | null;
+  /** Original public image used for channels such as WhatsApp. The storefront
+   * can keep using its optimized local WebP, which some providers reject. */
+  outboundImageUrl?: string | null;
   imageAlt: string | null;
   technicalSpecs?: string | null;
   unitPrice: string;

@@ -299,12 +299,18 @@ function getAssistantProductImage(product: AssistantProductRecord) {
   if (preferredUrl) {
     return {
       imageUrl: preferredUrl,
+      // WhatsApp/YCloud does not reliably accept the optimized local WebP
+      // copies. Prefer the original public photograph for outbound media.
+      outboundImageUrl: [product.sourceImageUrl, realImageMedia?.url, product.imageUrl]
+        .map((url) => url?.trim() ?? "")
+        .find((url) => url && !isGenericProductPhotoUrl(url) && /^https?:\/\//i.test(url)) ?? null,
       imageAlt: realImageMedia?.altText ?? product.name,
     };
   }
 
   return {
     imageUrl: null,
+    outboundImageUrl: null,
     imageAlt: null,
   };
 }
@@ -326,6 +332,7 @@ function mapAssistantProduct(
     brand: product.brand,
     category: product.category,
     imageUrl: image.imageUrl,
+    outboundImageUrl: image.outboundImageUrl,
     imageAlt: image.imageAlt,
     unitPrice: formatCurrency(unitPrice, currencySymbol),
     unitPriceValue: unitPrice,
