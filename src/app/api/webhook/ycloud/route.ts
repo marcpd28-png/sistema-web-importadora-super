@@ -89,14 +89,24 @@ async function sendWelcomeMessage(conversationId: string, recipient: string) {
     type: "text",
   });
 
-  const welcome = await prisma.chatMessage.create({
-    data: {
+  const welcome = await prisma.chatMessage.upsert({
+    where: { externalMessageId: sent.messageId },
+    create: {
       conversationId,
       direction: "OUTBOUND",
       senderType: "BOT",
       messageType: "TEXT",
       content: WELCOME_MESSAGE,
       externalMessageId: sent.messageId,
+      metadata: { provider: sent.provider, source: "conversation_welcome" } as Prisma.InputJsonValue,
+      status: "sent",
+    },
+    update: {
+      conversationId,
+      direction: "OUTBOUND",
+      senderType: "BOT",
+      messageType: "TEXT",
+      content: WELCOME_MESSAGE,
       metadata: { provider: sent.provider, source: "conversation_welcome" } as Prisma.InputJsonValue,
       status: "sent",
     },

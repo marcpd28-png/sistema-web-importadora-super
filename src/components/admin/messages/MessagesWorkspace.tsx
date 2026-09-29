@@ -547,7 +547,11 @@ export function MessagesWorkspace() {
 
     try {
       await fetch(`/api/admin/conversations/${activeId}`, {
-        body: JSON.stringify({ botEnabled: nextStatus }),
+        body: JSON.stringify(
+          nextStatus
+            ? { assignedUserId: null, botEnabled: true, status: "AUTOMATICO" }
+            : { botEnabled: false },
+        ),
         headers: { "Content-Type": "application/json" },
         method: "PATCH",
       });
