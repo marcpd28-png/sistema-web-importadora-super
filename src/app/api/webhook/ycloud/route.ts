@@ -35,6 +35,12 @@ Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cu
 
 ¿Qué producto estás buscando hoy?`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
+const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
+const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
+const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
+const PRICES_MESSAGE = "Puedes revisar precios y stock actualizados en nuestro catálogo: https://tiendavirtualsuper.com. Para precio mayorista, indícanos el producto y la cantidad que necesitas.";
+const OFFERS_MESSAGE = "Aquí puedes ver nuestras ofertas y productos destacados: https://tiendavirtualsuper.com/?featured=1";
+const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
 // A catalog request should receive the same complete orientation as a new chat.
 const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
 const SCREEN_EXTENDER_MESSAGE = "Estos son los modelos disponibles de extensores de pantalla: https://tiendavirtualsuper.com/?q=extensor+de+pantalla";
@@ -144,6 +150,34 @@ function isScreenExtenderInquiry(content: string) {
     && /\bpantalla(?:s)?\b/.test(normalized);
 }
 
+function isAdvisorRequest(content: string) {
+  return /\b(asesor(?:a)?|agente|humano|persona|representante)\b/.test(normalizedText(content));
+}
+
+function isLocationRequest(content: string) {
+  return /\b(ubicacion|direccion|donde estan|donde queda|local|tienda fisica)\b/.test(normalizedText(content));
+}
+
+function isShippingRequest(content: string) {
+  return /\b(envio|envios|delivery|entrega|despacho|shalom)\b/.test(normalizedText(content));
+}
+
+function isPriceRequest(content: string) {
+  return /\b(precio|precios|cuanto cuesta|cuanto vale|mayorista)\b/.test(normalizedText(content));
+}
+
+function isOffersRequest(content: string) {
+  return /\b(oferta|ofertas|promo|promocion|promociones|descuento|descuentos)\b/.test(normalizedText(content));
+}
+
+function isHoursRequest(content: string) {
+  return /\b(horario|horarios|hora atienden|a que hora)\b/.test(normalizedText(content));
+}
+
+function isPaymentRequest(content: string) {
+  return /\b(pago|pagos|pagar|cuenta|cuentas|transferencia|yape|plin)\b/.test(normalizedText(content));
+}
+
 function isNoProductMatchReply(content: string) {
   const normalized = normalizedText(content);
   return normalized.includes("no encontre una coincidencia clara")
@@ -152,11 +186,11 @@ function isNoProductMatchReply(content: string) {
 }
 
 async function sendScreenExtenderOptions(conversationId: string, recipient: string) {
-  const sent = await sendYCloudOutboundMessage({
-    content: SCREEN_EXTENDER_MESSAGE,
-    recipient,
-    type: "text",
-  });
+  await sendBotText(conversationId, recipient, SCREEN_EXTENDER_MESSAGE, "screen_extender_options");
+}
+
+async function sendBotText(conversationId: string, recipient: string, content: string, source: string) {
+  const sent = await sendYCloudOutboundMessage({ content, recipient, type: "text" });
   const reply = await prisma.chatMessage.upsert({
     where: { externalMessageId: sent.messageId },
     create: {
@@ -164,13 +198,13 @@ async function sendScreenExtenderOptions(conversationId: string, recipient: stri
       direction: "OUTBOUND",
       senderType: "BOT",
       messageType: "TEXT",
-      content: SCREEN_EXTENDER_MESSAGE,
+      content,
       externalMessageId: sent.messageId,
-      metadata: { provider: sent.provider, source: "screen_extender_options" } as Prisma.InputJsonValue,
+      metadata: { provider: sent.provider, source } as Prisma.InputJsonValue,
       status: "sent",
     },
     update: {
-      content: SCREEN_EXTENDER_MESSAGE,
+      content,
       senderType: "BOT",
       status: "sent",
     },
@@ -317,6 +351,19 @@ async function processInbound(event: JsonRecord) {
   });
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    if (isAdvisorRequest(content)) {
+      await prisma.conversation.update({
+        where: { id: result.conversationId },
+        data: { assignedUserId: null, botEnabled: false, status: "REQUIERE_ASESOR" },
+      });
+      try {
+        await sendBotText(result.conversationId, from, ADVISOR_MESSAGE, "advisor_handoff");
+      } catch (error) {
+        console.error("YCloud advisor handoff response failed:", error);
+      }
+      return result;
+    }
+
     if (isScreenExtenderInquiry(content)) {
       try {
         await sendScreenExtenderOptions(result.conversationId, from);
@@ -353,6 +400,51 @@ async function processInbound(event: JsonRecord) {
       return result;
     }
 
+    if (isPaymentRequest(content)) {
+      try {
+        await sendPaymentNotice(result.conversationId, from);
+      } catch (error) {
+        console.error("YCloud payment question failed:", error);
+      }
+      return result;
+    }
+
+    if (isLocationRequest(content)) {
+      try {
+        await sendBotText(result.conversationId, from, LOCATION_MESSAGE, "store_location");
+      } catch (error) {
+        console.error("YCloud location response failed:", error);
+      }
+      return result;
+    }
+
+    if (isHoursRequest(content)) {
+      try {
+        await sendBotText(result.conversationId, from, HOURS_MESSAGE, "store_hours");
+      } catch (error) {
+        console.error("YCloud hours response failed:", error);
+      }
+      return result;
+    }
+
+    if (isOffersRequest(content)) {
+      try {
+        await sendBotText(result.conversationId, from, OFFERS_MESSAGE, "store_offers");
+      } catch (error) {
+        console.error("YCloud offers response failed:", error);
+      }
+      return result;
+    }
+
+    if (isPriceRequest(content)) {
+      try {
+        await sendBotText(result.conversationId, from, PRICES_MESSAGE, "store_prices");
+      } catch (error) {
+        console.error("YCloud prices response failed:", error);
+      }
+      return result;
+    }
+
     if (isLimaDeliveryRequest(content)) {
       await prisma.conversationSalesState.upsert({
         where: { conversationId: result.conversationId },
@@ -368,6 +460,15 @@ async function processInbound(event: JsonRecord) {
         });
       } catch (error) {
         console.error("YCloud delivery question failed:", error);
+      }
+      return result;
+    }
+
+    if (isShippingRequest(content)) {
+      try {
+        await sendBotText(result.conversationId, from, SHIPPING_MESSAGE, "store_shipping");
+      } catch (error) {
+        console.error("YCloud shipping response failed:", error);
       }
       return result;
     }
