@@ -137,6 +137,39 @@ function normalizedText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
+function editDistanceAtMost(left: string, right: string, maximum: number) {
+  if (Math.abs(left.length - right.length) > maximum) return false;
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    let diagonal = previous[0];
+    previous[0] = row;
+    let minimum = previous[0];
+    for (let column = 1; column <= right.length; column += 1) {
+      const saved = previous[column];
+      previous[column] = Math.min(
+        previous[column] + 1,
+        previous[column - 1] + 1,
+        diagonal + (left[row - 1] === right[column - 1] ? 0 : 1),
+      );
+      diagonal = saved;
+      minimum = Math.min(minimum, previous[column]);
+    }
+    if (minimum > maximum) return false;
+  }
+  return previous[right.length] <= maximum;
+}
+
+function hasIntent(content: string, phrases: string[]) {
+  const normalized = normalizedText(content);
+  const words = normalized.match(/[a-z0-9]+/g) ?? [];
+  return phrases.some((phrase) => {
+    if (normalized.includes(phrase)) return true;
+    if (phrase.includes(" ")) return false;
+    const tolerance = phrase.length >= 8 ? 2 : phrase.length >= 5 ? 1 : 0;
+    return tolerance > 0 && words.some((word) => editDistanceAtMost(word, phrase, tolerance));
+  });
+}
+
 function isLimaDeliveryRequest(content: string) {
   const normalized = normalizedText(content);
   const mentionsLima = /\blima\b/.test(normalized);
@@ -151,31 +184,31 @@ function isScreenExtenderInquiry(content: string) {
 }
 
 function isAdvisorRequest(content: string) {
-  return /\b(asesor(?:a)?|agente|humano|persona|representante)\b/.test(normalizedText(content));
+  return hasIntent(content, ["asesor", "asesora", "agente", "humano", "representante", "vendedor", "vendedora", "atencion humana", "hablar con alguien", "comunicarme"]);
 }
 
 function isLocationRequest(content: string) {
-  return /\b(ubicacion|direccion|donde estan|donde queda|local|tienda fisica)\b/.test(normalizedText(content));
+  return hasIntent(content, ["ubicacion", "direccion", "donde estan", "donde queda", "local", "tienda fisica", "como llego", "mapa"]);
 }
 
 function isShippingRequest(content: string) {
-  return /\b(envio|envios|delivery|entrega|despacho|shalom)\b/.test(normalizedText(content));
+  return hasIntent(content, ["envio", "envios", "delivery", "entrega", "despacho", "shalom", "reparto", "provincia", "regiones", "agencia"]);
 }
 
 function isPriceRequest(content: string) {
-  return /\b(precio|precios|cuanto cuesta|cuanto vale|mayorista)\b/.test(normalizedText(content));
+  return hasIntent(content, ["precio", "precios", "cuanto cuesta", "cuanto vale", "mayorista", "costo", "lista de precios"]);
 }
 
 function isOffersRequest(content: string) {
-  return /\b(oferta|ofertas|promo|promocion|promociones|descuento|descuentos)\b/.test(normalizedText(content));
+  return hasIntent(content, ["oferta", "ofertas", "promo", "promocion", "promociones", "descuento", "descuentos", "rebaja", "rebajas", "liquidacion", "remate"]);
 }
 
 function isHoursRequest(content: string) {
-  return /\b(horario|horarios|hora atienden|a que hora)\b/.test(normalizedText(content));
+  return hasIntent(content, ["horario", "horarios", "hora atienden", "a que hora", "abren", "cierran", "atienden hoy", "atienden domingo"]);
 }
 
 function isPaymentRequest(content: string) {
-  return /\b(pago|pagos|pagar|cuenta|cuentas|transferencia|yape|plin)\b/.test(normalizedText(content));
+  return hasIntent(content, ["pago", "pagos", "pagar", "cuenta", "cuentas", "transferencia", "yape", "plin", "deposito", "banco", "datos para transferir"]);
 }
 
 function isNoProductMatchReply(content: string) {
