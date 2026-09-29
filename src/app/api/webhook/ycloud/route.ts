@@ -48,7 +48,9 @@ const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de pa
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
 const OUTBOUND_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 const BOT_REPLY_DEDUPLICATE_WINDOW_MS = 30 * 60 * 1000;
-const ROCKY_MESSAGE_BATCH_WAIT_MS = 1_500;
+// Customers often send a greeting followed immediately by the actual request.
+// Wait long enough to assemble that thought, while the welcome remains instant.
+const ROCKY_MESSAGE_BATCH_WAIT_MS = 10_000;
 
 class DuplicateOutboundMessageError extends Error {
   constructor() {
@@ -622,9 +624,9 @@ async function processInbound(event: JsonRecord) {
     type: messageType(type),
   });
 
-  // Every new customer conversation starts with the configured welcome. Do
-  // this before evaluating catalog, product, or automation intents so a
-  // keyword in the first bubble can never skip the default response.
+  // Every new customer conversation receives the configured welcome first.
+  // Do not return here: the same first message may already contain a product
+  // request, which will be evaluated after the short message batch window.
   if (result.ok && !result.duplicate && result.createdConversation) {
     try {
       await sendWelcomeMessage(result.conversationId, from);
@@ -634,7 +636,6 @@ async function processInbound(event: JsonRecord) {
       // YCloud can retry incoming events and duplicate the conversation.
       console.error("YCloud welcome message failed:", error);
     }
-    return result;
   }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
