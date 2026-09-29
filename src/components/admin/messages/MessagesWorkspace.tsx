@@ -448,6 +448,11 @@ export function MessagesWorkspace() {
     setActiveMessages([]);
     setMessageTotal(0);
     setMessageHasMore(false);
+    void fetch(`/api/admin/conversations/${id}`, {
+      body: JSON.stringify({ markAsRead: true }),
+      headers: { "Content-Type": "application/json" },
+      method: "PATCH",
+    }).catch((error) => console.error("Failed to mark conversation as read", error));
   };
 
   const handleBackToConversations = () => {
@@ -489,6 +494,7 @@ export function MessagesWorkspace() {
               lastMessage: {
                 content,
                 createdAt: now,
+                direction: "OUTBOUND",
                 id: tempMessage.id,
                 messageType,
                 senderType: "AGENT",

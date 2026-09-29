@@ -1,5 +1,5 @@
 import type { Conversation } from "@/types/messages";
-import { Bot, Globe, MessageSquare, User, UserRound } from "lucide-react";
+import { Bot, Globe, MessageSquare, UserRound } from "lucide-react";
 
 interface Props {
   conversation: Conversation;
@@ -100,6 +100,7 @@ export function ConversationItem({ conversation, isActive, onClick }: Props) {
   const { contact, channel, unreadCount, status, botEnabled, lastMessageAt } = conversation;
   const ChannelIcon = channel === "WEB" ? Globe : MessageSquare;
   const OwnerIcon = botEnabled ? Bot : UserRound;
+  const needsResponse = conversation.lastMessage?.direction === "INBOUND";
 
   return (
     <button className={`conversation-item ${isActive ? "active" : ""}`} onClick={onClick} type="button">
@@ -117,7 +118,16 @@ export function ConversationItem({ conversation, isActive, onClick }: Props) {
 
       <div className="conversation-info">
         <div className="conversation-header">
-          <span className="conversation-name">{contact.name}</span>
+          <span className="conversation-name">
+            {contact.name}
+            {needsResponse ? (
+              <span
+                aria-label="Pendiente de respuesta"
+                className="conversation-response-pending"
+                title="Pendiente de respuesta"
+              />
+            ) : null}
+          </span>
           <span className="conversation-time">{formatConversationTime(lastMessageAt)}</span>
         </div>
 

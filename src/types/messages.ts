@@ -26,7 +26,7 @@ export type ChatMessage = PrismaChatMessage;
 
 export type ConversationLastMessage = Pick<
   PrismaChatMessage,
-  "id" | "content" | "createdAt" | "messageType" | "senderType"
+  "id" | "content" | "createdAt" | "direction" | "messageType" | "senderType"
 >;
 
 export type Conversation = PrismaConversation & {

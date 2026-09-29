@@ -70,7 +70,6 @@ export async function POST(request: Request) {
         where: { id: input.conversationId },
         data: {
           lastMessageAt: created.createdAt,
-          unreadCount: { increment: 1 },
         },
       });
 

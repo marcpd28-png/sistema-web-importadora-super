@@ -306,6 +306,7 @@ export async function getConversations(input: GetConversationsInput) {
           select: {
             id: true,
             content: true,
+            direction: true,
             messageType: true,
             senderType: true,
             createdAt: true,
@@ -494,6 +495,9 @@ export async function sendInternalMessage(
       where: { id: conversationId },
       data: {
         lastMessageAt: sentMessage.createdAt,
+        // Una respuesta manual implica que el asesor ya vio los mensajes del cliente.
+        unreadCount: 0,
+        lastReadAt: sentMessage.createdAt,
         botEnabled: false,
         status: "ATENDIENDO",
         assignedUserId: agentId,
@@ -525,22 +529,27 @@ const updateConversationSchema = z.object({
   status: z.nativeEnum(ConversationState).optional(),
   botEnabled: z.boolean().optional(),
   assignedUserId: z.string().nullable().optional(),
+  markAsRead: z.boolean().optional(),
 });
 
 export type UpdateConversationInput = z.infer<typeof updateConversationSchema>;
 
 export async function updateConversation(id: string, input: UpdateConversationInput) {
   const parsed = updateConversationSchema.parse(input);
+  const { markAsRead, ...conversationChanges } = parsed;
 
   // Activar Rocky devuelve la conversación a la cola automática. Esto evita
   // conservar una asignación anterior que impediría al bot retomarla.
-  const data = parsed.botEnabled
-    ? { ...parsed, assignedUserId: null, status: "AUTOMATICO" as const }
-    : parsed;
+  const data = conversationChanges.botEnabled
+    ? { ...conversationChanges, assignedUserId: null, status: "AUTOMATICO" as const }
+    : conversationChanges;
 
   return prisma.conversation.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      ...(markAsRead ? { unreadCount: 0, lastReadAt: new Date() } : {}),
+    },
     include: {
       contact: true,
       assignedUser: { select: { name: true, email: true } },
@@ -706,19 +715,28 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
 }
 
 /**
- * Returns the recent customer bubbles as one intent for n8n. The raw latest
- * message is still supplied separately by callers, so flows can use either.
+ * Returns the current customer turn as one intent. A turn begins after the
+ * last outgoing reply, so Rocky can combine split WhatsApp bubbles without
+ * mixing them with a previous request from the same conversation.
  */
 export async function getAutomationConversationContext(
   conversationId: string,
 ): Promise<AutomationConversationContext> {
   const since = new Date(Date.now() - AUTOMATION_CONTEXT_WINDOW_MS);
+  const latestOutbound = await prisma.chatMessage.findFirst({
+    where: { conversationId, direction: "OUTBOUND" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { createdAt: true },
+  });
+  const turnStartedAt = latestOutbound?.createdAt && latestOutbound.createdAt > since
+    ? latestOutbound.createdAt
+    : since;
   const recentMessages = await prisma.chatMessage.findMany({
     where: {
       conversationId,
       direction: "INBOUND",
       senderType: "CUSTOMER",
-      createdAt: { gte: since },
+      createdAt: { gte: turnStartedAt },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: AUTOMATION_CONTEXT_MESSAGE_LIMIT,

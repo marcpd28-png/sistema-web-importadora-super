@@ -672,6 +672,22 @@
   font-weight: bold;
 }
 
+.conversation-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.conversation-response-pending {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  box-shadow: 0 0 0 2px #fff;
+}
+
 .conversation-tags {
   display: flex;
   align-items: center;

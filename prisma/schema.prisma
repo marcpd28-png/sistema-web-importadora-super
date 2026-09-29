@@ -815,6 +815,7 @@ model Conversation {
   createdAt            DateTime                @default(now())
   updatedAt            DateTime                @updatedAt
   unreadCount          Int                     @default(0)
+  lastReadAt           DateTime?
   messages             ChatMessage[]
   salesState           ConversationSalesState?
   automationExecutions AutomationExecution[]
