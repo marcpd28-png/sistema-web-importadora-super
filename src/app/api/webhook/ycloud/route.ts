@@ -544,17 +544,10 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
     triggerPusherEvent(`chat-${conversationId}`, "new-message", document);
   } catch (error) {
     if (error instanceof DuplicateOutboundMessageError) return true;
-    // Never expose a failed match or an internal error to the customer. Keep
-    // the conversation commercial and guide it toward an available catalog.
-    const reply = "Tenemos alternativas para ayudarte. Indícame la categoría, marca o el uso que buscas y te comparto las opciones disponibles.";
     console.error("YCloud catalog generation failed:", error);
-    const sent = await sendYCloudOutboundMessage({ content: reply, recipient, type: "text" });
-    const message = await prisma.chatMessage.upsert({
-      where: { externalMessageId: sent.messageId },
-      create: { conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "TEXT", content: reply, externalMessageId: sent.messageId, metadata: { provider: sent.provider, source: "requested_catalog_error" } as Prisma.InputJsonValue, status: "sent" },
-      update: { content: reply, senderType: "BOT", status: "sent" },
-    });
-    triggerPusherEvent(`chat-${conversationId}`, "new-message", message);
+    // Never promise an empty catalog. A person can confirm the product name,
+    // stock, or a suitable alternative without misleading the customer.
+    await handOffToAdvisor(conversationId, recipient, "catalog_unavailable_handoff");
   }
   return true;
 }
@@ -680,9 +673,13 @@ async function processInbound(event: JsonRecord) {
       return result;
     }
 
-    // Do not hand off speaker searches just because the exact wording did not
-    // match a product. Give the customer the broad catalog and a short example
-    // of how to narrow the request on their next message.
+    // An explicit catalog request always takes precedence over a regular
+    // product inquiry: "catálogo de parlantes" must receive a PDF, not a
+    // generic speaker suggestion flow.
+    if (await sendCatalog(result.conversationId, from, content)) {
+      return result;
+    }
+
     if (isSpeakerInquiry(content)) {
       try {
         if (await sendProductSearchResults(result.conversationId, from, content)) {
@@ -692,10 +689,6 @@ async function processInbound(event: JsonRecord) {
       } catch (error) {
         console.error("YCloud speaker catalog response failed:", error);
       }
-      return result;
-    }
-
-    if (await sendCatalog(result.conversationId, from, content)) {
       return result;
     }
 
