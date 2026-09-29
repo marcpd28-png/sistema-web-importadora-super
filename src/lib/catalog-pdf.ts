@@ -426,7 +426,7 @@ export async function generateRequestedProductImages(
   selection?: any,
 ) {
   return {
-    products: selection?.products ?? [],
+    products: (selection?.products ?? []) as any[],
     outboundMessages: [] as { type: "IMAGE"; content: string; mediaUrl: string }[],
     scopes: [],
     brands: selection?.brands ?? [],
