@@ -461,7 +461,11 @@ export async function sendInternalMessage(
   const mediaUrl = parsed.mediaUrl?.startsWith("/")
     ? buildPublicUrl(parsed.mediaUrl)
     : parsed.mediaUrl;
-  const message = await prisma.chatMessage.create({
+  // Pause Rocky before attempting delivery, not after YCloud responds. This
+  // closes the race where a customer message can arrive while an advisor's
+  // message is still being sent.
+  const message = await prisma.$transaction(async (tx) => {
+    const pendingMessage = await tx.chatMessage.create({
       data: {
         conversationId,
         direction: "OUTBOUND",
@@ -472,6 +476,20 @@ export async function sendInternalMessage(
         metadata: { requestId: parsed.requestId },
         status: "pending",
       },
+    });
+
+    await tx.conversation.update({
+      where: { id: conversationId },
+      data: {
+        botEnabled: false,
+        status: "ATENDIENDO",
+        assignedUserId: agentId,
+        unreadCount: 0,
+        lastReadAt: pendingMessage.createdAt,
+      },
+    });
+
+    return pendingMessage;
   });
 
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
@@ -499,18 +517,10 @@ export async function sendInternalMessage(
         },
       });
 
-    await tx.conversation.update({
-      where: { id: conversationId },
-      data: {
-        lastMessageAt: sentMessage.createdAt,
-        // Una respuesta manual implica que el asesor ya vio los mensajes del cliente.
-        unreadCount: 0,
-        lastReadAt: sentMessage.createdAt,
-        botEnabled: false,
-        status: "ATENDIENDO",
-        assignedUserId: agentId,
-      },
-    });
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: { lastMessageAt: sentMessage.createdAt },
+      });
 
       triggerPusherEvent(`chat-${conversationId}`, "new-message", sentMessage);
       console.info("[outbound] sent", { requestId: parsed.requestId, conversationId, messageId: message.id });
