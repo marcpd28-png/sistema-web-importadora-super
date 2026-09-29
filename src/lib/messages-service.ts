@@ -597,9 +597,15 @@ export type UpdateConversationInput = z.infer<typeof updateConversationSchema>;
 export async function updateConversation(id: string, input: UpdateConversationInput) {
   const parsed = updateConversationSchema.parse(input);
 
+  // Activar Rocky devuelve la conversación a la cola automática. Esto evita
+  // conservar una asignación anterior que impediría al bot retomarla.
+  const data = parsed.botEnabled
+    ? { ...parsed, assignedUserId: null, status: "AUTOMATICO" as const }
+    : parsed;
+
   return prisma.conversation.update({
     where: { id },
-    data: parsed,
+    data,
     include: {
       contact: true,
       assignedUser: { select: { name: true, email: true } },
