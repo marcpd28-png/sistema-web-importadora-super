@@ -868,8 +868,8 @@
 .message-bot {
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
-  align-self: flex-start;
-  border-top-left-radius: 4px;
+  align-self: flex-end;
+  border-top-right-radius: 4px;
 }
 
 .message-agent {
