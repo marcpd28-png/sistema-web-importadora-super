@@ -42,7 +42,7 @@ const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima ta
 const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
 // A catalog request should receive the same complete orientation as a new chat.
 const GENERAL_CATALOG_MESSAGE = WELCOME_MESSAGE;
-const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
+const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
