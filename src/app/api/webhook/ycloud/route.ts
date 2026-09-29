@@ -7,6 +7,7 @@ import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
 import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
+import { buildPublicUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -32,6 +33,9 @@ Si estás en Lima, también podemos coordinar el envío de tu pedido a domicilio
 Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cualquier momento de la conversación y un asesor atenderá tu chat.
 
 ¿Qué producto estás buscando hoy?`;
+const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
+const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autorizadas-importaciones-super.jpeg");
+const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
@@ -119,6 +123,42 @@ async function sendWelcomeMessage(conversationId: string, recipient: string) {
   triggerPusherEvent(`chat-${conversationId}`, "new-message", welcome);
 }
 
+function normalizedText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function isLimaDeliveryRequest(content: string) {
+  const normalized = normalizedText(content);
+  return /\b(lima|delivery|entrega|envio|costo)\b/.test(normalized)
+    && /(lima|delivery|entrega|envio|costo)/.test(normalized);
+}
+
+async function sendPaymentNotice(conversationId: string, recipient: string) {
+  const sent = await sendYCloudOutboundMessage({
+    content: PAYMENT_NOTICE_MESSAGE,
+    mediaUrl: PAYMENT_NOTICE_URL,
+    recipient,
+    type: "image",
+  });
+
+  const notice = await prisma.chatMessage.upsert({
+    where: { externalMessageId: sent.messageId },
+    create: {
+      conversationId,
+      direction: "OUTBOUND",
+      senderType: "BOT",
+      messageType: "IMAGE",
+      content: PAYMENT_NOTICE_MESSAGE,
+      mediaUrl: PAYMENT_NOTICE_URL,
+      externalMessageId: sent.messageId,
+      metadata: { provider: sent.provider, source: "lima_delivery_payment_notice" } as Prisma.InputJsonValue,
+      status: "sent",
+    },
+    update: { content: PAYMENT_NOTICE_MESSAGE, mediaUrl: PAYMENT_NOTICE_URL, senderType: "BOT", status: "sent" },
+  });
+  triggerPusherEvent(`chat-${conversationId}`, "new-message", notice);
+}
+
 function verifySignature(rawBody: string, signatureHeader: string | null) {
   const secret = process.env.YCLOUD_WEBHOOK_SECRET?.trim();
   if (!secret || !signatureHeader) return false;
@@ -168,6 +208,50 @@ async function processInbound(event: JsonRecord) {
     timestamp: text(message.sendTime) ?? text(event.createTime) ?? new Date().toISOString(),
     type: messageType(type),
   });
+
+  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    const salesState = await prisma.conversationSalesState.findUnique({
+      where: { conversationId: result.conversationId },
+      select: { deliveryData: true, stage: true },
+    });
+    const awaitingAddress = salesState?.stage === "AWAITING_DELIVERY_DETAILS"
+      && Boolean((salesState.deliveryData as JsonRecord | null)?.awaitingLimaAddress);
+
+    if (awaitingAddress && content.trim()) {
+      await prisma.conversationSalesState.update({
+        where: { conversationId: result.conversationId },
+        data: {
+          stage: "AWAITING_PAYMENT_METHOD",
+          deliveryData: { limaAddress: content, awaitingLimaAddress: false } as Prisma.InputJsonValue,
+        },
+      });
+      try {
+        await sendPaymentNotice(result.conversationId, from);
+      } catch (error) {
+        console.error("YCloud payment notice failed:", error);
+      }
+      return result;
+    }
+
+    if (isLimaDeliveryRequest(content)) {
+      await prisma.conversationSalesState.upsert({
+        where: { conversationId: result.conversationId },
+        create: { conversationId: result.conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
+        update: { stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
+      });
+      try {
+        const sent = await sendYCloudOutboundMessage({ content: LIMA_DELIVERY_MESSAGE, recipient: from, type: "text" });
+        await prisma.chatMessage.upsert({
+          where: { externalMessageId: sent.messageId },
+          create: { conversationId: result.conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "TEXT", content: LIMA_DELIVERY_MESSAGE, externalMessageId: sent.messageId, metadata: { provider: sent.provider, source: "lima_delivery_address_request" } as Prisma.InputJsonValue, status: "sent" },
+          update: { content: LIMA_DELIVERY_MESSAGE, senderType: "BOT", status: "sent" },
+        });
+      } catch (error) {
+        console.error("YCloud delivery question failed:", error);
+      }
+      return result;
+    }
+  }
 
   if (result.ok && !result.duplicate && result.createdConversation) {
     try {
