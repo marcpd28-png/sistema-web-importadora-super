@@ -847,6 +847,19 @@ model ChatMessage {
   @@index([createdAt(sort: Asc)])
 }
 
+// Reserva de corta duración que hace idempotente cada envío automático hacia
+// WhatsApp. La clave única también protege cuando dos webhooks se procesan a
+// la vez en instancias distintas de la aplicación.
+model OutboundMessageDispatch {
+  id          String   @id @default(cuid())
+  recipient   String   @db.VarChar(32)
+  fingerprint String   @db.VarChar(64)
+  reservedAt  DateTime @default(now())
+
+  @@unique([recipient, fingerprint])
+  @@index([reservedAt])
+}
+
 model PromoCode {
   id              String    @id @default(cuid())
   code            String    @unique @db.VarChar(20)

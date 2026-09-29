@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { MessageType, Prisma } from "@prisma/client";
 import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
@@ -6,7 +6,7 @@ import { getAutomationConversationContext, processIncomingMessage } from "@/lib/
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
-import { sendYCloudOutboundMessage } from "@/lib/ycloud-outbound";
+import { sendYCloudOutboundMessage as deliverYCloudOutboundMessage } from "@/lib/ycloud-outbound";
 import { buildPublicUrl } from "@/lib/site-url";
 import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "@/lib/catalog-pdf";
 import { answerShopAssistant } from "@/lib/shop-assistant";
@@ -50,6 +50,53 @@ const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/cuentas-autor
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 const PRODUCT_CATALOG_MESSAGE = "Encontré varias opciones con stock. Te comparto el catálogo filtrado para que puedas verlas y elegir la que prefieras:";
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
+const OUTBOUND_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
+
+class DuplicateOutboundMessageError extends Error {
+  constructor() {
+    super("El mismo mensaje automático ya fue enviado recientemente.");
+    this.name = "DuplicateOutboundMessageError";
+  }
+}
+
+function outboundFingerprint(input: { content: string; mediaUrl?: string | null; recipient: string; type: string }) {
+  return createHash("sha256")
+    .update(JSON.stringify({ content: input.content, mediaUrl: input.mediaUrl ?? null, type: input.type }))
+    .digest("hex");
+}
+
+// Reserve before calling the provider: a second concurrent webhook finds the
+// same reservation and never reaches WhatsApp. The reservation is deliberately
+// retained after a network failure because delivery may have succeeded even
+// when the response was lost.
+async function sendYCloudOutboundMessage(input: Parameters<typeof deliverYCloudOutboundMessage>[0]) {
+  const recipient = normalizeWhatsappPhone(input.recipient) ?? input.recipient;
+  const fingerprint = outboundFingerprint(input);
+  const cutoff = new Date(Date.now() - OUTBOUND_DUPLICATE_WINDOW_MS);
+  const existing = await prisma.outboundMessageDispatch.findUnique({
+    where: { recipient_fingerprint: { recipient, fingerprint } },
+    select: { id: true, reservedAt: true },
+  });
+
+  if (existing) {
+    const refreshed = await prisma.outboundMessageDispatch.updateMany({
+      where: { id: existing.id, reservedAt: { lt: cutoff } },
+      data: { reservedAt: new Date() },
+    });
+    if (refreshed.count === 0) throw new DuplicateOutboundMessageError();
+  } else {
+    try {
+      await prisma.outboundMessageDispatch.create({ data: { recipient, fingerprint } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new DuplicateOutboundMessageError();
+      }
+      throw error;
+    }
+  }
+
+  return deliverYCloudOutboundMessage(input);
+}
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
@@ -400,6 +447,7 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
     await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: document.createdAt } });
     triggerPusherEvent(`chat-${conversationId}`, "new-message", document);
   } catch (error) {
+    if (error instanceof DuplicateOutboundMessageError) return true;
     // Never expose a failed match or an internal error to the customer. Keep
     // the conversation commercial and guide it toward an available catalog.
     const reply = "Tenemos alternativas para ayudarte. Indícame la categoría, marca o el uso que buscas y te comparto las opciones disponibles.";
@@ -672,6 +720,7 @@ async function processInbound(event: JsonRecord) {
     try {
       await sendWelcomeMessage(result.conversationId, from);
     } catch (error) {
+      if (error instanceof DuplicateOutboundMessageError) return result;
       // Do not reject the provider webhook when the welcome delivery fails;
       // YCloud can retry incoming events and duplicate the conversation.
       console.error("YCloud welcome message failed:", error);
