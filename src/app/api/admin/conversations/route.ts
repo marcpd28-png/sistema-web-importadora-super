@@ -6,9 +6,9 @@ import { z } from "zod";
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
+  await requireAdmin();
 
+  try {
     const searchParams = request.nextUrl.searchParams;
 
     const query = {
