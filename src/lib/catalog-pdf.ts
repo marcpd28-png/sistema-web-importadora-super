@@ -52,9 +52,11 @@ export type CatalogRequest = {
 const CATALOG_REQUEST_FILLER_WORDS = new Set([
   "catalogo", "de", "del", "la", "el", "los", "las", "para", "por", "favor",
   "quiero", "deseo", "un", "una", "me", "puedes", "enviar", "podria", "podrias",
-  "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "mandar",
-  "mandarme", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
+  "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "pasame", "mandar",
+  "mandarme", "mandame", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
   "hola", "consultar", "consulta", "consultas", "informacion", "informarme", "saber",
+  "virtual", "tienda", "web", "online", "pagina", "link", "enlace", "ver", "veo", "revisar",
+  "acceder", "entrar", "necesito", "donde",
 ]);
 
 function normalizedCatalogWords(content: string) {

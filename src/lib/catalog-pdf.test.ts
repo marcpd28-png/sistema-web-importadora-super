@@ -8,6 +8,8 @@ test("detecta solicitudes del catálogo general aunque usen lenguaje cortés", (
   assert.equal(isGeneralCatalogRequest("¿Me podría brindar el catálogo?"), true);
   assert.equal(isGeneralCatalogRequest("Quiero el catálogo completo, por favor"), true);
   assert.equal(isGeneralCatalogRequest("Hola quiero consultar por el catálogo"), true);
+  assert.equal(isGeneralCatalogRequest("¿Dónde veo el catálogo virtual?"), true);
+  assert.equal(isGeneralCatalogRequest("Pásame el link del catálogo online"), true);
   assert.equal(isGeneralCatalogRequest("¿Tienen catálogo de parlantes JBL?"), false);
 });
 
