@@ -251,7 +251,7 @@ function isSpeakerInquiry(content: string) {
 
 function isGreeting(content: string) {
   const normalized = normalizedText(content).replace(/[!¡?.:,;]/g, "").replace(/\s+/g, " ").trim();
-  return /^(hola|buenos dias|buenas tardes|buenas noches|buen dia|saludos|hey)(?:\s+(?:rocky|amigo|amiga))?$/.test(normalized);
+  return /^(hola|ola|buenos dias|buenas tardes|buenas noches|buen dia|saludos|hey)(?:\s+(?:rocky|amigo|amiga))?$/.test(normalized);
 }
 
 function isAdvisorRequest(content: string) {
@@ -619,6 +619,24 @@ async function processInbound(event: JsonRecord) {
   }
 
   if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+    // Resolve an unanswered request from the same customer turn before a
+    // later "hola" can mask it. This is especially important for a catalog
+    // request followed hours later by a greeting.
+    const conversationContext = await getAutomationConversationContext(result.conversationId);
+    const pendingContent = conversationContext.combinedContent;
+    if (pendingContent && pendingContent !== content) {
+      try {
+        if (await sendCatalog(result.conversationId, from, pendingContent)) {
+          return result;
+        }
+        if (await sendProductSearchResults(result.conversationId, from, pendingContent)) {
+          return result;
+        }
+      } catch (error) {
+        console.error("YCloud pending customer intent failed:", error);
+      }
+    }
+
     if (isGreeting(content)) {
       try {
         // Do not greet before intent classification. A greeting-only message
@@ -843,6 +861,10 @@ async function processInbound(event: JsonRecord) {
       // Rocky owns interpretation. It receives the customer's recent bubbles
       // as one request, so it can resolve incomplete or split messages using
       // the real product catalog before any escalation is considered.
+      if (await sendCatalog(result.conversationId, from, rockyContent)) {
+        return result;
+      }
+
       if (await sendProductSearchResults(result.conversationId, from, rockyContent)) {
         return result;
       }

@@ -17,6 +17,9 @@ import { buildPublicUrl } from "@/lib/site-url";
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
 const AUTOMATION_CONTEXT_WINDOW_MS = 30 * 60 * 1000;
+// When Rocky has not replied yet, a customer may return hours later with a
+// greeting. Keep that unanswered turn long enough to recover its request.
+const AUTOMATION_UNANSWERED_CONTEXT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const AUTOMATION_CONTEXT_MESSAGE_LIMIT = 12;
 // A console-originated outbound message can temporarily mark a conversation as
 // human-attended. Resume the bot after a quiet period, but never override an
@@ -735,7 +738,7 @@ export async function getAutomationConversationContext(
   });
   const turnStartedAt = latestOutbound?.createdAt && latestOutbound.createdAt > since
     ? latestOutbound.createdAt
-    : since;
+    : new Date(Date.now() - AUTOMATION_UNANSWERED_CONTEXT_WINDOW_MS);
   const recentMessages = await prisma.chatMessage.findMany({
     where: {
       conversationId,
