@@ -1,0 +1,2 @@
+-- This migration was released without SQL. The following migration
+-- (20260915210000_add_manychat_subscriber_id) applies the column and index.
