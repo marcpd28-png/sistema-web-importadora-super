@@ -297,3 +297,18 @@ test("a new product model and quantity never quote the previously selected model
   await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
   assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).every(reply => !reply.content.includes("300.00")));
 });
+
+test("simulator runs the same engine but can never create a provider job", async () => {
+  const first = await processIncomingMessage({ channel: "WHATSAPP", content: "Ola", externalContactId: "SIMULATOR:phase7", externalMessageId: randomUUID(), phone: recipient, name: "Simulation", type: "TEXT", timestamp: new Date().toISOString(), metadata: {} });
+  await outbox.runSimulation(first.conversationId, first.messageId, () => planRockyResponse(first.conversationId, first.messageId));
+  assert.equal(await db.rockyOutboundJob.count(), 0); assert.equal(sends, 0);
+  const messages = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+  assert.equal(messages.length, 1); assert.equal(messages[0].status, "simulated");
+  assert.match(messages[0].content, /Bienvenido/);
+});
+
+test("simulation sink rejects a real customer conversation", async () => {
+  const first = await receive("Hola");
+  await assert.rejects(outbox.runSimulation(first.conversationId, first.messageId, () => planRockyResponse(first.conversationId, first.messageId)));
+  assert.equal(await db.chatMessage.count({ where: { senderType: "BOT" } }), 0);
+});

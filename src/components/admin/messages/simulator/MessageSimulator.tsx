@@ -171,6 +171,9 @@ export function MessageSimulator() {
             ? `Flujo real disparado: ${payload.automationName}. Esperando respuesta de n8n...`
             : "Webhook real de n8n disparado. Esperando respuesta...",
         );
+      } else {
+        setWaitingForN8n(false);
+        setNotice("Respuesta del motor único de Rocky. No se enviaron mensajes a WhatsApp.");
       }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "No se pudo simular el mensaje.");
@@ -219,7 +222,7 @@ export function MessageSimulator() {
         </button>
 
         <p className="message-simulator-help">
-          Esta conversacion queda aislada del inbox y solo se usa para probar n8n.
+          Esta conversación usa el motor de Rocky y queda aislada de los envíos reales.
         </p>
       </aside>
 
@@ -227,7 +230,7 @@ export function MessageSimulator() {
         <div className="message-simulator-chat-header">
           <div>
             <h2>{name || "Cliente Simulador"}</h2>
-            <p>Dispara el flujo real de n8n en modo simulacion</p>
+            <p>Prueba el motor de producción con transporte simulado</p>
           </div>
           <span className="conversation-badge badge-automatico">
             {waitingForN8n ? "ESPERANDO N8N" : "N8N REAL"}
@@ -238,7 +241,7 @@ export function MessageSimulator() {
           {messages.length === 0 ? (
             <div className="message-simulator-empty">
               <Bot size={44} />
-              <p>Escribe una consulta como cliente para disparar el workflow real.</p>
+              <p>Escribe una consulta como cliente. No se enviará a ningún teléfono.</p>
             </div>
           ) : (
             messages.map((message) => {
@@ -292,7 +295,7 @@ export function MessageSimulator() {
           />
           <button className="btn btn-primary" disabled={!canSend} type="submit">
             <Send size={15} />
-            {busy ? "Disparando" : "Enviar a n8n"}
+            {busy ? "Procesando" : "Probar Rocky"}
           </button>
         </form>
       </section>

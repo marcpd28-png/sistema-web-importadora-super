@@ -10,7 +10,7 @@ type Turn = RockyTurn;
 type Reply = { conversationId: string; recipient: string; content: string; source: string; mediaUrl?: string; type?: YCloudOutboundMessageInput["type"] };
 type Tx = Prisma.TransactionClient;
 type Plan = { replies: Reply[]; handoff?: Reply; writes: Array<(tx: Tx) => Promise<unknown>> };
-const turnContext = new AsyncLocalStorage<Turn & { plan?: Plan }>();
+const turnContext = new AsyncLocalStorage<Turn & { plan?: Plan; simulation?: boolean }>();
 const REPLY_TTL_MS = 5 * 60_000;
 const DEDUPE_MS = 30 * 60_000;
 // All workers contend for one database-backed lock, including across hosts.
@@ -80,13 +80,35 @@ export class RockyOutbox {
     context.plan.writes.push(write);
   }
 
+  /** Same planner/state transitions, an isolated chat-only sink. A simulation
+   * cannot produce an outbound job, even when its UI supplies a real phone. */
+  async runSimulation(conversationId: string, triggerMessageId: string, work: () => Promise<unknown>) {
+    const turn = await this.captureTurn(conversationId, triggerMessageId);
+    if (!turn) throw new AutomationCancelledError();
+    const plan: Plan = { replies: [], writes: [] };
+    await turnContext.run({ ...turn, plan, simulation: true }, async () => {
+      await this.assertCurrent(conversationId);
+      await work();
+    });
+    await this.db.$transaction(async tx => {
+      if (!await this.permitted(tx, turn, "reply", true)) throw new AutomationCancelledError();
+      for (const write of plan.writes) await write(tx);
+      if (plan.handoff) await tx.conversation.update({ where: { id: conversationId }, data: { botEnabled: false, status: "REQUIERE_ASESOR" } });
+      for (const reply of plan.handoff ? [plan.handoff] : plan.replies) {
+        const copies = await tx.chatMessage.count({ where: { conversationId, senderType: "BOT", content: reply.content, status: "simulated" } });
+        if (copies >= 2) continue;
+        await tx.chatMessage.create({ data: { conversationId, senderType: "BOT", direction: "OUTBOUND", messageType: (reply.type ?? "text").toUpperCase() as MessageType, content: reply.content, mediaUrl: reply.mediaUrl, status: "simulated", metadata: { source: reply.source, simulation: true } } });
+      }
+    });
+  }
+
   private currentTurn(conversationId: string) {
     const turn = turnContext.getStore();
     if (!turn || turn.conversationId !== conversationId) throw new AutomationCancelledError();
     return turn;
   }
 
-  private async permitted(tx: Tx, turn: Turn, kind = "reply") {
+  private async permitted(tx: Tx, turn: Turn, kind = "reply", simulation = false) {
     // Consistent lock order. Locks are released BEFORE network IO so taking a
     // chat never waits for the provider. Already-in-flight messages cannot be recalled.
     await tx.$queryRaw`SELECT id FROM "StoreSettings" WHERE id = 1 FOR SHARE`;
@@ -95,7 +117,7 @@ export class RockyOutbox {
     const conversation = await tx.conversation.findUnique({ where: { id: turn.conversationId }, include: { contact: true } });
     if (!settings?.botMasterSwitch || settings.automationRevision !== turn.globalRevision ||
         !conversation || conversation.automationRevision !== turn.conversationRevision ||
-        conversation.assignedUserId || conversation.contact.externalId?.startsWith("SIMULATOR:")) return false;
+        conversation.assignedUserId || Boolean(conversation.contact.externalId?.startsWith("SIMULATOR:")) !== simulation) return false;
     if (kind === "handoff") {
       if (conversation.botEnabled || conversation.status !== "REQUIERE_ASESOR") return false;
     } else if (!conversation.botEnabled || conversation.status !== "AUTOMATICO") return false;
@@ -112,7 +134,7 @@ export class RockyOutbox {
 
   async assertCurrent(conversationId: string) {
     const turn = this.currentTurn(conversationId);
-    if (!await this.db.$transaction(tx => this.permitted(tx, turn))) throw new AutomationCancelledError();
+    if (!await this.db.$transaction(tx => this.permitted(tx, turn, "reply", turn.simulation))) throw new AutomationCancelledError();
   }
 
   private async persist(tx: Tx, turn: Turn, input: Reply, kind = "reply") {

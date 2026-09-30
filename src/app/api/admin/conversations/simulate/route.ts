@@ -2,226 +2,40 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
-import { N8nAutomationProvider } from "@/lib/automations/n8n-provider";
 import { prisma } from "@/lib/prisma";
-import { normalizeWhatsappPhone } from "@/lib/utils";
+import { processIncomingMessage } from "@/lib/messages-service";
+import { planRockyResponse } from "@/lib/rocky-engine";
+import { rockyOutbox, AutomationCancelledError } from "@/lib/rocky-outbox";
 
 export const dynamic = "force-dynamic";
-
-const SIMULATOR_WEBHOOK_PATH = "whatsapp";
-
-const simulatorInputSchema = z.object({
+const inputSchema = z.object({
   content: z.string().trim().min(1).max(1200),
   name: z.string().trim().min(1).max(180).default("Cliente Simulador"),
-  phone: z.string().trim().max(32).default("+51 999 888 777"),
   sessionKey: z.string().trim().min(1).max(80).default("default"),
 });
-
-function buildSimulatorExternalId(sessionKey: string) {
-  const letters = Array.from(sessionKey)
-    .map((character) => String.fromCharCode(97 + (character.charCodeAt(0) % 26)))
-    .join("")
-    .slice(0, 80);
-
-  return `SIMULATOR:${letters || "session"}`;
-}
-
-async function triggerSimulatorWebhook(path: string, payload: unknown) {
-  const simulatorBaseUrl = process.env.N8N_SIMULATOR_URL?.trim();
-
-  if (!simulatorBaseUrl) {
-    await N8nAutomationProvider.triggerWebhook(path, payload);
-    return;
-  }
-
-  const endpoint = new URL(`/webhook/${path}`, simulatorBaseUrl);
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    throw new Error(`n8n simulator webhook returned ${response.status}`);
-  }
-}
 
 export async function POST(request: Request) {
   try {
     await requireAdmin();
-    const input = simulatorInputSchema.parse(await request.json());
-    const now = new Date();
-    const normalizedPhone = normalizeWhatsappPhone(input.phone);
-    const externalId = buildSimulatorExternalId(input.sessionKey);
-    const externalMessageId = `SIM-CUSTOMER-${randomUUID()}`;
-
-    const contact = await prisma.chatContact.upsert({
-      where: {
-        channel_externalId: {
-          channel: "WHATSAPP",
-          externalId,
-        },
-      },
-      create: {
-        channel: "WHATSAPP",
-        externalId,
-        name: input.name,
-        phone: input.phone,
-        phoneNormalized: normalizedPhone,
-        tags: ["simulador"],
-      },
-      update: {
-        name: input.name,
-        phone: input.phone,
-        phoneNormalized: normalizedPhone,
-      },
-    });
-
-    let conversation = await prisma.conversation.findFirst({
-      where: {
-        channel: "WHATSAPP",
-        contactId: contact.id,
-        status: { not: "CERRADO" },
-      },
-      orderBy: { lastMessageAt: "desc" },
-    });
-
-    if (!conversation) {
-      conversation = await prisma.conversation.create({
-        data: {
-          botEnabled: true,
-          channel: "WHATSAPP",
-          contactId: contact.id,
-          status: "AUTOMATICO",
-        },
-      });
-    } else if (!conversation.botEnabled || conversation.status !== "AUTOMATICO") {
-      conversation = await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: {
-          botEnabled: true,
-          status: "AUTOMATICO",
-        },
-      });
-    }
-
-    const settings = await prisma.storeSettings.findFirst({
-      select: { botMasterSwitch: true },
+    const input = inputSchema.parse(await request.json());
+    const incoming = await processIncomingMessage({
+      channel: "WHATSAPP", content: input.content, externalContactId: "SIMULATOR:" + input.sessionKey,
+      externalMessageId: "SIM-CUSTOMER-" + randomUUID(), name: input.name,
+      phone: "+15005550006", type: "TEXT", timestamp: new Date().toISOString(), metadata: { simulation: true },
     });
     let automationError: string | null = null;
-    let automationExecutionId: string | null = null;
-    let automationName: string | null = null;
-    let automationTriggered = false;
-
-    if (settings?.botMasterSwitch === false) {
-      automationError = "Bot global apagado en configuración.";
-    } else {
-      try {
-        const activeAutomation = await prisma.automation.findFirst({
-          where: { channel: "WHATSAPP", status: "ACTIVE" },
-          select: {
-            id: true,
-            name: true,
-            versions: {
-              where: { status: "PUBLISHED" },
-              orderBy: { version: "desc" },
-              take: 1,
-              select: { id: true },
-            },
-          },
-        });
-
-        const publishedVersion = activeAutomation?.versions[0] ?? null;
-
-        if (activeAutomation && publishedVersion) {
-          const execution = await prisma.automationExecution.create({
-            data: {
-              automationId: activeAutomation.id,
-              automationVersionId: publishedVersion.id,
-              conversationId: conversation.id,
-              correlationId: `${conversation.id}-${externalMessageId}`,
-              status: "RUNNING",
-            },
-          });
-
-          automationExecutionId = execution.id;
-        }
-
-        automationName = activeAutomation?.name ?? `Webhook directo ${SIMULATOR_WEBHOOK_PATH}`;
-        await triggerSimulatorWebhook(SIMULATOR_WEBHOOK_PATH, {
-          object: "whatsapp_business_account",
-          entry: [
-            {
-              id: "admin-simulator",
-              changes: [
-                {
-                  field: "messages",
-                  value: {
-                    contacts: [
-                      {
-                        profile: { name: input.name },
-                        wa_id: externalId,
-                      },
-                    ],
-                    messages: [
-                      {
-                        from: externalId,
-                        id: externalMessageId,
-                        text: { body: input.content },
-                        timestamp: String(Math.floor(now.getTime() / 1000)),
-                        type: "text",
-                      },
-                    ],
-                    metadata: {
-                      display_phone_number: input.phone,
-                      phone_number_id: "admin-simulator",
-                    },
-                    messaging_product: "whatsapp",
-                    simulation: {
-                      conversationId: conversation.id,
-                      dryRun: true,
-                      executionId: automationExecutionId,
-                      phone: input.phone,
-                      phoneNormalized: normalizedPhone,
-                      sessionKey: input.sessionKey,
-                      source: "admin-simulator",
-                    },
-                  },
-                },
-              ],
-            },
-          ],
-        });
-        automationTriggered = true;
-      } catch (error) {
-        automationError = error instanceof Error
-          ? error.message
-          : "No se pudo disparar la automatización de n8n.";
-      }
+    try {
+      await rockyOutbox.runSimulation(incoming.conversationId, incoming.messageId,
+        () => planRockyResponse(incoming.conversationId, incoming.messageId));
+    } catch (error) {
+      if (!(error instanceof AutomationCancelledError)) throw error;
+      automationError = "Rocky está pausado en esta conversación o globalmente. Inicia una sesión nueva para volver a probar.";
     }
-
-    const messages = await prisma.chatMessage.findMany({
-      where: { conversationId: conversation.id },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: 100,
-    });
-
-    return NextResponse.json({
-      automationError,
-      automationExecutionId,
-      automationName,
-      automationTriggered,
-      conversationId: conversation.id,
-      customerMessageId: null,
-      pendingSince: now.toISOString(),
-      messages,
-    });
+    const messages = await prisma.chatMessage.findMany({ where: { conversationId: incoming.conversationId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], take: 100 });
+    return NextResponse.json({ messages, conversationId: incoming.conversationId, customerMessageId: incoming.messageId,
+      automationError, automationTriggered: false, automationName: "Rocky — motor único, sin envíos reales", pendingSince: null });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
-    }
-
-    console.error("Simulator error:", error);
+    if (error instanceof z.ZodError) return NextResponse.json({ error: "Revisa el mensaje y la sesión de prueba." }, { status: 400 });
     return NextResponse.json({ error: "No se pudo simular la conversación." }, { status: 500 });
   }
 }
