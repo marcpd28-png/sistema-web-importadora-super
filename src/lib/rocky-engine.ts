@@ -11,32 +11,27 @@ type JsonRecord = Record<string, unknown>;
 function text(value: unknown) { return typeof value === "string" && value.trim() ? value.trim() : null; }
 function asRecord(value: unknown): JsonRecord | null { return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null; }
 
-const WELCOME_MESSAGE = `¡Hola! 👋 Bienvenido a Importaciones Super.
-Soy Rocky, tu asistente virtual.
-
-Puedes ver nuestro catálogo completo en nuestra tienda virtual:
-https://tiendavirtualsuper.com
-
-Si buscas un catálogo específico en PDF, escríbeme por ejemplo: “catálogo parlantes JBL” y te lo envío.
-
-Realizamos envíos por Shalom a todo el Perú. También puedes recoger tu pedido en nuestra tienda:
-
-Avenida Abancay 752, Centro de Lima
-Lun–Sáb: 8:00 a. m. – 8:00 p. m.
-Dom: 9:00 a. m. – 8:00 p. m.
-
-Si estás en Lima, también podemos coordinar el envío de tu pedido a domicilio por inDrive. El costo del delivery se coordina directamente contigo para que elijas la opción que más te convenga.
-
-Si deseas hablar directamente con un asesor, escribe “solicito asesor” en cualquier momento de la conversación y un asesor atenderá tu chat.
-
-¿Qué producto estás buscando hoy?`;
+const WELCOME_MESSAGE = `👋 ¡Hola! Buen día. Bienvenido a *Importaciones Super*. Soy *Rocky*, tu asistente virtual.
+📚 *TODOS NUESTROS PRODUCTOS Y CATÁLOGOS ACTUALIZADOS ESTÁN AQUÍ:*
+👉 https://mc.ht/s/rwQ7BMz
+Encontrarás *14 catálogos en PDF* con nuestros productos. 😉
+🛍️ También puedes visitar nuestra tienda virtual:
+👉 https://tiendavirtualsuper.com
+📸 Si ya viste un producto, *envíame la foto, nombre o modelo* y te ayudo a encontrarlo.
+🚚 Hacemos *envíos a Lima y a todo el Perú*.
+📍 También puedes visitarnos en *Av. Abancay 752, Cercado de Lima*.
+🕐 Atendemos *todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos*.
+Para atenderte más rápido, indícame:
+*📍 ¿Es para Lima o provincia?*
+*📦 ¿Deseas comprar por unidad o por mayor?*
+Si deseas hablar con una persona, escribe *“solicito asesor”* y te derivamos con un asesor.`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
 const PRODUCT_PROMPT_MESSAGE = "¡Hola! Con gusto te ayudo. ¿Qué producto del catálogo te interesa? Puedes escribirme el nombre, marca o código y te indico las opciones y precios disponibles.";
-const LOCATION_MESSAGE = "Nuestra tienda está en Avenida Abancay 752, Centro de Lima. Horario: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
+const LOCATION_MESSAGE = "Nuestra tienda está en Av. Abancay 752, Cercado de Lima. Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const PRODUCT_DELIVERY_MESSAGE = "Tenemos recojo en tienda (Avenida Abancay 752, Centro de Lima), envíos por Shalom a todo el Perú y delivery en Lima por inDrive. ¿En qué distrito o ciudad lo necesitas?";
-const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.–8:00 p. m.; Dom, 9:00 a. m.–8:00 p. m.";
+const HOURS_MESSAGE = "Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos.";
 const GENERAL_CATALOG_MESSAGE = "¡Claro! Puedes revisar y escoger los productos disponibles en nuestro catálogo completo: https://tiendavirtualsuper.com\n\nCuando elijas un producto, escríbeme su nombre o código y te confirmo el precio y stock. También hacemos envíos por Shalom a todo el Perú.";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
@@ -235,8 +230,11 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
   const content = (requests.length ? requests : fragments).join("\n") || latest.content;
   const result = { ok: true, duplicate: false, conversation: { botEnabled: true }, conversationId, messageId: triggerMessageId };
 
+  // The inbox already waits for ten seconds of silence. For a new automated
+  // conversation, send only the welcome regardless of the first message's intent.
+  if (await sendWelcomeIfNeeded(conversationId, from)) return result;
   if (isGreeting(content)) {
-    if (!await sendWelcomeIfNeeded(conversationId, from)) await sendBotText(conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+    await sendBotText(conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
     return result;
   }
   if (isAdvisorRequest(content)) {

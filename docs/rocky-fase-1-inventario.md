@@ -523,3 +523,19 @@ se validó con `pg_restore -l`; no se ensayó una restauración completa en prod
   Solo tres procesos PM2 activos, interruptor global conservado en true;
   seis trabajos recientes enviados al proveedor, sin fallos en la ventana leída.
   No se enviaron mensajes sintéticos a clientes ni se activó otro workflow.
+
+## 15. Bienvenida universal solicitada por el negocio
+
+La primera respuesta automática de una conversación, después del debounce de
+diez segundos desde el último mensaje, ahora es únicamente la bienvenida
+proporcionada por el propietario. Aplica aunque el primer mensaje sea producto,
+catálogo, multimedia, texto desconocido o petición de asesor. La atención por
+intención se retoma en el siguiente turno del cliente; no se agrega una búsqueda
+ni una derivación a esa primera bienvenida. No se reinician conversaciones que
+ya tuvieron respuesta automática ni conversaciones pausadas por intervención humana.
+
+Incluye el enlace `https://mc.ht/s/rwQ7BMz`, la referencia a 14 PDFs y las preguntas
+Lima/provincia y unidad/mayorista. Se utiliza negrita de WhatsApp (un asterisco).
+Horario de bienvenida, ubicación y consulta de horario unificado en 8:00 a. m.
+a 8:00 p. m. todos los días, incluidos domingos, según indicación del propietario.
+62 pruebas de conversación, pausa, outbox y webhook aprobadas; TypeScript correcto.

@@ -30,6 +30,13 @@ const receive = (content = "Hola", externalMessageId = randomUUID(), timestamp =
 const input = (conversationId: string) => db.rockyInboundTurn.findUniqueOrThrow({ where: { conversationId } });
 const reply = (conversationId: string, content = "Respuesta") => outbox.enqueue({ conversationId, recipient, content, source: "synthetic-phase3" });
 const due = async (worker: RockyInbox, id: string) => worker.tick((await input(id)).dueAt);
+// Existing-conversation scenarios are evaluated after a previously delivered
+// bot response. Remove only this fixture so assertions count new replies.
+const establishedPlanner: typeof planRockyResponse = async (cid, mid, mids) => {
+  const prior = await db.chatMessage.create({ data: { conversationId: cid, direction: "OUTBOUND", senderType: "BOT", content: "Previous welcome", status: "read", createdAt: new Date(Date.now() - 60_000) } });
+  try { return await planRockyResponse(cid, mid, mids); }
+  finally { await db.chatMessage.delete({ where: { id: prior.id } }); }
+};
 
 test("concurrent duplicate webhooks persist exactly one contact, chat, message and timer", async () => {
   const id = randomUUID();
@@ -195,19 +202,22 @@ test("a slow conversation does not block another customer's input", async () => 
   await pending;
 });
 
-test("real engine treats greeting + catalog request as one request, without welcome or handoff", async () => {
+test("first greeting and catalog request receive only the new universal welcome", async () => {
   const first = await receive("Hola"); await receive("Me puede brindar su catálogo");
   await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1);
-  assert.match(replies[0].content, /catálogo completo/);
-  assert.doesNotMatch(replies[0].content, /Bienvenido|derivé|derivo/);
+  assert.match(replies[0].content, /Bienvenido/);
+  assert.match(replies[0].content, /https:\/\/mc.ht\/s\/rwQ7BMz/);
+  assert.match(replies[0].content, /14 catálogos en PDF/);
+  assert.match(replies[0].content, /incluidos domingos/);
+  assert.doesNotMatch(replies[0].content, /9:00|Te derivé/);
 });
 
 test("real engine answers a split product-price request using the catalog", async () => {
   await db.product.create({ data: { code: "TEST-TV", slug: "phase3-test-tv", name: "TELEVISOR LED 32 PULGADAS", category: "televisor", unitPrice: 399, stockUnits: 5, imageUrl: "https://example.invalid/tv.jpg" } });
   const first = await receive("Hola"); await receive("Precio del televisor");
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.ok(replies.some(reply => reply.content.includes("399")));
   assert.ok(replies.every(reply => !/Bienvenido|derivé|derivo/.test(reply.content)));
@@ -218,6 +228,33 @@ test("repeated greeting fragments produce one welcome, not a handoff", async () 
   await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1); assert.match(replies[0].content, /Bienvenido/);
+});
+
+for (const content of ["Precio del televisor", "imagen recibido", "cualquier cosa", "solicito asesor"]) {
+  test(`first message receives only welcome after debounce: ${content}`, async () => {
+    const first = await receive(content);
+    const worker = new RockyInbox(db, outbox, planRockyResponse);
+    assert.equal(await worker.tick(new Date((await input(first.conversationId)).dueAt.getTime() - 1)), false);
+    assert.equal(await db.chatMessage.count({ where: { senderType: "BOT" } }), 0);
+    await due(worker, first.conversationId);
+    const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+    assert.equal(replies.length, 1);
+    assert.match(replies[0].content, /TODOS NUESTROS PRODUCTOS Y CATÁLOGOS/);
+    assert.match(replies[0].content, /¿Es para Lima o provincia/);
+    assert.match(replies[0].content, /¿Deseas comprar por unidad o por mayor/);
+    await due(worker, first.conversationId);
+    assert.equal(await db.chatMessage.count({ where: { senderType: "BOT" } }), 1);
+  });
+}
+
+test("welcome is not repeated on the next customer greeting", async () => {
+  const first = await receive("Hola");
+  const worker = new RockyInbox(db, outbox, planRockyResponse);
+  await due(worker, first.conversationId);
+  await outbox.tick();
+  await receive("Hola de nuevo");
+  await due(worker, first.conversationId);
+  assert.equal(await db.chatMessage.count({ where: { senderType: "BOT", content: { contains: "14 catálogos en PDF" } } }), 1);
 });
 
 test("database retrieval preserves numeric models, stock, price and device identity", async () => {
@@ -254,7 +291,7 @@ test("model interpretation asks for confirmation without sending a price or paym
   globalThis.fetch = async () => Response.json({ message: { content: '{"query":"licuadora"}' } });
   try {
     const message = await receive("aparato que sirve para mezclar frutas");
-    await due(new RockyInbox(db, outbox, planRockyResponse), message.conversationId);
+    await due(new RockyInbox(db, outbox, establishedPlanner), message.conversationId);
     const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
     assert.equal(replies.length, 1);
     assert.match(replies[0].content, /¿Te refieres a LICUADORA/);
@@ -285,7 +322,7 @@ test("matching a category never discards a requested brand or screen size", asyn
 test("informal TV enquiry produces a priced result instead of a failed catalog or handoff", async () => {
   await db.product.create({ data: { code: "TV", slug: "tv", name: "TELEVISOR 32", unitPrice: 399, stockUnits: 5 } });
   const first = await receive("muy buen día habrá tv");
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.ok(replies.some(reply => reply.content.includes("399")));
   assert.ok(replies.every(reply => !/derivé|derivo|no encontr|\?q=/.test(reply.content)));
@@ -293,7 +330,7 @@ test("informal TV enquiry produces a priced result instead of a failed catalog o
 
 test("a miss sends only a controlled advisor handoff, never a fabricated search link", async () => {
   const first = await receive("iphone 15 precio");
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1); assert.match(replies[0].content, /asesor/);
   assert.doesNotMatch(replies[0].content, /no encontr|no pude|https?:/);
@@ -302,7 +339,7 @@ test("a miss sends only a controlled advisor handoff, never a fabricated search 
 test("a pending delivery question cannot swallow a location or price question", async () => {
   const first = await receive("Donde estan ubicados");
   await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } } });
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1); assert.match(replies[0].content, /Abancay/);
   const state = await db.conversationSalesState.findUniqueOrThrow({ where: { conversationId: first.conversationId } });
@@ -314,7 +351,7 @@ test("quantity follow-up rereads live price and wholesale tier, not cached sales
   await db.product.create({ data: { code: "TEST-QUOTE", slug: "test-quote", name: "Televisor", unitPrice: 100, wholesalePrice: 90, wholesaleMinQty: 3, stockUnits: 10 } });
   const first = await receive("3 unidades");
   await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "TEST-QUOTE", unitPrice: 1 } });
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const state = await db.conversationSalesState.findUniqueOrThrow({ where: { conversationId: first.conversationId } });
   assert.equal(Number(state.total), 270); assert.equal(Number(state.unitPrice), 90);
   assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).some(reply => reply.content.includes("270.00")));
@@ -324,7 +361,7 @@ test("unavailable quantity hands off instead of quoting stale stock", async () =
   await db.product.create({ data: { code: "LOW", slug: "low", name: "Televisor", unitPrice: 100, stockUnits: 1 } });
   const first = await receive("3 unidades");
   await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "LOW", unitPrice: 100 } });
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   assert.equal((await db.conversation.findUniqueOrThrow({ where: { id: first.conversationId } })).status, "REQUIERE_ASESOR");
   assert.equal(await db.chatMessage.count({ where: { senderType: "BOT" } }), 1);
 });
@@ -333,7 +370,7 @@ test("a new product model and quantity never quote the previously selected model
   await db.product.create({ data: { code: "OLD", slug: "old", name: "Televisor", unitPrice: 100, stockUnits: 10 } });
   const first = await receive("iphone 15, 3 unidades");
   await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "OLD", unitPrice: 100 } });
-  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).every(reply => !reply.content.includes("300.00")));
 });
 
