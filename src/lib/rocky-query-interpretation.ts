@@ -18,7 +18,7 @@ export function validateInterpretedQuery(message: string, value: unknown) {
 }
 
 export async function interpretProductQuery(message: string, request: typeof fetch = fetch) {
-  if (process.env.OLLAMA_ENABLED !== "true" || message.length > 1200) return null;
+  if (process.env.ROCKY_QUERY_INTERPRETATION_ENABLED !== "true" || process.env.OLLAMA_ENABLED !== "true" || message.length > 1200) return null;
   try {
     const response = await request(`${(process.env.OLLAMA_HOST || "http://127.0.0.1:11434").replace(/\/+$/, "")}/api/chat`, {
       method: "POST", signal: AbortSignal.timeout(6000),

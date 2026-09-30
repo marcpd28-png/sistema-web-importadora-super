@@ -506,3 +506,10 @@ se validó con `pg_restore -l`; no se ensayó una restauración completa en prod
 - No hay nuevo proceso, workflow ni migración. Los productos ocultos no se publican
   y los fallos del modelo conservan la derivación segura. Esta mejora no garantiza
   comprensión universal ni habilita coincidencias semánticas directas para PDFs.
+- La interpretación de modelo queda DESACTIVADA por defecto hasta superar una
+  evaluación de latencia/calidad real (`ROCKY_QUERY_INTERPRETATION_ENABLED=true`
+  más `OLLAMA_ENABLED=true` son necesarios). En la VPS el modelo configurado
+  agotó seis segundos en cuatro consultas; el modelo pequeño probó una salida
+  inadecuada y tardó más de diez segundos. No se habilita solo por estar instalado.
+  Sí queda activa la búsqueda léxica general corregida; esto no completa todavía
+  la recuperación semántica propuesta.

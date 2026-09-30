@@ -13,6 +13,8 @@ test("interpretation cannot change numbers, dimensions or attach commercial fact
 
 test("model failure, invalid JSON and invalid schema safely return no interpretation", async () => {
   const before = process.env.OLLAMA_ENABLED;
+  const flag = process.env.ROCKY_QUERY_INTERPRETATION_ENABLED;
+  process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = "true";
   process.env.OLLAMA_ENABLED = "true";
   try {
     for (const body of [{ message: { content: 'not JSON' } }, { message: { content: '{"query":123}' } }, {}]) {
@@ -20,7 +22,10 @@ test("model failure, invalid JSON and invalid schema safely return no interpreta
     }
     assert.equal(await interpretProductQuery('busco una licuadora', async () => { throw new Error('timeout'); }), null);
     assert.equal(await interpretProductQuery('busco una licuadora', async () => new Response('', { status: 503 })), null);
-  } finally { if (before === undefined) delete process.env.OLLAMA_ENABLED; else process.env.OLLAMA_ENABLED = before; }
+  } finally {
+    if (before === undefined) delete process.env.OLLAMA_ENABLED; else process.env.OLLAMA_ENABLED = before;
+    if (flag === undefined) delete process.env.ROCKY_QUERY_INTERPRETATION_ENABLED; else process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = flag;
+  }
 });
 
 test("disabled model never makes a network request", async () => {

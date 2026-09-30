@@ -248,6 +248,8 @@ test("model interpretation asks for confirmation without sending a price or paym
   await db.product.create({ data: { code: "BLENDER", slug: "blender", name: "LICUADORA", stockUnits: 3, unitPrice: 89 } });
   const previousFetch = globalThis.fetch;
   const enabled = process.env.OLLAMA_ENABLED;
+  const interpretationEnabled = process.env.ROCKY_QUERY_INTERPRETATION_ENABLED;
+  process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = "true";
   process.env.OLLAMA_ENABLED = "true";
   globalThis.fetch = async () => Response.json({ message: { content: '{"query":"licuadora"}' } });
   try {
@@ -267,6 +269,7 @@ test("model interpretation asks for confirmation without sending a price or paym
   } finally {
     globalThis.fetch = previousFetch;
     if (enabled === undefined) delete process.env.OLLAMA_ENABLED; else process.env.OLLAMA_ENABLED = enabled;
+    if (interpretationEnabled === undefined) delete process.env.ROCKY_QUERY_INTERPRETATION_ENABLED; else process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = interpretationEnabled;
   }
 });
 
