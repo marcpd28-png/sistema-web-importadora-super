@@ -513,3 +513,13 @@ se validó con `pg_restore -l`; no se ensayó una restauración completa en prod
   inadecuada y tardó más de diez segundos. No se habilita solo por estar instalado.
   Sí queda activa la búsqueda léxica general corregida; esto no completa todavía
   la recuperación semántica propuesta.
+- Desplegado código `0d983f3`, build `JqBgnE5-u17aj73rIM4mK`; respaldo
+  `/root/rocky-search-backup.W2yeLf`. 220 pruebas combinadas aprobadas y 64
+  comprobaciones del núcleo repetidas después del interruptor del modelo.
+  TypeScript y build correctos. Contra 7.256 productos, búsquedas de identidad
+  entre 212 y 437 ms en seis consultas de lectura (no es una prueba de carga).
+  Producción: tienda 200, webhook sin firma 401, entrada antigua 410; consultas
+  públicas de licuadoras con error ortográfico, ventiladores e hielo correctas.
+  Solo tres procesos PM2 activos, interruptor global conservado en true;
+  seis trabajos recientes enviados al proveedor, sin fallos en la ventana leída.
+  No se enviaron mensajes sintéticos a clientes ni se activó otro workflow.
