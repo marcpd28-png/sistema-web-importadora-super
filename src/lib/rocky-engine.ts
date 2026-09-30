@@ -142,6 +142,17 @@ function productSearchCaption(product: {
  * "busco un repetidor wifi" or "tienen parlantes". */
 async function sendProductSearchResults(conversationId: string, recipient: string, content: string, productContextCode?: string) {
   const reply = await answerShopAssistant({ message: content, productContextCode });
+  if (reply.searchClarification?.length) {
+    const previous = await prisma.conversationSalesState.findUnique({ where: { conversationId }, select: { deliveryData: true } });
+    const deliveryData = { ...asRecord(previous?.deliveryData), awaitingProductConfirmation: true } as Prisma.InputJsonValue;
+    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
+      where: { conversationId },
+      create: { conversationId, stage: "AWAITING_PRODUCT_QUERY", shownProducts: reply.searchClarification!.map((product, index) => ({ ...product, position: index + 1 })), deliveryData },
+      update: { stage: "AWAITING_PRODUCT_QUERY", selectedProductCode: null, quantity: null, shownProducts: reply.searchClarification!.map((product, index) => ({ ...product, position: index + 1 })), deliveryData },
+    }));
+    await sendBotText(conversationId, recipient, reply.text, "product_search_clarification");
+    return true;
+  }
   // Two precise alternatives are easier to compare and prevent a catalog
   // search from turning into a sequence of repetitive bot bubbles.
   const products = (reply.products ?? []).filter(product => product.stockUnits > 0 && Number.isFinite(product.unitPriceValue) && product.unitPriceValue > 0).slice(0, 2);
@@ -163,7 +174,7 @@ async function sendProductSearchResults(conversationId: string, recipient: strin
   const previousState = await prisma.conversationSalesState.findUnique({ where: { conversationId }, select: { deliveryData: true } });
   const previousDelivery = asRecord(previousState?.deliveryData) ?? {};
   const knownDestination = text(previousDelivery.location) ?? text(previousDelivery.limaAddress);
-  const deliveryData = { ...previousDelivery, awaitingDeliveryLocation: !knownDestination } as Prisma.InputJsonValue;
+  const deliveryData = { ...previousDelivery, awaitingProductConfirmation: false, awaitingDeliveryLocation: !knownDestination } as Prisma.InputJsonValue;
   await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
     where: { conversationId },
     create: { conversationId, stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, deliveryData, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
@@ -240,7 +251,9 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
   if (isPaymentRequest(content)) { await sendPaymentNotice(conversationId, from); return result; }
 
   const salesState = await prisma.conversationSalesState.findUnique({ where: { conversationId } });
-  const selected = selectedShownProduct(content, salesState?.shownProducts);
+  const confirmation = asRecord(salesState?.deliveryData)?.awaitingProductConfirmation && salesState && Date.now() - salesState.updatedAt.getTime() < 10 * 60 * 1000;
+  const singleConfirmation = confirmation && /^(si|si ese|si esa|correcto|ese|esa|exacto)$/.test(normalizedText(content)) && Array.isArray(salesState.shownProducts) && salesState.shownProducts.length === 1 ? asRecord(salesState.shownProducts[0]) : null;
+  const selected = selectedShownProduct(content, salesState?.shownProducts) ?? singleConfirmation;
   const code = text(selected?.code) ?? salesState?.selectedProductCode;
   const quantity = requestedUnits(content);
   if (quantity && code && (selected || isQuantityOnly(content))) {
@@ -253,6 +266,11 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
     return result;
   }
   if (selected && code) {
+    if (asRecord(salesState?.deliveryData)?.awaitingProductConfirmation) {
+      if (await sendProductSearchResults(conversationId, from, code, code)) return result;
+      await handOffToAdvisor(conversationId, from, "selection_validation_handoff");
+      return result;
+    }
     const product = await prisma.product.findUnique({ where: { code } });
     if (!product || !verifiedQuote(product, 1)) { await handOffToAdvisor(conversationId, from, "selection_validation_handoff"); return result; }
     await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { selectedProductCode: code, stage: "AWAITING_QUANTITY" } }));

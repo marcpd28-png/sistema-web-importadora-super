@@ -1,4 +1,5 @@
-import { findCatalogProductIds, matchesProductQuery, productQueryTerms } from "./rocky-product-query";
+import { searchCatalogIdentity, matchesProductQuery, productQueryTerms } from "./rocky-product-query";
+import { interpretProductQuery } from "./rocky-query-interpretation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
@@ -960,14 +961,14 @@ function createRealRepository(): ShopAssistantRepository {
     },
 
     async searchVisibleProducts(query) {
-      const ids = await findCatalogProductIds(query, MAX_SEARCH_CANDIDATES);
+      const { ids, query: resolvedQuery } = await searchCatalogIdentity(query, MAX_SEARCH_CANDIDATES);
       if (!ids.length) return [];
       const products = await prisma.product.findMany({
         where: { id: { in: ids }, isVisible: true, stockUnits: { gt: 0 }, unitPrice: { gt: 0 } },
         select: ASSISTANT_PRODUCT_SELECT,
       });
-      return products.filter(product => matchesProductQuery(product, query))
-        .sort((left, right) => scoreAssistantProduct(right, query) - scoreAssistantProduct(left, query));
+      return products.filter(product => matchesProductQuery(product, resolvedQuery))
+        .sort((left, right) => scoreAssistantProduct(right, resolvedQuery) - scoreAssistantProduct(left, resolvedQuery));
     },
 
     async getFeaturedProducts() {
@@ -1589,5 +1590,18 @@ export async function answerShopAssistant(input: {
   contextCategorySlug?: string | null;
   recentMessages?: Array<{ role: "assistant" | "user"; text: string }>;
 }): Promise<ShopAssistantReply> {
-  return answerWithRealRepository(input);
+  const reply = await answerWithRealRepository(input);
+  if (reply.text.trim() || reply.products?.length || input.productContextCode) return reply;
+  const interpreted = await interpretProductQuery(input.message);
+  if (!interpreted || interpreted === productQueryTerms(input.message).join(" ")) return reply;
+  // A model-generated synonym must be confirmed by the customer. It never
+  // directly supplies cards, prices, payment prompts, or catalog links.
+  const candidates = (await realRepository.searchVisibleProducts(interpreted)).slice(0, 2);
+  if (!candidates.length) return reply;
+  const searchClarification = candidates.map(({ code, name }) => ({ code, name }));
+  return {
+    text: `¿Te refieres a ${searchClarification.map(product => `${product.name} (${product.code})`).join(" o a ")}? Confírmame cuál para consultar su precio y disponibilidad.`,
+    searchClarification,
+    meta: { intent: "product_clarification", usedOllama: true },
+  };
 }

@@ -32,6 +32,7 @@ export type ShopAssistantProductCard = {
 
 export type ShopAssistantReply = {
   text: string;
+  searchClarification?: Array<{ code: string; name: string }>;
   contextProductCode?: string | null;
   contextCategorySlug?: string | null;
   products?: ShopAssistantProductCard[];

@@ -489,3 +489,20 @@ Recuperación: cerrar webhook, detener inbox/outbox, restaurar build y Nginx de
 este respaldo de manera coordinada. No ejecutar `pm2 resurrect` sobre el inventario
 antiguo completo ni reactivar emisores/workflows retirados. El respaldo de base
 se validó con `pg_restore -l`; no se ensayó una restauración completa en producción.
+
+## 14. Recuperación general de productos (30 de septiembre)
+
+- La corrección ortográfica utiliza vocabulario del catálogo completo: una edición
+  inequívoca, sin modificar códigos, números ni marcas conocidas. No se agregan
+  excepciones por SKU. Palabras ambiguas siguen siendo restricciones.
+- Identidad y elegibilidad comercial se calculan por separado. Solo se ofrecen
+  productos visibles, con stock y precio positivo, consultados nuevamente al cotizar.
+- Las medidas se normalizan conservando su unidad: 32 pulgadas no equivale a 32 GB.
+- Búsqueda compartida por respuestas, simulador, PDFs e integración interna.
+- Cuando la respuesta determinista queda vacía, el modelo local puede proponer
+  una consulta alternativa. Tiene límite de seis segundos y salida validada.
+  Sus resultados solo generan una pregunta de confirmación, sin precio ni pago;
+  se mantienen los controles de cancelación por intervención humana y duplicados.
+- No hay nuevo proceso, workflow ni migración. Los productos ocultos no se publican
+  y los fallos del modelo conservan la derivación segura. Esta mejora no garantiza
+  comprensión universal ni habilita coincidencias semánticas directas para PDFs.

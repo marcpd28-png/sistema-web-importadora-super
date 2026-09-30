@@ -6,7 +6,7 @@ import { processIncomingMessage } from "./messages-service";
 import { RockyOutbox } from "./rocky-outbox";
 import { RockyInbox } from "./rocky-inbox";
 import { planRockyResponse } from "./rocky-engine";
-import { findCatalogProductIds } from "./rocky-product-query";
+import { findCatalogProductIds, searchCatalogIdentity } from "./rocky-product-query";
 import { answerShopAssistant } from "./shop-assistant";
 
 const url = process.env.ROCKY_TEST_DATABASE_URL;
@@ -230,8 +230,44 @@ test("database retrieval preserves numeric models, stock, price and device ident
   for (const [code, name, stockUnits, unitPrice] of rows) await db.product.create({ data: { code, slug: code.toLowerCase(), name, stockUnits, unitPrice } });
   const ids = await findCatalogProductIds("iphone 15 precio");
   assert.deepEqual((await db.product.findMany({ where: { id: { in: ids } } })).map(p => p.code), ["PHONE15"]);
+  const identity = await searchCatalogIdentity("iphone 15 precio");
+  assert.deepEqual((await db.product.findMany({ where: { id: { in: identity.unavailableIds } }, orderBy: { code: "asc" } })).map(p => p.code), ["FREE15", "ZERO15"]);
   const ice = await findCatalogProductIds("maquinade hielo");
   assert.deepEqual((await db.product.findMany({ where: { id: { in: ice } } })).map(p => p.code), ["ICE"]);
+});
+
+test("general spelling repair reaches actual product replies without changing dimensions", async () => {
+  await db.product.create({ data: { code: "BLENDER", slug: "blender", name: "LICUADORA 2 LITROS", stockUnits: 3, unitPrice: 89 } });
+  const reply = await answerShopAssistant({ message: "Todavía tienen a la venta licudora" });
+  assert.deepEqual(reply.products?.map(product => product.code), ["BLENDER"]);
+  await db.product.create({ data: { code: "TABLET", slug: "tablet", name: 'TABLET 10" 32GB', stockUnits: 3, unitPrice: 89 } });
+  assert.deepEqual(await findCatalogProductIds("tablet de 32 pulgadas"), []);
+});
+
+test("model interpretation asks for confirmation without sending a price or payment", async () => {
+  await db.product.create({ data: { code: "BLENDER", slug: "blender", name: "LICUADORA", stockUnits: 3, unitPrice: 89 } });
+  const previousFetch = globalThis.fetch;
+  const enabled = process.env.OLLAMA_ENABLED;
+  process.env.OLLAMA_ENABLED = "true";
+  globalThis.fetch = async () => Response.json({ message: { content: '{"query":"licuadora"}' } });
+  try {
+    const message = await receive("aparato que sirve para mezclar frutas");
+    await due(new RockyInbox(db, outbox, planRockyResponse), message.conversationId);
+    const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+    assert.equal(replies.length, 1);
+    assert.match(replies[0].content, /¿Te refieres a LICUADORA/);
+    assert.doesNotMatch(replies[0].content, /89|cuentas|deriv/);
+    const state = await db.conversationSalesState.findUnique({ where: { conversationId: message.conversationId } });
+    assert.equal(state?.selectedProductCode, null);
+    await outbox.tick();
+    await receive("sí");
+    await due(new RockyInbox(db, outbox, planRockyResponse), message.conversationId);
+    const confirmed = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+    assert.ok(confirmed.some(reply => reply.content.includes("89")));
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (enabled === undefined) delete process.env.OLLAMA_ENABLED; else process.env.OLLAMA_ENABLED = enabled;
+  }
 });
 
 test("matching a category never discards a requested brand or screen size", async () => {
