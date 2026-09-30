@@ -21,6 +21,9 @@ type CatalogProductImage = {
   code: string;
   imageUrls: string[];
   updatedAt: Date;
+  unitPrice: unknown;
+  wholesalePrice: unknown;
+  wholesaleMinQty: number;
 };
 
 export type GeneratedCatalogPdf = {
@@ -95,6 +98,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
       },
       sourceImageUrl: true,
       updatedAt: true,
+      unitPrice: true, wholesalePrice: true, wholesaleMinQty: true,
     },
   });
 
@@ -110,7 +114,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
       ),
     );
 
-    return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
+    return imageUrls.length ? [{ ...product, imageUrls }] : [];
   });
 }
 
@@ -124,6 +128,7 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
       id: true, name: true, code: true, imageUrl: true, localImageUrl: true,
       media: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       sourceImageUrl: true, updatedAt: true,
+      unitPrice: true, wholesalePrice: true, wholesaleMinQty: true,
     },
   });
 
@@ -131,13 +136,13 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
     const imageUrls = Array.from(new Set([
       product.localImageUrl, ...product.media.map((media) => media.url), product.sourceImageUrl, product.imageUrl,
     ].filter((value): value is string => Boolean(value?.trim()))));
-    return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
+    return imageUrls.length ? [{ ...product, imageUrls }] : [];
   });
 }
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {
   return createHash("sha256")
-    .update("large-product-page-v3")
+    .update("large-product-page-v4-current-prices")
     .update(
       JSON.stringify(
         products.map((product) => [
@@ -232,7 +237,7 @@ async function loadFirstAvailableImage(product: CatalogProductImage) {
   throw new Error(`No available image for product ${product.id}`);
 }
 
-export function renderCatalogImagePdf(images: { image: Buffer; name: string; code: string }[], title = "CATÁLOGO DE PRODUCTOS") {
+export function renderCatalogImagePdf(images: { image: Buffer; name: string; code: string; unitPrice?: unknown; wholesalePrice?: unknown; wholesaleMinQty?: number }[], title = "CATÁLOGO DE PRODUCTOS") {
   return new Promise<Buffer>((resolve, reject) => {
     const document = new PDFDocument({
       autoFirstPage: false,
@@ -271,9 +276,10 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
         });
       document.moveTo(marginX, 66).lineTo(pageWidth - marginX, 66)
         .lineWidth(2).strokeColor(BRAND_PRIMARY).stroke();
+      document.fillColor("#555555").font("Helvetica").fontSize(8).text("Imagen referencial. Consulta los precios vigentes al pie de esta página.", marginX, 71, { width: imageWidth, align: "center" });
       document.image(product.image, marginX, headerHeight, {
         align: "center",
-        fit: [imageWidth, 605],
+        fit: [imageWidth, 555],
         valign: "center",
       });
       document.fillColor("#17172B").font("Helvetica-Bold").fontSize(17);
@@ -281,9 +287,13 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
       while (document.heightOfString(product.name, { width: imageWidth }) > 56 && nameSize > 11) {
         document.fontSize(--nameSize);
       }
-      document.text(product.name, marginX, 704, { width: imageWidth, align: "center" });
+      document.text(product.name, marginX, 653, { width: imageWidth, align: "center" });
       document.fillColor(BRAND_PRIMARY).font("Helvetica-Bold").fontSize(15)
-        .text(`Código: ${product.code}`, marginX, 768, { width: imageWidth, align: "center" });
+        .text(`Código: ${product.code}`, marginX, 715, { width: imageWidth, align: "center" });
+      if (Number(product.unitPrice) > 0) {
+        document.fillColor("#17172B").font("Helvetica-Bold").fontSize(14).text(`Precio vigente: S/ ${Number(product.unitPrice).toFixed(2)}`, marginX, 744, { width: imageWidth, align: "center" });
+        if (Number(product.wholesalePrice) > 0) document.font("Helvetica").fontSize(12).text(`Mayorista desde ${product.wholesaleMinQty} unidades: S/ ${Number(product.wholesalePrice).toFixed(2)}`, marginX, 766, { width: imageWidth, align: "center" });
+      }
       document.fillColor("#666666").font("Helvetica").fontSize(9)
         .text(`${index + 1} / ${images.length}`, marginX, pageHeight - 28, { width: imageWidth, align: "center" });
     });
@@ -320,7 +330,7 @@ async function createCatalogPdf(products: CatalogProductImage[], slug: string, t
     imageResults.push(...await Promise.allSettled(products.slice(index, index + 4).map(loadFirstAvailableImage)));
   }
   const images = imageResults.flatMap((result, index) =>
-    result.status === "fulfilled" ? [{ image: result.value, name: products[index].name, code: products[index].code }] : [],
+    result.status === "fulfilled" ? [{ ...products[index], image: result.value }] : [],
   );
 
   if (!images.length) {

@@ -44,7 +44,7 @@ export function productTermAlternatives(term: string) {
 function termPattern(term: string) {
   return `(^|[^a-z0-9])(${productTermAlternatives(term).join("|")})($|[^a-z0-9])`;
 }
-const ACCESSORIES = "funda|fundas|protector|protectores|soporte|soportes|control|controles|cargador|cargadores|cable|cables|adaptador|adaptadores|box|stick|cooler|holder|aro|microfono|tripode|audifono|audifonos|auricular|auriculares";
+const ACCESSORIES = "funda|fundas|protector|protectores|soporte|soportes|control|controles|cargador|cargadores|cable|cables|adaptador|adaptadores|box|stick|cooler|holder|aro|microfono|tripode|audifono|audifonos|auricular|auriculares|dado";
 function needsMainDevice(terms: string[]) {
   return terms.some(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term))) &&
     !terms.some(term => new RegExp(`^(${ACCESSORIES})$`).test(term));
@@ -55,6 +55,7 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
   const text = normalizeProductQuery([product.name, product.code, product.externalCode, product.brand, product.category].filter(Boolean).join(" "));
   if (needsMainDevice(terms) && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
   if (needsMainDevice(terms)) {
+    if (/accesorio/.test(normalizeProductQuery(product.category ?? ""))) return false;
     const device = terms.find(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
     if (!new RegExp(termPattern(device)).test(normalizeProductQuery(product.name).split(" para ")[0])) return false;
   }
@@ -71,6 +72,7 @@ export async function findCatalogProductIds(query: string, limit = 80) {
   const conditions = terms.map(term => Prisma.sql`${identity} ~ ${termPattern(term)}`);
   if (needsMainDevice(terms)) conditions.push(Prisma.sql`NOT (translate(lower("name"), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${`(^|[^a-z0-9])(${ACCESSORIES})($|[^a-z0-9])`})`);
   if (needsMainDevice(terms)) {
+    conditions.push(Prisma.sql`lower(COALESCE("category", '')) NOT LIKE '%accesorio%'`);
     const device = terms.find(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
     conditions.push(Prisma.sql`translate(split_part(lower("name"), ' para ', 1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${termPattern(device)}`);
   }
