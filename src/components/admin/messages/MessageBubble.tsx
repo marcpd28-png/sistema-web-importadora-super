@@ -36,7 +36,7 @@ export function MessageBubble({ message, onRetry }: Props) {
   const isTextLike = message.messageType === "TEXT" || message.messageType === "UNKNOWN";
 
   return <div className={`message-bubble ${bubbleClass} ${isFailed ? "message-failed" : ""}`}>
-    <div className="message-sender">{senderName} {isBot ? <span className="message-bot-badge">🤖 n8n Auto</span> : null}</div>
+    <div className="message-sender">{senderName} {isBot ? <span className="message-bot-badge">🤖 Rocky</span> : null}</div>
     <div className="message-content">
       {isTextLike ? <span>{message.content}</span> : null}
       {message.messageType === "IMAGE" && mediaSource ? <div className="message-media-attachment"><button className="message-image-preview" onClick={() => setIsMediaOpen(true)} type="button"><img alt={message.content || "Imagen enviada"} src={mediaSource} /><span><Expand size={16} /> Ampliar imagen</span></button>{message.content ? <span>{message.content}</span> : null}</div> : null}
@@ -44,7 +44,10 @@ export function MessageBubble({ message, onRetry }: Props) {
       {["VIDEO", "AUDIO", "DOCUMENT"].includes(message.messageType) ? <MediaAttachment message={message} onOpen={() => setIsMediaOpen(true)} /> : null}
     </div>
     <span className="message-time">{timeStr}</span>
-    {isAgent && message.status === "sent" ? <span className="message-delivery-status">Aceptado; entrega no confirmada.</span> : null}
+    {(isAgent || isBot) && message.status === "accepted" ? <span className="message-delivery-status">Aceptado; entrega no confirmada.</span> : null}
+    {message.status === "queued" ? <span className="message-sending-status">En cola; todavía no enviado.</span> : null}
+    {message.status === "cancelled" ? <span className="message-delivery-status">Cancelado; no se envió.</span> : null}
+    {message.status === "uncertain" ? <span className="message-failure-status">Entrega sin confirmar. Revisa WhatsApp antes de volver a enviar.</span> : null}
     {isSending ? <span className="message-sending-status">Enviando...</span> : null}
     {isFailed ? <span className="message-failure-status">{failureReason}</span> : null}
     {isFailed && onRetry ? <button className="message-retry" onClick={() => onRetry(message)} type="button">Reintentar</button> : null}

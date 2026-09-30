@@ -6,7 +6,9 @@ export class N8nAutomationProvider {
   }
 
   private static get apiKey() {
-    return process.env.N8N_API_KEY || "ZLvLtVT5iUOHPPQf2eaB5Mkg3E6g2UXQnFhL6o8YzLM="; // Fallback from knowledge base
+    const key = process.env.N8N_API_KEY?.trim();
+    if (!key) throw new Error("N8N_API_KEY is required");
+    return key;
   }
 
   private static get isDev() {

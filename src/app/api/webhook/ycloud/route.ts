@@ -1,11 +1,12 @@
-import { createHash, createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { MessageType, Prisma } from "@prisma/client";
 import { getAutomationConversationContext, processIncomingMessage } from "@/lib/messages-service";
 import { triggerPusherEvent } from "@/lib/pusher-server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsappPhone } from "@/lib/utils";
-import { sendYCloudOutboundMessage as deliverYCloudOutboundMessage } from "@/lib/ycloud-outbound";
+import { AutomationCancelledError, rockyOutbox } from "@/lib/rocky-outbox";
+import { recordYCloudReceipt } from "@/lib/ycloud-receipts";
 import { buildPublicUrl } from "@/lib/site-url";
 import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "@/lib/catalog-pdf";
 import { answerShopAssistant } from "@/lib/shop-assistant";
@@ -46,57 +47,8 @@ const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
-const OUTBOUND_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
-const BOT_REPLY_DEDUPLICATE_WINDOW_MS = 30 * 60 * 1000;
-// Customers often send a greeting followed immediately by the actual request.
-// Wait long enough to assemble that thought, while the welcome remains instant.
+// Every first reply, including the welcome, waits for the customer turn.
 const ROCKY_MESSAGE_BATCH_WAIT_MS = 10_000;
-
-class DuplicateOutboundMessageError extends Error {
-  constructor() {
-    super("El mismo mensaje automático ya fue enviado recientemente.");
-    this.name = "DuplicateOutboundMessageError";
-  }
-}
-
-function outboundFingerprint(input: { content: string; mediaUrl?: string | null; recipient: string; type: string }) {
-  return createHash("sha256")
-    .update(JSON.stringify({ content: input.content, mediaUrl: input.mediaUrl ?? null, type: input.type }))
-    .digest("hex");
-}
-
-// Reserve before calling the provider: a second concurrent webhook finds the
-// same reservation and never reaches WhatsApp. The reservation is deliberately
-// retained after a network failure because delivery may have succeeded even
-// when the response was lost.
-async function sendYCloudOutboundMessage(input: Parameters<typeof deliverYCloudOutboundMessage>[0]) {
-  const recipient = normalizeWhatsappPhone(input.recipient) ?? input.recipient;
-  const fingerprint = outboundFingerprint(input);
-  const cutoff = new Date(Date.now() - OUTBOUND_DUPLICATE_WINDOW_MS);
-  const existing = await prisma.outboundMessageDispatch.findUnique({
-    where: { recipient_fingerprint: { recipient, fingerprint } },
-    select: { id: true, reservedAt: true },
-  });
-
-  if (existing) {
-    const refreshed = await prisma.outboundMessageDispatch.updateMany({
-      where: { id: existing.id, reservedAt: { lt: cutoff } },
-      data: { reservedAt: new Date() },
-    });
-    if (refreshed.count === 0) throw new DuplicateOutboundMessageError();
-  } else {
-    try {
-      await prisma.outboundMessageDispatch.create({ data: { recipient, fingerprint } });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-        throw new DuplicateOutboundMessageError();
-      }
-      throw error;
-    }
-  }
-
-  return deliverYCloudOutboundMessage(input);
-}
 
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
@@ -148,45 +100,12 @@ function messageMediaUrl(message: JsonRecord, type: string | null) {
 }
 
 async function sendWelcomeMessage(conversationId: string, recipient: string) {
-  const sent = await sendYCloudOutboundMessage({
-    content: WELCOME_MESSAGE,
-    recipient,
-    type: "text",
-  });
-
-  const welcome = await prisma.chatMessage.upsert({
-    where: { externalMessageId: sent.messageId },
-    create: {
-      conversationId,
-      direction: "OUTBOUND",
-      senderType: "BOT",
-      messageType: "TEXT",
-      content: WELCOME_MESSAGE,
-      externalMessageId: sent.messageId,
-      metadata: { provider: sent.provider, source: "conversation_welcome" } as Prisma.InputJsonValue,
-      status: "sent",
-    },
-    update: {
-      conversationId,
-      direction: "OUTBOUND",
-      senderType: "BOT",
-      messageType: "TEXT",
-      content: WELCOME_MESSAGE,
-      metadata: { provider: sent.provider, source: "conversation_welcome" } as Prisma.InputJsonValue,
-      status: "sent",
-    },
-  });
-
-  await prisma.conversation.update({
-    where: { id: conversationId },
-    data: { lastMessageAt: welcome.createdAt },
-  });
-  triggerPusherEvent(`chat-${conversationId}`, "new-message", welcome);
+  await sendBotText(conversationId, recipient, WELCOME_MESSAGE, "conversation_welcome");
 }
 
 async function sendWelcomeIfNeeded(conversationId: string, recipient: string) {
   const priorBotReply = await prisma.chatMessage.findFirst({
-    where: { conversationId, senderType: "BOT" },
+    where: { conversationId, senderType: "BOT", status: { notIn: ["cancelled", "failed", "uncertain"] } },
     select: { id: true },
   });
   if (priorBotReply) return false;
@@ -311,11 +230,7 @@ function isNoProductMatchReply(content: string) {
 }
 
 async function handOffToAdvisor(conversationId: string, recipient: string, source: string) {
-  await prisma.conversation.update({
-    where: { id: conversationId },
-    data: { assignedUserId: null, botEnabled: false, status: "REQUIERE_ASESOR" },
-  });
-  await sendBotText(conversationId, recipient, ADVISOR_MESSAGE, source);
+  await rockyOutbox.handoff({ conversationId, recipient, content: ADVISOR_MESSAGE, source });
 }
 
 async function sendScreenExtenderOptions(conversationId: string, recipient: string) {
@@ -330,75 +245,11 @@ async function sendSpeakerCatalogGuidance(conversationId: string, recipient: str
 }
 
 async function sendBotText(conversationId: string, recipient: string, content: string, source: string) {
-  const duplicateCutoff = new Date(Date.now() - BOT_REPLY_DEDUPLICATE_WINDOW_MS);
-  const recentEquivalentReply = await prisma.chatMessage.findFirst({
-    where: {
-      conversationId,
-      senderType: "BOT",
-      createdAt: { gte: duplicateCutoff },
-      content,
-    },
-    select: { id: true },
-  });
-  if (recentEquivalentReply) {
-    console.info("[rocky] repeated reply suppressed", { conversationId, source });
-    return;
-  }
-
-  const sent = await sendYCloudOutboundMessage({ content, recipient, type: "text" });
-  const reply = await prisma.chatMessage.upsert({
-    where: { externalMessageId: sent.messageId },
-    create: {
-      conversationId,
-      direction: "OUTBOUND",
-      senderType: "BOT",
-      messageType: "TEXT",
-      content,
-      externalMessageId: sent.messageId,
-      metadata: { provider: sent.provider, source } as Prisma.InputJsonValue,
-      status: "sent",
-    },
-    update: {
-      content,
-      senderType: "BOT",
-      status: "sent",
-    },
-  });
-  await prisma.conversation.update({
-    where: { id: conversationId },
-    data: { lastMessageAt: reply.createdAt },
-  });
-  triggerPusherEvent(`chat-${conversationId}`, "new-message", reply);
+  await rockyOutbox.enqueue({ conversationId, recipient, content, source });
 }
 
-async function sendBotImage(
-  conversationId: string,
-  recipient: string,
-  mediaUrl: string,
-  caption: string,
-  source: string,
-) {
-  const sent = await sendYCloudOutboundMessage({ content: caption, mediaUrl, recipient, type: "image" });
-  const reply = await prisma.chatMessage.upsert({
-    where: { externalMessageId: sent.messageId },
-    create: {
-      conversationId,
-      direction: "OUTBOUND",
-      senderType: "BOT",
-      messageType: "IMAGE",
-      content: caption,
-      mediaUrl,
-      externalMessageId: sent.messageId,
-      metadata: { provider: sent.provider, source } as Prisma.InputJsonValue,
-      status: "sent",
-    },
-    update: { content: caption, mediaUrl, senderType: "BOT", status: "sent" },
-  });
-  await prisma.conversation.update({
-    where: { id: conversationId },
-    data: { lastMessageAt: reply.createdAt },
-  });
-  triggerPusherEvent(`chat-${conversationId}`, "new-message", reply);
+async function sendBotImage(conversationId: string, recipient: string, mediaUrl: string, caption: string, source: string) {
+  await rockyOutbox.enqueue({ conversationId, recipient, mediaUrl, content: caption, source, type: "image" });
 }
 
 async function isLatestCustomerMessage(conversationId: string, messageId: string) {
@@ -411,6 +262,7 @@ async function isLatestCustomerMessage(conversationId: string, messageId: string
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: { id: true },
   });
+  await rockyOutbox.assertCurrent(conversationId);
   return latest?.id === messageId;
 }
 
@@ -474,23 +326,8 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
       create: { conversationId, stage: "AWAITING_CATALOG_SCOPE" },
       update: { stage: "AWAITING_CATALOG_SCOPE" },
     });
-    const sent = await sendYCloudOutboundMessage({
-      content: GENERAL_CATALOG_MESSAGE,
-      recipient,
-      type: "text",
-    });
-    const message = await prisma.chatMessage.upsert({
-      where: { externalMessageId: sent.messageId },
-      create: {
-        conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "TEXT",
-        content: GENERAL_CATALOG_MESSAGE, externalMessageId: sent.messageId,
-        metadata: { provider: sent.provider, source: "general_catalog" } as Prisma.InputJsonValue,
-        status: "sent",
-      },
-      update: { conversationId, senderType: "BOT", messageType: "TEXT", content: GENERAL_CATALOG_MESSAGE, status: "sent" },
-    });
-    await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: message.createdAt } });
-    triggerPusherEvent(`chat-${conversationId}`, "new-message", message);
+    await sendBotText(conversationId, recipient, GENERAL_CATALOG_MESSAGE, "general_catalog");
+
     return true;
   }
 
@@ -500,21 +337,11 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
   try {
     const catalog = await generateCatalogPdf(request);
     const caption = `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos).`;
-    const sent = await sendYCloudOutboundMessage({ content: caption, mediaUrl: catalog.absoluteUrl, recipient, type: "document" });
-    const document = await prisma.chatMessage.upsert({
-      where: { externalMessageId: sent.messageId },
-      create: {
-        conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "DOCUMENT", content: caption,
-        mediaUrl: catalog.absoluteUrl, externalMessageId: sent.messageId,
-        metadata: { provider: sent.provider, source: "requested_catalog", catalog: request.slug } as Prisma.InputJsonValue,
-        status: "sent",
-      },
-      update: { conversationId, senderType: "BOT", messageType: "DOCUMENT", content: caption, mediaUrl: catalog.absoluteUrl, status: "sent" },
-    });
-    await prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: document.createdAt } });
-    triggerPusherEvent(`chat-${conversationId}`, "new-message", document);
+    await rockyOutbox.enqueue({ conversationId, recipient, content: caption, mediaUrl: catalog.absoluteUrl, type: "document", source: "requested_catalog" });
+
   } catch (error) {
-    if (error instanceof DuplicateOutboundMessageError) return true;
+
+    if (error instanceof AutomationCancelledError) throw error;
     console.error("YCloud catalog generation failed:", error);
     // Never promise an empty catalog. A person can confirm the product name,
     // stock, or a suitable alternative without misleading the customer.
@@ -524,42 +351,7 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
 }
 
 async function sendPaymentNotice(conversationId: string, recipient: string) {
-  const recentEquivalentNotice = await prisma.chatMessage.findFirst({
-    where: {
-      conversationId,
-      direction: "OUTBOUND",
-      senderType: "BOT",
-      messageType: "IMAGE",
-      mediaUrl: PAYMENT_NOTICE_URL,
-      createdAt: { gte: new Date(Date.now() - BOT_REPLY_DEDUPLICATE_WINDOW_MS) },
-    },
-    select: { id: true },
-  });
-  if (recentEquivalentNotice) return;
-
-  const sent = await sendYCloudOutboundMessage({
-    content: PAYMENT_NOTICE_MESSAGE,
-    mediaUrl: PAYMENT_NOTICE_URL,
-    recipient,
-    type: "image",
-  });
-
-  const notice = await prisma.chatMessage.upsert({
-    where: { externalMessageId: sent.messageId },
-    create: {
-      conversationId,
-      direction: "OUTBOUND",
-      senderType: "BOT",
-      messageType: "IMAGE",
-      content: PAYMENT_NOTICE_MESSAGE,
-      mediaUrl: PAYMENT_NOTICE_URL,
-      externalMessageId: sent.messageId,
-      metadata: { provider: sent.provider, source: "lima_delivery_payment_notice" } as Prisma.InputJsonValue,
-      status: "sent",
-    },
-    update: { content: PAYMENT_NOTICE_MESSAGE, mediaUrl: PAYMENT_NOTICE_URL, senderType: "BOT", status: "sent" },
-  });
-  triggerPusherEvent(`chat-${conversationId}`, "new-message", notice);
+  await sendBotImage(conversationId, recipient, PAYMENT_NOTICE_URL, PAYMENT_NOTICE_MESSAGE, "lima_delivery_payment_notice");
 }
 
 function verifySignature(rawBody: string, signatureHeader: string | null) {
@@ -612,280 +404,296 @@ async function processInbound(event: JsonRecord) {
     type: messageType(type),
   });
 
-  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-    if (!await isLatestCustomerMessage(result.conversationId, result.messageId)) {
-      return result;
+  if (!result.ok || result.duplicate || !result.conversation?.botEnabled) return result;
+  return rockyOutbox.runTurn(result.conversationId, result.messageId, async () => {
+    if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+      if (!await isLatestCustomerMessage(result.conversationId, result.messageId)) {
+        return result;
+      }
     }
-  }
 
-  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-    // Resolve an unanswered request from the same customer turn before a
-    // later "hola" can mask it. This is especially important for a catalog
-    // request followed hours later by a greeting.
-    const conversationContext = await getAutomationConversationContext(result.conversationId);
-    const pendingContent = conversationContext.combinedContent;
-    if (pendingContent && pendingContent !== content) {
-      try {
-        if (await sendCatalog(result.conversationId, from, pendingContent)) {
+    if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
+      // Resolve an unanswered request from the same customer turn before a
+      // later "hola" can mask it. This is especially important for a catalog
+      // request followed hours later by a greeting.
+      const conversationContext = await getAutomationConversationContext(result.conversationId);
+      const pendingContent = conversationContext.combinedContent;
+      if (pendingContent && pendingContent !== content) {
+        try {
+          if (await sendCatalog(result.conversationId, from, pendingContent)) {
+            return result;
+          }
+          if (await sendProductSearchResults(result.conversationId, from, pendingContent)) {
+            return result;
+          }
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud pending customer intent failed:", error);
+        }
+      }
+
+      if (isGreeting(content)) {
+        try {
+          // Do not greet before intent classification. A greeting-only message
+          // receives the welcome; a greeting followed by a request is handled
+          // by that request's dedicated flow instead.
+          const welcomeSent = await sendWelcomeIfNeeded(result.conversationId, from);
+          if (!welcomeSent) {
+            await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+          }
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud greeting response failed:", error);
+        }
+        return result;
+      }
+
+      if (isAdvisorRequest(content)) {
+        try {
+          await handOffToAdvisor(result.conversationId, from, "advisor_handoff");
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud advisor handoff response failed:", error);
+        }
+        return result;
+      }
+
+      if (isScreenExtenderInquiry(content)) {
+        try {
+          await sendScreenExtenderOptions(result.conversationId, from);
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud screen extender response failed:", error);
+        }
+        return result;
+      }
+
+      // An explicit catalog request always takes precedence over a regular
+      // product inquiry: "catálogo de parlantes" must receive a PDF, not a
+      // generic speaker suggestion flow.
+      if (await sendCatalog(result.conversationId, from, content)) {
+        return result;
+      }
+
+      if (isSpeakerInquiry(content)) {
+        try {
+          if (await sendProductSearchResults(result.conversationId, from, content)) {
+            return result;
+          }
+          await sendSpeakerCatalogGuidance(result.conversationId, from);
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud speaker catalog response failed:", error);
+        }
+        return result;
+      }
+
+      const salesState = await prisma.conversationSalesState.findUnique({
+        where: { conversationId: result.conversationId },
+        select: { deliveryData: true, selectedProductCode: true, shownProducts: true, stage: true, unitPrice: true, updatedAt: true },
+      });
+
+      const awaitingCatalogScope =
+        salesState?.stage === "AWAITING_CATALOG_SCOPE" &&
+        Date.now() - salesState.updatedAt.getTime() <= CATALOG_SCOPE_WAIT_MS &&
+        content.trim().split(/\s+/).length <= 4;
+      if (awaitingCatalogScope) {
+        try {
+          // The customer may answer the general-catalog prompt with only a
+          // category or brand, e.g. "audífonos" or "JBL".
+          if (await sendCatalog(result.conversationId, from, `catálogo ${content}`)) {
+            await prisma.conversationSalesState.update({
+              where: { conversationId: result.conversationId },
+              data: { stage: "AWAITING_PRODUCT_QUERY" },
+            });
+            return result;
+          }
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud catalog scope response failed:", error);
+        }
+      }
+      const awaitingAddress = salesState?.stage === "AWAITING_DELIVERY_DETAILS"
+        && Boolean((salesState.deliveryData as JsonRecord | null)?.awaitingLimaAddress);
+
+      if (awaitingAddress && content.trim()) {
+        await prisma.conversationSalesState.update({
+          where: { conversationId: result.conversationId },
+          data: {
+            stage: "AWAITING_PAYMENT_METHOD",
+            deliveryData: { limaAddress: content, awaitingLimaAddress: false } as Prisma.InputJsonValue,
+          },
+        });
+        try {
+          await sendPaymentNotice(result.conversationId, from);
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud payment notice failed:", error);
+        }
+        return result;
+      }
+
+      const requestedQuantity = extractRequestedQuantity(content);
+      const selectedProduct = salesState?.stage === "AWAITING_MODEL_SELECTION"
+        ? selectedShownProduct(content, salesState.shownProducts)
+        : null;
+      if (selectedProduct) {
+        const code = text(selectedProduct.code);
+        const unitPrice = Number(selectedProduct.unitPrice);
+        const quantity = extractExplicitQuantity(content);
+        if (code && Number.isFinite(unitPrice) && quantity && quantity > 0) {
+          await prisma.conversationSalesState.update({
+            where: { conversationId: result.conversationId },
+            data: { stage: "AWAITING_PAYMENT_METHOD", selectedProductCode: code, quantity, unitPrice, total: unitPrice * quantity },
+          });
+          await sendPaymentNotice(result.conversationId, from);
           return result;
         }
-        if (await sendProductSearchResults(result.conversationId, from, pendingContent)) {
+        if (code && Number.isFinite(unitPrice)) {
+          await prisma.conversationSalesState.update({ where: { conversationId: result.conversationId }, data: { stage: "AWAITING_QUANTITY", selectedProductCode: code, unitPrice } });
+          await sendBotText(result.conversationId, from, "Perfecto. ¿Cuántas unidades necesitas para enviarte los medios de pago?", "product_selection_quantity");
           return result;
         }
-      } catch (error) {
-        console.error("YCloud pending customer intent failed:", error);
       }
-    }
-
-    if (isGreeting(content)) {
-      try {
-        // Do not greet before intent classification. A greeting-only message
-        // receives the welcome; a greeting followed by a request is handled
-        // by that request's dedicated flow instead.
-        const welcomeSent = await sendWelcomeIfNeeded(result.conversationId, from);
-        if (!welcomeSent) {
-          await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+      if (
+        salesState?.stage === "AWAITING_QUANTITY" &&
+        salesState.selectedProductCode &&
+        requestedQuantity
+      ) {
+        const unitPrice = salesState.unitPrice ? Number(salesState.unitPrice) : null;
+        await prisma.conversationSalesState.update({
+          where: { conversationId: result.conversationId },
+          data: {
+            stage: "AWAITING_PAYMENT_METHOD",
+            quantity: requestedQuantity,
+            total: unitPrice === null ? null : unitPrice * requestedQuantity,
+          },
+        });
+        try {
+          await sendPaymentNotice(result.conversationId, from);
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud product quantity payment notice failed:", error);
         }
-      } catch (error) {
-        if (error instanceof DuplicateOutboundMessageError) return result;
-        console.error("YCloud greeting response failed:", error);
+        return result;
       }
-      return result;
-    }
 
-    if (isAdvisorRequest(content)) {
-      try {
-        await handOffToAdvisor(result.conversationId, from, "advisor_handoff");
-      } catch (error) {
-        console.error("YCloud advisor handoff response failed:", error);
+      if (isPriceRequest(content)) {
+        try {
+          if (await answerProductPriceInquiry(result.conversationId, from, content)) {
+            return result;
+          }
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud product price inquiry failed:", error);
+        }
       }
-      return result;
-    }
 
-    if (isScreenExtenderInquiry(content)) {
-      try {
-        await sendScreenExtenderOptions(result.conversationId, from);
-      } catch (error) {
-        console.error("YCloud screen extender response failed:", error);
+      if (isPaymentRequest(content)) {
+        try {
+          await sendPaymentNotice(result.conversationId, from);
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud payment question failed:", error);
+        }
+        return result;
       }
-      return result;
-    }
 
-    // An explicit catalog request always takes precedence over a regular
-    // product inquiry: "catálogo de parlantes" must receive a PDF, not a
-    // generic speaker suggestion flow.
-    if (await sendCatalog(result.conversationId, from, content)) {
-      return result;
-    }
+      if (isLocationRequest(content)) {
+        try {
+          await sendBotText(result.conversationId, from, LOCATION_MESSAGE, "store_location");
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud location response failed:", error);
+        }
+        return result;
+      }
 
-    if (isSpeakerInquiry(content)) {
+      if (isHoursRequest(content)) {
+        try {
+          await sendBotText(result.conversationId, from, HOURS_MESSAGE, "store_hours");
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud hours response failed:", error);
+        }
+        return result;
+      }
+
+      if (isLimaDeliveryRequest(content)) {
+        await prisma.conversationSalesState.upsert({
+          where: { conversationId: result.conversationId },
+          create: { conversationId: result.conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
+          update: { stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
+        });
+        try {
+          await sendBotText(result.conversationId, from, LIMA_DELIVERY_MESSAGE, "lima_delivery_address_request");
+
+        } catch (error) {
+
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud delivery question failed:", error);
+        }
+        return result;
+      }
+
+      if (isShippingRequest(content)) {
+        try {
+          await sendBotText(result.conversationId, from, SHIPPING_MESSAGE, "store_shipping");
+        } catch (error) {
+          if (error instanceof AutomationCancelledError) throw error;
+          console.error("YCloud shipping response failed:", error);
+        }
+        return result;
+      }
+
+      // Product requests do not need to mention a price. Resolve them against
+      // the catalog before handing the message to n8n or an advisor.
       try {
         if (await sendProductSearchResults(result.conversationId, from, content)) {
           return result;
         }
-        await sendSpeakerCatalogGuidance(result.conversationId, from);
       } catch (error) {
-        console.error("YCloud speaker catalog response failed:", error);
+        if (error instanceof AutomationCancelledError) throw error;
+        console.error("YCloud general product search failed:", error);
       }
-      return result;
     }
 
-    const salesState = await prisma.conversationSalesState.findUnique({
-      where: { conversationId: result.conversationId },
-      select: { deliveryData: true, selectedProductCode: true, shownProducts: true, stage: true, unitPrice: true, updatedAt: true },
-    });
-
-    const awaitingCatalogScope =
-      salesState?.stage === "AWAITING_CATALOG_SCOPE" &&
-      Date.now() - salesState.updatedAt.getTime() <= CATALOG_SCOPE_WAIT_MS &&
-      content.trim().split(/\s+/).length <= 4;
-    if (awaitingCatalogScope) {
+    if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
       try {
-        // The customer may answer the general-catalog prompt with only a
-        // category or brand, e.g. "audífonos" or "JBL".
-        if (await sendCatalog(result.conversationId, from, `catálogo ${content}`)) {
-          await prisma.conversationSalesState.update({
-            where: { conversationId: result.conversationId },
-            data: { stage: "AWAITING_PRODUCT_QUERY" },
-          });
+        const conversationContext = await getAutomationConversationContext(result.conversationId);
+        const rockyContent = conversationContext.combinedContent || content;
+
+        // Rocky owns interpretation. It receives the customer's recent bubbles
+        // as one request, so it can resolve incomplete or split messages using
+        // the real product catalog before any escalation is considered.
+        if (await sendCatalog(result.conversationId, from, rockyContent)) {
+          return result;
+        }
+
+        if (await sendProductSearchResults(result.conversationId, from, rockyContent)) {
+          return result;
+        }
+
+        const rockyReply = await answerShopAssistant({ message: rockyContent });
+        if (rockyReply.text) {
+          await sendBotText(result.conversationId, from, rockyReply.text, "rocky_catalog_interpretation");
           return result;
         }
       } catch (error) {
-        console.error("YCloud catalog scope response failed:", error);
+        if (error instanceof AutomationCancelledError) throw error;
+        console.error("Rocky catalog interpretation failed:", error);
       }
-    }
-    const awaitingAddress = salesState?.stage === "AWAITING_DELIVERY_DETAILS"
-      && Boolean((salesState.deliveryData as JsonRecord | null)?.awaitingLimaAddress);
 
-    if (awaitingAddress && content.trim()) {
-      await prisma.conversationSalesState.update({
-        where: { conversationId: result.conversationId },
-        data: {
-          stage: "AWAITING_PAYMENT_METHOD",
-          deliveryData: { limaAddress: content, awaitingLimaAddress: false } as Prisma.InputJsonValue,
-        },
-      });
       try {
-        await sendPaymentNotice(result.conversationId, from);
+        await handOffToAdvisor(result.conversationId, from, "catalog_match_handoff");
       } catch (error) {
-        console.error("YCloud payment notice failed:", error);
-      }
-      return result;
-    }
-
-    const requestedQuantity = extractRequestedQuantity(content);
-    const selectedProduct = salesState?.stage === "AWAITING_MODEL_SELECTION"
-      ? selectedShownProduct(content, salesState.shownProducts)
-      : null;
-    if (selectedProduct) {
-      const code = text(selectedProduct.code);
-      const unitPrice = Number(selectedProduct.unitPrice);
-      const quantity = extractExplicitQuantity(content);
-      if (code && Number.isFinite(unitPrice) && quantity && quantity > 0) {
-        await prisma.conversationSalesState.update({
-          where: { conversationId: result.conversationId },
-          data: { stage: "AWAITING_PAYMENT_METHOD", selectedProductCode: code, quantity, unitPrice, total: unitPrice * quantity },
-        });
-        await sendPaymentNotice(result.conversationId, from);
-        return result;
-      }
-      if (code && Number.isFinite(unitPrice)) {
-        await prisma.conversationSalesState.update({ where: { conversationId: result.conversationId }, data: { stage: "AWAITING_QUANTITY", selectedProductCode: code, unitPrice } });
-        await sendBotText(result.conversationId, from, "Perfecto. ¿Cuántas unidades necesitas para enviarte los medios de pago?", "product_selection_quantity");
-        return result;
-      }
-    }
-    if (
-      salesState?.stage === "AWAITING_QUANTITY" &&
-      salesState.selectedProductCode &&
-      requestedQuantity
-    ) {
-      const unitPrice = salesState.unitPrice ? Number(salesState.unitPrice) : null;
-      await prisma.conversationSalesState.update({
-        where: { conversationId: result.conversationId },
-        data: {
-          stage: "AWAITING_PAYMENT_METHOD",
-          quantity: requestedQuantity,
-          total: unitPrice === null ? null : unitPrice * requestedQuantity,
-        },
-      });
-      try {
-        await sendPaymentNotice(result.conversationId, from);
-      } catch (error) {
-        console.error("YCloud product quantity payment notice failed:", error);
-      }
-      return result;
-    }
-
-    if (isPriceRequest(content)) {
-      try {
-        if (await answerProductPriceInquiry(result.conversationId, from, content)) {
-          return result;
-        }
-      } catch (error) {
-        console.error("YCloud product price inquiry failed:", error);
+        if (error instanceof AutomationCancelledError) throw error;
+        console.error("Rocky clarification response failed:", error);
       }
     }
 
-    if (isPaymentRequest(content)) {
-      try {
-        await sendPaymentNotice(result.conversationId, from);
-      } catch (error) {
-        console.error("YCloud payment question failed:", error);
-      }
-      return result;
-    }
-
-    if (isLocationRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, LOCATION_MESSAGE, "store_location");
-      } catch (error) {
-        console.error("YCloud location response failed:", error);
-      }
-      return result;
-    }
-
-    if (isHoursRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, HOURS_MESSAGE, "store_hours");
-      } catch (error) {
-        console.error("YCloud hours response failed:", error);
-      }
-      return result;
-    }
-
-    if (isLimaDeliveryRequest(content)) {
-      await prisma.conversationSalesState.upsert({
-        where: { conversationId: result.conversationId },
-        create: { conversationId: result.conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
-        update: { stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
-      });
-      try {
-        const sent = await sendYCloudOutboundMessage({ content: LIMA_DELIVERY_MESSAGE, recipient: from, type: "text" });
-        await prisma.chatMessage.upsert({
-          where: { externalMessageId: sent.messageId },
-          create: { conversationId: result.conversationId, direction: "OUTBOUND", senderType: "BOT", messageType: "TEXT", content: LIMA_DELIVERY_MESSAGE, externalMessageId: sent.messageId, metadata: { provider: sent.provider, source: "lima_delivery_address_request" } as Prisma.InputJsonValue, status: "sent" },
-          update: { content: LIMA_DELIVERY_MESSAGE, senderType: "BOT", status: "sent" },
-        });
-      } catch (error) {
-        console.error("YCloud delivery question failed:", error);
-      }
-      return result;
-    }
-
-    if (isShippingRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, SHIPPING_MESSAGE, "store_shipping");
-      } catch (error) {
-        console.error("YCloud shipping response failed:", error);
-      }
-      return result;
-    }
-
-    // Product requests do not need to mention a price. Resolve them against
-    // the catalog before handing the message to n8n or an advisor.
-    try {
-      if (await sendProductSearchResults(result.conversationId, from, content)) {
-        return result;
-      }
-    } catch (error) {
-      console.error("YCloud general product search failed:", error);
-    }
-  }
-
-  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-    try {
-      const conversationContext = await getAutomationConversationContext(result.conversationId);
-      const rockyContent = conversationContext.combinedContent || content;
-
-      // Rocky owns interpretation. It receives the customer's recent bubbles
-      // as one request, so it can resolve incomplete or split messages using
-      // the real product catalog before any escalation is considered.
-      if (await sendCatalog(result.conversationId, from, rockyContent)) {
-        return result;
-      }
-
-      if (await sendProductSearchResults(result.conversationId, from, rockyContent)) {
-        return result;
-      }
-
-      const rockyReply = await answerShopAssistant({ message: rockyContent });
-      if (rockyReply.text) {
-        await sendBotText(result.conversationId, from, rockyReply.text, "rocky_catalog_interpretation");
-        return result;
-      }
-    } catch (error) {
-      console.error("Rocky catalog interpretation failed:", error);
-    }
-
-    try {
-      await handOffToAdvisor(result.conversationId, from, "catalog_match_handoff");
-    } catch (error) {
-      console.error("Rocky clarification response failed:", error);
-    }
-  }
-
-  return result;
+    return result;
+  }, result);
 }
 
 async function applyStatus(event: JsonRecord) {
@@ -894,17 +702,7 @@ async function applyStatus(event: JsonRecord) {
   const ids = [text(message?.wamid), text(message?.id)].filter((id): id is string => Boolean(id));
   if (!message || !ids.length || !status) return;
 
-  const existing = await prisma.chatMessage.findFirst({
-    where: { externalMessageId: { in: ids } },
-  });
-
-  if (existing) {
-    await prisma.chatMessage.update({
-      where: { id: existing.id },
-      data: { status },
-    });
-    return;
-  }
+  if (await recordYCloudReceipt(prisma, { ids, externalId: text(message.externalId), recipient: text(message.to), status })) return;
 
   const recipient = text(message.to);
   const phoneNormalized = normalizeWhatsappPhone(recipient);
@@ -971,8 +769,7 @@ async function applyStatus(event: JsonRecord) {
       // The first no-results reply takes ownership away from the automation.
       // Subsequent customer messages stay in the advisor queue, preventing a
       // repeated sequence of "no encontré" replies from the bot.
-      status: noProductMatch ? "REQUIERE_ASESOR" : "ATENDIENDO",
-      assignedUserId: noProductMatch ? null : undefined,
+      status: noProductMatch && !conversation.assignedUserId ? "REQUIERE_ASESOR" : "ATENDIENDO",
     },
   });
   triggerPusherEvent(`chat-${conversation.id}`, "new-message", synced);

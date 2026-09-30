@@ -4,9 +4,10 @@ import { test } from "node:test";
 
 const route = readFileSync(new URL("./route.ts", import.meta.url), "utf8");
 
-test("los envíos automáticos reservan una clave persistente antes de llegar a YCloud", () => {
-  assert.match(route, /outboundMessageDispatch/);
-  assert.match(route, /recipient_fingerprint/);
-  assert.match(route, /DuplicateOutboundMessageError/);
-  assert.match(route, /return deliverYCloudOutboundMessage\(input\)/);
+test("el webhook solo produce trabajos; no accede al transporte automático", () => {
+  assert.doesNotMatch(route, /sendYCloudOutboundMessage|api\.ycloud\.com/);
+  assert.match(route, /rockyOutbox\.enqueue/);
+  assert.match(route, /rockyOutbox\.runTurn/);
+  assert.match(route, /rockyOutbox\.assertCurrent/);
+  assert.match(route, /rockyOutbox\.handoff/);
 });

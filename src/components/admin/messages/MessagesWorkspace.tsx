@@ -324,6 +324,7 @@ export function MessagesWorkspace() {
     }
 
     const filtersSnapshot = messageFilters;
+    let pollingCancelled = false;
     const interval = window.setInterval(async () => {
       const latestMessage = activeMessagesRef.current.at(-1);
 
@@ -332,23 +333,25 @@ export function MessagesWorkspace() {
       }
 
       try {
-        const data = await fetchMessagesPage(activeId, filtersSnapshot, {
-          afterId: latestMessage.id,
-          after: new Date(latestMessage.createdAt).toISOString(),
-        });
+        // Existing messages change state when a queued reply is cancelled or
+        // confirmed by YCloud. An after-only cursor cannot see these updates.
+        const [data, recent] = await Promise.all([
+          fetchMessagesPage(activeId, filtersSnapshot, {
+            afterId: latestMessage.id,
+            after: new Date(latestMessage.createdAt).toISOString(),
+          }),
+          fetchMessagesPage(activeId, filtersSnapshot),
+        ]);
+        if (pollingCancelled) return;
 
         const knownIds = new Set(activeMessagesRef.current.map((message) => message.id));
         const newItems = data.items.filter((message) => !knownIds.has(message.id));
 
-        if (!newItems.length) {
-          return;
-        }
-
         const shouldScroll = isNearBottom(messagesContainerRef.current);
-        setActiveMessages((current) => mergeMessages(current, newItems));
+        setActiveMessages((current) => mergeMessages(current, [...recent.items, ...data.items]));
         setMessageTotal(data.total);
 
-        if (shouldScroll) {
+        if (shouldScroll && newItems.length) {
           window.requestAnimationFrame(() => scrollToBottom("smooth"));
         }
       } catch (error) {
@@ -356,7 +359,7 @@ export function MessagesWorkspace() {
       }
     }, MESSAGE_POLL_MS);
 
-    return () => window.clearInterval(interval);
+    return () => { pollingCancelled = true; window.clearInterval(interval); };
   }, [activeId, messageFilters, scrollToBottom]);
 
   const handleFiltersChange = useCallback((nextFilters: Partial<ConversationFilters>) => {

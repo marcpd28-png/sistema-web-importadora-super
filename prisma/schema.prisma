@@ -261,6 +261,7 @@ model StoreSettings {
   orderFooter         String   @default("Quedo atento a la confirmación de stock y total final.")
   currencySymbol      String   @default("S/")
   botMasterSwitch     Boolean  @default(true)
+  automationRevision  Int      @default(0)
   n8nWebhookUrl       String?
   highlightMessage    String   @default("Precios por unidad y mayorista sincronizados con el ERP.")
   supportHours        String   @default("Lun a sáb 8:00 am - 7:00 pm")
@@ -809,6 +810,7 @@ model Conversation {
   channel              Channel                 @default(WHATSAPP)
   status               ConversationState       @default(AUTOMATICO)
   botEnabled           Boolean                 @default(true)
+  automationRevision   Int                     @default(0)
   assignedUserId       String?
   assignedUser         User?                   @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
   lastMessageAt        DateTime                @default(now())
@@ -819,6 +821,7 @@ model Conversation {
   messages             ChatMessage[]
   salesState           ConversationSalesState?
   automationExecutions AutomationExecution[]
+  rockyOutboundJobs    RockyOutboundJob[]
 
   @@index([contactId])
   @@index([channel])
@@ -841,6 +844,7 @@ model ChatMessage {
   metadata          Json?
   status            String?          @db.VarChar(32)
   createdAt         DateTime         @default(now())
+  rockyOutboundJob  RockyOutboundJob?
 
   @@index([conversationId])
   @@index([conversationId, createdAt(sort: Desc), id(sort: Desc)])
@@ -859,6 +863,32 @@ model OutboundMessageDispatch {
 
   @@unique([recipient, fingerprint])
   @@index([reservedAt])
+}
+
+// Only the Rocky sender consumes this outbox. Control revisions invalidate
+// work even when an advisor pauses and immediately reactivates the bot.
+model RockyOutboundJob {
+  id                   String       @id @default(cuid())
+  sequence             Int          @unique @default(autoincrement())
+  conversationId       String
+  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  messageId            String       @unique
+  message              ChatMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  triggerMessageId     String
+  conversationRevision Int
+  globalRevision       Int
+  recipient            String
+  fingerprint          String
+  kind                 String       @default("reply")
+  state                String       @default("queued")
+  reason               String?
+  createdAt            DateTime     @default(now())
+  expiresAt            DateTime
+  startedAt            DateTime?
+  finishedAt           DateTime?
+
+  @@index([state, sequence])
+  @@index([conversationId, fingerprint, createdAt])
 }
 
 model PromoCode {

@@ -31,11 +31,13 @@ test("normaliza emisor y destinatario al formato E.164 requerido por YCloud", as
     content: "Hola",
     recipient: "51967426958",
     type: "text",
+    externalId: "local-persisted-message-id",
   });
 
   const payload = JSON.parse(requestBody) as Record<string, unknown>;
   assert.equal(payload.from, "+51955252609");
   assert.equal(payload.to, "+51967426958");
+  assert.equal(payload.externalId, "local-persisted-message-id");
   assert.equal(result.provider, "ycloud");
 });
 
