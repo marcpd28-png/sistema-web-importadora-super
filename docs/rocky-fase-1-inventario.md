@@ -286,3 +286,50 @@ Límites que permanecen para las siguientes fases:
   La reproducción desde una base vacía necesita consolidar ese historial.
 - Se quitó el secreto literal de fallback n8n del código actual. La rotación de
   credenciales ya expuestas y la limpieza del historial siguen pendientes.
+
+## 10. Fase 3 — recepción durable y agrupación, 2026-09-30
+
+Código desplegado: `c00e490`. Build: `ROj8ARDcfomwqfTau5ahT`.
+
+- El webhook autentica y guarda mensaje, contacto, conversación y turno pendiente
+  en una sola transacción; ya no duerme diez segundos ni genera respuestas dentro
+  de la petición HTTP. Los reintentos del mismo mensaje no duplican la entrada
+  ni prolongan su espera.
+- Cada fragmento nuevo fija el vencimiento a diez segundos desde su recepción.
+  Se conservan todos los IDs del lote, incluso cuando supera los doce mensajes
+  del contexto anterior. Saludos aislados se separan de una consulta concreta:
+  «Hola» seguido de precio o catálogo procesa la consulta, sin anteponer bienvenida.
+- PM2 `importadora-rocky-inbox` (42) procesa dos conversaciones simultáneamente,
+  con exclusión por conversación y recuperación de intentos interrumpidos.
+  La versión y el token de procesamiento impiden publicar planes obsoletos.
+- Respuestas, estado comercial y cierre del turno se guardan juntos. Un fallo
+  durante la preparación no publica parte del plan. Los errores de preparación
+  tienen tres intentos; después se solicita asesor. Los turnos vencidos tras
+  quince minutos pasan a revisión humana sin enviar respuestas atrasadas.
+- Se mantienen el emisor único `importadora-rocky-outbox` (41), la intervención
+  humana y el interruptor global. Un fragmento nuevo cancela las respuestas aún
+  en cola del turno anterior; los cambios de control cancelan también la entrada.
+  No se reactivaron emisores ni workflows retirados en la fase 2.
+
+Validación y despliegue:
+
+- 46 pruebas de entrada/control/transporte más 25 de búsqueda aprobadas, TypeScript
+  y build productivo correctos. Incluyen duplicados concurrentes, mensajes con
+  fechas desordenadas, recuperación, intervención humana, interruptor global,
+  publicación atómica, saludo + catálogo/precio y conversaciones simultáneas.
+  Pruebas de integración en PostgreSQL local aislado, con transporte simulado.
+- Migración aditiva `20260930190000_rocky_durable_inbox` aplicada en producción;
+  seis triggers de control habilitados. Procesos 40, 41 y 42 online. Interruptor
+  global conservado (`true`, revisión 0); no se reprodujeron mensajes históricos.
+- Compilación en carpeta separada, cierre temporal del webhook y drenaje de la
+  versión anterior antes del cambio. Tienda HTTP 200, centro de mensajes 307
+  hacia autenticación y rutas retiradas 410. No se enviaron pruebas a clientes.
+- Respaldo restringido `/root/rocky-phase3-backup.iKfzEi`: dump PostgreSQL con
+  índice validado, Nginx, estados PM2, build anterior y workspace de compilación.
+  La migración es compatible con el build anterior; una reversión requiere cerrar
+  primero el webhook y detener inbox/outbox, sin resucitar emisores históricos.
+
+Límites: la cola garantiza publicación atómica local, no entrega atómica de varios
+mensajes en WhatsApp. Un envío ya aceptado por YCloud no se puede cancelar. La
+calidad de recuperación de productos, los archivos multimedia y la consolidación
+del resto de servicios siguen siendo trabajo de las fases siguientes.
