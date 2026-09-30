@@ -41,7 +41,8 @@ await linkRuntimeDirectory(
 const server = spawn(process.execPath, [serverEntry], {
   env: {
     ...process.env,
-    HOSTNAME: process.env.HOSTNAME || "0.0.0.0",
+    // Nginx is the public ingress; do not expose the application port directly.
+    HOSTNAME: process.env.WEB_BIND_HOST || "127.0.0.1",
     PORT: process.env.PORT || "4000",
   },
   stdio: "inherit",
