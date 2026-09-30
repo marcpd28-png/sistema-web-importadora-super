@@ -333,3 +333,11 @@ Límites: la cola garantiza publicación atómica local, no entrega atómica de 
 mensajes en WhatsApp. Un envío ya aceptado por YCloud no se puede cancelar. La
 calidad de recuperación de productos, los archivos multimedia y la consolidación
 del resto de servicios siguen siendo trabajo de las fases siguientes.
+
+Observación posterior al arranque: hubo entradas reales completadas en un intento
+y otras canceladas por estar deshabilitada la automatización. El POST sin firma
+respondió 401; PM2 guardó inbox/outbox online y ninguno de los dos emisores retirados.
+No hubo reinicios del worker ni errores genéricos de procesamiento durante la
+verificación. Sí se registró un error comercial de catálogo sin resultados para
+una consulta informal sobre televisores: la normalización de esa búsqueda sigue
+pendiente y no debe considerarse resuelta por la nueva cola.
