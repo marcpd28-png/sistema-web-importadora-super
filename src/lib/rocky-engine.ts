@@ -1,3 +1,4 @@
+import { deliveryLocation, isPriceFollowUp, isQuantityOnly, isRockyGreeting, requestedUnits, verifiedQuote } from "./rocky-conversation-policy";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getAutomationConversationContext } from "./messages-service";
@@ -58,37 +59,9 @@ function normalizedText(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-function editDistanceAtMost(left: string, right: string, maximum: number) {
-  if (Math.abs(left.length - right.length) > maximum) return false;
-  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
-  for (let row = 1; row <= left.length; row += 1) {
-    let diagonal = previous[0];
-    previous[0] = row;
-    let minimum = previous[0];
-    for (let column = 1; column <= right.length; column += 1) {
-      const saved = previous[column];
-      previous[column] = Math.min(
-        previous[column] + 1,
-        previous[column - 1] + 1,
-        diagonal + (left[row - 1] === right[column - 1] ? 0 : 1),
-      );
-      diagonal = saved;
-      minimum = Math.min(minimum, previous[column]);
-    }
-    if (minimum > maximum) return false;
-  }
-  return previous[right.length] <= maximum;
-}
-
 function hasIntent(content: string, phrases: string[]) {
-  const normalized = normalizedText(content);
-  const words = normalized.match(/[a-z0-9]+/g) ?? [];
-  return phrases.some((phrase) => {
-    if (normalized.includes(phrase)) return true;
-    if (phrase.includes(" ")) return false;
-    const tolerance = phrase.length >= 8 ? 2 : phrase.length >= 5 ? 1 : 0;
-    return tolerance > 0 && words.some((word) => editDistanceAtMost(word, phrase, tolerance));
-  });
+  const normalized = " " + normalizedText(content).replace(/[^a-z0-9]+/g, " ").trim() + " ";
+  return phrases.some(phrase => normalized.includes(" " + phrase + " "));
 }
 
 function isLimaDeliveryRequest(content: string) {
@@ -98,12 +71,7 @@ function isLimaDeliveryRequest(content: string) {
   return mentionsLima && mentionsDelivery;
 }
 
-function isGreeting(content: string) {
-  const fragments = content.split(/\n+/).filter(fragment => fragment.trim());
-  if (fragments.length > 1) return fragments.every(isGreeting);
-  const normalized = normalizedText(content).replace(/[!¡?.:,;]/g, "").replace(/\s+/g, " ").trim();
-  return /^(hola|ola|buenos dias|buenas tardes|buenas noches|buen dia|saludos|hey)(?:\s+(?:rocky|amigo|amiga))?$/.test(normalized);
-}
+const isGreeting = isRockyGreeting;
 
 function isAdvisorRequest(content: string) {
   return hasIntent(content, ["asesor", "asesora", "agente", "humano", "representante", "vendedor", "vendedora", "atencion humana", "hablar con alguien", "comunicarme"]);
@@ -117,28 +85,12 @@ function isShippingRequest(content: string) {
   return hasIntent(content, ["envio", "envios", "delivery", "entrega", "despacho", "shalom", "reparto", "provincia", "regiones", "agencia"]);
 }
 
-function isPriceRequest(content: string) {
-  return hasIntent(content, ["precio", "precios", "cuanto cuesta", "cuanto vale", "mayorista", "costo", "lista de precios"]);
-}
-
 function isHoursRequest(content: string) {
   return hasIntent(content, ["horario", "horarios", "hora atienden", "a que hora", "abren", "cierran", "atienden hoy", "atienden domingo"]);
 }
 
 function isPaymentRequest(content: string) {
   return hasIntent(content, ["pago", "pagos", "pagar", "cuenta", "cuentas", "transferencia", "yape", "plin", "deposito", "banco", "datos para transferir"]);
-}
-
-function extractRequestedQuantity(content: string) {
-  const match = normalizedText(content).match(/\b(\d{1,4})\s*(?:unidad|unidades|und|unds)?\b/);
-  if (!match) return null;
-  const quantity = Number(match[1]);
-  return Number.isInteger(quantity) && quantity > 0 ? quantity : null;
-}
-
-function extractExplicitQuantity(content: string) {
-  const match = normalizedText(content).match(/\b(\d{1,4})\s*(?:unidad|unidades|und|unds|piezas|pieza)\b/);
-  return match ? Number(match[1]) : null;
 }
 
 function selectedShownProduct(content: string, shownProducts: unknown) {
@@ -149,7 +101,9 @@ function selectedShownProduct(content: string, shownProducts: unknown) {
   return shownProducts.find((product) => {
     const item = asRecord(product);
     const code = text(item?.code);
-    return (code && normalized.includes(normalizedText(code))) || (ordinal && Number(item?.position) === positions[ordinal]);
+    const normalizedCode = code ? normalizedText(code).replace(/[^a-z0-9]+/g, " ").trim() : "";
+    const normalizedMessage = " " + normalized.replace(/[^a-z0-9]+/g, " ").trim() + " ";
+    return (normalizedCode && normalizedMessage.includes(" " + normalizedCode + " ")) || (ordinal && Number(item?.position) === positions[ordinal]);
   }) as JsonRecord | undefined ?? null;
 }
 
@@ -165,10 +119,6 @@ async function sendBotImage(conversationId: string, recipient: string, mediaUrl:
   await rockyOutbox.enqueue({ conversationId, recipient, mediaUrl, content: caption, source, type: "image" });
 }
 
-async function answerProductPriceInquiry(conversationId: string, recipient: string, content: string) {
-  return sendProductSearchResults(conversationId, recipient, content);
-}
-
 function productSearchCaption(product: {
   code: string;
   name: string;
@@ -181,14 +131,16 @@ function productSearchCaption(product: {
   const wholesale = product.wholesalePrice
     ? `\nPrecio mayorista desde ${product.wholesaleMinQty} unidades: ${product.wholesalePrice}.`
     : "";
-  return `${product.name} (${product.code})\nPrecio unitario: ${product.unitPrice}.${wholesale}\nDisponibilidad: ${product.availabilityLabel}.`;
+  const prefix = `(${product.code})`;
+  const name = product.name.startsWith(prefix) ? product.name.slice(prefix.length).trim() : product.name;
+  return `${name} (${product.code})\nPrecio unitario: ${product.unitPrice}.${wholesale}\nDisponibilidad: ${product.availabilityLabel}.`;
 }
 
 /** Responds to any product request with the available product information.
  * Unlike the old price-only path, this is also used for requests such as
  * "busco un repetidor wifi" or "tienen parlantes". */
-async function sendProductSearchResults(conversationId: string, recipient: string, content: string) {
-  const reply = await answerShopAssistant({ message: content });
+async function sendProductSearchResults(conversationId: string, recipient: string, content: string, productContextCode?: string) {
+  const reply = await answerShopAssistant({ message: content, productContextCode });
   // Two precise alternatives are easier to compare and prevent a catalog
   // search from turning into a sequence of repetitive bot bubbles.
   const products = (reply.products ?? []).filter(product => product.stockUnits > 0 && Number.isFinite(product.unitPriceValue) && product.unitPriceValue > 0).slice(0, 2);
@@ -207,13 +159,17 @@ async function sendProductSearchResults(conversationId: string, recipient: strin
     }
   }
 
+  const previousState = await prisma.conversationSalesState.findUnique({ where: { conversationId }, select: { deliveryData: true } });
+  const previousDelivery = asRecord(previousState?.deliveryData) ?? {};
+  const knownDestination = text(previousDelivery.location) ?? text(previousDelivery.limaAddress);
+  const deliveryData = { ...previousDelivery, awaitingDeliveryLocation: !knownDestination } as Prisma.InputJsonValue;
   await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
     where: { conversationId },
-    create: { conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true }, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
-    update: { stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, quantity: null, deliveryData: { awaitingLimaAddress: true }, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
+    create: { conversationId, stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, deliveryData, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
+    update: { stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, quantity: null, deliveryData, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
   }));
 
-  await sendBotText(conversationId, recipient, PRODUCT_DELIVERY_MESSAGE, "product_search_delivery_options");
+  if (!knownDestination) await sendBotText(conversationId, recipient, PRODUCT_DELIVERY_MESSAGE, "product_search_delivery_options");
   await sendPaymentNotice(conversationId, recipient);
   return true;
 }
@@ -267,212 +223,68 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
   const content = (requests.length ? requests : fragments).join("\n") || latest.content;
   const result = { ok: true, duplicate: false, conversation: { botEnabled: true }, conversationId, messageId: triggerMessageId };
 
-  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-    // The durable batch above already includes unanswered fragments.
-    if (isGreeting(content)) {
-      try {
-        // Do not greet before intent classification. A greeting-only message
-        // receives the welcome; a greeting followed by a request is handled
-        // by that request's dedicated flow instead.
-        const welcomeSent = await sendWelcomeIfNeeded(result.conversationId, from);
-        if (!welcomeSent) {
-          await sendBotText(result.conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
-        }
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud greeting response failed:", error);
-      }
-      return result;
-    }
+  if (isGreeting(content)) {
+    if (!await sendWelcomeIfNeeded(conversationId, from)) await sendBotText(conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
+    return result;
+  }
+  if (isAdvisorRequest(content)) {
+    await handOffToAdvisor(conversationId, from, "advisor_handoff");
+    return result;
+  }
+  if (await sendCatalog(conversationId, from, content)) return result;
 
-    if (isAdvisorRequest(content)) {
-      try {
-        await handOffToAdvisor(result.conversationId, from, "advisor_handoff");
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud advisor handoff response failed:", error);
-      }
-      return result;
-    }
+  // Explicit service questions outrank any previously pending sales question.
+  if (isLocationRequest(content)) { await sendBotText(conversationId, from, LOCATION_MESSAGE, "store_location"); return result; }
+  if (isHoursRequest(content)) { await sendBotText(conversationId, from, HOURS_MESSAGE, "store_hours"); return result; }
+  if (isPaymentRequest(content)) { await sendPaymentNotice(conversationId, from); return result; }
 
-    // An explicit catalog request always takes precedence over a regular
-    // product inquiry: "catálogo de parlantes" must receive a PDF, not a
-    // generic speaker suggestion flow.
-    if (await sendCatalog(result.conversationId, from, content)) {
-      return result;
-    }
-
-    const salesState = await prisma.conversationSalesState.findUnique({
-      where: { conversationId: result.conversationId },
-      select: { deliveryData: true, selectedProductCode: true, shownProducts: true, stage: true, unitPrice: true, updatedAt: true },
-    });
-
-    const awaitingCatalogScope =
-      salesState?.stage === "AWAITING_CATALOG_SCOPE" &&
-      Date.now() - salesState.updatedAt.getTime() <= CATALOG_SCOPE_WAIT_MS &&
-      content.trim().split(/\s+/).length <= 4;
-    if (awaitingCatalogScope) {
-      try {
-        // The customer may answer the general-catalog prompt with only a
-        // category or brand, e.g. "audífonos" or "JBL".
-        if (await sendCatalog(result.conversationId, from, `catálogo ${content}`)) {
-          await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({
-            where: { conversationId: result.conversationId },
-            data: { stage: "AWAITING_PRODUCT_QUERY" },
-          }));
-          return result;
-        }
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud catalog scope response failed:", error);
-      }
-    }
-    const awaitingAddress = salesState?.stage === "AWAITING_DELIVERY_DETAILS"
-      && Boolean((salesState.deliveryData as JsonRecord | null)?.awaitingLimaAddress);
-
-    if (awaitingAddress && content.trim()) {
-      await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({
-        where: { conversationId: result.conversationId },
-        data: {
-          stage: "AWAITING_PAYMENT_METHOD",
-          deliveryData: { limaAddress: content, awaitingLimaAddress: false } as Prisma.InputJsonValue,
-        },
-      }));
-      try {
-        await sendPaymentNotice(result.conversationId, from);
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud payment notice failed:", error);
-      }
-      return result;
-    }
-
-    const requestedQuantity = extractRequestedQuantity(content);
-    const selectedProduct = salesState?.stage === "AWAITING_MODEL_SELECTION"
-      ? selectedShownProduct(content, salesState.shownProducts)
-      : null;
-    if (selectedProduct) {
-      const code = text(selectedProduct.code);
-      const unitPrice = Number(selectedProduct.unitPrice);
-      const quantity = extractExplicitQuantity(content);
-      if (code && Number.isFinite(unitPrice) && quantity && quantity > 0) {
-        await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({
-          where: { conversationId: result.conversationId },
-          data: { stage: "AWAITING_PAYMENT_METHOD", selectedProductCode: code, quantity, unitPrice, total: unitPrice * quantity },
-        }));
-        await sendPaymentNotice(result.conversationId, from);
-        return result;
-      }
-      if (code && Number.isFinite(unitPrice)) {
-        await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId: result.conversationId }, data: { stage: "AWAITING_QUANTITY", selectedProductCode: code, unitPrice } }));
-        await sendBotText(result.conversationId, from, "Perfecto. ¿Cuántas unidades necesitas para enviarte los medios de pago?", "product_selection_quantity");
-        return result;
-      }
-    }
-    if (
-      salesState?.stage === "AWAITING_QUANTITY" &&
-      salesState.selectedProductCode &&
-      requestedQuantity
-    ) {
-      const unitPrice = salesState.unitPrice ? Number(salesState.unitPrice) : null;
-      await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({
-        where: { conversationId: result.conversationId },
-        data: {
-          stage: "AWAITING_PAYMENT_METHOD",
-          quantity: requestedQuantity,
-          total: unitPrice === null ? null : unitPrice * requestedQuantity,
-        },
-      }));
-      try {
-        await sendPaymentNotice(result.conversationId, from);
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud product quantity payment notice failed:", error);
-      }
-      return result;
-    }
-
-    if (isPriceRequest(content)) {
-      try {
-        if (await answerProductPriceInquiry(result.conversationId, from, content)) {
-          return result;
-        }
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud product price inquiry failed:", error);
-      }
-    }
-
-    if (isPaymentRequest(content)) {
-      try {
-        await sendPaymentNotice(result.conversationId, from);
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud payment question failed:", error);
-      }
-      return result;
-    }
-
-    if (isLocationRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, LOCATION_MESSAGE, "store_location");
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud location response failed:", error);
-      }
-      return result;
-    }
-
-    if (isHoursRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, HOURS_MESSAGE, "store_hours");
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud hours response failed:", error);
-      }
-      return result;
-    }
-
-    if (isLimaDeliveryRequest(content)) {
-      await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
-        where: { conversationId: result.conversationId },
-        create: { conversationId: result.conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
-        update: { stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } },
-      }));
-      try {
-        await sendBotText(result.conversationId, from, LIMA_DELIVERY_MESSAGE, "lima_delivery_address_request");
-
-      } catch (error) {
-
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud delivery question failed:", error);
-      }
-      return result;
-    }
-
-    if (isShippingRequest(content)) {
-      try {
-        await sendBotText(result.conversationId, from, SHIPPING_MESSAGE, "store_shipping");
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud shipping response failed:", error);
-      }
-      return result;
-    }
-
-    // Product requests do not need to mention a price. Resolve them against
-    // the catalog before handing the message to n8n or an advisor.
-    try {
-      if (await sendProductSearchResults(result.conversationId, from, content)) {
-        return result;
-      }
-    } catch (error) {
-      if (error instanceof AutomationCancelledError) throw error;
-      console.error("YCloud general product search failed:", error);
-    }
+  const salesState = await prisma.conversationSalesState.findUnique({ where: { conversationId } });
+  const selected = selectedShownProduct(content, salesState?.shownProducts);
+  const code = text(selected?.code) ?? salesState?.selectedProductCode;
+  const quantity = requestedUnits(content);
+  if (quantity && code && (selected || isQuantityOnly(content))) {
+    const product = await prisma.product.findUnique({ where: { code } });
+    const quote = product ? verifiedQuote(product, quantity) : null;
+    if (!product || !quote) { await handOffToAdvisor(conversationId, from, "quote_validation_handoff"); return result; }
+    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { selectedProductCode: code, ...quote, stage: "AWAITING_PAYMENT_METHOD" } }));
+    await sendBotText(conversationId, from, product.name + " (" + code + "). " + quantity + " unidades a S/ " + quote.unitPrice.toFixed(2) + " cada una. Total: S/ " + quote.total.toFixed(2) + ".", "verified_quantity_quote");
+    await sendPaymentNotice(conversationId, from);
+    return result;
+  }
+  if (selected && code) {
+    const product = await prisma.product.findUnique({ where: { code } });
+    if (!product || !verifiedQuote(product, 1)) { await handOffToAdvisor(conversationId, from, "selection_validation_handoff"); return result; }
+    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { selectedProductCode: code, stage: "AWAITING_QUANTITY" } }));
+    await sendBotText(conversationId, from, "Perfecto, " + product.name + ". ¿Cuántas unidades necesitas?", "product_selection_quantity");
+    return result;
+  }
+  if (isPriceFollowUp(content)) {
+    const shown = Array.isArray(salesState?.shownProducts) ? salesState.shownProducts : [];
+    const contextCode = code ?? (shown.length === 1 ? text(asRecord(shown[0])?.code) : null);
+    if (contextCode && await sendProductSearchResults(conversationId, from, content, contextCode)) return result;
+    await sendBotText(conversationId, from, shown.length > 1 ? "¿De cuál de los modelos que te mostré necesitas el precio?" : "¿Qué producto te interesa? Puedes indicarme su nombre, marca o modelo.", "product_clarification");
+    return result;
+  }
+  if (isShippingRequest(content)) {
+    await sendBotText(conversationId, from, isLimaDeliveryRequest(content) ? LIMA_DELIVERY_MESSAGE : SHIPPING_MESSAGE, "store_shipping");
+    return result;
   }
 
-  await handOffToAdvisor(result.conversationId, from, "catalog_match_handoff");
+  const catalogScope = salesState?.stage === "AWAITING_CATALOG_SCOPE" && Date.now() - salesState.updatedAt.getTime() <= CATALOG_SCOPE_WAIT_MS && !/\b(precio|precios|cuanto|costo|vale)\b/.test(normalizedText(content));
+  if (catalogScope && await sendCatalog(conversationId, from, "catálogo " + content)) return result;
+  if (await sendProductSearchResults(conversationId, from, content)) return result;
 
+  const destination = deliveryLocation(content);
+  if (destination && salesState) {
+    const previous = asRecord(salesState.deliveryData) ?? {};
+    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { deliveryData: { ...previous, location: destination, awaitingDeliveryLocation: false, awaitingLimaAddress: false } as Prisma.InputJsonValue } }));
+    await sendBotText(conversationId, from, "Anoté el destino: " + destination + ". Hacemos envíos por Shalom a todo el Perú; en Lima también coordinamos delivery por inDrive. El costo se confirma con un asesor antes del pago.", "delivery_location_confirmed");
+    return result;
+  }
+  if (/^(gracias|muchas gracias|ok|okay|listo|perfecto)$/.test(normalizedText(content))) {
+    await sendBotText(conversationId, from, "¡Con gusto! Si necesitas otra información del producto, aquí estoy para ayudarte.", "courtesy_acknowledgement");
+    return result;
+  }
+  await handOffToAdvisor(conversationId, from, "catalog_match_handoff");
   return result;
 }

@@ -259,3 +259,41 @@ test("a miss sends only a controlled advisor handoff, never a fabricated search 
   assert.equal(replies.length, 1); assert.match(replies[0].content, /asesor/);
   assert.doesNotMatch(replies[0].content, /no encontr|no pude|https?:/);
 });
+
+test("a pending delivery question cannot swallow a location or price question", async () => {
+  const first = await receive("Donde estan ubicados");
+  await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_DELIVERY_DETAILS", deliveryData: { awaitingLimaAddress: true } } });
+  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+  assert.equal(replies.length, 1); assert.match(replies[0].content, /Abancay/);
+  const state = await db.conversationSalesState.findUniqueOrThrow({ where: { conversationId: first.conversationId } });
+  assert.equal(state.stage, "AWAITING_DELIVERY_DETAILS");
+  assert.equal((state.deliveryData as Record<string, unknown>).limaAddress, undefined);
+});
+
+test("quantity follow-up rereads live price and wholesale tier, not cached sales memory", async () => {
+  await db.product.create({ data: { code: "TEST-QUOTE", slug: "test-quote", name: "Televisor", unitPrice: 100, wholesalePrice: 90, wholesaleMinQty: 3, stockUnits: 10 } });
+  const first = await receive("3 unidades");
+  await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "TEST-QUOTE", unitPrice: 1 } });
+  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  const state = await db.conversationSalesState.findUniqueOrThrow({ where: { conversationId: first.conversationId } });
+  assert.equal(Number(state.total), 270); assert.equal(Number(state.unitPrice), 90);
+  assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).some(reply => reply.content.includes("270.00")));
+});
+
+test("unavailable quantity hands off instead of quoting stale stock", async () => {
+  await db.product.create({ data: { code: "LOW", slug: "low", name: "Televisor", unitPrice: 100, stockUnits: 1 } });
+  const first = await receive("3 unidades");
+  await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "LOW", unitPrice: 100 } });
+  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  assert.equal((await db.conversation.findUniqueOrThrow({ where: { id: first.conversationId } })).status, "REQUIERE_ASESOR");
+  assert.equal(await db.chatMessage.count({ where: { senderType: "BOT" } }), 1);
+});
+
+test("a new product model and quantity never quote the previously selected model", async () => {
+  await db.product.create({ data: { code: "OLD", slug: "old", name: "Televisor", unitPrice: 100, stockUnits: 10 } });
+  const first = await receive("iphone 15, 3 unidades");
+  await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "OLD", unitPrice: 100 } });
+  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).every(reply => !reply.content.includes("300.00")));
+});

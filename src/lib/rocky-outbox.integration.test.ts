@@ -47,6 +47,16 @@ test("persists before delivery, deduplicates concurrent producers and sends once
   assert.equal((await db.rockyOutboundJob.findFirst())?.state, "submitted");
 });
 
+test("an identical automatic reply cannot appear a third time even after the dedupe window", async () => {
+  const f = await fixture();
+  for (let i = 0; i < 2; i++) await db.chatMessage.create({ data: {
+    conversationId: f.conversation.id, senderType: "BOT", direction: "OUTBOUND", messageType: "TEXT",
+    content: f.input.content, status: "delivered", createdAt: new Date(Date.now() - (i + 1) * 60 * 60_000),
+  } });
+  await f.run(() => outbox.enqueue(f.input));
+  assert.equal(await db.rockyOutboundJob.count(), 0);
+});
+
 test("human intervention during debounce prevents enqueue and stale handoff", async () => {
   const f = await fixture();
   await f.run(async () => {

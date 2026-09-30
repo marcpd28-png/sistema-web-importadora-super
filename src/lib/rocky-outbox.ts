@@ -123,6 +123,12 @@ export class RockyOutbox {
     if (recipient !== expectedRecipient) throw new Error("Automatic recipient does not match conversation");
     const type = input.type ?? "text";
     const fingerprint = createHash("sha256").update(JSON.stringify([type, input.content, input.mediaUrl ?? null])).digest("hex");
+    const previousCopies = await tx.chatMessage.count({ where: {
+      conversationId: input.conversationId, senderType: "BOT", content: input.content,
+      messageType: type.toUpperCase() as MessageType, mediaUrl: input.mediaUrl ?? null,
+      status: { notIn: ["cancelled", "failed"] },
+    } });
+    if (previousCopies >= 2) return null;
     const duplicate = await tx.rockyOutboundJob.findFirst({ where: {
       conversationId: input.conversationId, fingerprint, state: { not: "cancelled" },
       createdAt: { gte: new Date(Date.now() - DEDUPE_MS) },
