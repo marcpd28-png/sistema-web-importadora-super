@@ -49,6 +49,17 @@ export function AdminFormSectionNav({ label, sections }: AdminFormSectionNavProp
 
   return (
     <nav aria-label={label} className="admin-form-section-nav">
+      <label className="admin-mobile-section-select">
+        <span>Ir a sección</span>
+        <select aria-label="Ir a sección" value={activeId} onChange={event => {
+          const id = event.target.value;
+          setActiveId(id);
+          document.getElementById(id)?.scrollIntoView({ block: "start" });
+          window.history.replaceState(window.history.state, "", `#${id}`);
+        }}>
+          {sections.map((section, index) => <option value={section.id} key={section.id}>{index + 1}. {section.label}</option>)}
+        </select>
+      </label>
       <div className="admin-form-section-nav-track">
         {sections.map((section, index) => {
           const isActive = activeId === section.id;

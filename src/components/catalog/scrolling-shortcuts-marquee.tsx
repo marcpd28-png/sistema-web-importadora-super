@@ -87,9 +87,21 @@ export function ScrollingShortcutsMarquee({
       frameRef.current = window.requestAnimationFrame(step);
     };
 
-    frameRef.current = window.requestAnimationFrame(step);
+    const staticView = window.matchMedia("(max-width: 920px), (prefers-reduced-motion: reduce)");
+    const updateMotion = () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+      if (!staticView.matches) {
+        frameRef.current = window.requestAnimationFrame(step);
+      }
+    };
+    updateMotion();
+    staticView.addEventListener("change", updateMotion);
 
     return () => {
+      staticView.removeEventListener("change", updateMotion);
       if (frameRef.current !== null) {
         window.cancelAnimationFrame(frameRef.current);
       }

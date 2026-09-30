@@ -1,24 +1,27 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { approveOrderAction, cancelOrderAction, markShippedAction, saveAdminNotesAction } from "./actions";
+import { approveOrderAction, cancelOrderAction, markShippedAction, markDeliveredAction, saveAdminNotesAction } from "./actions";
 import { CheckCircle, XCircle, Truck, Save, Loader2 } from "lucide-react";
 
 type Props = {
   orderId: string;
   status: string;
   initialNotes: string | null;
+  isTest?: boolean;
 };
 
-export function OrderActions({ orderId, status, initialNotes }: Props) {
+export function OrderActions({ orderId, status, initialNotes, isTest = false }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [notes, setNotes] = useState(initialNotes || "");
+  const [notes, setNotes] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  const run = (action: () => Promise<void>) => {
+  const run = (action: () => Promise<{ error?: string; ok?: boolean }>) => {
     startTransition(async () => {
       try {
-        await action();
+        const result = await action();
+        if (result.error) { setFeedback({ type: "error", msg: result.error }); return; }
+        setNotes("");
         setFeedback({ type: "success", msg: "Estado actualizado correctamente." });
       } catch {
         setFeedback({ type: "error", msg: "Error al actualizar. Intenta de nuevo." });
@@ -31,13 +34,14 @@ export function OrderActions({ orderId, status, initialNotes }: Props) {
       {/* Notes */}
       <div>
         <label style={{ fontSize: 13, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>
-          Notas internas del admin
+          Añadir nota o referencia de revisión
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Ej: Voucher verificado, código de transferencia #123456..."
           rows={3}
+          maxLength={4000}
           disabled={isPending}
           style={{
             width: "100%", padding: "10px 12px", border: "1px solid #d1d5db",
@@ -55,9 +59,12 @@ export function OrderActions({ orderId, status, initialNotes }: Props) {
         </button>
       </div>
 
+      {initialNotes && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{initialNotes}</p>}
+      {isTest && <p role="status">Pedido de prueba: no cobrar ni despachar.</p>}
+      {status === "PENDING" && !isTest && <p>Confirma el pago después de comprobar el abono en la cuenta receptora y escribir su referencia. El comprobante adjunto no acredita por sí solo el pago.</p>}
       {/* Action buttons */}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {status === "PENDING" && (
+        {status === "PENDING" && !isTest && (
           <button
             className="button button-primary"
             disabled={isPending}
@@ -69,7 +76,7 @@ export function OrderActions({ orderId, status, initialNotes }: Props) {
           </button>
         )}
 
-        {(status === "PENDING" || status === "PAID") && (
+        {status === "PAID" && !isTest && (
           <button
             className="button button-primary"
             disabled={isPending}
@@ -81,7 +88,8 @@ export function OrderActions({ orderId, status, initialNotes }: Props) {
           </button>
         )}
 
-        {status !== "CANCELED" && status !== "DELIVERED" && (
+        {status === "SHIPPED" && !isTest && <button className="button button-primary" disabled={isPending} onClick={() => run(() => markDeliveredAction(orderId, notes))}>Marcar como ENTREGADO</button>}
+        {["PENDING", "PAID", "FAILED"].includes(status) && (
           <button
             className="button"
             disabled={isPending}

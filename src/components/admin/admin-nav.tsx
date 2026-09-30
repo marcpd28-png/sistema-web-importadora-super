@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   ChartNoAxesCombined,
   DatabaseZap,
@@ -16,6 +17,7 @@ import {
   QrCode,
   Settings,
   ShieldAlert,
+  TriangleAlert,
   ShoppingBag,
   Store,
   Tag,
@@ -26,6 +28,7 @@ import {
 import { logoutAction } from "@/app/admin/actions";
 import type { AdminNavBadges } from "@/lib/admin";
 import { cn } from "@/lib/utils";
+import { useAdminMobile } from "./use-admin-mobile";
 
 type AdminNavLink = {
   href?: string;
@@ -53,6 +56,7 @@ const sections: AdminNavSection[] = [
     title: "Catálogo e Inventario",
     links: [
       { href: "/admin/products", label: "Productos", icon: PackageSearch, badgeKey: "lowStockProductsCount" },
+      { href: "/admin/atencion", label: "Requiere atención", icon: TriangleAlert, badgeKey: "productsNeedingPhotoCount" },
       { href: "/admin/products/new", label: "Nuevo producto", icon: PackagePlus },
       { href: "/admin/categories", label: "Categorías", icon: FolderTree },
       { href: "/admin/fichas", label: "Fichas digitales / QR", icon: QrCode },
@@ -61,10 +65,12 @@ const sections: AdminNavSection[] = [
   {
     title: "Ventas y Marketing",
     links: [
+      { href: "/admin/analitica", label: "Visitas y mapas de calor", icon: ChartNoAxesCombined },
       { href: "/admin/orders", label: "Órdenes / Pagos", icon: ShoppingBag, badgeKey: "pendingOrdersCount" },
       { href: "/admin/quotes", label: "Cotizaciones", icon: FileText, badgeKey: "pendingQuotesCount" },
       { href: "/admin/cupones", label: "Cupones de Descuento", icon: Tag },
       { href: "/admin/banners", label: "Banners y campañas", icon: ImagePlus },
+      { href: "/admin/collections", label: "Ofertas y preventa", icon: Tag },
     ],
   },
   {
@@ -92,6 +98,30 @@ type AdminNavProps = {
 export function AdminNav({ badges }: AdminNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const mobile = useAdminMobile();
+  const [search, setSearch] = useState("");
+  const [mobileSection, setMobileSection] = useState<string | null>(null);
+  const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const query = mobile ? normalize(search.trim()) : "";
+  const activeSection = sections.find(section => section.links.some(link => link.href === pathname || (link.href !== "/admin" && link.href !== "/" && link.href && pathname.startsWith(link.href + "/"))))?.title;
+  const [tooltip, setTooltip] = useState<{ label: string; left: number; top: number } | null>(null);
+  const showTooltip = (element: HTMLElement, label: string) => {
+    if (window.matchMedia("(max-width: 920px)").matches || !document.body.classList.contains("admin-sidebar-collapsed")) return;
+    const rect = element.getBoundingClientRect();
+    setTooltip({ label, left: Math.min(rect.right + 10, window.innerWidth - 250), top: Math.max(8, Math.min(rect.top, window.innerHeight - 60)) });
+  };
+  useEffect(() => {
+    const hide = () => setTooltip(null);
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") hide(); };
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    document.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     "Principal": true,
@@ -117,6 +147,10 @@ export function AdminNav({ badges }: AdminNavProps) {
   }, []);
 
   const toggleSection = (title: string) => {
+    if (mobile) {
+      setMobileSection((mobileSection ?? activeSection) === title ? "" : title);
+      return;
+    }
     const newState = { ...expandedSections, [title]: !expandedSections[title] };
     setExpandedSections(newState);
     localStorage.setItem("admin-nav-expanded", JSON.stringify(newState));
@@ -130,8 +164,14 @@ export function AdminNav({ badges }: AdminNavProps) {
 
   return (
     <nav className="admin-nav" aria-label="Navegación administrativa">
+      <label className="admin-mobile-nav-search">
+        <span className="sr-only">Buscar una sección</span>
+        <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar una sección…" />
+      </label>
       {sections.map((section) => {
-        const isExpanded = expandedSections[section.title] !== false;
+        const links = section.links.filter(link => !query || normalize(link.label + " " + section.title).includes(query));
+        if (!links.length) return null;
+        const isExpanded = mobile ? Boolean(query) || (mobileSection ?? activeSection) === section.title : expandedSections[section.title] !== false;
         
         return (
           <section className="admin-nav-section" key={section.title}>
@@ -168,7 +208,7 @@ export function AdminNav({ badges }: AdminNavProps) {
               className={cn("admin-nav-links", !isExpanded && "is-accordion-closed")}
               id={`admin-nav-${section.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
             >
-              {section.links.map((link) => {
+              {links.map((link) => {
                 const Icon = link.icon;
                 const isLink = link.kind !== "action" && Boolean(link.href);
                 const isActive =
@@ -180,7 +220,9 @@ export function AdminNav({ badges }: AdminNavProps) {
                 if (link.kind === "action") {
                   return (
                     <form action={logoutAction} key={link.label}>
-                      <button className="admin-nav-link admin-nav-button" type="submit">
+                      <button className="admin-nav-link admin-nav-button" type="submit" aria-label={link.label}
+                        onMouseEnter={event => showTooltip(event.currentTarget, link.label)} onMouseLeave={() => setTooltip(null)}
+                        onFocus={event => showTooltip(event.currentTarget, link.label)} onBlur={() => setTooltip(null)} onClick={() => setTooltip(null)}>
                         <span className="admin-nav-icon">
                           <Icon size={18} />
                         </span>
@@ -202,8 +244,13 @@ export function AdminNav({ badges }: AdminNavProps) {
                       isActive && "is-active",
                     )}
                     href={link.href}
-                    onFocus={() => handlePrefetch(link.href)}
-                    onMouseEnter={() => handlePrefetch(link.href)}
+                    aria-current={isActive ? "page" : undefined}
+                    aria-label={link.label}
+                    onFocus={event => { handlePrefetch(link.href); showTooltip(event.currentTarget, link.label); }}
+                    onMouseEnter={event => { handlePrefetch(link.href); showTooltip(event.currentTarget, link.label); }}
+                    onMouseLeave={() => setTooltip(null)}
+                    onBlur={() => setTooltip(null)}
+                    onClick={() => setTooltip(null)}
                     onTouchStart={() => handlePrefetch(link.href)}
                   >
                     <span className="admin-nav-icon">
@@ -220,6 +267,8 @@ export function AdminNav({ badges }: AdminNavProps) {
           </section>
         );
       })}
+      {query && !sections.some(section => section.links.some(link => normalize(link.label + " " + section.title).includes(query))) ? <p className="muted">No hay secciones con ese nombre.</p> : null}
+      {tooltip ? createPortal(<div className="admin-nav-tooltip" role="tooltip" style={{ left: tooltip.left, top: tooltip.top }}>{tooltip.label}</div>, document.body) : null}
     </nav>
   );
 }

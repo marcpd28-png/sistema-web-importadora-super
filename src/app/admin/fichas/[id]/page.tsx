@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { FichaEditorWorkspace } from "@/components/admin/ficha-editor-workspace";
+import { editorialWriteSelect } from "@/lib/facturador/editorial-write";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function FichaEditorPage({
     where: { id: productId },
     include: {
       digitalProfile: true,
+      erpEditorialWrites: { orderBy: { createdAt: "desc" }, take: 5, select: editorialWriteSelect },
       specifications: { orderBy: { sortOrder: "asc" } },
       variants: { orderBy: { sortOrder: "asc" } },
       videos: { orderBy: { sortOrder: "asc" } },

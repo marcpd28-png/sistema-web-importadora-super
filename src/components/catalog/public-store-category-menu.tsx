@@ -1,206 +1,49 @@
 "use client";
-
-import { useState } from "react";
-import { ChevronDown, ChevronLeft, Menu, Battery, Car, Headphones, House, Lightbulb, NotebookPen, PackageSearch, Smartphone } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Menu, X, Search, ChevronDown, Headphones, Smartphone, PlugZap, Watch, Laptop, Gamepad2, Drone, CookingPot, ShieldCheck, Car, Sparkles, ToyBrick, Backpack, Heart, PackageSearch, Tags } from "lucide-react";
 import type { BrandOption, CategoryOption } from "@/lib/store";
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
-
-function formatCatalogLabel(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word, index) => {
-      if (["de", "del", "para", "y", "e", "a", "con", "en"].includes(word) && index > 0) {
-        return word;
-      }
-
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    })
-    .join(" ");
-}
-
-function normalizeCatalogValue(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-function sortCatalogCategories(left: CategoryOption, right: CategoryOption) {
-  const priority = (name: string) => {
-    const normalized = normalizeCatalogValue(name);
-    const priorities: Array<[RegExp, number]> = [
-      [/auricular|audio/, 10],
-      [/parlante/, 20],
-      [/celular|telefono|movil/, 30],
-      [/smart watch|smartwatch|reloj/, 40],
-      [/dispositivos portatiles|tablet|celular/, 50],
-      [/periferic|mouse|teclado|gamer/, 60],
-      [/bateria|power bank|cargador portatil/, 70],
-      [/almacenamiento|memoria|usb/, 80],
-      [/entretenimiento|multimedia|consola|proyector|tv/, 90],
-      [/camara de seguridad|seguridad/, 100],
-      [/auto|carro|vehiculo/, 110],
-      [/cocina|utencillo|domestico/, 120],
-      [/hogar|iluminacion/, 130],
-      [/cuidado personal/, 140],
-      [/juguete.*escolar|utiles escolares|articulos escolares/, 150],
-      [/equipaje|bolso/, 160],
-      [/novedad/, 900],
-      [/sexual/, 990],
-    ];
-
-    return priorities.find(([pattern]) => pattern.test(normalized))?.[1] ?? 500;
-  };
-
-  const priorityDelta = priority(left.name) - priority(right.name);
-
-  if (priorityDelta !== 0) {
-    return priorityDelta;
-  }
-
-  return formatCatalogLabel(left.name).localeCompare(formatCatalogLabel(right.name), "es");
-}
-
-function getCategoryIcon(name: string) {
-  const normalized = normalizeCatalogValue(name);
-
-  if (/celular|telefono|m[oó]vil|smart/.test(normalized)) {
-    return Smartphone;
-  }
-
-  if (/auto|carro|vehiculo/.test(normalized)) {
-    return Car;
-  }
-
-  if (/hogar|casa|ilumin/.test(normalized)) {
-    return normalized.includes("ilumin") ? Lightbulb : House;
-  }
-
-  if (/auricular|audio/.test(normalized)) {
-    return Headphones;
-  }
-
-  if (/bater/i.test(normalized)) {
-    return Battery;
-  }
-
-  if (/escolar|util|cuaderno|lapic/.test(normalized)) {
-    return NotebookPen;
-  }
-
-  return PackageSearch;
-}
-
-type PublicStoreCategoryMenuProps = {
-  brands: BrandOption[];
-  categories: CategoryOption[];
-};
-
-export function PublicStoreCategoryMenu({ brands, categories }: PublicStoreCategoryMenuProps) {
-  const [panel, setPanel] = useState<"main" | "categories" | "brands" | "sites">("main");
-
-  const closePanel = () => setPanel("main");
-
-  return (
-    <div className="public-store-shortcut-menu-shell">
-      <details className="public-store-shortcut-menu">
-        <summary aria-label={`Abrir ${categories.length} categorías del catálogo`} className="public-store-shortcut is-lead">
-          <span className="public-store-lead-icon">
-            <Menu size={16} />
-          </span>
-          <span className="public-store-lead-label">Categorías</span>
-        </summary>
-        <div className="public-store-shortcut-dropdown">
-        {panel === "main" ? (
-          <div className="public-store-shortcut-panel">
-            <button className="public-store-shortcut-row" onClick={() => setPanel("categories")} type="button">
-              <span>Categorías</span>
-              <ChevronDown size={18} />
-            </button>
-            <button className="public-store-shortcut-row" onClick={() => setPanel("brands")} type="button">
-              <span>Marcas</span>
-              <ChevronDown size={18} />
-            </button>
-            <button className="public-store-shortcut-row" onClick={() => setPanel("sites")} type="button">
-              <span>Sedes</span>
-              <ChevronDown size={18} />
-            </button>
-          </div>
-        ) : null}
-
-        {panel === "categories" ? (
-          <div className="public-store-shortcut-panel">
-            <button className="public-store-shortcut-back" onClick={closePanel} type="button">
-              <ChevronLeft size={18} />
-              <span>Categorías</span>
-            </button>
-            <div className="public-store-shortcut-dropdown-section">
-              <div className="public-store-shortcut-dropdown-grid is-categories">
-                {categories
-                  .slice()
-                  .sort(sortCatalogCategories)
-                  .map((category) => {
-                    const Icon = getCategoryIcon(category.name);
-
-                    return (
-                      <CatalogPrefetchLink
-                        className="public-store-shortcut-dropdown-link is-category"
-                        href={`/?category=${encodeURIComponent(category.slug)}`}
-                        key={category.id}
-                      >
-                        <Icon size={16} />
-                        <span>{formatCatalogLabel(category.name)}</span>
-                      </CatalogPrefetchLink>
-                    );
-                  })}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {panel === "brands" ? (
-          <div className="public-store-shortcut-panel">
-            <button className="public-store-shortcut-back" onClick={closePanel} type="button">
-              <ChevronLeft size={18} />
-              <span>Marcas</span>
-            </button>
-            <div className="public-store-shortcut-dropdown-section">
-              {brands.length ? (
-                <div className="public-store-shortcut-dropdown-grid is-brands">
-                  {brands.slice(0, 18).map((brand) => (
-                    <CatalogPrefetchLink
-                      className="public-store-shortcut-dropdown-link"
-                      href={`/?brand=${encodeURIComponent(brand.name)}`}
-                      key={brand.name}
-                    >
-                      {formatCatalogLabel(brand.name)}
-                    </CatalogPrefetchLink>
-                  ))}
-                </div>
-              ) : (
-                <p className="public-store-shortcut-empty">Todavía no hay marcas configuradas.</p>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {panel === "sites" ? (
-          <div className="public-store-shortcut-panel">
-            <button className="public-store-shortcut-back" onClick={closePanel} type="button">
-              <ChevronLeft size={18} />
-              <span>Sedes</span>
-            </button>
-            <div className="public-store-shortcut-dropdown-section">
-              <p className="public-store-shortcut-empty">
-                No hay sedes configuradas en este momento.
-              </p>
-            </div>
-          </div>
-        ) : null}
-        </div>
-      </details>
+const icons = [Headphones, Smartphone, PlugZap, Watch, Laptop, Gamepad2, Drone, CookingPot, ShieldCheck, Car, Sparkles, ToyBrick, Backpack, Heart];
+const slugs = ["audio", "moviles", "carga", "relojes", "computacion", "tv-videojuegos", "foto-video", "hogar", "seguridad", "auto", "cuidado", "juguetes-escolares", "bolsos", "intimo"];
+const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+export function PublicStoreCategoryMenu({ brands, categories }: { brands: BrandOption[]; categories: CategoryOption[] }) {
+  const menu = useRef<HTMLDetailsElement>(null);
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const search = normalize(query.trim());
+  const groups = [...new Set(categories.map(c => c.parentName ?? "Categorías"))];
+  const publishedCount = categories.reduce((total, category) => total + (category.productCount ?? 0), 0);
+  const visibleGroups = groups.map(group => ({ group, children: categories.filter(c => (c.parentName ?? "Categorías") === group && (!search || normalize(group).includes(search) || normalize(c.name).includes(search))) })).filter(g => g.children.length);
+  const visibleBrands = brands.filter(b => !search || normalize(b.name).includes(search));
+  const close = () => { if (menu.current) { menu.current.open = false; menu.current.querySelector("summary")?.focus(); } };
+  useEffect(() => {
+    const outside = (event: PointerEvent) => { if (event.target instanceof Node && !menu.current?.contains(event.target) && menu.current) menu.current.open = false; };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape" && menu.current?.open) { menu.current.open = false; menu.current.querySelector("summary")?.focus(); } };
+    document.addEventListener("pointerdown", outside); document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
+  }, []);
+  return <div className="public-store-shortcut-menu-shell"><details className="public-store-shortcut-menu" ref={menu} onToggle={event => { if (event.target === event.currentTarget && !event.currentTarget.open) { setQuery(""); setExpanded(null); } }}>
+    <summary aria-label="Explorar categorías" className="public-store-shortcut is-lead"><span className="public-store-lead-icon"><Menu size={16} /></span><span className="public-store-lead-label">Categorías</span></summary>
+    <div className="public-store-shortcut-dropdown category-menu-compact" onClick={event => { if (event.target instanceof Element && event.target.closest("a[href]")) close(); }}>
+      <div className="category-menu-heading">
+        <div className="public-store-category-toolbar"><strong>Categorías</strong><button type="button" className="icon-button" aria-label="Cerrar categorías" onClick={close}><X size={20} /></button></div>
+        <label className="category-menu-search"><Search size={17} aria-hidden="true" /><input type="search" aria-label="Buscar categorías o marcas" placeholder="Buscar categorías o marcas" value={query} onChange={event => setQuery(event.target.value)} /></label>
+        <p className="category-menu-count-note">Cantidades en productos publicados, no en unidades de stock.</p>
+      </div>
+      <div className="category-menu-results">
+      <CatalogPrefetchLink href="/?view=all" className="public-store-shortcut-dropdown-link">Todos los productos <small aria-label={`${publishedCount} productos publicados`}>{publishedCount}</small></CatalogPrefetchLink>
+      {visibleGroups.map(({ group, children }) => {
+        const Icon = icons[slugs.indexOf(children[0].parentSlug?.replace("familia-", "") ?? "")] ?? PackageSearch;
+        const open = search ? true : expanded === group;
+        const groupCount = categories.filter(c => (c.parentName ?? "Categorías") === group).reduce((total, c) => total + (c.productCount ?? 0), 0);
+        return <details className="storefront-category-group" key={group} open={open}><summary onClick={event => { event.preventDefault(); setExpanded(expanded === group ? null : group); }}><Icon size={19} aria-hidden="true" /><span>{group}</span><small aria-label={`${groupCount} productos publicados`}>{groupCount}</small><ChevronDown className="category-menu-chevron" size={16} aria-hidden="true" /></summary>
+          {children[0].parentSlug ? <CatalogPrefetchLink href={'/?category=' + children[0].parentSlug}>Ver todo en {group}</CatalogPrefetchLink> : null}
+          {children.map(c => <CatalogPrefetchLink href={'/?category=' + c.slug} key={c.slug}>{c.name}<small>{c.productCount}</small></CatalogPrefetchLink>)}
+        </details>;
+      })}
+      {visibleBrands.length > 0 ? <details className="storefront-category-group" open={search ? true : expanded === "__brands"}><summary onClick={event => { event.preventDefault(); setExpanded(expanded === "__brands" ? null : "__brands"); }}><Tags size={19} aria-hidden="true" /><span>Marcas</span><ChevronDown className="category-menu-chevron" size={16} aria-hidden="true" /></summary>{visibleBrands.map(b => <CatalogPrefetchLink key={b.name} href={'/?brand=' + encodeURIComponent(b.name)}>{b.name}</CatalogPrefetchLink>)}</details> : null}
+      {visibleGroups.length === 0 && visibleBrands.length === 0 ? <p className="category-menu-empty" role="status">No hay coincidencias. Prueba otro nombre.</p> : null}
+      </div>
     </div>
-  );
+  </details></div>;
 }

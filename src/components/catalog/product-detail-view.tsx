@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { CircleX, ImageIcon, Minus, Plus, ShoppingCart, ZoomIn } from "lucide-react";
 import { CartStoreBootstrap } from "@/components/catalog/cart-store-bootstrap";
 import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "@/components/catalog/cart-store";
 import { trackAddToCart, trackViewItem } from "@/lib/analytics";
+import { storeAnalyticsAllowed } from "@/lib/store-analytics-client";
+import { analyticsConsentEvent } from "@/lib/store-analytics-contract";
 import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogProduct, ProductMediaView, StoreSettingsView } from "@/lib/store";
@@ -153,7 +154,11 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
   const hasSavings = wholesaleApplies && wholesaleSavings > 0;
 
   useEffect(() => {
-    trackViewItem({
+    let sent = false;
+    const send = () => {
+      if (sent || !storeAnalyticsAllowed()) return;
+      sent = true;
+      trackViewItem({
       item_id: product.code,
       item_name: displayName,
       item_brand: product.brand ?? undefined,
@@ -161,6 +166,10 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
       price: product.unitPrice,
       quantity: 1,
     });
+    };
+    const later = () => { window.setTimeout(send, 0); };
+    later(); window.addEventListener(analyticsConsentEvent, later);
+    return () => window.removeEventListener(analyticsConsentEvent, later);
   }, [displayName, product.brand, product.category, product.code, product.unitPrice]);
 
   useEffect(() => {
@@ -304,31 +313,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
               <h1>{displayName}</h1>
             </div>
 
-            {product.description ? (
-              <div 
-                className="product-detail-description"
-                dangerouslySetInnerHTML={{ 
-                  __html: product.description
-                    .replace(/\n/g, "<br/>")
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                }} 
-              />
-            ) : null}
 
-            {/* CHANGE-CODE: CAT-002 */}
-            {product.technicalSpecs ? (
-              <section className="product-detail-specs-card">
-                <p className="eyebrow">Especificaciones técnicas</p>
-                <div 
-                  className="product-detail-specs"
-                  dangerouslySetInnerHTML={{ 
-                    __html: product.technicalSpecs
-                      .replace(/\n/g, "<br/>")
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                  }} 
-                />
-              </section>
-            ) : null}
           </div>
 
           <div className="product-detail-price-box">
@@ -358,8 +343,9 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
 
           <div className="product-detail-buybox">
             <div className="product-detail-qty-row">
-              <div className="product-detail-qty-control">
+              <div className="product-detail-qty-control" role="group" aria-label="Cantidad de unidades">
                 <button
+                  aria-label="Disminuir cantidad"
                   disabled={maxQuantity <= 0 || safeQuantity <= 1}
                   onClick={() => setQuantity((value) => Math.max(1, value - 1))}
                   type="button"
@@ -368,6 +354,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
                 </button>
                 <strong>{safeQuantity}</strong>
                 <button
+                  aria-label="Aumentar cantidad"
                   disabled={maxQuantity <= 0 || safeQuantity >= maxQuantity}
                   onClick={() => setQuantity((value) => Math.min(Math.max(maxQuantity, 1), value + 1))}
                   type="button"
@@ -385,8 +372,8 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
             <div className="product-detail-buy-note">
               <span>
                 {wholesaleApplies
-                  ? `Ya aplica el precio mayorista desde ${product.wholesaleMinQty} unidades.`
-                  : `Compra ${product.wholesaleMinQty} o más para activar el precio mayorista.`}
+                  ? `Precio mayorista aplicado desde ${product.wholesaleMinQty} unidades.`
+                  : `Precio mayorista desde ${product.wholesaleMinQty} unidades.`}
               </span>
             </div>
 
@@ -405,48 +392,75 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
               </Link>
             </div>
           </div>
+          {product.description || product.technicalSpecs ? (
+            <details className="product-detail-disclosure">
+              <summary>Detalles y especificaciones</summary>
+            {product.description ? (
+              <div
+                className="product-detail-description"
+                dangerouslySetInnerHTML={{
+                  __html: product.description
+                    .replace(/\n/g, "<br/>")
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                }}
+              />
+            ) : null}
+
+            {/* CHANGE-CODE: CAT-002 */}
+            {product.technicalSpecs ? (
+              <section className="product-detail-specs-card">
+                <p className="eyebrow">Especificaciones técnicas</p>
+                <div
+                  className="product-detail-specs"
+                  dangerouslySetInnerHTML={{
+                    __html: product.technicalSpecs
+                      .replace(/\n/g, "<br/>")
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }}
+                />
+              </section>
+            ) : null}
+            </details>
+          ) : null}
         </article>
       </div>
 
-      {fullscreenMedia && fullscreenMediaUrl && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              aria-modal="true"
-              className="product-detail-lightbox"
+      {fullscreenMedia && fullscreenMediaUrl ? (
+        <div
+          aria-modal="true"
+          className="product-detail-lightbox"
+          onClick={() => setFullScreenMediaId(null)}
+          role="dialog"
+        >
+          <div className="product-detail-lightbox-panel" onClick={(event) => event.stopPropagation()}>
+            <button
+              aria-label="Cerrar imagen ampliada"
+              className="icon-button icon-button-close product-detail-lightbox-close"
               onClick={() => setFullScreenMediaId(null)}
-              role="dialog"
+              type="button"
             >
-              <div className="product-detail-lightbox-panel" onClick={(event) => event.stopPropagation()}>
-                <button
-                  aria-label="Cerrar imagen ampliada"
-                  className="icon-button icon-button-close product-detail-lightbox-close"
-                  onClick={() => setFullScreenMediaId(null)}
-                  type="button"
-                >
-                  <CircleX size={18} />
-                </button>
-                {fullscreenMedia.type === "IMAGE" ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    alt={fullscreenMedia.altText ?? displayName}
-                    className="product-detail-lightbox-media"
-                    src={fullscreenMediaUrl}
-                  />
-                ) : (
-                  <video
-                    autoPlay
-                    className="product-detail-lightbox-media"
-                    controls
-                    playsInline
-                    preload="metadata"
-                    src={fullscreenMediaUrl}
-                  />
-                )}
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
+              <CircleX size={18} />
+            </button>
+            {fullscreenMedia.type === "IMAGE" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                alt={fullscreenMedia.altText ?? displayName}
+                className="product-detail-lightbox-media"
+                src={getOptimizedImageUrl(fullscreenMediaUrl, 1200) ?? undefined}
+              />
+            ) : (
+              <video
+                autoPlay
+                className="product-detail-lightbox-media"
+                controls
+                playsInline
+                preload="metadata"
+                src={fullscreenMediaUrl}
+              />
+            )}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

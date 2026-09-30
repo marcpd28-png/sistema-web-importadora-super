@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { findCatalogProductIds, matchesProductQuery } from "./rocky-product-query";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
 import {
   buildProductSearchWhere,
@@ -190,7 +191,7 @@ export function rankAndMapInternalProductResults(input: {
   const siteUrl = normalizeSiteUrl(input.siteUrl);
 
   return input.products
-    .filter((product) => product.isVisible)
+    .filter((product) => product.isVisible && product.stockUnits > 0 && Number(product.unitPrice) > 0 && matchesProductQuery(product, input.query))
     .map((product) => ({
       product,
       score: getResultScore(product, input.query),
@@ -253,6 +254,11 @@ export async function searchInternalProducts(
   options: SearchInternalProductsOptions = {},
 ) {
   const repository = options.repository ?? prisma.product;
+  if (!options.repository) {
+    const ids = await findCatalogProductIds(input.query, MAX_SEARCH_CANDIDATES);
+    const products = ids.length ? await prisma.product.findMany({ where: { id: { in: ids } }, select: INTERNAL_PRODUCT_SEARCH_SELECT }) : [];
+    return rankAndMapInternalProductResults({ products, query: input.query, limit: input.limit, siteUrl: options.siteUrl });
+  }
   const [exactMatches, searchMatches] = await Promise.all([
     repository.findMany({
       where: {

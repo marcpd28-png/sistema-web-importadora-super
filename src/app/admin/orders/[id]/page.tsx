@@ -36,6 +36,7 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
   const order = await prisma.order.findUnique({
     where: { id },
     include: {
+      reviews: { orderBy: { createdAt: "desc" }, take: 100 },
       items: {
         include: { product: { select: { id: true, name: true } } },
       },
@@ -181,7 +182,7 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
               </div>
               {order.status === "PENDING" && (
                 <p style={{ fontSize: 13, color: "#92400e", marginTop: 6 }}>
-                  ⚡ Esta orden requiere que verifiques el comprobante de pago antes de confirmarla.
+                  Verifica el abono en la cuenta receptora antes de confirmar el pago.
                 </p>
               )}
             </div>
@@ -190,9 +191,22 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
               orderId={order.id}
               status={order.status}
               initialNotes={order.adminNotes}
+              isTest={order.isTest}
             />
           </article>
 
+          {order.reviews.length > 0 && <article style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
+            <h2 style={{ fontSize: 16 }}>Historial de revisión</h2>
+            <ol style={{ paddingLeft: 20 }}>
+              {order.reviews.map(review => <li key={review.id} style={{ marginBottom: 12, overflowWrap: "anywhere" }}>
+                <strong>{({ PAYMENT_CONFIRMED: "Pago confirmado manualmente", SHIPPED: "Envío registrado", DELIVERED: "Entrega registrada", CANCELED: "Cancelación", NOTE: "Nota" } as Record<string, string>)[review.action] || review.action}</strong>
+                <p>{new Date(review.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima" })} · Asesor {review.actorId}</p>
+                <p>{STATUS_CONFIG[review.previousStatus].label} → {STATUS_CONFIG[review.nextStatus].label}</p>
+                {review.note && <p style={{ whiteSpace: "pre-wrap" }}>{review.note}</p>}
+              </li>)}
+            </ol>
+            {order.reviews.length === 100 && <p>Se muestran las últimas 100 revisiones.</p>}
+          </article>}
           {/* Metadata */}
           <article style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
             <p className="eyebrow" style={{ marginBottom: 10 }}>ℹ️ Metadata</p>

@@ -2,28 +2,25 @@ import { prisma } from "@/lib/prisma";
 import { OrderStatus, Prisma } from "@prisma/client";
 
 export async function getAdminOrders(input: { page: number; status: OrderStatus | "all" }) {
-  const pageSize = 50;
-  const skip = (input.page - 1) * pageSize;
+  const pageSize = 10;
 
   const where: Prisma.OrderWhereInput = {};
   if (input.status !== "all") {
     where.status = input.status;
   }
 
-  const [totalResults, orders] = await Promise.all([
-    prisma.order.count({ where }),
-    prisma.order.findMany({
+  const totalResults = await prisma.order.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
+  const page = Number.isSafeInteger(input.page) ? Math.min(totalPages, Math.max(1, input.page)) : 1;
+  const orders = await prisma.order.findMany({
       where,
-      orderBy: { createdAt: "desc" },
-      skip,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
         items: true,
       },
-    }),
-  ]);
-
-  const totalPages = Math.ceil(totalResults / pageSize);
+    });
 
   const rawStats = await prisma.order.groupBy({
     by: ["status"],
@@ -51,7 +48,7 @@ export async function getAdminOrders(input: { page: number; status: OrderStatus 
     }),
     totalResults,
     totalPages,
-    page: input.page,
+    page,
     pageSize,
     stats,
   };

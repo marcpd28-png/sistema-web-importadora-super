@@ -1,18 +1,21 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { CatalogProduct, CategoryOption } from "@/lib/store";
 import type { ProductActionState } from "@/components/admin/product-form-state";
 import { ProductCoverField } from "@/components/admin/product-cover-field";
 import { ProductMediaManager } from "@/components/admin/product-media-manager";
 import { AdminFormSectionNav } from "@/components/admin/admin-form-section-nav";
+import { MobileDisclosure } from "./mobile-disclosure";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { ErpProductEditor } from "@/components/admin/erp-product-editor";
 
 const PRODUCT_FORM_SECTIONS = [
   { id: "product-identity", label: "Información", description: "Datos que identifican el producto" },
   { id: "product-commerce", label: "Precio e inventario", description: "Venta, unidad y existencias" },
-  { id: "product-cover", label: "Contenido", description: "Descripción, portada y galería" },
+  { id: "product-description", label: "Contenido", description: "Descripción, portada y galería" },
   { id: "product-publishing", label: "Publicación", description: "Revisión y visibilidad" },
 ] as const;
 
@@ -62,7 +65,10 @@ export function ProductForm({
           <p className="eyebrow">Administración</p>
           <h1>{title}</h1>
         </div>
+        <Link href="/admin/atencion">Requiere atención</Link>
       </div>
+
+      {product ? <ErpProductEditor productId={product.id} /> : null}
 
       <form
         action={formAction}
@@ -91,7 +97,7 @@ export function ProductForm({
             <strong>Listo</strong>
             <span>
               {status === "updated"
-                ? "El producto se actualizó correctamente."
+                ? "El producto se actualizó en la web. Los cambios al ERP se envían desde su panel."
                 : "Operación completada correctamente."}
             </span>
           </div>
@@ -240,7 +246,7 @@ export function ProductForm({
               </details>
             </section>
 
-            <section className="product-section-card">
+            <section className="product-section-card admin-form-anchor" id="product-description">
               <div className="product-section-head">
                 <div><p className="eyebrow">Contenido</p><h2>Descripción del producto</h2></div>
               </div>
@@ -289,10 +295,12 @@ export function ProductForm({
                   <span>Destacado</span>
                 </label>
               </div>
+              <p className="admin-form-save-hint">Solo se muestra en la web cuando tiene una foto real en la portada o galería, incluso después de sincronizar. Al guardar, la portada también se conserva en la galería.</p>
             </section>
           </div>
 
           <aside className="product-editor-sidebar">
+            <MobileDisclosure title="Resumen del producto">
             <article className="product-summary-card">
               <p className="eyebrow">Resumen</p>
               <strong>{liveSummary.name || "Nuevo producto"}</strong>
@@ -302,19 +310,20 @@ export function ProductForm({
 
             <article className="product-summary-card">
               <p className="eyebrow">Estado actual</p>
-              <span>{liveSummary.isVisible ? "Publicado" : "Borrador / oculto"}</span>
+              <span>{liveSummary.isVisible ? "Publicación habilitada · requiere foto" : "Borrador / oculto"}</span>
               <span>{liveSummary.isFeatured ? "Destacado" : "Normal"}</span>
               <span>{values.imageUrl.trim() ? "Portada cargada" : "Sin portada"}</span>
               <span>{values.technicalSpecs.trim() ? "Con especificaciones" : "Sin especificaciones"}</span>
               <span>{mediaCount} medios</span>
             </article>
+            </MobileDisclosure>
           </aside>
         </div>
 
         <div className="actions-row product-editor-actions admin-form-sticky-actions">
           <span className="admin-form-save-hint">Los productos nuevos se guardan ocultos hasta que decidas publicarlos.</span>
           <SubmitButton pendingLabel={product ? "Guardando cambios..." : "Creando producto..."}>
-            {product ? "Guardar cambios" : "Crear producto"}
+            {product ? "Guardar cambios solo en la web" : "Crear producto"}
           </SubmitButton>
         </div>
       </form>

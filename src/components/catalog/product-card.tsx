@@ -1,4 +1,5 @@
 "use client";
+import { variantColor } from "@/lib/storefront-taxonomy";
 
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { useState } from "react";
@@ -13,29 +14,33 @@ import { getPublicProductName } from "@/lib/product-name";
 import type { CatalogProduct, StoreSettingsView } from "@/lib/store";
 import { ProductPriceRows } from "@/components/catalog/product-display";
 import { ProductMediaFrame } from "@/components/catalog/product-media-frame";
+import { formatCurrency } from "@/lib/utils";
 
 type ProductCardProps = {
+  className?: string;
   product: CatalogProduct;
   settings: StoreSettingsView;
 };
 
-export function ProductCard({ product, settings }: ProductCardProps) {
+export function ProductCard({ product: initialProduct, settings, className = "" }: ProductCardProps) {
+  const [selectedId, setSelectedId] = useState(initialProduct.id);
+  const product = initialProduct.colorVariants?.find(item => item.id === selectedId) ?? initialProduct;
   const addItem = useCartStore((state) => state.addItem);
   const displayName = getPublicProductName(product.name);
   const [quantity, setQuantity] = useState(1);
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (requestedQuantity = quantity) => {
     if (!isCartStoreHydrated()) {
       await rehydrateCartStore();
     }
 
-    addItem(product, "unit", quantity);
+    addItem(product, "unit", requestedQuantity);
     trackAddToCart({
       item_id: product.code,
       item_name: displayName,
       item_brand: product.brand ?? undefined,
       item_category: product.category ?? undefined,
       price: product.unitPrice,
-      quantity,
+      quantity: requestedQuantity,
     });
     setQuantity(1);
   };
@@ -51,7 +56,7 @@ export function ProductCard({ product, settings }: ProductCardProps) {
   };
 
   return (
-    <article className="product-card">
+    <article className={`product-card ${className}`}>
       <ProductMediaFrame displayName={displayName} href={`/producto/${product.slug}`} product={product} />
 
       <div className="product-body">
@@ -65,6 +70,11 @@ export function ProductCard({ product, settings }: ProductCardProps) {
           </div>
         </div>
 
+        {initialProduct.colorVariants && initialProduct.colorVariants.length > 1 ? <label className="storefront-color-selector">
+          <span>Color</span><select aria-label={'Color de ' + displayName} value={product.id} onChange={event => { setSelectedId(event.target.value); setQuantity(1); }}>
+            {initialProduct.colorVariants.map(variant => <option key={variant.id} value={variant.id}>{variantColor(variant) ?? variant.code}{variant.stockUnits <= 0 ? " · Agotado" : ""}</option>)}
+          </select>
+        </label> : null}
         <div className="price-box product-price-box">
           <ProductPriceRows currencySymbol={settings.currencySymbol} product={product} />
         </div>
@@ -106,6 +116,29 @@ export function ProductCard({ product, settings }: ProductCardProps) {
           <button className="button button-secondary" onClick={openAssistantForProduct} type="button">
             <Bot size={16} />
             <span className="product-card-action-label">Consultar</span>
+          </button>
+        </div>
+
+        <div className="product-card-mobile-summary">
+          <div className="product-card-mobile-prices">
+            <div aria-label={`Precio unitario: ${formatCurrency(product.unitPrice, settings.currencySymbol)}`}>
+              <span>Un.</span>
+              <strong>{formatCurrency(product.unitPrice, settings.currencySymbol)}</strong>
+            </div>
+            <div className="is-wholesale" aria-label={`Precio mayorista desde ${product.wholesaleMinQty} unidades: ${formatCurrency(product.wholesalePrice ?? product.unitPrice, settings.currencySymbol)}`}>
+              <span>{product.wholesaleMinQty}+</span>
+              <strong>{formatCurrency(product.wholesalePrice ?? product.unitPrice, settings.currencySymbol)}</strong>
+            </div>
+          </div>
+          <button
+            className="button button-primary product-card-mobile-add"
+            disabled={product.stockUnits <= 0}
+            onClick={() => void handleAddToCart(1)}
+            aria-label={product.stockUnits <= 0 ? `${displayName}: sin stock` : `Añadir una unidad de ${displayName} al carrito`}
+            title={product.stockUnits <= 0 ? "Sin stock" : "Añadir una unidad al carrito"}
+            type="button"
+          >
+            <ShoppingCart size={18} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Settings } from "lucide-react";
+import { MobileDisclosure } from "./mobile-disclosure";
 import { CouponBarChart, PaymentMethodDonut, InfluencerDonut, DiscountVsNetDonut } from "./promo-charts";
 import { formatCurrency } from "@/lib/utils";
 import { UsersRound } from "lucide-react";
@@ -275,13 +276,16 @@ export function CustomizableDashboard({
         {preferences.widgets.filter(w => w.enabled).map((w, index) => (
           <div 
             key={w.id} 
+            className="dashboard-widget-slot"
             style={{ 
               gridColumn: DASHBOARD_WIDGET_META[w.id].fullWidth ? "1 / -1" : "auto",
               order: index,
               minHeight: 300
             }}
           >
-            {renderWidgetContent(w.id)}
+            <MobileDisclosure title={DASHBOARD_WIDGET_META[w.id].title}>
+              {renderWidgetContent(w.id)}
+            </MobileDisclosure>
           </div>
         ))}
       </div>

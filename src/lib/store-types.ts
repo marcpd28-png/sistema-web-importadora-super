@@ -15,6 +15,7 @@ import type {
 } from "@/lib/hero-banners";
 
 export type CatalogProduct = {
+  colorVariants?: CatalogProduct[];
   id: string;
   code: string;
   slug: string;
@@ -88,6 +89,10 @@ export type ProductMediaView = {
 };
 
 export type CategoryOption = {
+  parentSlug?: string;
+  parentName?: string;
+  productCount?: number;
+  imageUrl?: string | null;
   id: string;
   name: string;
   slug: string;

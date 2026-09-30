@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { StoreHomeLink } from "@/components/catalog/store-home-link";
 import {
   House,
   ShoppingCart,
@@ -37,23 +37,22 @@ export function StoreSideActions({
       <button
         aria-label={`Abrir carrito${itemCount > 0 ? `, ${itemCount} productos` : ""}`}
         className="store-side-action store-side-action-cart"
+        title="Ver mi carrito"
         onClick={openCart}
         type="button"
       >
         <ShoppingCart size={24} />
-        {itemCount > 0 ? <strong className="store-side-action-badge">{itemCount}</strong> : null}
+        {itemCount > 0 ? <strong className="store-side-action-badge" aria-hidden="true">{itemCount > 99 ? "99+" : itemCount}</strong> : null}
         <span>Carrito</span>
       </button>
 
       {showHomeShortcut ? (
-        <Link
-          aria-label="Volver al inicio"
+        <StoreHomeLink
           className="store-side-action store-side-action-home"
-          href="/"
         >
           <House size={24} />
           <span>Inicio</span>
-        </Link>
+        </StoreHomeLink>
       ) : null}
 
       <StoreAssistantLauncher businessName={settings.businessName} />
@@ -64,6 +63,7 @@ export function StoreSideActions({
         rel="noreferrer"
         target="_blank"
         aria-label="Abrir WhatsApp"
+        title="Consultar por WhatsApp"
       >
         <WhatsAppIcon />
       </a>
@@ -78,6 +78,7 @@ function WhatsAppIcon() {
       aria-hidden="true"
       focusable="false"
       viewBox="0 0 16 16"
+      preserveAspectRatio="xMidYMid meet"
     >
       <path
         fill="currentColor"

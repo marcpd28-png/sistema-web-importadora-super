@@ -41,7 +41,7 @@ export function ProductPriceRows({
       </div>
       {showWholesalePrice ? (
         <div className="price-row is-wholesale">
-          <span>Mayorista desde {product.wholesaleMinQty}</span>
+          <span>Mayorista desde {product.wholesaleMinQty} uds.</span>
           <strong>
             {formatCurrency(
               product.wholesalePrice ?? product.unitPrice,

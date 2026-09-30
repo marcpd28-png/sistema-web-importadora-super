@@ -11,6 +11,7 @@ import type {
   FacturadorSalesProduct,
   FacturadorProductSyncOptions,
 } from "@/lib/facturador/types";
+import { confirmQuotationResponse, QuotationUnconfirmedError } from "./quotation-confirmation";
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_SOURCE = "facturador-smart";
@@ -548,6 +549,7 @@ export class FacturadorClient {
 
     const response = await this.request(this.config.quotationPath, {
       method: "POST",
+      retry: false,
       body: {
         description: additionalInformation,
         prefix: this.config.quotationPrefix,
@@ -597,19 +599,13 @@ export class FacturadorClient {
         actions: {
           format_pdf: "a4",
         },
-        payments: [
-          {
-            id: null,
-            document_id: null,
-            date_of_payment: issueDate.toISOString().slice(0, 10),
-            payment_method_type_id: "01",
-            reference: null,
-            payment_destination_id: "cash",
-            payment: total,
-          },
-        ],
+        payments: [],
       },
+    }).catch((error) => {
+      if (error instanceof FacturadorApiError && [400, 401, 403, 404, 422, 429].includes(error.status)) throw error;
+      throw new QuotationUnconfirmedError("Se perdió la confirmación del ERP. Consulta con un asesor antes de repetir la cotización.");
     });
+    confirmQuotationResponse(response);
 
     return {
       customerDocumentNumber: input.customer.documentNumber?.trim() || null,
@@ -622,9 +618,15 @@ export class FacturadorClient {
   }
 
   private async findProductForQuotation(item: FacturadorQuoteItem) {
+    if (item.externalId && /^\d+$/.test(item.externalId)) {
+      const payload = await this.request(`/items/record/${encodeURIComponent(item.externalId)}`);
+      const record = extractRecord(payload);
+      if (record && String(record.id) === item.externalId) return record;
+      throw new Error(`El ERP no devolvió el producto vinculado ${item.code}.`);
+    }
     const products = await this.searchProducts(item.code);
     const exact = products.find((product) => matchesProductCode(product, item));
-    return exact ?? products[0] ?? null;
+    return exact ?? null;
   }
 
   private async resolveQuotationCustomer(

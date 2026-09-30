@@ -20,6 +20,7 @@ import {
 import { CulqiCheckout } from "@/components/catalog/culqi-checkout";
 import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
 import { rehydrateCartStore } from "@/components/catalog/cart-store";
+import { trackStoreEvent } from "@/lib/store-analytics-client";
 import { trackBeginCheckout } from "@/lib/analytics";
 import { getSafeMediaUrl, getOptimizedImageUrl } from "@/lib/media-url";
 import { getLinePricing } from "@/lib/pricing";
@@ -136,7 +137,7 @@ function CartHeader({
         Vaciar carrito
       </button>
       <div className="cart-header-actions">
-        <button className="icon-button icon-button-close" onClick={onClose} type="button">
+        <button aria-label="Cerrar carrito" className="icon-button icon-button-close" onClick={onClose} type="button">
           ×
         </button>
       </div>
@@ -178,7 +179,7 @@ function CartList({
             <div className="stack-xs">
               <div className="cart-item-head">
                 <h3>{item.name}</h3>
-                <button className="icon-button" onClick={() => onRemove(item.key)} type="button">
+                <button aria-label={`Quitar ${item.name} del carrito`} className="icon-button" onClick={() => onRemove(item.key)} type="button">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -190,11 +191,11 @@ function CartList({
           </div>
 
           <div className="qty-control">
-            <button onClick={() => onSetQuantity(item.key, item.quantity - 1)} type="button">
+            <button aria-label={`Disminuir cantidad de ${item.name}`} onClick={() => onSetQuantity(item.key, item.quantity - 1)} type="button">
               <Minus size={16} />
             </button>
             <span>{item.quantity}</span>
-            <button onClick={() => onSetQuantity(item.key, item.quantity + 1)} type="button">
+            <button aria-label={`Aumentar cantidad de ${item.name}`} onClick={() => onSetQuantity(item.key, item.quantity + 1)} type="button">
               <Plus size={16} />
             </button>
           </div>
@@ -342,7 +343,7 @@ function QuoteForm({
             <h3>Elige cómo pagar</h3>
             <p className="checkout-step-copy">Selecciona una opción para terminar tu pedido.</p>
           </div>
-          <button className="icon-button icon-button-close" onClick={() => setPaymentStep("form")} type="button">
+          <button aria-label="Volver a los datos de envío" className="icon-button icon-button-close" onClick={() => setPaymentStep("form")} type="button">
             <X size={16} />
           </button>
         </div>
@@ -452,7 +453,7 @@ function QuoteForm({
           <h3>Datos de envío y contacto</h3>
           <p className="checkout-step-copy">Completa tus datos y dinos cómo quieres recibir tu pedido.</p>
         </div>
-        <button className="icon-button icon-button-close" onClick={onClose} type="button">
+        <button aria-label="Cerrar formulario de envío" className="icon-button icon-button-close" onClick={onClose} type="button">
           <X size={16} />
         </button>
       </div>
@@ -694,6 +695,7 @@ export function CartDrawer({
   const [quoteWhatsappHref, setQuoteWhatsappHref] = useState<string | null>(null);
   const [culqiOpen, setCulqiOpen] = useState(false);
   const quoteSubmitPendingRef = useRef(false);
+  const quoteRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(() => buildInitialQuoteDraft(settings, quoteDefaults));
 
   // Promociones
@@ -833,17 +835,21 @@ export function CartDrawer({
     setQuoteWhatsappHref(null);
 
     try {
+      const fingerprint = JSON.stringify({ draft: quoteDraft, items: orderLines.map(({ item }) => ({ code: item.code, quantity: item.quantity })) });
+      if (quoteRequestRef.current?.fingerprint !== fingerprint) quoteRequestRef.current = { fingerprint, id: crypto.randomUUID() };
       const response = await fetch("/api/erp-quote", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          requestId: quoteRequestRef.current.id,
           customer: {
             documentNumber: quoteDraft.documentNumber,
             documentType: quoteDraft.documentType,
             name: quoteDraft.name,
             phone: quoteDraft.phone,
+            address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(", ") || undefined,
           },
           items: orderLines.map(({ item }) => ({
             code: item.code,
@@ -859,6 +865,7 @@ export function CartDrawer({
       let payload: {
         message?: string;
         quoteNumber?: string | null;
+        localQuoteId?: string;
         statusSteps?: QuoteStatusStep[];
         whatsappHref?: string | null;
       } = {};
@@ -878,6 +885,7 @@ export function CartDrawer({
       }
 
       setQuoteState("success");
+      if (payload.localQuoteId) trackStoreEvent("quote_created", { quoteId: payload.localQuoteId });
       setQuoteMessage(payload.message ?? "Cotización enviada correctamente.");
       setQuoteMessageTone("success");
       setQuoteStatusSteps(payload.statusSteps ?? []);
@@ -885,6 +893,7 @@ export function CartDrawer({
       setQuoteFormOpen(true);
     } catch (error) {
       setQuoteState("error");
+      trackStoreEvent("checkout_error");
       setQuoteMessage(
         error instanceof Error ? error.message : "No se pudo enviar la cotización.",
       );

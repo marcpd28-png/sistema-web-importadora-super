@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 
 export function SidebarToggle() {
   const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
+      setMounted(true);
       const saved = localStorage.getItem("admin-sidebar-collapsed");
       if (saved === "true") {
         setCollapsed(true);
@@ -15,7 +17,10 @@ export function SidebarToggle() {
       }
     });
 
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.body.classList.remove("admin-sidebar-collapsed");
+    };
   }, []);
 
   const toggle = () => {
@@ -29,12 +34,14 @@ export function SidebarToggle() {
     }
   };
 
+  if (!mounted) return <div style={{ width: "36px", height: "36px" }} />;
+
   return (
     <button 
       aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
       aria-pressed={collapsed}
       onClick={toggle}
-      className="icon-button admin-shell-icon-button"
+      className="icon-button admin-shell-icon-button admin-desktop-sidebar-toggle"
       title={collapsed ? "Expandir menú" : "Colapsar menú"}
       type="button"
     >

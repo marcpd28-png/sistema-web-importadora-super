@@ -75,6 +75,9 @@ export function StoreAssistantLauncher({ businessName }: StoreAssistantLauncherP
     <>
       <button
         aria-label="Abrir asistente virtual"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        title="Recibir ayuda para comprar"
         className="store-side-action store-side-action-assistant"
         onClick={openAssistant}
         onFocus={preloadPanel}

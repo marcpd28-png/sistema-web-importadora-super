@@ -123,7 +123,7 @@ test("busca productos por código", () => {
       code: "SKU-123",
       slug: "speaker-sku-123",
       name: "Parlante portatil",
-      stockUnits: 0,
+      stockUnits: 5,
     }),
     productFixture({
       id: "brand-match",

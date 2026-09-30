@@ -74,7 +74,7 @@ export function PromoChartsSection({ data }: { data: ChartsData }) {
       </div>
 
       {/* Row 2: Three donuts side by side */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+      <div className="admin-promo-charts-grid">
         {/* Donut 1 — Payment method */}
         <div style={cardStyle}>
           <div>

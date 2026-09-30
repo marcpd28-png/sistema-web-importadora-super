@@ -390,12 +390,12 @@ export function AdminProductsWorkspace({
       <div className="panel-header admin-products-page-head">
         <div>
           <p className="eyebrow">Productos</p>
-          <h1>Catálogo de productos</h1>
+          <h1><span className="admin-desktop-copy">Catálogo de productos</span><span className="admin-mobile-copy">Productos</span></h1>
           <p className="panel-copy">Busca, corrige y publica productos desde una sola vista.</p>
         </div>
-        <Link className="button button-primary admin-products-new-button" href="/admin/products/new">
+        <Link className="button button-primary admin-products-new-button" href="/admin/products/new" aria-label="Nuevo producto">
           <Plus size={17} />
-          Nuevo producto
+          <span className="admin-desktop-copy">Nuevo producto</span><span className="admin-mobile-copy">Nuevo</span>
         </Link>
       </div>
 
@@ -414,6 +414,16 @@ export function AdminProductsWorkspace({
       ) : null}
 
       <section className="admin-products-sanity-rail" aria-label="Vistas del catálogo">
+        <label className="admin-mobile-catalog-view">
+          <span className="sr-only">Vista del catálogo</span>
+          <select
+            value={quickFilters.find((filter) => filter.active)?.href ?? "custom"}
+            onChange={(event) => router.push(event.target.value)}
+          >
+            {!quickFilters.some((filter) => filter.active) ? <option value="custom" disabled>Filtros personalizados</option> : null}
+            {quickFilters.map((filter) => <option key={filter.label} value={filter.href}>{filter.label} · {filter.count}</option>)}
+          </select>
+        </label>
         <div className="admin-products-sanity-chips">
           {quickFilters.map((filter) => (
             <Link
@@ -433,22 +443,22 @@ export function AdminProductsWorkspace({
         <form className="filters-form admin-filters" method="GET">
           <label className="search-field">
             <Search size={18} />
-            <input defaultValue={filters.q} name="q" placeholder="Buscar por nombre, código o marca..." />
+            <input aria-label="Buscar productos por nombre, código o marca" defaultValue={filters.q} name="q" placeholder="Nombre, código o marca" />
           </label>
-          <button className="button button-secondary" onClick={() => setShowAdvancedFilters((value) => !value)} type="button" aria-expanded={showAdvancedFilters}>
+          <button className="button button-secondary admin-products-filter-toggle" onClick={() => setShowAdvancedFilters((value) => !value)} type="button" aria-label="Más filtros" aria-controls="product-advanced-filters" aria-expanded={showAdvancedFilters}>
             <SlidersHorizontal size={16} />
-            Más filtros
+            <span className="admin-desktop-copy">Más filtros</span>
           </button>
           <input name="issue" type="hidden" value={filters.issue} />
-          <button className="button button-primary" type="submit">
-            Buscar
+          <button className="button button-primary admin-products-search-submit" type="submit" aria-label="Buscar">
+            <Search className="admin-mobile-copy" size={18} /><span className="admin-desktop-copy">Buscar</span>
           </button>
           {hasAnyFilter ? (
             <Link className="button button-secondary" href="/admin/products">
               Limpiar
             </Link>
           ) : null}
-          <div className={`admin-products-advanced-filters ${showAdvancedFilters ? "is-open" : ""}`}>
+          <div id="product-advanced-filters" className={`admin-products-advanced-filters ${showAdvancedFilters ? "is-open" : ""}`}>
             <select defaultValue={filters.category} name="category" aria-label="Categoría">
               <option value="all">Todas las categorías</option>
               {categories.map((item) => <option key={item.id} value={item.slug}>{item.name}</option>)}
@@ -550,18 +560,21 @@ export function AdminProductsWorkspace({
               {products.map((product) => {
                 const hasPhoto = product.hasPhoto;
                 const hasStock = product.stockUnits > 0;
-                const isEffectivelyVisible = product.isVisible;
+                const isEffectivelyVisible = product.isVisible && hasPhoto;
                 const needsReview = !hasPhoto || !hasStock;
 
                 return (
                   <tr key={product.id}>
                     <td data-label="Sel.">
+                      <label className="admin-product-select-target">
+                      <span className="sr-only">Seleccionar {product.name}</span>
                       <input
                         checked={selectedIds.includes(product.id)}
                         form={undefined}
                         onChange={() => toggleSelection(product.id)}
                         type="checkbox"
                       />
+                      </label>
                     </td>
                     <td data-label="Producto">
                       <div className="admin-product-identity">
@@ -606,7 +619,7 @@ export function AdminProductsWorkspace({
                     </td>
                     <td data-label="Acciones">
                       <div className="table-actions admin-product-actions">
-                        <Link className="icon-button" href={`/admin/products/${product.id}`}>
+                        <Link className="icon-button" aria-label={`Editar ${product.name}`} href={`/admin/products/${product.id}`}>
                           <PencilLine size={16} />
                         </Link>
                         <button
@@ -800,13 +813,13 @@ export function AdminProductsWorkspace({
                   </article>
                   <article>
                     <span>Estado</span>
-                    <strong>{previewProduct.isVisible ? "Visible" : "Oculto"}</strong>
+                    <strong>{previewProduct.isVisible && previewProduct.hasPhoto ? "Visible" : "Oculto"}</strong>
                   </article>
                 </div>
 
                 <div className="admin-preview-badges">
-                  <span className={`status-badge ${previewProduct.isVisible ? "is-visible" : "is-hidden"}`}>
-                    {previewProduct.isVisible ? "Publicado" : "Oculto"}
+                  <span className={`status-badge ${previewProduct.isVisible && previewProduct.hasPhoto ? "is-visible" : "is-hidden"}`}>
+                    {previewProduct.isVisible && previewProduct.hasPhoto ? "Publicado" : "Oculto"}
                   </span>
                   <span className={`status-badge ${previewProduct.hasPhoto ? "is-visible" : "is-warning"}`}>
                     {previewProduct.hasPhoto ? "Con foto" : "Sin foto"}
