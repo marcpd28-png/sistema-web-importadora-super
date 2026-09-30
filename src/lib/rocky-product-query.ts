@@ -44,7 +44,7 @@ export function productTermAlternatives(term: string) {
 function termPattern(term: string) {
   return `(^|[^a-z0-9])(${productTermAlternatives(term).join("|")})($|[^a-z0-9])`;
 }
-const ACCESSORIES = "funda|fundas|protector|protectores|soporte|soportes|control|controles|cargador|cargadores|cable|cables|adaptador|adaptadores";
+const ACCESSORIES = "funda|fundas|protector|protectores|soporte|soportes|control|controles|cargador|cargadores|cable|cables|adaptador|adaptadores|box|stick|cooler|holder|aro|microfono|tripode|audifono|audifonos|auricular|auriculares";
 function needsMainDevice(terms: string[]) {
   return terms.some(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term))) &&
     !terms.some(term => new RegExp(`^(${ACCESSORIES})$`).test(term));
@@ -56,7 +56,7 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
   if (needsMainDevice(terms) && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
   if (needsMainDevice(terms)) {
     const device = terms.find(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
-    if (!new RegExp(termPattern(device)).test(normalizeProductQuery(product.name))) return false;
+    if (!new RegExp(termPattern(device)).test(normalizeProductQuery(product.name).split(" para ")[0])) return false;
   }
   return terms.length > 0 && terms.every(term => new RegExp(termPattern(term)).test(text));
 }
@@ -72,7 +72,7 @@ export async function findCatalogProductIds(query: string, limit = 80) {
   if (needsMainDevice(terms)) conditions.push(Prisma.sql`NOT (translate(lower("name"), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${`(^|[^a-z0-9])(${ACCESSORIES})($|[^a-z0-9])`})`);
   if (needsMainDevice(terms)) {
     const device = terms.find(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
-    conditions.push(Prisma.sql`translate(lower("name"), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${termPattern(device)}`);
+    conditions.push(Prisma.sql`translate(split_part(lower("name"), ' para ', 1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${termPattern(device)}`);
   }
   const rows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
     SELECT id FROM "Product" WHERE "isVisible" = true AND "stockUnits" > 0 AND "unitPrice" > 0
