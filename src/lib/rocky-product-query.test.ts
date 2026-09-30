@@ -34,3 +34,11 @@ test("catalogue parsing preserves category and brand and does not intercept ordi
   assert.equal(isGeneralCatalogRequest("catálogo de productos televisores"), false);
   assert.equal(isGeneralCatalogRequest("Buenas tardes soy Dimas de Arequipa me daría su catálogo de productos para escoger"), true);
 });
+
+test("speaker catalogs require speaker identity, not an accessory category", () => {
+  assert.equal(matchesProductQuery({ name: "RADIO INTERCOMUNICADOR", category: "PARLANTES" }, "parlantes"), false);
+  assert.equal(matchesProductQuery({ name: "TRIPODE PARA PARLANTE", category: "PARLANTES" }, "parlantes"), false);
+  assert.equal(matchesProductQuery({ name: "TRIPODE PARA PARLANTE" }, "tripode parlante"), true);
+  assert.equal(matchesProductQuery({ name: "PARLANTE CON MICROFONO KARAOKE" }, "parlantes"), true);
+  assert.equal(matchesProductQuery({ name: "MICROFONO + PARLANTE KARAOKE" }, "parlantes"), true);
+});

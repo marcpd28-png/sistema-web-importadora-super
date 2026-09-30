@@ -50,9 +50,22 @@ function needsMainDevice(terms: string[]) {
     !terms.some(term => new RegExp(`^(${ACCESSORIES})$`).test(term));
 }
 
+// A category is useful context, but cannot turn a stand or walkie-talkie
+// into a speaker. Explicit accessory searches remain available.
+function speakerIdentityTerm(terms: string[]) {
+  if (terms.some(term => /^(tripode|tripodes|soporte|soportes|funda|fundas|cable|cables)$/.test(term))) return undefined;
+  return terms.find(term => productTermAlternatives("parlante").includes(term));
+}
+const SPEAKER_ACCESSORIES = "tripode|tripodes|soporte|soportes|funda|fundas|cable|cables";
+
 export function matchesProductQuery(product: { name: string; code?: string; externalCode?: string | null; brand?: string | null; category?: string | null }, query: string) {
   const terms = productQueryTerms(query);
   const text = normalizeProductQuery([product.name, product.code, product.externalCode, product.brand, product.category].filter(Boolean).join(" "));
+  const speaker = speakerIdentityTerm(terms);
+  if (speaker) {
+    const name = normalizeProductQuery(product.name).split(" para ")[0];
+    if (!new RegExp(termPattern(speaker)).test(name) || new RegExp(`(^| )(${SPEAKER_ACCESSORIES})( |$)`).test(name)) return false;
+  }
   if (needsMainDevice(terms) && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
   if (needsMainDevice(terms)) {
     if (/accesorio/.test(normalizeProductQuery(product.category ?? ""))) return false;
@@ -70,6 +83,12 @@ export async function findCatalogProductIds(query: string, limit = 80) {
   if (!terms.length || terms.length > 24) return [];
   const identity = Prisma.sql`translate(lower(concat_ws(' ', "name", "code", "externalCode", "brand", "category")), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun')`;
   const conditions = terms.map(term => Prisma.sql`${identity} ~ ${termPattern(term)}`);
+  const speaker = speakerIdentityTerm(terms);
+  if (speaker) {
+    const name = Prisma.sql`translate(split_part(lower("name"), ' para ', 1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun')`;
+    conditions.push(Prisma.sql`${name} ~ ${termPattern(speaker)}`);
+    conditions.push(Prisma.sql`NOT (${name} ~ ${`(^|[^a-z0-9])(${SPEAKER_ACCESSORIES})($|[^a-z0-9])`})`);
+  }
   if (needsMainDevice(terms)) conditions.push(Prisma.sql`NOT (translate(lower("name"), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${`(^|[^a-z0-9])(${ACCESSORIES})($|[^a-z0-9])`})`);
   if (needsMainDevice(terms)) {
     conditions.push(Prisma.sql`lower(COALESCE("category", '')) NOT LIKE '%accesorio%'`);
