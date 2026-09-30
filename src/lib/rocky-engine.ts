@@ -6,6 +6,7 @@ import { AutomationCancelledError, rockyOutbox } from "./rocky-outbox";
 import { buildPublicUrl } from "./site-url";
 import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "./catalog-pdf";
 import { answerShopAssistant } from "./shop-assistant";
+import { productWhatsAppImage } from "./whatsapp-product-image";
 type JsonRecord = Record<string, unknown>;
 function text(value: unknown) { return typeof value === "string" && value.trim() ? value.trim() : null; }
 function asRecord(value: unknown): JsonRecord | null { return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null; }
@@ -148,7 +149,7 @@ async function sendProductSearchResults(conversationId: string, recipient: strin
 
   for (const product of products) {
     const caption = productSearchCaption(product);
-    const outboundImage = product.outboundImageUrl ?? product.imageUrl;
+    const outboundImage = await productWhatsAppImage(product.id);
     if (outboundImage) {
       const imageUrl = outboundImage.startsWith("http")
         ? outboundImage

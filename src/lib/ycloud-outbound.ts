@@ -66,8 +66,8 @@ function buildMessage(input: YCloudOutboundMessageInput) {
     });
   }
 
-  const media = input.type === "document"
-    ? { link: input.mediaUrl, caption: input.content || undefined }
+  const media = input.type === "audio"
+    ? { link: input.mediaUrl }
     : { link: input.mediaUrl, caption: input.content || undefined };
 
   return { type: input.type, [input.type]: media };

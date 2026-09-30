@@ -4,6 +4,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createNormalizedProductImage } from "@/lib/product-image-normalization";
+import { prepareWhatsAppUpload } from "@/lib/whatsapp-upload";
 
 export const runtime = "nodejs";
 
@@ -15,9 +16,11 @@ const allowedMimeTypes = new Set([
   "image/gif",
   "image/svg+xml",
   "video/mp4",
+  "video/3gpp",
   "video/webm",
   "video/quicktime",
   "audio/aac",
+  "audio/amr",
   "audio/mpeg",
   "audio/mp4",
   "audio/ogg",
@@ -181,6 +184,17 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await fileEntry.arrayBuffer());
 
   await mkdir(uploadDir, { recursive: true });
+
+  if (folder === "documents") {
+    try {
+      const prepared = await prepareWhatsAppUpload(buffer, fileEntry.type);
+      const fileName = `${fileBase}${prepared.extension}`;
+      await writeFile(path.join(uploadDir, fileName), prepared.buffer);
+      return NextResponse.json({ fileName, folder, url: `/uploads/${folder}/${fileName}` });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo preparar el archivo para WhatsApp." }, { status: 422 });
+    }
+  }
 
   if (isImageFile(fileEntry)) {
     const optimized = await writeOptimizedImageVariants(buffer, uploadDir, fileBase);

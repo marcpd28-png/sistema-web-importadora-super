@@ -81,3 +81,12 @@ test("normalizador acepta formato internacional y rechaza entradas incompletas",
   assert.equal(normalizeYCloudPhone("+51 967 426 958"), "+51967426958");
   assert.equal(normalizeYCloudPhone("310"), null);
 });
+
+test("audio has no unsupported caption field", async () => {
+  process.env.YCLOUD_API_KEY = "test-key";
+  process.env.YCLOUD_WHATSAPP_FROM = "+15005550006";
+  let payload: Record<string, unknown> = {};
+  globalThis.fetch = async (_url, init) => { payload = JSON.parse(String(init?.body)); return Response.json({ id: "audio-test" }); };
+  await sendYCloudOutboundMessage({ recipient: "+15005550007", type: "audio", mediaUrl: "https://example.invalid/audio.mp3", content: "Archivo adjunto" });
+  assert.deepEqual(payload.audio, { link: "https://example.invalid/audio.mp3" });
+});

@@ -137,7 +137,7 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {
   return createHash("sha256")
-    .update("large-product-page-v2")
+    .update("large-product-page-v3")
     .update(
       JSON.stringify(
         products.map((product) => [
@@ -165,7 +165,7 @@ function resolveLocalImagePath(imageUrl: string) {
   return resolvedPath.startsWith(`${uploadRoot}${path.sep}`) ? resolvedPath : null;
 }
 
-async function loadImage(imageUrl: string) {
+export async function loadCatalogImage(imageUrl: string) {
   const localPath = resolveLocalImagePath(imageUrl);
   let source: Buffer;
 
@@ -215,6 +215,7 @@ export async function prepareCatalogImage(source: Buffer) {
       withoutEnlargement: true,
     })
     .flatten({ background: "#FFFFFF" })
+    .withIccProfile("srgb")
     .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
 }
@@ -222,7 +223,7 @@ export async function prepareCatalogImage(source: Buffer) {
 async function loadFirstAvailableImage(product: CatalogProductImage) {
   for (const imageUrl of product.imageUrls) {
     try {
-      return await loadImage(imageUrl);
+      return await loadCatalogImage(imageUrl);
     } catch {
       // Try the next stored source for this product.
     }
@@ -300,18 +301,24 @@ async function createCatalogPdf(products: CatalogProductImage[], slug: string, t
 
   try {
     await access(outputPath);
+    const metadata = JSON.parse(await readFile(`${outputPath}.json`, "utf8")) as { productCount: number };
+    if (!Number.isInteger(metadata.productCount) || metadata.productCount < 1 || metadata.productCount > products.length) throw new Error("Invalid catalog manifest");
     return {
       absoluteUrl: buildPublicUrl(relativeUrl),
       filename,
       generated: false,
-      productCount: products.length,
+      productCount: metadata.productCount,
       relativeUrl,
     } satisfies GeneratedCatalogPdf;
   } catch {
     // Generate the immutable catalog below.
   }
 
-  const imageResults = await Promise.allSettled(products.map(loadFirstAvailableImage));
+  // Bound concurrent image decoding; two conversations may generate PDFs at once.
+  const imageResults: PromiseSettledResult<Buffer>[] = [];
+  for (let index = 0; index < products.length; index += 4) {
+    imageResults.push(...await Promise.allSettled(products.slice(index, index + 4).map(loadFirstAvailableImage)));
+  }
   const images = imageResults.flatMap((result, index) =>
     result.status === "fulfilled" ? [{ image: result.value, name: products[index].name, code: products[index].code }] : [],
   );
@@ -331,6 +338,7 @@ async function createCatalogPdf(products: CatalogProductImage[], slug: string, t
   try {
     await writeFile(temporaryPath, pdf, { flag: "wx" });
     await rename(temporaryPath, outputPath);
+    await writeFile(`${outputPath}.json`, JSON.stringify({ productCount: images.length }));
   } catch (error) {
     await unlink(temporaryPath).catch(() => undefined);
     throw error;

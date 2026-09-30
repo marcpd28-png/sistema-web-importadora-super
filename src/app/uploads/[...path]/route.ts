@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
+import { parseHttpByteRange } from "@/lib/http-byte-range";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,13 @@ const CONTENT_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".mov": "video/quicktime",
   ".mp4": "video/mp4",
+  ".3gp": "video/3gpp",
+  ".mp3": "audio/mpeg",
+  ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".amr": "audio/amr",
+  ".ogg": "audio/ogg",
+  ".wav": "audio/wav",
   ".pdf": "application/pdf",
   ".png": "image/png",
   ".svg": "image/svg+xml",
@@ -26,6 +34,7 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 function safeJoinUploadPath(parts: string[]) {
+  if (parts.some(part => part === "." || part === ".." || part.includes("\\"))) return null;
   const normalizedParts = parts
     .map((part) => part.trim())
     .filter(Boolean)
@@ -80,11 +89,20 @@ async function readUploadFile(filePath: string, requestHeaders?: Headers) {
   headers.set("ETag", etag);
   headers.set("Last-Modified", lastModified);
   headers.set("Accept-Ranges", "bytes");
+  headers.set("X-Content-Type-Options", "nosniff");
 
-  const stream = Readable.toWeb(createReadStream(filePath)) as ReadableStream;
+  const ifRange = requestHeaders?.get("if-range");
+  const range = parseHttpByteRange(!ifRange || ifRange === etag || ifRange === lastModified ? requestHeaders?.get("range") ?? null : null, fileStats.size);
+  if (range === "invalid") return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${fileStats.size}` } });
+  if (range) {
+    headers.set("Content-Range", `bytes ${range.start}-${range.end}/${fileStats.size}`);
+    headers.set("Content-Length", String(range.end - range.start + 1));
+  }
+
+  const stream = Readable.toWeb(createReadStream(filePath, range ?? undefined)) as ReadableStream;
 
   return new Response(stream, {
-    status: 200,
+    status: range ? 206 : 200,
     headers,
   });
 }
