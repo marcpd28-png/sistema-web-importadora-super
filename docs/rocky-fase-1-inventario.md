@@ -210,3 +210,79 @@ cuantificación de trabajos pendientes se harán antes de retirar sus consumidor
 
 La fase 1 entrega inventario observado, clasificación, arquitectura objetivo y
 procedimiento de transición. No certifica que los defectos del bot estén corregidos.
+
+## 9. Cierre operativo de la fase 2 — 2026-09-30
+
+Este apartado registra cambios posteriores al inventario de solo lectura.
+Código aplicado: `4f7bac1`; build productivo `WHzjNyycL7KVE55V9H4N8`.
+
+- Webhook principal: produce trabajos persistentes en `RockyOutboundJob`; ya no
+  llama al transporte. El saludo también conserva la espera de diez segundos.
+- Trabajador único: PM2 `importadora-rocky-outbox` (41), directorio
+  `/home/IMPORTADORA`, Node con `--env-file=/home/IMPORTADORA/.env --import tsx`,
+  script `scripts/rocky-outbox-worker.ts`, kill timeout 20 segundos.
+  `npm run messages:worker` permite ejecutarlo con la misma configuración.
+- Cada trabajo captura revisiones de conversación e interruptor global. Las
+  revisiones se comprueban después de la espera, al encolar y antes de enviar.
+  Pausar/reactivar no habilita respuestas preparadas en una revisión anterior.
+- Cuatro triggers protegen cambios desde versiones antiguas: control de
+  conversación, interruptor global, inserción de mensaje humano y rechazo de colas
+  retiradas. No existe reactivación automática después de una hora.
+- La derivación admite únicamente su aviso, y lo cancela si el asesor interviene.
+  Una respuesta incierta no se reintenta automáticamente; deriva el control y
+  cancela el resto. Los trabajos caducan a los cinco minutos. El bloqueo del
+  trabajador es compartido en PostgreSQL, también entre distintas instancias.
+- YCloud recibe el ID local como `externalId` antes del envío. Sus recibos no
+  confunden un BOT con un AGENT aunque lleguen antes de la respuesta HTTP. El
+  panel distingue en cola, cancelado, aceptado y entrega incierta; actualiza
+  estados de mensajes existentes, no solo nuevas burbujas.
+
+Retirada realizada:
+
+- PM2 38 y 37 eliminados del registro y del dump de arranque. Archivos históricos
+  conservados como recuperación, sin esos emisores en ejecución.
+- 67 mensajes BOT pendientes anteriores cancelados: 66 `bc_queued` del 29 de
+  septiembre y uno `queued` del 19. Se conservan contenido, historial y motivo.
+- n8n productivo: despublicados EZaAQCCbY3qWIWY1, 19jLl9xVWxDslVVL,
+  cAtPr0jPdf202609, 386c7deddf33dbb8, dCECdX9nMtQEbBUy, fMANAA76DedfoMkQ y
+  YwSoeCWb8Joo3RAR. Permanecen activos únicamente búsqueda y tres flujos de
+  simulación, sin transporte directo.
+- n8n staging: despublicados sus cinco workflows activos. Ambos contenedores se
+  reiniciaron para aplicar la despublicación; staging queda sin workflows activos.
+  No se borraron workflows, credenciales, bases ni volúmenes.
+- Nginx: configuración global e ingreso interno apuntan a 4000; las entradas
+  históricas `/api/webhook/whatsapp`, `/api/internal/chat/manychat-outgoing` y
+  `/api/internal/chat/requests` devuelven 410. Tienda y archivos siguen en sus
+  servicios previos. No se adelantó su consolidación funcional.
+
+Verificación y recuperación:
+
+- 29 pruebas de control/transporte y 25 de búsqueda aprobadas. Integración sobre
+  PostgreSQL local desechable, incluyendo webhook firmado con espera real de
+  diez segundos, intervención concurrente, dos trabajadores, apagado global,
+  recibo temprano y recuperación de un envío incierto. Transporte simulado:
+  estas pruebas no enviaron mensajes a clientes.
+- TypeScript y build productivo aprobados. Migración
+  `20260930170000_rocky_outbox` aplicada; cuatro triggers habilitados. Tienda HTTP
+  200, webhook sin firma 401, rutas retiradas 410, n8n/staging health 200.
+- Respaldo restringido en VPS: `/root/rocky-phase2-backup.TY69gW`, con dump de
+  PostgreSQL, workflows exportados, configuración Nginx, estado PM2 y build
+  anterior. Se validó el índice del dump; no se ensayó restaurarlo en producción.
+  Nunca hacer `pm2 resurrect` del dump antiguo completo: contiene emisores que
+  fueron retirados. Recuperar componentes individualmente y mantener cerrada
+  la entrada automática mientras se corrige cualquier fallo.
+
+Límites que permanecen para las siguientes fases:
+
+- La cancelación cubre trabajo local pendiente. Un envío ya entregado a YCloud
+  puede completarse después de la intervención humana; esta cola no lo revoca.
+- La recepción/agrupación todavía espera dentro de la petición HTTP. Persistir
+  también ese procesamiento y su recuperación pertenece a la siguiente fase.
+- Las aplicaciones de tienda, router, archivos y simulador heredados continúan
+  operativos hasta migrar sus funciones; se retiraron sus emisores, no toda la
+  infraestructura. La lógica de recuperación comercial no se reescribió aquí.
+- El historial productivo incluye once migraciones históricas ausentes en este
+  checkout. No se borraron ni se reinició la base: la migración nueva es aditiva.
+  La reproducción desde una base vacía necesita consolidar ese historial.
+- Se quitó el secreto literal de fallback n8n del código actual. La rotación de
+  credenciales ya expuestas y la limpieza del historial siguen pendientes.
