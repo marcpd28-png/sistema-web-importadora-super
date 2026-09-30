@@ -1,3 +1,4 @@
+import { findCatalogProductIds, productQueryTerms } from "./rocky-product-query";
 import { createHash } from "node:crypto";
 import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -49,92 +50,25 @@ export type CatalogRequest = {
   terms: string[];
 };
 
-const CATALOG_REQUEST_FILLER_WORDS = new Set([
-  "catalogo", "de", "del", "la", "el", "los", "las", "para", "por", "favor",
-  "quiero", "deseo", "un", "una", "me", "su", "puedes", "enviar", "podria", "podrias",
-  "puede", "pueden", "podrian", "tienen", "tiene", "tenemos", "hay", "dame", "dan", "dar",
-  "brindar", "brindarme", "compartir", "compartirme", "pasar", "pasarme", "pasame", "mandar", "mandas",
-  "mandarme", "mandame", "mostrar", "mostrarme", "completo", "general", "productos", "producto",
-  "hola", "consultar", "consulta", "consultas", "informacion", "informarme", "saber",
-  "virtual", "tienda", "web", "online", "pagina", "link", "enlace", "ver", "veo", "revisar",
-  "acceder", "entrar", "necesito", "donde", "porfavor", "xfavor",
-  // Saludos habituales que no deben convertirse en términos del catálogo.
-  "buenos", "buenas", "dia", "dias", "tardes", "noches", "que", "tal",
-]);
-
-function normalizedCatalogWords(content: string) {
-  return content
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .split(" ")
-    .map((word) => isCatalogKeyword(word) ? "catalogo" : word)
-    .filter(Boolean);
+// Explicit catalogue vocabulary: a broad edit-distance match used to classify
+// ordinary product words as catalogues (and route them to a failed PDF).
+const CATALOG_WORDS = new Set(["catalogo", "catalogos", "catalog", "catalogue", "catalgo", "catalgoo", "cataglafo"]);
+function catalogScope(content: string): string | null {
+  const words = content.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/);
+  const index = words.findIndex(word => CATALOG_WORDS.has(word));
+  if (index < 0) return null;
+  return words.slice(index + 1).filter(word => !["escoger", "escogerm", "elegir", "todo", "todos", "completa"].includes(word)).join(" ");
 }
-
-/** Accepts common spelling errors and plural forms without treating another
- * product word as a catalog request. */
-function isCatalogKeyword(word: string) {
-  const candidates = ["catalogo", "catalogos", "catalog", "catalogue"];
-  return candidates.some((candidate) => editDistanceAtMost(word, candidate, 3));
-}
-
-function editDistanceAtMost(left: string, right: string, maximum: number) {
-  if (Math.abs(left.length - right.length) > maximum) return false;
-  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
-  for (let row = 1; row <= left.length; row += 1) {
-    let diagonal = previous[0];
-    previous[0] = row;
-    let smallest = previous[0];
-    for (let column = 1; column <= right.length; column += 1) {
-      const saved = previous[column];
-      previous[column] = Math.min(
-        previous[column] + 1,
-        previous[column - 1] + 1,
-        diagonal + (left[row - 1] === right[column - 1] ? 0 : 1),
-      );
-      diagonal = saved;
-      smallest = Math.min(smallest, previous[column]);
-    }
-    if (smallest > maximum) return false;
-  }
-  return previous[right.length] <= maximum;
-}
-
-/** True when a customer asks for the store-wide catalog rather than a category or brand. */
 export function isGeneralCatalogRequest(content: string) {
-  const words = normalizedCatalogWords(content);
-  if (!words.includes("catalogo")) return false;
-
-  // A customer often introduces themself and their city before asking for the
-  // whole catalog ("soy Dimas de Arequipa, ¿me da su catálogo de productos
-  // para escoger?"). Those personal details must not turn a general catalog
-  // request into a failed category-PDF search.
-  const generalCatalogCues = new Set([
-    "producto", "productos", "escoger", "elegir", "opciones", "todos",
-    "todo", "general", "completo", "completa",
-  ]);
-  return words.every((word) => word.length <= 1 || CATALOG_REQUEST_FILLER_WORDS.has(word))
-    || words.some((word) => generalCatalogCues.has(word));
+  const scope = catalogScope(content);
+  return scope !== null && productQueryTerms(scope).length === 0;
 }
-
-/** Extracts a specific catalog request, e.g. "catálogo parlantes JBL". */
 export function parseCatalogRequest(content: string): CatalogRequest | null {
-  const normalized = normalizedCatalogWords(content).join(" ");
-
-  if (!/\bcatalogo\b/.test(normalized)) return null;
-
-  const terms = normalized.split(" ").filter((term) => term.length > 1 && !CATALOG_REQUEST_FILLER_WORDS.has(term)).slice(0, 4);
+  const scope = catalogScope(content);
+  if (scope === null) return null;
+  const terms = productQueryTerms(scope);
   if (!terms.length) return null;
-
-  const label = terms.map((term) => term.toUpperCase()).join(" ");
-  return {
-    terms,
-    slug: terms.join("-").slice(0, 80),
-    title: `CATÁLOGO DE ${label}`,
-  };
+  return { terms, slug: terms.join("-").slice(0, 80), title: "CATÁLOGO DE " + terms.join(" ").toUpperCase() };
 }
 
 async function findProjectorImages(): Promise<CatalogProductImage[]> {
@@ -181,24 +115,11 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
 }
 
 async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]> {
+  const ids = await findCatalogProductIds(terms.join(" "), MAX_CATALOG_PRODUCTS);
+  if (!ids.length) return [];
   const products = await prisma.product.findMany({
-    where: {
-      isVisible: true,
-      stockUnits: { gt: 0 },
-      AND: terms.map((term) => ({
-        OR: [
-          ...getCatalogTermVariants(term).flatMap((variant) => [
-            { name: { contains: variant, mode: "insensitive" as const } },
-            { brand: { contains: variant, mode: "insensitive" as const } },
-            { category: { contains: variant, mode: "insensitive" as const } },
-            { description: { contains: variant, mode: "insensitive" as const } },
-            { code: { contains: variant, mode: "insensitive" as const } },
-          ]),
-        ],
-      })),
-    },
+    where: { id: { in: ids }, isVisible: true, stockUnits: { gt: 0 }, unitPrice: { gt: 0 } },
     orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
-    take: MAX_CATALOG_PRODUCTS,
     select: {
       id: true, name: true, code: true, imageUrl: true, localImageUrl: true,
       media: { orderBy: { sortOrder: "asc" }, select: { url: true } },
@@ -212,18 +133,6 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
     ].filter((value): value is string => Boolean(value?.trim()))));
     return imageUrls.length ? [{ id: product.id, name: product.name, code: product.code, imageUrls, updatedAt: product.updatedAt }] : [];
   });
-}
-
-function getCatalogTermVariants(term: string) {
-  const variants = new Set([term]);
-  if (term.endsWith("s") && term.length > 4) variants.add(term.slice(0, -1));
-  if (term === "audifono" || term === "audifonos") {
-    variants.add("audifono");
-    variants.add("audifonos");
-    variants.add("auricular");
-    variants.add("auriculares");
-  }
-  return [...variants];
 }
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {

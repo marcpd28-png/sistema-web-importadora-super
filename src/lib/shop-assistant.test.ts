@@ -153,18 +153,7 @@ function createMockRepository(
       return products.find((product) => product.code.toLowerCase() === code.toLowerCase()) ?? null;
     },
     async searchVisibleProducts(query) {
-      const tokens = query
-        .toLowerCase()
-        .split(" ")
-        .filter((token) => token.length >= 2);
-      return products.filter((product) =>
-        tokens.some((token) =>
-          [product.code, product.name, product.description ?? "", product.brand ?? "", product.category ?? ""]
-            .join(" ")
-            .toLowerCase()
-            .includes(token),
-        ),
-      );
+      return products.filter(product => matchesAllRequiredSearchTerms(product, query));
     },
     async getFeaturedProducts() {
       return [products[0], products[1]];

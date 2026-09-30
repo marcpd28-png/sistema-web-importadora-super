@@ -38,7 +38,6 @@ const HOURS_MESSAGE = "Nuestro horario de atención es: Lun–Sáb, 8:00 a. m.�
 const GENERAL_CATALOG_MESSAGE = "¡Claro! Puedes revisar y escoger los productos disponibles en nuestro catálogo completo: https://tiendavirtualsuper.com\n\nCuando elijas un producto, escríbeme su nombre o código y te confirmo el precio y stock. También hacemos envíos por Shalom a todo el Perú.";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
-const SPEAKER_CATALOG_MESSAGE = "¡Claro! Te comparto el catálogo general de parlantes.\n\nPara pedir una opción específica, escríbeme por ejemplo: “catálogo parlantes Bluetooth” o “catálogo parlantes JBL”.";
 const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
 async function sendWelcomeMessage(conversationId: string, recipient: string) {
   await sendBotText(conversationId, recipient, WELCOME_MESSAGE, "conversation_welcome");
@@ -97,16 +96,6 @@ function isLimaDeliveryRequest(content: string) {
   const mentionsLima = /\blima\b/.test(normalized);
   const mentionsDelivery = /\b(delivery|entrega|envio|costo)\b/.test(normalized);
   return mentionsLima && mentionsDelivery;
-}
-
-function isScreenExtenderInquiry(content: string) {
-  const normalized = normalizedText(content);
-  return /\bextensor(?:es)?\b/.test(normalized)
-    && /\bpantalla(?:s)?\b/.test(normalized);
-}
-
-function isSpeakerInquiry(content: string) {
-  return /\b(parlante(?:s)?|altavoz(?:es)?|speaker(?:s)?)\b/.test(normalizedText(content));
 }
 
 function isGreeting(content: string) {
@@ -168,17 +157,6 @@ async function handOffToAdvisor(conversationId: string, recipient: string, sourc
   await rockyOutbox.handoff({ conversationId, recipient, content: ADVISOR_MESSAGE, source });
 }
 
-async function sendScreenExtenderOptions(conversationId: string, recipient: string) {
-  if (!await sendProductSearchResults(conversationId, recipient, "extensor de pantalla")) {
-    await handOffToAdvisor(conversationId, recipient, "screen_extender_handoff");
-  }
-}
-
-async function sendSpeakerCatalogGuidance(conversationId: string, recipient: string) {
-  await sendBotText(conversationId, recipient, SPEAKER_CATALOG_MESSAGE, "speaker_catalog_guidance");
-  return sendCatalog(conversationId, recipient, "catálogo parlantes");
-}
-
 async function sendBotText(conversationId: string, recipient: string, content: string, source: string) {
   await rockyOutbox.enqueue({ conversationId, recipient, content, source });
 }
@@ -213,7 +191,7 @@ async function sendProductSearchResults(conversationId: string, recipient: strin
   const reply = await answerShopAssistant({ message: content });
   // Two precise alternatives are easier to compare and prevent a catalog
   // search from turning into a sequence of repetitive bot bubbles.
-  const products = (reply.products ?? []).slice(0, 2);
+  const products = (reply.products ?? []).filter(product => product.stockUnits > 0 && Number.isFinite(product.unitPriceValue) && product.unitPriceValue > 0).slice(0, 2);
   if (!products.length) return false;
 
   for (const product of products) {
@@ -317,33 +295,10 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
       return result;
     }
 
-    if (isScreenExtenderInquiry(content)) {
-      try {
-        await sendScreenExtenderOptions(result.conversationId, from);
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud screen extender response failed:", error);
-      }
-      return result;
-    }
-
     // An explicit catalog request always takes precedence over a regular
     // product inquiry: "catálogo de parlantes" must receive a PDF, not a
     // generic speaker suggestion flow.
     if (await sendCatalog(result.conversationId, from, content)) {
-      return result;
-    }
-
-    if (isSpeakerInquiry(content)) {
-      try {
-        if (await sendProductSearchResults(result.conversationId, from, content)) {
-          return result;
-        }
-        await sendSpeakerCatalogGuidance(result.conversationId, from);
-      } catch (error) {
-        if (error instanceof AutomationCancelledError) throw error;
-        console.error("YCloud speaker catalog response failed:", error);
-      }
       return result;
     }
 
@@ -517,38 +472,7 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
     }
   }
 
-  if (result.ok && !result.duplicate && result.conversation?.botEnabled) {
-    try {
-      const rockyContent = content;
-
-      // Rocky owns interpretation. It receives the customer's recent bubbles
-      // as one request, so it can resolve incomplete or split messages using
-      // the real product catalog before any escalation is considered.
-      if (await sendCatalog(result.conversationId, from, rockyContent)) {
-        return result;
-      }
-
-      if (await sendProductSearchResults(result.conversationId, from, rockyContent)) {
-        return result;
-      }
-
-      const rockyReply = await answerShopAssistant({ message: rockyContent });
-      if (rockyReply.text) {
-        await sendBotText(result.conversationId, from, rockyReply.text, "rocky_catalog_interpretation");
-        return result;
-      }
-    } catch (error) {
-      if (error instanceof AutomationCancelledError) throw error;
-      console.error("Rocky catalog interpretation failed:", error);
-    }
-
-    try {
-      await handOffToAdvisor(result.conversationId, from, "catalog_match_handoff");
-    } catch (error) {
-      if (error instanceof AutomationCancelledError) throw error;
-      console.error("Rocky clarification response failed:", error);
-    }
-  }
+  await handOffToAdvisor(result.conversationId, from, "catalog_match_handoff");
 
   return result;
 }

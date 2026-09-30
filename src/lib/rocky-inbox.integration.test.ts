@@ -6,6 +6,8 @@ import { processIncomingMessage } from "./messages-service";
 import { RockyOutbox } from "./rocky-outbox";
 import { RockyInbox } from "./rocky-inbox";
 import { planRockyResponse } from "./rocky-engine";
+import { findCatalogProductIds } from "./rocky-product-query";
+import { answerShopAssistant } from "./shop-assistant";
 
 const url = process.env.ROCKY_TEST_DATABASE_URL;
 if (!url || new URL(url).hostname !== "127.0.0.1" || new URL(url).pathname !== "/rocky_phase2_integration" || process.env.DATABASE_URL !== url) {
@@ -216,4 +218,44 @@ test("repeated greeting fragments produce one welcome, not a handoff", async () 
   await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1); assert.match(replies[0].content, /Bienvenido/);
+});
+
+test("database retrieval preserves numeric models, stock, price and device identity", async () => {
+  const rows = [
+    ["PHONE15", "CELULAR IPHONE 15", 5, 999], ["PHONE14", "CELULAR IPHONE 14", 5, 899],
+    ["CASE15", "FUNDA IPHONE 15", 100, 19], ["ZERO15", "IPHONE 15", 0, 999],
+    ["FREE15", "IPHONE 15", 5, 0], ["ICE", "MÁQUINA DE HIELO", 5, 399],
+    ["HAIR", "MÁQUINA CORTADORA DE CABELLO", 5, 29],
+  ] as const;
+  for (const [code, name, stockUnits, unitPrice] of rows) await db.product.create({ data: { code, slug: code.toLowerCase(), name, stockUnits, unitPrice } });
+  const ids = await findCatalogProductIds("iphone 15 precio");
+  assert.deepEqual((await db.product.findMany({ where: { id: { in: ids } } })).map(p => p.code), ["PHONE15"]);
+  const ice = await findCatalogProductIds("maquinade hielo");
+  assert.deepEqual((await db.product.findMany({ where: { id: { in: ice } } })).map(p => p.code), ["ICE"]);
+});
+
+test("matching a category never discards a requested brand or screen size", async () => {
+  const category = await db.category.upsert({ where: { slug: "phase4-televisor" }, create: { name: "Televisor", slug: "phase4-televisor" }, update: {} });
+  for (const [code, name] of [["TV32", "TELEVISOR SAMSUNG 32"], ["TV43", "TELEVISOR SAMSUNG 43"], ["LG43", "TELEVISOR LG 43"]]) {
+    await db.product.create({ data: { code, slug: code.toLowerCase(), name, categoryId: category.id, unitPrice: 399, stockUnits: 5 } });
+  }
+  const reply = await answerShopAssistant({ message: "precio televisor samsung 43" });
+  assert.deepEqual(reply.products?.map(p => p.code), ["TV43"]);
+});
+
+test("informal TV enquiry produces a priced result instead of a failed catalog or handoff", async () => {
+  await db.product.create({ data: { code: "TV", slug: "tv", name: "TELEVISOR 32", unitPrice: 399, stockUnits: 5 } });
+  const first = await receive("muy buen día habrá tv");
+  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+  assert.ok(replies.some(reply => reply.content.includes("399")));
+  assert.ok(replies.every(reply => !/derivé|derivo|no encontr|\?q=/.test(reply.content)));
+});
+
+test("a miss sends only a controlled advisor handoff, never a fabricated search link", async () => {
+  const first = await receive("iphone 15 precio");
+  await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
+  const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+  assert.equal(replies.length, 1); assert.match(replies[0].content, /asesor/);
+  assert.doesNotMatch(replies[0].content, /no encontr|no pude|https?:/);
 });
