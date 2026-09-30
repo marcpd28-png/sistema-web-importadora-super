@@ -557,3 +557,20 @@ El buscador manual de la tienda y los datos necesarios para los PDFs permanecen.
 El emisor cancela trabajos antiguos de búsqueda/cotización que sigan en cola
 (`product_automation_retired`). No se borran historiales ni estados comerciales.
 72 pruebas de motor, controles de envío, catálogos y webhook aprobadas.
+
+## 17. Auditoría y retirada final del buscador n8n
+
+Verificados GitHub y VPS con código `1ef0373` y build
+`4Wg9TQV0mk7FGbjCuDURe`. PM2 activo y guardado contiene únicamente
+`importadora`, `importadora-rocky-inbox` y `importadora-rocky-outbox`, todos
+desde `/home/IMPORTADORA`. Una sola instancia web en 127.0.0.1:4000 y un
+scheduler ERP dependiente de la aplicación; sin instancias 4001/4018/4031/4033
+ni n8n staging 5680. No se modificaron servicios de otros proyectos.
+
+Se retiró la publicación del último flujo n8n activo, `04 - Product Search`
+(`KLb2eUqmr2JVRK4R`), mediante `unpublish:workflow`. No había ejecuciones
+en curso. Exportación recuperable en
+`/root/rocky-retirement-backup.0AkS32/product-search.json`. Se reinició n8n:
+salud HTTP 200 y cero workflows activos después del reinicio. La plataforma
+y su base de datos se conservan; Rocky genera sus PDFs desde la aplicación,
+sin depender de ese buscador. Los flujos históricos quedan inactivos, no borrados.
