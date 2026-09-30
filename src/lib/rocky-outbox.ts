@@ -5,10 +5,12 @@ import { prisma } from "./prisma";
 import { triggerPusherEvent } from "./pusher-server";
 import { normalizeYCloudPhone, sendYCloudOutboundMessage, YCloudOutboundMessageInput } from "./ycloud-outbound";
 
-type Turn = { conversationId: string; triggerMessageId: string; conversationRevision: number; globalRevision: number };
+export type RockyTurn = { conversationId: string; triggerMessageId: string; conversationRevision: number; globalRevision: number; inboundVersion?: number | null };
+type Turn = RockyTurn;
 type Reply = { conversationId: string; recipient: string; content: string; source: string; mediaUrl?: string; type?: YCloudOutboundMessageInput["type"] };
 type Tx = Prisma.TransactionClient;
-const turnContext = new AsyncLocalStorage<Turn>();
+type Plan = { replies: Reply[]; handoff?: Reply; writes: Array<(tx: Tx) => Promise<unknown>> };
+const turnContext = new AsyncLocalStorage<Turn & { plan?: Plan }>();
 const REPLY_TTL_MS = 5 * 60_000;
 const DEDUPE_MS = 30 * 60_000;
 // All workers contend for one database-backed lock, including across hosts.
@@ -47,6 +49,37 @@ export class RockyOutbox {
     }
   }
 
+  /** Publish the entire reply plan and mark its input complete in ONE commit.
+   * A crash during reasoning leaves no partial replies or sales-state changes. */
+  async runPlannedTurn(turn: RockyTurn, work: () => Promise<unknown>, finish: (tx: Tx) => Promise<void>) {
+    const plan: Plan = { replies: [], writes: [] };
+    await turnContext.run({ ...turn, plan }, async () => {
+      await this.assertCurrent(turn.conversationId);
+      await work();
+    });
+    if (!plan.handoff && !plan.replies.length) throw new Error("EMPTY_REPLY_PLAN");
+    const messages = await this.db.$transaction(async tx => {
+      if (!await this.permitted(tx, turn)) throw new AutomationCancelledError();
+      for (const write of plan.writes) await write(tx);
+      const messages = [];
+      if (plan.handoff) {
+        const paused = await tx.conversation.update({ where: { id: turn.conversationId }, data: { botEnabled: false, status: "REQUIERE_ASESOR" } });
+        messages.push(await this.persist(tx, { ...turn, conversationRevision: paused.automationRevision }, plan.handoff, "handoff"));
+      } else {
+        for (const reply of plan.replies) messages.push(await this.persist(tx, turn, reply));
+      }
+      await finish(tx);
+      return messages;
+    }, { timeout: 15_000 });
+    for (const message of messages) if (message) this.notify(`chat-${turn.conversationId}`, "new-message", message);
+  }
+
+  async stageSalesStateWrite(write: (tx: Tx) => Promise<unknown>) {
+    const context = turnContext.getStore();
+    if (!context?.plan) throw new Error("Sales-state writes require a durable input plan");
+    context.plan.writes.push(write);
+  }
+
   private currentTurn(conversationId: string) {
     const turn = turnContext.getStore();
     if (!turn || turn.conversationId !== conversationId) throw new AutomationCancelledError();
@@ -66,6 +99,10 @@ export class RockyOutbox {
     if (kind === "handoff") {
       if (conversation.botEnabled || conversation.status !== "REQUIERE_ASESOR") return false;
     } else if (!conversation.botEnabled || conversation.status !== "AUTOMATICO") return false;
+    if (turn.inboundVersion != null) {
+      const input = await tx.rockyInboundTurn.findUnique({ where: { conversationId: turn.conversationId } });
+      return input?.version === turn.inboundVersion && input.triggerMessageId === turn.triggerMessageId;
+    }
     const latest = await tx.chatMessage.findFirst({
       where: { conversationId: turn.conversationId, senderType: "CUSTOMER", direction: "INBOUND" },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { id: true },
@@ -97,7 +134,9 @@ export class RockyOutbox {
       status: "queued", metadata: { provider: "ycloud", source: input.source, dispatcher: "rocky-outbox-v1" },
     } });
     await tx.rockyOutboundJob.create({ data: {
-      ...turn, messageId: message.id, recipient, fingerprint, kind, expiresAt: new Date(Date.now() + REPLY_TTL_MS),
+      conversationId: turn.conversationId, triggerMessageId: turn.triggerMessageId,
+      conversationRevision: turn.conversationRevision, globalRevision: turn.globalRevision, inboundVersion: turn.inboundVersion,
+      messageId: message.id, recipient, fingerprint, kind, expiresAt: new Date(Date.now() + REPLY_TTL_MS),
     } });
     await tx.conversation.update({ where: { id: input.conversationId }, data: { lastMessageAt: message.createdAt } });
     return message;
@@ -105,6 +144,11 @@ export class RockyOutbox {
 
   async enqueue(input: Reply) {
     const turn = this.currentTurn(input.conversationId);
+    if (turn.plan) {
+      await this.assertCurrent(input.conversationId);
+      turn.plan.replies.push(input);
+      return null;
+    }
     const message = await this.db.$transaction(async tx => {
       if (!await this.permitted(tx, turn)) throw new AutomationCancelledError();
       return this.persist(tx, turn, input);
@@ -115,6 +159,13 @@ export class RockyOutbox {
 
   async handoff(input: Reply) {
     const turn = this.currentTurn(input.conversationId);
+    if (turn.plan) {
+      await this.assertCurrent(input.conversationId);
+      turn.plan.replies = [];
+      turn.plan.writes = [];
+      turn.plan.handoff = input;
+      return;
+    }
     const message = await this.db.$transaction(async tx => {
       if (!await this.permitted(tx, turn)) throw new AutomationCancelledError();
       const paused = await tx.conversation.update({ where: { id: input.conversationId }, data: { botEnabled: false, status: "REQUIERE_ASESOR" } });

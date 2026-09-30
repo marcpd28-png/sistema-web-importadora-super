@@ -822,6 +822,7 @@ model Conversation {
   salesState           ConversationSalesState?
   automationExecutions AutomationExecution[]
   rockyOutboundJobs    RockyOutboundJob[]
+  rockyInboundTurn     RockyInboundTurn?
 
   @@index([contactId])
   @@index([channel])
@@ -875,6 +876,7 @@ model RockyOutboundJob {
   messageId            String       @unique
   message              ChatMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
   triggerMessageId     String
+  inboundVersion       Int?
   conversationRevision Int
   globalRevision       Int
   recipient            String
@@ -889,6 +891,28 @@ model RockyOutboundJob {
 
   @@index([state, sequence])
   @@index([conversationId, fingerprint, createdAt])
+}
+
+// One durable debounce slot per conversation. New fragments supersede the
+// previous version; duplicates never extend the ten-second quiet period.
+model RockyInboundTurn {
+  conversationId       String       @id
+  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  version              Int          @default(1)
+  triggerMessageId     String
+  messageIds           String[]     @default([])
+  conversationRevision Int
+  globalRevision       Int
+  state                String       @default("pending")
+  attempts             Int          @default(0)
+  processingToken      String?
+  reason               String?
+  dueAt                DateTime
+  expiresAt            DateTime
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  @@index([state, dueAt])
 }
 
 model PromoCode {

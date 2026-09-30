@@ -263,7 +263,7 @@ test("real advisor service pauses and cancels BEFORE its provider call", async (
   } finally { globalThis.fetch = oldFetch; delete process.env.YCLOUD_API_KEY; delete process.env.YCLOUD_WHATSAPP_FROM; }
 });
 
-test("signed inbound webhook waits ten seconds and cancels welcome after advisor intervention", async () => {
+test("signed inbound webhook persists a ten-second task and returns before processing", async () => {
   const { createHmac } = await import("node:crypto");
   const { NextRequest } = await import("next/server");
   const { POST } = await import("../app/api/webhook/ycloud/route");
@@ -272,13 +272,16 @@ test("signed inbound webhook waits ten seconds and cancels welcome after advisor
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const body = JSON.stringify({ type: "whatsapp.inbound_message.received", whatsappInboundMessage: { id: randomUUID(), from: recipient, type: "text", text: { body: "Hola" } } });
   const signature = createHmac("sha256", process.env.YCLOUD_WEBHOOK_SECRET).update(`${timestamp}.${body}`).digest("hex");
-  let completed = false;
-  const request = POST(new NextRequest("https://example.invalid/api/webhook/ycloud", { method: "POST", body, headers: { "ycloud-signature": `t=${timestamp},s=${signature}` } })).then(response => { completed = true; return response; });
-  await new Promise(resolve => setTimeout(resolve, 250));
-  assert.equal(completed, false);
+  const started = Date.now();
+  const response = await POST(new NextRequest("https://example.invalid/api/webhook/ycloud", { method: "POST", body, headers: { "ycloud-signature": `t=${timestamp},s=${signature}` } }));
+  assert.ok(Date.now() - started < 3000);
+  const pending = await db.rockyInboundTurn.findUniqueOrThrow({ where: { conversationId: f.conversation.id } });
+  assert.equal(pending.state, "pending");
+  assert.ok(pending.dueAt.getTime() >= started + 10_000);
   assert.equal(await db.rockyOutboundJob.count(), 0);
   await db.chatMessage.create({ data: { conversationId: f.conversation.id, direction: "OUTBOUND", senderType: "AGENT", content: "Yo lo atiendo" } });
-  assert.equal((await request).status, 200);
+  assert.equal(response.status, 200);
+  assert.equal((await db.rockyInboundTurn.findUniqueOrThrow({ where: { conversationId: f.conversation.id } })).state, "cancelled");
   assert.equal(await db.rockyOutboundJob.count(), 0);
   delete process.env.YCLOUD_WEBHOOK_SECRET;
 });

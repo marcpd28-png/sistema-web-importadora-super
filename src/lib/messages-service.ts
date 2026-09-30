@@ -12,6 +12,7 @@ import {
   buildAutomationConversationContext,
   type AutomationConversationContext,
 } from "@/lib/conversation-context";
+import { scheduleRockyTurn } from "./rocky-inbox-intake";
 import { buildPublicUrl } from "@/lib/site-url";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -577,151 +578,159 @@ export async function updateConversation(id: string, input: UpdateConversationIn
   });
 }
 
-export async function processIncomingMessage(input: IncomingMessageInput) {
+export async function processIncomingMessage(input: IncomingMessageInput, options: { scheduleRocky?: boolean } = {}) {
   const parsed = incomingMessageSchema.parse(input);
   const timestamp = new Date(parsed.timestamp);
   const isSimulator = parsed.externalContactId.startsWith("SIMULATOR:");
   const normalizedPhone = normalizeMessagePhone(parsed.phone ?? (isSimulator ? "" : parsed.externalContactId));
   const phone = parsed.phone?.trim() || (isSimulator ? null : normalizedPhone) || null;
 
-  const existingMsg = await prisma.chatMessage.findUnique({
-    where: { externalMessageId: parsed.externalMessageId },
-  });
+  const outcome = await prisma.$transaction(async tx => {
+    // Serialize first contact creation and provider retries by canonical sender.
+    // All paths take settings before the conversation to avoid control deadlocks.
+    await tx.$queryRaw`SELECT id FROM "StoreSettings" WHERE id = 1 FOR SHARE`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${parsed.channel + ":" + (normalizedPhone || parsed.externalContactId)}, 0))`;
+    const existingMsg = await tx.chatMessage.findUnique({
+      where: { externalMessageId: parsed.externalMessageId },
+    });
 
-  if (existingMsg) {
-    return {
-      ok: true,
-      duplicate: true,
-      createdConversation: false,
-      messageId: existingMsg.id,
-      conversationId: existingMsg.conversationId,
-    };
-  }
+    if (existingMsg) {
+      return {
+        ok: true,
+        duplicate: true,
+        message: null,
+        createdConversation: false,
+        messageId: existingMsg.id,
+        conversationId: existingMsg.conversationId,
+      };
+    }
 
-  let contact = await prisma.chatContact.findUnique({
-    where: {
-      channel_externalId: {
-        channel: parsed.channel,
-        externalId: parsed.externalContactId,
-      },
-    },
-  });
-
-  if (!contact && normalizedPhone && !isSimulator) {
-    contact = await prisma.chatContact.findFirst({
+    let contact = await tx.chatContact.findUnique({
       where: {
-        channel: parsed.channel,
-        NOT: {
-          externalId: { startsWith: "SIMULATOR:" },
+        channel_externalId: {
+          channel: parsed.channel,
+          externalId: parsed.externalContactId,
         },
-        OR: [
-          { phoneNormalized: normalizedPhone },
-          { phone: { contains: normalizedPhone } },
-          { externalId: normalizedPhone },
-        ],
       },
     });
-  }
 
-  if (contact) {
-    const dataToUpdate: Prisma.ChatContactUpdateInput = {};
-
-    if (parsed.name && parsed.name !== contact.name) {
-      dataToUpdate.name = parsed.name;
-    }
-
-    if (phone && phone !== contact.phone) {
-      dataToUpdate.phone = phone;
-    }
-
-    if (normalizedPhone && normalizedPhone !== contact.phoneNormalized) {
-      dataToUpdate.phoneNormalized = normalizedPhone;
-    }
-
-    if (!contact.externalId) {
-      dataToUpdate.externalId = parsed.externalContactId;
-    }
-
-    if (Object.keys(dataToUpdate).length > 0) {
-      contact = await prisma.chatContact.update({
-        where: { id: contact.id },
-        data: dataToUpdate,
+    if (!contact && normalizedPhone && !isSimulator) {
+      contact = await tx.chatContact.findFirst({
+        where: {
+          channel: parsed.channel,
+          NOT: {
+            externalId: { startsWith: "SIMULATOR:" },
+          },
+          OR: [
+            { phoneNormalized: normalizedPhone },
+            { phone: { contains: normalizedPhone } },
+            { externalId: normalizedPhone },
+          ],
+        },
       });
     }
-  } else {
-    contact = await prisma.chatContact.create({
-      data: {
-        channel: parsed.channel,
-        externalId: parsed.externalContactId,
-        name: parsed.name,
-        phone,
-        phoneNormalized: normalizedPhone,
-      },
-    });
-  }
 
-  let conversation = await prisma.conversation.findFirst({
-    where: {
-      contactId: contact.id,
-      channel: parsed.channel,
-      status: { not: "CERRADO" },
-    },
-    orderBy: { lastMessageAt: "desc" },
-  });
+    if (contact) {
+      const dataToUpdate: Prisma.ChatContactUpdateInput = {};
 
-  const createdConversation = !conversation;
+      if (parsed.name && parsed.name !== contact.name) {
+        dataToUpdate.name = parsed.name;
+      }
 
-  if (!conversation) {
-    conversation = await prisma.conversation.create({
-      data: {
+      if (phone && phone !== contact.phone) {
+        dataToUpdate.phone = phone;
+      }
+
+      if (normalizedPhone && normalizedPhone !== contact.phoneNormalized) {
+        dataToUpdate.phoneNormalized = normalizedPhone;
+      }
+
+      if (!contact.externalId) {
+        dataToUpdate.externalId = parsed.externalContactId;
+      }
+
+      if (Object.keys(dataToUpdate).length > 0) {
+        contact = await tx.chatContact.update({
+          where: { id: contact.id },
+          data: dataToUpdate,
+        });
+      }
+    } else {
+      contact = await tx.chatContact.create({
+        data: {
+          channel: parsed.channel,
+          externalId: parsed.externalContactId,
+          name: parsed.name,
+          phone,
+          phoneNormalized: normalizedPhone,
+        },
+      });
+    }
+
+    let conversation = await tx.conversation.findFirst({
+      where: {
         contactId: contact.id,
         channel: parsed.channel,
-        status: "AUTOMATICO",
-        botEnabled: true,
+        status: { not: "CERRADO" },
       },
+      orderBy: { lastMessageAt: "desc" },
     });
-  }
 
-  const [message, updatedConversation] = await prisma.$transaction([
-    prisma.chatMessage.create({
-      data: {
-        conversationId: conversation.id,
-        externalMessageId: parsed.externalMessageId,
-        direction: "INBOUND",
-        senderType: "CUSTOMER",
-        messageType: parsed.type,
-        content: parsed.content,
-        mediaUrl: parsed.mediaUrl,
-        metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
-        createdAt: timestamp,
-        status: "delivered",
+    const createdConversation = !conversation;
+
+    if (!conversation) {
+      conversation = await tx.conversation.create({
+        data: {
+          contactId: contact.id,
+          channel: parsed.channel,
+          status: "AUTOMATICO",
+          botEnabled: true,
+        },
+      });
+    }
+
+    const message = await tx.chatMessage.create({
+        data: {
+          conversationId: conversation.id,
+          externalMessageId: parsed.externalMessageId,
+          direction: "INBOUND",
+          senderType: "CUSTOMER",
+          messageType: parsed.type,
+          content: parsed.content,
+          mediaUrl: parsed.mediaUrl,
+          metadata: parsed.metadata ? (parsed.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+          createdAt: timestamp,
+          status: "delivered",
+        },
+      });
+    const updatedConversation = await tx.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          lastMessageAt: timestamp,
+          unreadCount: { increment: 1 },
+        },
+      });
+    if (options.scheduleRocky) await scheduleRockyTurn(tx, conversation.id, message.id);
+
+    return {
+      ok: true,
+      duplicate: false,
+      message,
+      createdConversation,
+      simulation: isSimulator,
+      contactId: contact.id,
+      conversationId: updatedConversation.id,
+      messageId: message.id,
+      conversation: {
+        status: updatedConversation.status,
+        botEnabled: updatedConversation.botEnabled,
+        assignedUserId: updatedConversation.assignedUserId,
       },
-    }),
-    prisma.conversation.update({
-      where: { id: conversation.id },
-      data: {
-        lastMessageAt: timestamp,
-        unreadCount: { increment: 1 },
-      },
-    }),
-  ]);
-
-  triggerPusherEvent(`chat-${updatedConversation.id}`, "new-message", message);
-
-  return {
-    ok: true,
-    duplicate: false,
-    createdConversation,
-    simulation: isSimulator,
-    contactId: contact.id,
-    conversationId: updatedConversation.id,
-    messageId: message.id,
-    conversation: {
-      status: updatedConversation.status,
-      botEnabled: updatedConversation.botEnabled,
-      assignedUserId: updatedConversation.assignedUserId,
-    },
-  };
+    };
+  }, { timeout: 15_000 });
+  const { message, ...result } = outcome;
+  if (message) triggerPusherEvent(`chat-${message.conversationId}`, "new-message", message);
+  return result;
 }
 
 /**

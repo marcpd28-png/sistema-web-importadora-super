@@ -20,6 +20,7 @@
     "db:sync-categories": "tsx prisma/sync-categories.ts",
     "messages:backfill-phones": "tsx scripts/backfill-message-phones.ts",
     "messages:worker": "node --env-file=.env --import tsx scripts/rocky-outbox-worker.ts",
+    "messages:inbox": "node --env-file=.env --import tsx scripts/rocky-inbox-worker.ts",
     "sync:facturador-product": "tsx prisma/sync-facturador-product.ts",
     "sync:facturador-products": "tsx prisma/sync-facturador-products.ts",
     "sync:facturador-scheduler": "tsx prisma/erp-sync-scheduler.ts"
