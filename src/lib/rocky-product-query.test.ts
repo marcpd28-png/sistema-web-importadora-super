@@ -20,6 +20,7 @@ test("accessories and descriptive mentions cannot masquerade as devices", () => 
   assert.equal(matchesProductQuery({ name: "FUNDA IPHONE 15" }, "iphone 15"), false);
   assert.equal(matchesProductQuery({ name: "FUNDA IPHONE 15" }, "funda iphone 15"), true);
   assert.equal(matchesProductQuery({ name: "TECLADO BLUETOOTH" }, "audifonos bluetooth"), false);
+  assert.equal(matchesProductQuery({ name: "AUDIFONO BLUETOOTH", category: "ACCESORIOS PARA CELULARES" }, "celulares"), false);
 });
 test("catalogue parsing preserves category and brand and does not intercept ordinary prose", () => {
   assert.equal(parseCatalogRequest("muy buen día habrá tv"), null);

@@ -37,7 +37,7 @@ export function productQueryTerms(value: string) {
 
 export function productTermAlternatives(term: string) {
   const group = GROUPS.find(values => values.includes(term));
-  if (group) return group;
+  if (group) return group[0] === "celular" ? [...group, "iphone"] : group;
   return term.endsWith("s") && term.length > 4 ? [term, term.slice(0, -1)] : [term];
 }
 
@@ -54,6 +54,10 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
   const terms = productQueryTerms(query);
   const text = normalizeProductQuery([product.name, product.code, product.externalCode, product.brand, product.category].filter(Boolean).join(" "));
   if (needsMainDevice(terms) && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
+  if (needsMainDevice(terms)) {
+    const device = terms.find(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
+    if (!new RegExp(termPattern(device)).test(normalizeProductQuery(product.name))) return false;
+  }
   return terms.length > 0 && terms.every(term => new RegExp(termPattern(term)).test(text));
 }
 
@@ -66,6 +70,10 @@ export async function findCatalogProductIds(query: string, limit = 80) {
   const identity = Prisma.sql`translate(lower(concat_ws(' ', "name", "code", "externalCode", "brand", "category")), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun')`;
   const conditions = terms.map(term => Prisma.sql`${identity} ~ ${termPattern(term)}`);
   if (needsMainDevice(terms)) conditions.push(Prisma.sql`NOT (translate(lower("name"), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${`(^|[^a-z0-9])(${ACCESSORIES})($|[^a-z0-9])`})`);
+  if (needsMainDevice(terms)) {
+    const device = terms.find(term => ["televisor", "celular", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
+    conditions.push(Prisma.sql`translate(lower("name"), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun') ~ ${termPattern(device)}`);
+  }
   const rows = await prisma.$queryRaw<Array<{ id: string }>>(Prisma.sql`
     SELECT id FROM "Product" WHERE "isVisible" = true AND "stockUnits" > 0 AND "unitPrice" > 0
       AND ${Prisma.join(conditions, " AND ")}
