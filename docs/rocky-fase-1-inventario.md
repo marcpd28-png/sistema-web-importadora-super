@@ -539,3 +539,21 @@ Lima/provincia y unidad/mayorista. Se utiliza negrita de WhatsApp (un asterisco)
 Horario de bienvenida, ubicación y consulta de horario unificado en 8:00 a. m.
 a 8:00 p. m. todos los días, incluidos domingos, según indicación del propietario.
 62 pruebas de conversación, pausa, outbox y webhook aprobadas; TypeScript correcto.
+
+## 16. Rocky informativo, sin asesoría automática de productos
+
+Por decisión del propietario, se retiran del motor activo la búsqueda de productos,
+tarjetas individuales, recomendaciones, confirmación de modelos y cotización por
+cantidad. No se llama al intérprete de modelos. Los estados comerciales antiguos
+no habilitan estos caminos. Las consultas de productos se derivan a un asesor.
+
+Se conservan bienvenida universal con debounce, catálogos PDF solicitados
+explícitamente, enlaces de catálogos/tienda, ubicación, horario, envíos y medios
+de pago. La bienvenida ahora atribuye al asesor la ayuda sobre productos. Se
+elimina la conversión implícita de cualquier seguimiento en una petición de PDF.
+WhatsApp y simulador comparten el motor; el chat público también queda informativo.
+El buscador manual de la tienda y los datos necesarios para los PDFs permanecen.
+
+El emisor cancela trabajos antiguos de búsqueda/cotización que sigan en cola
+(`product_automation_retired`). No se borran historiales ni estados comerciales.
+72 pruebas de motor, controles de envío, catálogos y webhook aprobadas.

@@ -47,6 +47,16 @@ test("persists before delivery, deduplicates concurrent producers and sends once
   assert.equal((await db.rockyOutboundJob.findFirst())?.state, "submitted");
 });
 
+test("retired product messages already in the outbox cannot reach the provider", async () => {
+  const f = await fixture();
+  for (const source of ["product_search_result", "product_search_result_without_image", "verified_quantity_quote", "product_selection_quantity", "product_clarification"]) {
+    await f.run(() => outbox.enqueue({ ...f.input, content: source, source }));
+    await outbox.tick();
+  }
+  assert.equal(sent.length, 0);
+  assert.equal(await db.rockyOutboundJob.count({ where: { state: "cancelled", reason: "product_automation_retired" } }), 5);
+});
+
 test("an identical automatic reply cannot appear a third time even after the dedupe window", async () => {
   const f = await fixture();
   for (let i = 0; i < 2; i++) await db.chatMessage.create({ data: {

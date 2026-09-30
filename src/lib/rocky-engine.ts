@@ -1,12 +1,10 @@
-import { deliveryLocation, isPriceFollowUp, isQuantityOnly, isRockyGreeting, requestedUnits, verifiedQuote } from "./rocky-conversation-policy";
+import { deliveryLocation, isRockyGreeting } from "./rocky-conversation-policy";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getAutomationConversationContext } from "./messages-service";
 import { AutomationCancelledError, rockyOutbox } from "./rocky-outbox";
 import { buildPublicUrl } from "./site-url";
 import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "./catalog-pdf";
-import { answerShopAssistant } from "./shop-assistant";
-import { productWhatsAppImage } from "./whatsapp-product-image";
 type JsonRecord = Record<string, unknown>;
 function text(value: unknown) { return typeof value === "string" && value.trim() ? value.trim() : null; }
 function asRecord(value: unknown): JsonRecord | null { return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null; }
@@ -17,7 +15,7 @@ const WELCOME_MESSAGE = `👋 ¡Hola! Buen día. Bienvenido a *Importaciones Sup
 Encontrarás *14 catálogos en PDF* con nuestros productos. 😉
 🛍️ También puedes visitar nuestra tienda virtual:
 👉 https://tiendavirtualsuper.com
-📸 Si ya viste un producto, *envíame la foto, nombre o modelo* y te ayudo a encontrarlo.
+📸 Si ya viste un producto, *envíame la foto, nombre o modelo* y un asesor te ayudará con la información.
 🚚 Hacemos *envíos a Lima y a todo el Perú*.
 📍 También puedes visitarnos en *Av. Abancay 752, Cercado de Lima*.
 🕐 Atendemos *todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos*.
@@ -27,15 +25,13 @@ Para atenderte más rápido, indícame:
 Si deseas hablar con una persona, escribe *“solicito asesor”* y te derivamos con un asesor.`;
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
-const PRODUCT_PROMPT_MESSAGE = "¡Hola! Con gusto te ayudo. ¿Qué producto del catálogo te interesa? Puedes escribirme el nombre, marca o código y te indico las opciones y precios disponibles.";
+const PRODUCT_PROMPT_MESSAGE = "¡Hola! Puedo compartirte nuestros catálogos, enlaces, horarios y medios de pago. Para precios, disponibilidad o detalles de productos, te atiende un asesor.";
 const LOCATION_MESSAGE = "Nuestra tienda está en Av. Abancay 752, Cercado de Lima. Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
-const PRODUCT_DELIVERY_MESSAGE = "Tenemos recojo en tienda (Avenida Abancay 752, Centro de Lima), envíos por Shalom a todo el Perú y delivery en Lima por inDrive. ¿En qué distrito o ciudad lo necesitas?";
 const HOURS_MESSAGE = "Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos.";
-const GENERAL_CATALOG_MESSAGE = "¡Claro! Puedes revisar y escoger los productos disponibles en nuestro catálogo completo: https://tiendavirtualsuper.com\n\nCuando elijas un producto, escríbeme su nombre o código y te confirmo el precio y stock. También hacemos envíos por Shalom a todo el Perú.";
+const GENERAL_CATALOG_MESSAGE = "📚 Nuestros catálogos en PDF: https://mc.ht/s/rwQ7BMz\n🛍️ Tienda virtual: https://tiendavirtualsuper.com\nPuedes pedirme un catálogo por categoría. Un asesor te ayudará con precios, disponibilidad y detalles de productos.";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
-const CATALOG_SCOPE_WAIT_MS = 30 * 60 * 1000;
 async function sendWelcomeMessage(conversationId: string, recipient: string) {
   await sendBotText(conversationId, recipient, WELCOME_MESSAGE, "conversation_welcome");
 }
@@ -89,20 +85,6 @@ function isPaymentRequest(content: string) {
   return hasIntent(content, ["pago", "pagos", "pagar", "cuenta", "cuentas", "transferencia", "yape", "plin", "deposito", "banco", "datos para transferir"]);
 }
 
-function selectedShownProduct(content: string, shownProducts: unknown) {
-  if (!Array.isArray(shownProducts)) return null;
-  const normalized = normalizedText(content);
-  const ordinal = normalized.match(/\b(?:opcion|modelo|el|la)\s*(primero|primera|segundo|segunda|tercero|tercera|[1-3])\b/)?.[1];
-  const positions: Record<string, number> = { primero: 1, primera: 1, segundo: 2, segunda: 2, tercero: 3, tercera: 3, "1": 1, "2": 2, "3": 3 };
-  return shownProducts.find((product) => {
-    const item = asRecord(product);
-    const code = text(item?.code);
-    const normalizedCode = code ? normalizedText(code).replace(/[^a-z0-9]+/g, " ").trim() : "";
-    const normalizedMessage = " " + normalized.replace(/[^a-z0-9]+/g, " ").trim() + " ";
-    return (normalizedCode && normalizedMessage.includes(" " + normalizedCode + " ")) || (ordinal && Number(item?.position) === positions[ordinal]);
-  }) as JsonRecord | undefined ?? null;
-}
-
 async function handOffToAdvisor(conversationId: string, recipient: string, source: string) {
   await rockyOutbox.handoff({ conversationId, recipient, content: ADVISOR_MESSAGE, source });
 }
@@ -115,79 +97,8 @@ async function sendBotImage(conversationId: string, recipient: string, mediaUrl:
   await rockyOutbox.enqueue({ conversationId, recipient, mediaUrl, content: caption, source, type: "image" });
 }
 
-function productSearchCaption(product: {
-  code: string;
-  name: string;
-  unitPrice: string;
-  wholesalePrice: string | null;
-  wholesaleMinQty: number;
-  availabilityLabel: string;
-  description?: string | null;
-}) {
-  const wholesale = product.wholesalePrice
-    ? `\nPrecio mayorista desde ${product.wholesaleMinQty} unidades: ${product.wholesalePrice}.`
-    : "";
-  const prefix = `(${product.code})`;
-  const name = product.name.startsWith(prefix) ? product.name.slice(prefix.length).trim() : product.name;
-  return `${name} (${product.code})\nPrecio unitario: ${product.unitPrice}.${wholesale}\nDisponibilidad: ${product.availabilityLabel}.`;
-}
-
-/** Responds to any product request with the available product information.
- * Unlike the old price-only path, this is also used for requests such as
- * "busco un repetidor wifi" or "tienen parlantes". */
-async function sendProductSearchResults(conversationId: string, recipient: string, content: string, productContextCode?: string) {
-  const reply = await answerShopAssistant({ message: content, productContextCode });
-  if (reply.searchClarification?.length) {
-    const previous = await prisma.conversationSalesState.findUnique({ where: { conversationId }, select: { deliveryData: true } });
-    const deliveryData = { ...asRecord(previous?.deliveryData), awaitingProductConfirmation: true } as Prisma.InputJsonValue;
-    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
-      where: { conversationId },
-      create: { conversationId, stage: "AWAITING_PRODUCT_QUERY", shownProducts: reply.searchClarification!.map((product, index) => ({ ...product, position: index + 1 })), deliveryData },
-      update: { stage: "AWAITING_PRODUCT_QUERY", selectedProductCode: null, quantity: null, shownProducts: reply.searchClarification!.map((product, index) => ({ ...product, position: index + 1 })), deliveryData },
-    }));
-    await sendBotText(conversationId, recipient, reply.text, "product_search_clarification");
-    return true;
-  }
-  // Two precise alternatives are easier to compare and prevent a catalog
-  // search from turning into a sequence of repetitive bot bubbles.
-  const products = (reply.products ?? []).filter(product => product.stockUnits > 0 && Number.isFinite(product.unitPriceValue) && product.unitPriceValue > 0).slice(0, 2);
-  if (!products.length) return false;
-
-  for (const product of products) {
-    const caption = productSearchCaption(product);
-    const outboundImage = await productWhatsAppImage(product.id);
-    if (outboundImage) {
-      const imageUrl = outboundImage.startsWith("http")
-        ? outboundImage
-        : buildPublicUrl(outboundImage);
-      await sendBotImage(conversationId, recipient, imageUrl, caption, "product_search_result");
-    } else {
-      await sendBotText(conversationId, recipient, caption, "product_search_result_without_image");
-    }
-  }
-
-  const previousState = await prisma.conversationSalesState.findUnique({ where: { conversationId }, select: { deliveryData: true } });
-  const previousDelivery = asRecord(previousState?.deliveryData) ?? {};
-  const knownDestination = text(previousDelivery.location) ?? text(previousDelivery.limaAddress);
-  const deliveryData = { ...previousDelivery, awaitingProductConfirmation: false, awaitingDeliveryLocation: !knownDestination } as Prisma.InputJsonValue;
-  await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
-    where: { conversationId },
-    create: { conversationId, stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, deliveryData, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
-    update: { stage: "AWAITING_DELIVERY_DETAILS", selectedProductCode: products.length === 1 ? products[0].code : null, quantity: null, deliveryData, shownProducts: products.map((product, index) => ({ position: index + 1, code: product.code, name: product.name, unitPrice: product.unitPriceValue, imageUrl: product.imageUrl })) },
-  }));
-
-  if (!knownDestination) await sendBotText(conversationId, recipient, PRODUCT_DELIVERY_MESSAGE, "product_search_delivery_options");
-  await sendPaymentNotice(conversationId, recipient);
-  return true;
-}
-
 async function sendCatalog(conversationId: string, recipient: string, content: string) {
   if (isGeneralCatalogRequest(content)) {
-    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({
-      where: { conversationId },
-      create: { conversationId, stage: "AWAITING_CATALOG_SCOPE" },
-      update: { stage: "AWAITING_CATALOG_SCOPE" },
-    }));
     await sendBotText(conversationId, recipient, GENERAL_CATALOG_MESSAGE, "general_catalog");
 
     return true;
@@ -241,6 +152,10 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
     await handOffToAdvisor(conversationId, from, "advisor_handoff");
     return result;
   }
+  if (hasIntent(content, ["link", "enlace", "tienda virtual", "pagina web"])) {
+    await sendBotText(conversationId, from, GENERAL_CATALOG_MESSAGE, "store_links");
+    return result;
+  }
   if (await sendCatalog(conversationId, from, content)) return result;
 
   // Explicit service questions outrank any previously pending sales question.
@@ -249,59 +164,35 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
   if (isPaymentRequest(content)) { await sendPaymentNotice(conversationId, from); return result; }
 
   const salesState = await prisma.conversationSalesState.findUnique({ where: { conversationId } });
-  const confirmation = asRecord(salesState?.deliveryData)?.awaitingProductConfirmation && salesState && Date.now() - salesState.updatedAt.getTime() < 10 * 60 * 1000;
-  const singleConfirmation = confirmation && /^(si|si ese|si esa|correcto|ese|esa|exacto)$/.test(normalizedText(content)) && Array.isArray(salesState.shownProducts) && salesState.shownProducts.length === 1 ? asRecord(salesState.shownProducts[0]) : null;
-  const selected = selectedShownProduct(content, salesState?.shownProducts) ?? singleConfirmation;
-  const code = text(selected?.code) ?? salesState?.selectedProductCode;
-  const quantity = requestedUnits(content);
-  if (quantity && code && (selected || isQuantityOnly(content))) {
-    const product = await prisma.product.findUnique({ where: { code } });
-    const quote = product ? verifiedQuote(product, quantity) : null;
-    if (!product || !quote) { await handOffToAdvisor(conversationId, from, "quote_validation_handoff"); return result; }
-    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { selectedProductCode: code, ...quote, stage: "AWAITING_PAYMENT_METHOD" } }));
-    await sendBotText(conversationId, from, product.name + " (" + code + "). " + quantity + " unidades a S/ " + quote.unitPrice.toFixed(2) + " cada una. Total: S/ " + quote.total.toFixed(2) + ".", "verified_quantity_quote");
-    await sendPaymentNotice(conversationId, from);
-    return result;
-  }
-  if (selected && code) {
-    if (asRecord(salesState?.deliveryData)?.awaitingProductConfirmation) {
-      if (await sendProductSearchResults(conversationId, from, code, code)) return result;
-      await handOffToAdvisor(conversationId, from, "selection_validation_handoff");
-      return result;
-    }
-    const product = await prisma.product.findUnique({ where: { code } });
-    if (!product || !verifiedQuote(product, 1)) { await handOffToAdvisor(conversationId, from, "selection_validation_handoff"); return result; }
-    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { selectedProductCode: code, stage: "AWAITING_QUANTITY" } }));
-    await sendBotText(conversationId, from, "Perfecto, " + product.name + ". ¿Cuántas unidades necesitas?", "product_selection_quantity");
-    return result;
-  }
-  if (isPriceFollowUp(content)) {
-    const shown = Array.isArray(salesState?.shownProducts) ? salesState.shownProducts : [];
-    const contextCode = code ?? (shown.length === 1 ? text(asRecord(shown[0])?.code) : null);
-    if (contextCode && await sendProductSearchResults(conversationId, from, content, contextCode)) return result;
-    await sendBotText(conversationId, from, shown.length > 1 ? "¿De cuál de los modelos que te mostré necesitas el precio?" : "¿Qué producto te interesa? Puedes indicarme su nombre, marca o modelo.", "product_clarification");
-    return result;
-  }
   if (isShippingRequest(content)) {
     await sendBotText(conversationId, from, isLimaDeliveryRequest(content) ? LIMA_DELIVERY_MESSAGE : SHIPPING_MESSAGE, "store_shipping");
     return result;
   }
 
-  const catalogScope = salesState?.stage === "AWAITING_CATALOG_SCOPE" && Date.now() - salesState.updatedAt.getTime() <= CATALOG_SCOPE_WAIT_MS && !/\b(precio|precios|cuanto|costo|vale)\b/.test(normalizedText(content));
-  if (catalogScope && await sendCatalog(conversationId, from, "catálogo " + content)) return result;
-  if (await sendProductSearchResults(conversationId, from, content)) return result;
-
   const destination = deliveryLocation(content);
-  if (destination && salesState) {
-    const previous = asRecord(salesState.deliveryData) ?? {};
-    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.update({ where: { conversationId }, data: { deliveryData: { ...previous, location: destination, awaitingDeliveryLocation: false, awaitingLimaAddress: false } as Prisma.InputJsonValue } }));
+  if (destination) {
+    const previous = asRecord(salesState?.deliveryData) ?? {};
+    const deliveryData = { ...previous, location: destination, awaitingDeliveryLocation: false, awaitingLimaAddress: false } as Prisma.InputJsonValue;
+    await rockyOutbox.stageSalesStateWrite(tx => tx.conversationSalesState.upsert({ where: { conversationId }, create: { conversationId, stage: "GENERAL_INFORMATION", deliveryData }, update: { deliveryData } }));
     await sendBotText(conversationId, from, "Anoté el destino: " + destination + ". Hacemos envíos por Shalom a todo el Perú; en Lima también coordinamos delivery por inDrive. El costo se confirma con un asesor antes del pago.", "delivery_location_confirmed");
     return result;
   }
   if (/^(gracias|muchas gracias|ok|okay|listo|perfecto)$/.test(normalizedText(content))) {
-    await sendBotText(conversationId, from, "¡Con gusto! Si necesitas otra información del producto, aquí estoy para ayudarte.", "courtesy_acknowledgement");
+    await sendBotText(conversationId, from, "¡Con gusto! Puedo ayudarte con catálogos e información general de la tienda.", "courtesy_acknowledgement");
     return result;
   }
-  await handOffToAdvisor(conversationId, from, "catalog_match_handoff");
+  await handOffToAdvisor(conversationId, from, "product_information_advisor_handoff");
   return result;
+}
+
+/** The website chat is informational too; never call the product advisor here. */
+export function rockyInformationReply(content: string, firstTurn = false) {
+  if (firstTurn) return WELCOME_MESSAGE;
+  if (isGreeting(content)) return PRODUCT_PROMPT_MESSAGE;
+  if (isGeneralCatalogRequest(content) || parseCatalogRequest(content) || hasIntent(content, ["link", "enlace", "tienda virtual", "pagina web"])) return GENERAL_CATALOG_MESSAGE;
+  if (isLocationRequest(content)) return LOCATION_MESSAGE;
+  if (isHoursRequest(content)) return HOURS_MESSAGE;
+  if (isShippingRequest(content)) return SHIPPING_MESSAGE;
+  if (isPaymentRequest(content)) return `${PAYMENT_NOTICE_MESSAGE}\n${PAYMENT_NOTICE_URL}`;
+  return "Un asesor te ayudará con precios, disponibilidad y detalles de productos. Escríbenos por WhatsApp para continuar.";
 }

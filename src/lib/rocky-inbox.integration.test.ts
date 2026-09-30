@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import { processIncomingMessage } from "./messages-service";
 import { RockyOutbox } from "./rocky-outbox";
 import { RockyInbox } from "./rocky-inbox";
-import { planRockyResponse } from "./rocky-engine";
+import { planRockyResponse, rockyInformationReply } from "./rocky-engine";
 import { findCatalogProductIds, searchCatalogIdentity } from "./rocky-product-query";
 import { answerShopAssistant } from "./shop-assistant";
 
@@ -214,13 +214,14 @@ test("first greeting and catalog request receive only the new universal welcome"
   assert.doesNotMatch(replies[0].content, /9:00|Te derivé/);
 });
 
-test("real engine answers a split product-price request using the catalog", async () => {
+test("established product-price requests hand off without product information", async () => {
   await db.product.create({ data: { code: "TEST-TV", slug: "phase3-test-tv", name: "TELEVISOR LED 32 PULGADAS", category: "televisor", unitPrice: 399, stockUnits: 5, imageUrl: "https://example.invalid/tv.jpg" } });
   const first = await receive("Hola"); await receive("Precio del televisor");
   await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
-  assert.ok(replies.some(reply => reply.content.includes("399")));
-  assert.ok(replies.every(reply => !/Bienvenido|derivé|derivo/.test(reply.content)));
+  assert.equal(replies.length, 1);
+  assert.match(replies[0].content, /asesor/);
+  assert.doesNotMatch(replies[0].content, /399|Precio unitario/);
 });
 
 test("repeated greeting fragments produce one welcome, not a handoff", async () => {
@@ -281,32 +282,20 @@ test("general spelling repair reaches actual product replies without changing di
   assert.deepEqual(await findCatalogProductIds("tablet de 32 pulgadas"), []);
 });
 
-test("model interpretation asks for confirmation without sending a price or payment", async () => {
-  await db.product.create({ data: { code: "BLENDER", slug: "blender", name: "LICUADORA", stockUnits: 3, unitPrice: 89 } });
-  const previousFetch = globalThis.fetch;
-  const enabled = process.env.OLLAMA_ENABLED;
-  const interpretationEnabled = process.env.ROCKY_QUERY_INTERPRETATION_ENABLED;
+test("product enquiries never call a model even with interpretation enabled", async () => {
+  const oldFetch = globalThis.fetch;
+  const enabled = process.env.ROCKY_QUERY_INTERPRETATION_ENABLED;
   process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = "true";
-  process.env.OLLAMA_ENABLED = "true";
-  globalThis.fetch = async () => Response.json({ message: { content: '{"query":"licuadora"}' } });
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; throw new Error("Network forbidden"); };
   try {
-    const message = await receive("aparato que sirve para mezclar frutas");
-    await due(new RockyInbox(db, outbox, establishedPlanner), message.conversationId);
-    const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
-    assert.equal(replies.length, 1);
-    assert.match(replies[0].content, /¿Te refieres a LICUADORA/);
-    assert.doesNotMatch(replies[0].content, /89|cuentas|deriv/);
-    const state = await db.conversationSalesState.findUnique({ where: { conversationId: message.conversationId } });
-    assert.equal(state?.selectedProductCode, null);
-    await outbox.tick();
-    await receive("sí");
-    await due(new RockyInbox(db, outbox, planRockyResponse), message.conversationId);
-    const confirmed = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
-    assert.ok(confirmed.some(reply => reply.content.includes("89")));
+    const first = await receive("aparato para mezclar frutas");
+    await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
+    assert.equal(calls, 0);
+    assert.equal((await db.conversation.findUniqueOrThrow({ where: { id: first.conversationId } })).status, "REQUIERE_ASESOR");
   } finally {
-    globalThis.fetch = previousFetch;
-    if (enabled === undefined) delete process.env.OLLAMA_ENABLED; else process.env.OLLAMA_ENABLED = enabled;
-    if (interpretationEnabled === undefined) delete process.env.ROCKY_QUERY_INTERPRETATION_ENABLED; else process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = interpretationEnabled;
+    globalThis.fetch = oldFetch;
+    if (enabled === undefined) delete process.env.ROCKY_QUERY_INTERPRETATION_ENABLED; else process.env.ROCKY_QUERY_INTERPRETATION_ENABLED = enabled;
   }
 });
 
@@ -319,13 +308,14 @@ test("matching a category never discards a requested brand or screen size", asyn
   assert.deepEqual(reply.products?.map(p => p.code), ["TV43"]);
 });
 
-test("informal TV enquiry produces a priced result instead of a failed catalog or handoff", async () => {
+test("informal TV enquiry goes to an advisor, never an automated quote", async () => {
   await db.product.create({ data: { code: "TV", slug: "tv", name: "TELEVISOR 32", unitPrice: 399, stockUnits: 5 } });
   const first = await receive("muy buen día habrá tv");
   await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
-  assert.ok(replies.some(reply => reply.content.includes("399")));
-  assert.ok(replies.every(reply => !/derivé|derivo|no encontr|\?q=/.test(reply.content)));
+  assert.equal(replies.length, 1);
+  assert.match(replies[0].content, /asesor/);
+  assert.doesNotMatch(replies[0].content, /399|Precio unitario/);
 });
 
 test("a miss sends only a controlled advisor handoff, never a fabricated search link", async () => {
@@ -347,14 +337,15 @@ test("a pending delivery question cannot swallow a location or price question", 
   assert.equal((state.deliveryData as Record<string, unknown>).limaAddress, undefined);
 });
 
-test("quantity follow-up rereads live price and wholesale tier, not cached sales memory", async () => {
+test("quantity follow-up with old sales memory no longer calculates a quote", async () => {
   await db.product.create({ data: { code: "TEST-QUOTE", slug: "test-quote", name: "Televisor", unitPrice: 100, wholesalePrice: 90, wholesaleMinQty: 3, stockUnits: 10 } });
   const first = await receive("3 unidades");
   await db.conversationSalesState.create({ data: { conversationId: first.conversationId, stage: "AWAITING_QUANTITY", selectedProductCode: "TEST-QUOTE", unitPrice: 1 } });
   await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
   const state = await db.conversationSalesState.findUniqueOrThrow({ where: { conversationId: first.conversationId } });
-  assert.equal(Number(state.total), 270); assert.equal(Number(state.unitPrice), 90);
-  assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).some(reply => reply.content.includes("270.00")));
+  assert.equal(state.total, null); assert.equal(Number(state.unitPrice), 1);
+  assert.ok((await db.chatMessage.findMany({ where: { senderType: "BOT" } })).every(reply => !reply.content.includes("270.00")));
+  assert.equal((await db.conversation.findUniqueOrThrow({ where: { id: first.conversationId } })).status, "REQUIERE_ASESOR");
 });
 
 test("unavailable quantity hands off instead of quoting stale stock", async () => {
@@ -387,4 +378,22 @@ test("simulation sink rejects a real customer conversation", async () => {
   const first = await receive("Hola");
   await assert.rejects(outbox.runSimulation(first.conversationId, first.messageId, () => planRockyResponse(first.conversationId, first.messageId)));
   assert.equal(await db.chatMessage.count({ where: { senderType: "BOT" } }), 0);
+});
+
+test("general links stay automated without offering a product search", async () => {
+  const first = await receive("envíame el link");
+  await due(new RockyInbox(db, outbox, establishedPlanner), first.conversationId);
+  const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
+  assert.equal(replies.length, 1);
+  assert.match(replies[0].content, /https:\/\/mc.ht\/s\/rwQ7BMz/);
+  assert.equal((await db.conversation.findUniqueOrThrow({ where: { id: first.conversationId } })).status, "AUTOMATICO");
+});
+
+test("public assistant stays informational for products, quotes and previous codes", () => {
+  for (const query of ["iphone 15 precio", "3 unidades", "N1434", "recomienda televisor", "stock tablet"]) {
+    assert.match(rockyInformationReply(query), /asesor/);
+    assert.doesNotMatch(rockyInformationReply(query), /S\/|Precio unitario|Disponibilidad:/);
+  }
+  assert.match(rockyInformationReply("catálogo televisores"), /mc.ht/);
+  assert.match(rockyInformationReply("horarios"), /incluidos domingos/);
 });

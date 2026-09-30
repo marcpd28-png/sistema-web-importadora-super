@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { answerShopAssistant } from "@/lib/shop-assistant";
+import { rockyInformationReply } from "@/lib/rocky-engine";
 import { buildPublicWhatsappHref } from "@/lib/utils";
 import { finalizeStoreReply } from "@/lib/store-reply-policy";
 
@@ -14,8 +14,8 @@ export async function POST(request: Request) {
   if (!input.success) return Response.json({ error: "Consulta no válida." }, { status: 400 });
   const advisorUrl = buildPublicWhatsappHref();
   try {
-    // Same catalog service used by Rocky. No second model rewrites validated prices.
-    return Response.json(finalizeStoreReply(await answerShopAssistant(input.data), advisorUrl), { headers: { "Cache-Control": "no-store" } });
+    const text = rockyInformationReply(input.data.message, !input.data.recentMessages?.some(message => message.role === "assistant"));
+    return Response.json(finalizeStoreReply({ text, quickActions: [{ label: "Hablar con un asesor", href: advisorUrl }], meta: { intent: "general_information", usedOllama: false } }, advisorUrl), { headers: { "Cache-Control": "no-store" } });
   } catch {
     return Response.json(finalizeStoreReply({ text: "" }, advisorUrl), { headers: { "Cache-Control": "no-store" } });
   }

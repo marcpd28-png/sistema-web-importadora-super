@@ -231,6 +231,12 @@ export class RockyOutbox {
         const allowed = await this.permitted(tx, candidate, candidate.kind);
         const current = await tx.rockyOutboundJob.findUniqueOrThrow({ where: { id: candidate.id }, include: { message: true } });
         if (current.state !== "queued") return null;
+        const source = (current.message.metadata as { source?: string } | null)?.source ?? "";
+        if (/^(product_search_|product_selection_|verified_quantity_quote$|product_clarification$)/.test(source)) {
+          await tx.rockyOutboundJob.update({ where: { id: current.id }, data: { state: "cancelled", reason: "product_automation_retired", finishedAt: new Date() } });
+          await tx.chatMessage.update({ where: { id: current.messageId }, data: { status: "cancelled" } });
+          return null;
+        }
         if (!allowed || current.expiresAt.getTime() <= Date.now()) {
           await tx.rockyOutboundJob.update({ where: { id: current.id }, data: { state: "cancelled", reason: "stale_or_control_changed", finishedAt: new Date() } });
           await tx.chatMessage.update({ where: { id: current.messageId }, data: { status: "cancelled" } });
