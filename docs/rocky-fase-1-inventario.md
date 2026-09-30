@@ -341,3 +341,78 @@ No hubo reinicios del worker ni errores genéricos de procesamiento durante la
 verificación. Sí se registró un error comercial de catálogo sin resultados para
 una consulta informal sobre televisores: la normalización de esa búsqueda sigue
 pendiente y no debe considerarse resuelta por la nueva cola.
+
+## 11. Fases 4–6 — recuperación, conversación y multimedia, 2026-09-30
+
+Desplegadas sucesivamente: `eb7b276` (fase 4), `67c11c9` (fase 5),
+`50dcfaa` (fase 6). Respaldos restringidos, con base, Nginx y build anterior:
+`/root/rocky-phase4-backup.wmKl9Q`, `/root/rocky-phase5-backup.HHmRbp`,
+`/root/rocky-phase6-backup.9ZEp6d`.
+
+- Respuestas y PDF usan una recuperación común: exige todas las restricciones,
+  conserva modelo/tamaño y normaliza saludos, tildes, plurales y variantes conocidas.
+  Solo devuelve productos visibles con stock y precio positivo. La descripción
+  no determina la identidad; se excluyen accesorios de búsquedas de TV/celulares.
+  El ajuste `d08d7ef` excluye también trípodes e intercomunicadores de parlantes.
+- Saludos, catálogo, ubicación, horarios y pagos se resuelven antes del estado
+  comercial pendiente. Una pregunta no se guarda como dirección. Las cantidades
+  vuelven a consultar precio, umbral mayorista y stock; un número de modelo no se
+  interpreta como cantidad. Ante ausencia de coincidencia fiable se deriva.
+- Las respuestas idénticas de tipo/contenido/archivo no se publican más de dos
+  veces por conversación; además se conserva la deduplicación de treinta minutos.
+  Esto no equivale a detectar toda paráfrasis semánticamente redundante.
+- El envío manual de imágenes normaliza a JPEG RGB compatible. Los formatos
+  no compatibles se rechazan con explicación; no se instaló transcodificación
+  de MOV/WAV/WebM. Audio saliente ya no incluye el campo caption no admitido.
+  Las imágenes de producto se preparan y almacenan antes de enviarse; si falla
+  la imagen se mantiene la información textual.
+- Los PDF incluyen precio vigente y mayorista del ERP, con aviso de imagen
+  referencial, concurrencia de preparación limitada y caché que cuenta las
+  imágenes realmente incluidas. Se revisaron visualmente televisores/celulares
+  y se corrigieron contaminaciones de accesorios detectadas en catálogos.
+- Catálogos, comunicaciones, documentos y carga administrativa ya apuntan a
+  4000. Se copiaron 34 archivos faltantes sin sobrescribir existentes. Retirado
+  PM2 36 (`importadora-ycloud-n8n`); su directorio original permanece recuperable.
+  Ese proceso era un servidor de archivos Next, no el contenedor n8n.
+- Descarga real entrante de imagen/audio/video: proveedor respondió 200 con sus
+  tipos correctos. No se enviaron mensajes sintéticos a clientes. La ruta local
+  de archivos responde 206 a Range; Cloudflare devolvió 200 en una solicitud
+  pública de caché fría, por lo que no se certifica todavía búsqueda temporal
+  de todos los videos desde todos los navegadores.
+
+Validación: 99 pruebas combinadas de colas, control, búsqueda, conversación,
+PDF, formatos multimedia y webhook aprobadas; builds y TypeScript correctos.
+Los casos de integración usan PostgreSQL local aislado, no datos de clientes.
+La política sigue siendo determinista: no se declara comprensión universal ni
+se introdujo un modelo que pueda inventar precios o productos.
+
+## 12. Fase 7 — motor del simulador unificado; consolidación parcial
+
+`c358c84`, `59bc983` y `d08d7ef` desplegados; build `SprRxUmFEigO0uR7t95le`.
+Actualización `a47efe0`: saludos compuestos como «Hola buenas tardes» y
+«Ola buen día»; build final `Ym-LwD7Z0570ZsBkCprrF`.
+Respaldo: `/root/rocky-phase7-backup.UMOlnq`.
+
+- El simulador administrativo ejecuta el mismo planificador de Rocky y guarda
+  salidas de prueba, sin crear trabajos de WhatsApp. Solo admite conversaciones
+  marcadas SIMULATOR; ignora un teléfono real suministrado por la interfaz.
+  Las pruebas comprueban que no se producen envíos y se rechaza un chat real.
+  Simula el motor, no la espera/entrega del proveedor de la cola productiva.
+- UI y API del simulador ahora apuntan a 4000. Los endpoints internos antiguos
+  `/api/internal/chat/simulate` y `/api/internal/chat/outgoing` responden 410.
+- Exportados y despublicados tres workflows de simulador n8n:
+  `HVFMz7fCQXRNXB3U`, `JMBAcoKFStcNFfFm`, `YXvIlOEj45LpjONf`.
+  n8n reiniciado y saludable; solo permanece activo `KLb2eUqmr2JVRK4R`
+  (`04 - Product Search`). Los exports restringidos están en el respaldo.
+
+Pendiente antes de cerrar fase 7 y ejecutar la retirada final de fase 8:
+
+- La tienda y pantallas heredadas aún se sirven desde PM2 33; router-v2/sales-state
+  todavía desde PM2 2. Analítica, Colecciones, Atención y Evaluación/Aprendizaje
+  no están completas en la aplicación principal. Se pidió decidir qué conservar;
+  no se apagaron esos servicios ni se eliminaron pantallas silenciosamente.
+- Unificar asistente público y búsqueda auxiliar; verificar paridad funcional y
+  rutas antes del cambio global. No se afirma que la tienda ya use el motor único.
+- Retirar staging y entradas PM2 antiguas solo tras resolver consumidores,
+  conservando exportaciones y una recuperación documentada. Rotación de secretos
+  históricos e historial de migraciones siguen pendientes (ver sección 9).
