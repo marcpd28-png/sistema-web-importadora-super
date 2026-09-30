@@ -416,3 +416,76 @@ Pendiente antes de cerrar fase 7 y ejecutar la retirada final de fase 8:
 - Retirar staging y entradas PM2 antiguas solo tras resolver consumidores,
   conservando exportaciones y una recuperación documentada. Rotación de secretos
   históricos e historial de migraciones siguen pendientes (ver sección 9).
+
+## 13. Consolidación y retirada operativa — fases 7–8, 2026-09-30
+
+El usuario autorizó continuar por la vía más rápida y limpia. Se conservaron
+funciones comerciales en la aplicación principal, sin reincorporar el motor BC,
+el planificador antiguo de Rocky ni sus emisores.
+
+Código: `ef9ea32` (migración de funciones) y `1bbce0e` (puerto privado).
+Build: `6W2ldJiRptanoNNt0mmqN`. Respaldo restringido:
+`/root/rocky-phase8-backup.f4Q2oh`.
+
+### Funciones conservadas y cambios intencionados
+
+- Tienda, filtros/categorías, carrito, navegación móvil, analítica con consentimiento,
+  colecciones/ofertas/preventa, atención a fotos, auditoría de imágenes, edición
+  vinculada al ERP y revisión de pedidos migradas desde la release 4031.
+- Migración aditiva `20260930210000_consolidate_storefront`: adopta cuatro tablas
+  comerciales existentes y `Order.isTest`, sin vaciar ni reiniciar datos.
+- Evaluación de conversaciones usa `planRockyResponse` y la salida aislada de
+  `runSimulation`. Una pausa o derivación no reactiva automáticamente el chat;
+  tampoco se modifica la conversación real. Los turnos de medios requieren
+  revisión del archivo original. No se presenta una confianza numérica inventada.
+- Correcciones actuales y archivo histórico disponibles en Aprendizaje. Se
+  retiró la activación de ejemplos para el planificador antiguo: conservar un
+  ejemplo no modifica automáticamente precios, stock ni el motor productivo.
+- Asistente público y búsqueda auxiliar usan el servicio compartido de catálogo.
+  El asistente web ya no reescribe precios con Ollama ni entrega enlaces filtrados
+  no verificados. Si falta una coincidencia ofrece el enlace al asesor, sin afirmar
+  que ya asignó un chat de WhatsApp. La web conserva su adaptador de presentación;
+  la cola de WhatsApp y el simulador comparten el planificador conversacional.
+
+### Retirada verificada
+
+- Nginx de la tienda apunta únicamente a 4000. APIs históricas de chat, router,
+  sales-state, Rocky interno, catálogos antiguos y ManyChat devuelven 410.
+- Retiradas 32 entradas antiguas de PM2 (IDs 1–31 y 33), además del candidato
+  temporal 43. `dump.pm2` guardado con solo `importadora`, `importadora-rocky-inbox`
+  e `importadora-rocky-outbox`. No se borraron las carpetas históricas.
+- Estáticos necesarios para navegadores con una versión anterior conservados en
+  `/home/IMPORTADORA-static-archive`; no requieren ejecutar una release antigua.
+- n8n-staging: 10 workflows exportados, ninguno activo; contenedor detenido y
+  retirado, volumen `n8n_staging_data` y base conservados. Inspección de recuperación
+  y export en el respaldo. n8n productivo sigue saludable con la búsqueda auxiliar;
+  no se tocaron los otros contenedores de la empresa.
+- Cron duplicado `/etc/cron.d/importadora-sync` trasladado al respaldo como
+  `importadora-sync.disabled`. Se conserva el scheduler ERP de la aplicación,
+  con precios cada minuto y completo cada hora, más reconciliación de medianoche.
+  No se retiró la tarea independiente de optimización de imágenes.
+- Web escucha en 127.0.0.1:4000; Nginx es la entrada pública. No deben quedar
+  listeners 4001, 4018, 4031, 4033 ni 5680.
+
+### Evidencia y límites
+
+- 209 pruebas combinadas más 3 de evaluación aprobadas; TypeScript y build
+  productivo correctos. Incluyen carrito sin almacenamiento, revisión de pedidos,
+  escritura ERP con transporte simulado, consentimiento y clasificación comercial.
+- Candidato probado antes del cambio: HTTP 200 en tienda, categoría televisor y
+  ocho pantallas administrativas autenticadas. Tras el cambio: tienda 200,
+  router retirado 410, webhook sin firma 401. Sin pruebas enviadas a clientes.
+- Consultas de lectura productivas: extensor de pantalla devuelve O832/PC402/PC401;
+  máquina de hielo devuelve N1434; iPhone 15 sin coincidencia ofrece asesor.
+  Las tres respuestas no incluyen enlaces filtrados ni reescritura de modelo.
+- La herramienta de navegador falló dos veces por timeout: las comprobaciones
+  HTTP no sustituyen una revisión visual/interactiva completa del panel.
+- Siguen pendientes la rotación coordinada de credenciales históricas, el historial
+  completo de migraciones para restauraciones desde cero y las comprobaciones
+  externas del proveedor descritas anteriormente. No se afirma entrega perfecta
+  de todos los medios ni comprensión universal del lenguaje.
+
+Recuperación: cerrar webhook, detener inbox/outbox, restaurar build y Nginx de
+este respaldo de manera coordinada. No ejecutar `pm2 resurrect` sobre el inventario
+antiguo completo ni reactivar emisores/workflows retirados. El respaldo de base
+se validó con `pg_restore -l`; no se ensayó una restauración completa en producción.
