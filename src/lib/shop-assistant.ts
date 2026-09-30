@@ -1101,7 +1101,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const contextProduct = code ? await repository.findProductByCode(code) : null;
 
     if (matchedCategory && !wantsSupport && !code && matchesProductQuery({ name: matchedCategory.name }, searchTerms)) {
-      const products = (await repository.getCategoryProducts(matchedCategory.id)).filter(product => product.stockUnits > 0 && Number(product.unitPrice) > 0 && product.isVisible !== false);
+      const products = (await repository.searchVisibleProducts(searchTerms)).filter(product => product.stockUnits > 0 && Number(product.unitPrice) > 0 && product.isVisible !== false && matchesProductQuery(product, searchTerms)).slice(0, MAX_PRODUCTS);
       return {
         text: products.length
           ? `En ${matchedCategory.name} encontré estas opciones para empezar rápido.`
