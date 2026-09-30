@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { deliveryLocation, isPriceFollowUp, isRockyGreeting, requestedUnits, verifiedQuote, isQuantityOnly } from "./rocky-conversation-policy";
 
 test("greetings and spelling variants stay greetings", () => {
-  for (const value of ["Ola", "Hola!", "Buenas tatdes", "Buen día", "Hola\nBuenos días"]) assert.equal(isRockyGreeting(value), true);
+  for (const value of ["Ola", "Hola!", "Buenas tatdes", "Buen día", "Hola\nBuenos días", "Hola buenas tardes", "Ola buen día", "Muy buenos días"]) assert.equal(isRockyGreeting(value), true);
   assert.equal(isRockyGreeting("Hola precio del televisor"), false);
 });
 test("model numbers are not quantities and questions are not addresses", () => {

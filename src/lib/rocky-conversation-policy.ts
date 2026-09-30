@@ -4,7 +4,7 @@ export function isRockyGreeting(content: string): boolean {
   const lines = content.split(/\n+/).filter(line => line.trim());
   if (lines.length > 1) return lines.every(isRockyGreeting);
   const text = normalizeProductQuery(content).replace(/tatdes/g, "tardes");
-  return /^(hola|ola|buenos dias|buenas tardes|buenas noches|buen dia|saludos|hey)( (rocky|amigo|amiga))?$/.test(text);
+  return /^(?:(?:hola|ola|hey) )?(?:hola|ola|hey|(?:muy )?(?:buenos dias|buenas tardes|buenas noches|buen dia)|saludos)(?: (?:rocky|amigo|amiga))?$/.test(text);
 }
 
 export function requestedUnits(content: string) {
