@@ -8,6 +8,7 @@ import "./storefront-responsive.css";
 import "./storefront-discovery.css";
 import "./admin/admin-responsive.css";
 import "./admin/admin-scale.css";
+import "./admin/admin-navigation.css";
 
 const displayFont = Bricolage_Grotesque({
   variable: "--font-display",

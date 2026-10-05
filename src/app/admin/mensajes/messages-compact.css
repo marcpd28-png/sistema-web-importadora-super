@@ -35,9 +35,6 @@
 .messages-app-navigation, .messages-page-header { flex-shrink: 0; }
 
 @media (min-width: 921px) {
-  .admin-shell:has(.messages-inbox-page) { grid-template-columns: 216px minmax(0, 1fr); }
-  /* Preserve the user's collapsed navigation preference. */
-  body.admin-sidebar-collapsed .admin-shell:has(.messages-inbox-page) { grid-template-columns: 88px minmax(0, 1fr); }
   .admin-shell:has(.messages-inbox-page) .admin-nav-link { font-size: 13px; min-height: 38px; padding-block: 8px; }
   .admin-shell:has(.messages-inbox-page) .admin-nav-section { gap: 6px; }
   .admin-shell:has(.messages-inbox-page) .admin-nav-label { min-width: 0; }

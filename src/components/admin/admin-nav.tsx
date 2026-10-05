@@ -182,24 +182,6 @@ export function AdminNav({ badges }: AdminNavProps) {
               aria-expanded={isExpanded}
               aria-controls={`admin-nav-${section.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
               onClick={() => toggleSection(section.title)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between", padding: "0.25rem 2rem 0.25rem 0.5rem",
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                
-                color: "var(--muted)",
-                fontFamily: "inherit",
-                textTransform: "uppercase",
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                marginBottom: "0.5rem",
-                textAlign: "left"
-              }}
               title={isExpanded ? "Colapsar sección" : "Expandir sección"}
             >
               <span>{section.title}</span>

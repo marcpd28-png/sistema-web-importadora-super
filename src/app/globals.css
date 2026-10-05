@@ -16929,16 +16929,6 @@ body[data-admin-theme="dark"] .admin-sidebar {
   box-sizing: border-box !important;
 }
 
-/* Force a right margin on nav links to ensure they never touch the scrollbar track or get clipped */
-.admin-nav-link {
-  /* margin-right: 1.2rem !important; */
-}
-
-/* Force a right margin on nav links ONLY when sidebar is expanded */
-body:not(.admin-sidebar-collapsed) .admin-nav-link {
-  margin-right: 1.25rem !important;
-}
-
 /* Admin workflow cohesion: long forms, keyboard access and responsive navigation. */
 .admin-skip-link {
   position: fixed;

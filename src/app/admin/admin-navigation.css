@@ -1,0 +1,98 @@
+/* Explicitly constrain every grid track so badges cannot widen the sidebar. */
+.admin-sidebar :is(.admin-sidebar-main, .admin-nav, .admin-nav-section, .admin-nav-links) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-sidebar :is(.admin-nav, .admin-nav-section, .admin-nav-links) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-sidebar .admin-nav-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.admin-sidebar .admin-nav-section-title span { min-width: 0; overflow-wrap: anywhere; }
+.admin-sidebar .admin-nav-section-title svg { flex-shrink: 0; }
+
+.admin-sidebar .admin-nav-link {
+  min-width: 0;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.admin-sidebar .admin-nav-label {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+.admin-sidebar .admin-nav-badge {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 4px #ef444426;
+}
+
+.admin-sidebar .admin-nav-link.is-active {
+  box-shadow: 0 3px 10px rgba(var(--brand-ink-rgb), 0.14);
+}
+
+@media (min-width: 921px) {
+  .admin-shell { grid-template-columns: 260px minmax(0, 1fr); }
+
+  body .admin-shell .admin-sidebar {
+    min-width: 0;
+    padding-inline: 12px !important;
+  }
+
+  body:not(.admin-sidebar-collapsed) .admin-sidebar .admin-nav-link {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    width: 100%;
+    margin: 0;
+    padding-inline: 10px;
+  }
+
+  body.admin-sidebar-collapsed .admin-shell .admin-sidebar {
+    padding-inline: 8px !important;
+  }
+
+  body.admin-sidebar-collapsed .admin-sidebar-main { width: 100%; }
+
+  body.admin-sidebar-collapsed .admin-sidebar .admin-nav-link {
+    flex-direction: column;
+    gap: 3px;
+    width: 56px;
+    height: auto;
+    min-height: 44px;
+    padding: 6px 2px;
+  }
+
+  body.admin-sidebar-collapsed .admin-sidebar .admin-nav-badge {
+    position: static;
+    margin: 0;
+    transform: none;
+    height: 18px;
+    font-size: 10px;
+    padding-inline: 4px;
+  }
+}
+
+@media (max-width: 560px) {
+  body .admin-sidebar .admin-nav-links { grid-template-columns: minmax(0, 1fr); }
+}
