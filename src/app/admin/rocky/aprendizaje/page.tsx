@@ -15,8 +15,8 @@ export default async function LearningPage() {
     <Link className="button button-primary" href="/admin/mensajes/evaluacion-rocky">Evaluar con el motor actual</Link>
     <h2>Correcciones actuales</h2>
     {!current.length && <p>Aún no hay correcciones guardadas con el motor actual.</p>}
-    {current.map(row => <article key={row.id} className="panel"><time>{row.createdAt.toLocaleString("es-PE", { timeZone: "America/Lima" })}</time><p style={{ whiteSpace: "pre-wrap" }}>{row.content}</p></article>)}
+    {current.map(row => <article key={row.id} className="panel"><time>{row.createdAt.toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })}</time><p style={{ whiteSpace: "pre-wrap" }}>{row.content}</p></article>)}
     <h2>Archivo histórico</h2>
-    {historical.map(row => <article key={row.id} className="panel"><time>{row.createdAt.toLocaleString("es-PE", { timeZone: "America/Lima" })}</time><p>{row.status}</p><p style={{ whiteSpace: "pre-wrap" }}>{row.humanResponse}</p></article>)}
+    {historical.map(row => <article key={row.id} className="panel"><time>{row.createdAt.toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })}</time><p>{row.status}</p><p style={{ whiteSpace: "pre-wrap" }}>{row.humanResponse}</p></article>)}
   </section>;
 }

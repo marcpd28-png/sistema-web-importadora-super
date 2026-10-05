@@ -103,7 +103,7 @@ export default async function AttentionPage({ searchParams }: {
                     <h3>{product.name}</h3>
                     <p>{product.category || "Sin categoría"}</p>
                     <small>{product.lastSyncedAt
-                      ? `Última sincronización: ${product.lastSyncedAt.toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "short", timeStyle: "short" })}`
+                      ? `Última sincronización: ${product.lastSyncedAt.toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima", dateStyle: "short", timeStyle: "short" })}`
                       : "Aún no se ha sincronizado"}</small>
                   </div>
                   <div className={styles.status}>

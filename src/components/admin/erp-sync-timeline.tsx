@@ -42,6 +42,7 @@ export function ErpSyncTimeline({ log, latestLog }: ErpSyncTimelineProps) {
             <div className="erp-timeline-idle-summary-row">
               <span>Última actividad</span>
               <strong>{latestLog ? new Intl.DateTimeFormat("es-PE", {
+                hour12: true,
                 timeZone: "America/Lima",
                 dateStyle: "medium",
                 timeStyle: "short",

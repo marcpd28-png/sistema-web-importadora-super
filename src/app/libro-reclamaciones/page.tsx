@@ -1324,6 +1324,7 @@ export default function LibroReclamacionesPage() {
                   <span>HORA</span>
                   <strong>
                     {new Date(successData.createdAt).toLocaleTimeString("es-PE", {
+                      hour12: true,
                       hour: "2-digit",
                       minute: "2-digit",
                       second: "2-digit",
@@ -1378,7 +1379,7 @@ export default function LibroReclamacionesPage() {
               <h3 style={{ margin: 0, fontSize: "13px", color: "#2320da", fontWeight: "bold" }}>HOJA DE RECLAMACIÓN</h3>
               <strong style={{ fontSize: "14px", display: "block" }}>{successData.sheetNumber}</strong>
               <small style={{ fontSize: "9px", color: "#475569" }}>
-                Fecha: {new Date(successData.createdAt).toLocaleDateString("es-PE")} - {new Date(successData.createdAt).toLocaleTimeString("es-PE")}
+                Fecha: {new Date(successData.createdAt).toLocaleDateString("es-PE")} - {new Date(successData.createdAt).toLocaleTimeString("es-PE", { hour12: true })}
               </small>
             </div>
           </div>

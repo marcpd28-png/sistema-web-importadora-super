@@ -200,7 +200,7 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
             <ol style={{ paddingLeft: 20 }}>
               {order.reviews.map(review => <li key={review.id} style={{ marginBottom: 12, overflowWrap: "anywhere" }}>
                 <strong>{({ PAYMENT_CONFIRMED: "Pago confirmado manualmente", SHIPPED: "Envío registrado", DELIVERED: "Entrega registrada", CANCELED: "Cancelación", NOTE: "Nota" } as Record<string, string>)[review.action] || review.action}</strong>
-                <p>{new Date(review.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima" })} · Asesor {review.actorId}</p>
+                <p>{new Date(review.createdAt).toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })} · Asesor {review.actorId}</p>
                 <p>{STATUS_CONFIG[review.previousStatus].label} → {STATUS_CONFIG[review.nextStatus].label}</p>
                 {review.note && <p style={{ whiteSpace: "pre-wrap" }}>{review.note}</p>}
               </li>)}
@@ -212,8 +212,8 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
             <p className="eyebrow" style={{ marginBottom: 10 }}>ℹ️ Metadata</p>
             {[
               ["ID Orden", id.slice(-12)],
-              ["Creado", new Date(order.createdAt).toLocaleString("es-PE")],
-              ["Actualizado", new Date(order.updatedAt).toLocaleString("es-PE")],
+              ["Creado", new Date(order.createdAt).toLocaleString("es-PE", { hour12: true })],
+              ["Actualizado", new Date(order.updatedAt).toLocaleString("es-PE", { hour12: true })],
               ["Culqi Charge ID", order.culqiChargeId || "—"],
               ["Token Culqi", order.culqiTokenId ? order.culqiTokenId.slice(0, 20) + "..." : "—"],
             ].map(([label, value]) => (

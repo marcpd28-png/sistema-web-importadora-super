@@ -84,6 +84,7 @@ export default async function AdminHomePage({ searchParams }: AdminHomePageProps
   const data = await getAdminDashboardData(selectedPeriod);
   const lastSyncDate = data.dataFreshness.lastSyncAt
     ? new Intl.DateTimeFormat("es-PE", {
+        hour12: true,
         timeZone: "America/Lima",
         dateStyle: "medium",
         timeStyle: "short",

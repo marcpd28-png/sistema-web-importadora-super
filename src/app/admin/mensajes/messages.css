@@ -610,6 +610,8 @@
 }
 
 .conversation-time {
+  white-space: nowrap;
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--text-muted);
 }
@@ -908,6 +910,7 @@
 }
 
 .message-time {
+  white-space: nowrap;
   font-size: 10px;
   opacity: 0.7;
   text-align: right;

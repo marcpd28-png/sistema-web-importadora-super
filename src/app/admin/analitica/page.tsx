@@ -20,7 +20,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   return <div className={styles.page}>
     <header className={styles.header}><div><p className={styles.eyebrow}>COMPORTAMIENTO DEL CLIENTE</p><h1>Visitas y mapas de calor</h1><p>Descubre qué buscan, qué les interesa y dónde necesitan ayuda.</p></div><nav aria-label="Período" className={styles.filters}>{[1, 7, 30].map(value => <Link aria-current={days === value ? "page" : undefined} key={value} href={`/admin/analitica?days=${value}`}>{value === 1 ? "24 horas" : `${value} días`}</Link>)}</nav></header>
     {!report ? <section className={styles.card} role="status"><h2>Medición temporalmente no disponible</h2><p>No se pudieron consultar los datos. Actualiza esta página dentro de unos minutos.</p></section> : <>
-      <p className={styles.note}>Período móvil hasta {report.end.toLocaleString("es-PE", { timeZone: "America/Lima" })} · Hora de Lima · Solo navegación con consentimiento. Las sesiones no equivalen a personas únicas.</p>
+      <p className={styles.note}>Período móvil hasta {report.end.toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })} · Hora de Lima · Solo navegación con consentimiento. Las sesiones no equivalen a personas únicas.</p>
       {!Number(session!.visits) && <div className={styles.notice}><strong>Esperando las primeras visitas</strong><p>La nueva medición empieza con las visitas que acepten analítica. No reconstruye el historial anterior.</p></div>}
       <div className={styles.metrics}>{[
         ["Sesiones registradas", session!.visits, "Se renuevan tras 30 minutos de inactividad"],

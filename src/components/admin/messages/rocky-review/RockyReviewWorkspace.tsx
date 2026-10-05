@@ -9,7 +9,7 @@ import styles from "./rocky-review.module.css";
 type ReplayState = { status: "pending" | "running" | "complete" | "skipped" | "failed"; result?: RockyResult; reason?: string };
 
 function formatTime(value: string) {
-  return new Date(value).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  return new Date(value).toLocaleTimeString("es-PE", { hour12: true, hour: "2-digit", minute: "2-digit" });
 }
 
 function makeReviewId() {

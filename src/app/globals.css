@@ -4785,6 +4785,17 @@ body[data-admin-theme="dark"] .category-danger-form .button-danger { border-colo
   min-width: 0;
 }
 
+.date-time-clock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.3fr);
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.date-time-clock select {
+  min-width: 0;
+}
+
 .hero-banner-upload-field {
   display: grid;
   gap: 0.65rem;

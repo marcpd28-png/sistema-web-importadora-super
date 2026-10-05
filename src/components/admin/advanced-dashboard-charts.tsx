@@ -133,12 +133,12 @@ export function TopPromotersChart({ data }: { data: { name: string, sales: numbe
 // 5. Mapa de Calor (Simulado con un Scatter Plot simple por limitaciones de Recharts)
 export function PeakHoursChart({ data }: { data: { hour: string, value: number }[] }) {
   const safeData = data?.length ? data : [
-    { hour: "00-04h", value: 15 },
-    { hour: "04-08h", value: 45 },
-    { hour: "08-12h", value: 250 },
-    { hour: "12-16h", value: 380 },
-    { hour: "16-20h", value: 420 },
-    { hour: "20-24h", value: 290 }
+    { hour: "12 a. m.–4 a. m.", value: 15 },
+    { hour: "4 a. m.–8 a. m.", value: 45 },
+    { hour: "8 a. m.–12 p. m.", value: 250 },
+    { hour: "12 p. m.–4 p. m.", value: 380 },
+    { hour: "4 p. m.–8 p. m.", value: 420 },
+    { hour: "8 p. m.–12 a. m.", value: 290 }
   ];
 
   return (
@@ -163,5 +163,4 @@ export function PeakHoursChart({ data }: { data: { hour: string, value: number }
     </div>
   );
 }
-
 

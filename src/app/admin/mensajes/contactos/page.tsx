@@ -60,7 +60,7 @@ export default async function ContactosPage() {
                     </span>
                   </td>
                   <td style={{ padding: "16px", color: "var(--text-muted)", fontSize: "14px" }}>
-                    {format(c.updatedAt, "dd MMM yyyy, HH:mm", { locale: es })}
+                    {format(c.updatedAt, "dd MMM yyyy, h:mm aaaa", { locale: es })}
                   </td>
                   <td style={{ padding: "16px" }}>
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>

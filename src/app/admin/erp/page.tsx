@@ -19,6 +19,7 @@ type ErpPageProps = {
 export const dynamic = "force-dynamic";
 
 const dateFormatter = new Intl.DateTimeFormat("es-PE", {
+  hour12: true,
   timeZone: "America/Lima",
   dateStyle: "medium",
   timeStyle: "short",

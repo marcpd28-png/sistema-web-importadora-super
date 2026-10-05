@@ -41,7 +41,7 @@ export default async function ActividadPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                     <h3 style={{ margin: 0, fontWeight: 500, color: "var(--text)" }}>{log.automation.name}</h3>
                     <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                      {format(log.startedAt, "dd MMM, HH:mm:ss", { locale: es })}
+                      {format(log.startedAt, "dd MMM, h:mm:ss aaaa", { locale: es })}
                     </span>
                   </div>
                   <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "var(--text-muted)" }}>Canal: {log.automation.channel}</p>

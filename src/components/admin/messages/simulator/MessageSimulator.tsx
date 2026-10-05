@@ -35,6 +35,7 @@ function formatTime(value: Date | string) {
   }
 
   return date.toLocaleTimeString("es-PE", {
+    hour12: true,
     hour: "2-digit",
     minute: "2-digit",
   });

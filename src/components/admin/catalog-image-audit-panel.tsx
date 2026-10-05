@@ -40,7 +40,7 @@ export async function CatalogImageAuditPanel({ params }: { params?: Record<strin
       {report ? <div className={styles.downloads}><a className="button button-secondary" href="/api/admin/catalog-image-audit?format=csv">Descargar CSV completo</a><a href="/api/admin/catalog-image-audit?format=json">Datos JSON</a></div> : null}
     </div>
     <div className={styles.progress} role="status">
-      {report ? <><strong>{(progress?.completedPhotos ?? report.scannedPhotos).toLocaleString("es-PE")} / {report.totalPhotos.toLocaleString("es-PE")} fotos procesadas</strong><span>{report.totalProducts.toLocaleString("es-PE")} productos · {report.noPhotoProducts.toLocaleString("es-PE")} sin foto</span><span>{report.complete ? "Barrido completo" : "Resultados parciales; el barrido continúa"} · Datos al {new Date(report.generatedAt).toLocaleString("es-PE", { timeZone: "America/Lima" })}</span></>
+      {report ? <><strong>{(progress?.completedPhotos ?? report.scannedPhotos).toLocaleString("es-PE")} / {report.totalPhotos.toLocaleString("es-PE")} fotos procesadas</strong><span>{report.totalProducts.toLocaleString("es-PE")} productos · {report.noPhotoProducts.toLocaleString("es-PE")} sin foto</span><span>{report.complete ? "Barrido completo" : "Resultados parciales; el barrido continúa"} · Datos al {new Date(report.generatedAt).toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })}</span></>
         : <p>{progress ? `Barrido en curso: ${progress.completedPhotos} de ${progress.totalPhotos} fotos. La clasificación estará disponible al publicarse el reporte.` : "Todavía no hay un barrido publicado."}</p>}
     </div>
     {report ? <>

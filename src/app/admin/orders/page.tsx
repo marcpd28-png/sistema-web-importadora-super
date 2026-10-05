@@ -134,7 +134,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               {data.orders.map((order) => (
                 <tr key={order.id}>
                   <td data-label="Fecha">
-                    {new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}
+                    {new Intl.DateTimeFormat("es-PE", { hour12: true, timeZone: "America/Lima", dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}
                   </td>
                   <td data-label="Cliente">
                     <strong>{order.customerName}</strong>

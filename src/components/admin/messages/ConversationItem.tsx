@@ -27,7 +27,7 @@ function formatConversationTime(value: Conversation["lastMessageAt"]) {
   const isToday = date.toDateString() === today.toDateString();
 
   if (isToday) {
-    return date.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("es-PE", { hour12: true, hour: "2-digit", minute: "2-digit" });
   }
 
   return date.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" });

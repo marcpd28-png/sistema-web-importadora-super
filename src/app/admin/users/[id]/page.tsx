@@ -156,8 +156,8 @@ export default async function AdminUserEditPage({ params, searchParams }: AdminU
 
           <article className="panel panel-slim">
             <p className="eyebrow">Fechas</p>
-            <p className="muted">Creado: {new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", dateStyle: "medium", timeStyle: "short" }).format(user.createdAt)}</p>
-            <p className="muted">Actualizado: {new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", dateStyle: "medium", timeStyle: "short" }).format(user.updatedAt)}</p>
+            <p className="muted">Creado: {new Intl.DateTimeFormat("es-PE", { hour12: true, timeZone: "America/Lima", dateStyle: "medium", timeStyle: "short" }).format(user.createdAt)}</p>
+            <p className="muted">Actualizado: {new Intl.DateTimeFormat("es-PE", { hour12: true, timeZone: "America/Lima", dateStyle: "medium", timeStyle: "short" }).format(user.updatedAt)}</p>
           </article>
 
           <div className="admin-user-danger-zone">

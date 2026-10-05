@@ -16,6 +16,7 @@ type AdminComplaintDetailPageProps = {
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-PE", {
+    hour12: true,
     timeZone: "America/Lima",
     dateStyle: "medium",
     timeStyle: "short",

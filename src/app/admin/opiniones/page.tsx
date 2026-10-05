@@ -21,6 +21,7 @@ const ratingMeta: Record<string, { label: string; score: number }> = {
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-PE", {
+    hour12: true,
     timeZone: "America/Lima",
     dateStyle: "medium",
     timeStyle: "short",

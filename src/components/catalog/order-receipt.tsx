@@ -44,6 +44,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 export function OrderReceipt({ data }: { data: ReceiptData }) {
   const receiptRef = useRef<HTMLDivElement>(null);
   const date = new Date(data.createdAt).toLocaleString("es-PE", {
+    hour12: true,
     day: "2-digit",
     month: "long",
     year: "numeric",

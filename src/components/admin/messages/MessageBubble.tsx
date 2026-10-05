@@ -33,7 +33,7 @@ export function MessageBubble({ message, onRetry }: Props) {
   const bubbleClass = isAgent ? "message-agent" : isBot ? "message-bot" : "message-customer";
   const senderName = isCustomer ? "Cliente" : isBot ? "Bot" : "Asesor";
   const dateObj = new Date(message.createdAt);
-  const timeStr = `${dateObj.getHours().toString().padStart(2, "0")}:${dateObj.getMinutes().toString().padStart(2, "0")}`;
+  const timeStr = dateObj.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
   const isTextLike = message.messageType === "TEXT" || message.messageType === "UNKNOWN";
 
   return <div className={`message-bubble ${bubbleClass} ${isFailed ? "message-failed" : ""}`}>

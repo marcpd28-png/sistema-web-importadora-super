@@ -141,7 +141,7 @@ export function ErpProductEditor({ productId }: { productId: string }) {
       {!!writes.length && <section aria-label="Historial de envíos al ERP" className="stack-sm">
         <strong>Historial de envíos al ERP</strong>
         {writes.map((write) => <div key={write.id} style={{ borderTop: "1px solid #cbd5e1", paddingTop: 8 }}>
-          <strong>{labels[write.status] ?? write.status}</strong> · {new Date(write.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+          <strong>{labels[write.status] ?? write.status}</strong> · {new Date(write.createdAt).toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })}
           <p>{write.message}</p>
           {(write.status === "UNCERTAIN" || (["SENDING", "PREPARING"].includes(write.status) && checkedAt - new Date(write.updatedAt).getTime() >= 120000)) && <button className="button button-neutral" type="button" disabled={busy} onClick={() => void reviewed(write.id)}>Ya revisé este envío en el ERP</button>}
         </div>)}

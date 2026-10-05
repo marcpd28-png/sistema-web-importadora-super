@@ -47,7 +47,7 @@ export function ErpEditorialStatus({ productId, writes, setWrites }: {
     {writes.slice(0, 3).map((write) => {
       const stale = ["PREPARING", "SENDING"].includes(write.status) && checkedAt - new Date(write.updatedAt).getTime() >= 120000;
       return <div key={write.id} style={{ fontSize: 13, borderTop: "1px solid #e2e8f0", paddingTop: 8 }}>
-        <strong>{labels[write.status] || write.status}</strong> · {new Date(write.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima" })}
+        <strong>{labels[write.status] || write.status}</strong> · {new Date(write.createdAt).toLocaleString("es-PE", { hour12: true, timeZone: "America/Lima" })}
         <p style={{ margin: "6px 0" }}>{write.message}</p>
         {(write.status === "UNCERTAIN" || stale) && <button type="button" className="button button-sm button-neutral" disabled={busy} onClick={() => void act(write.id)}>Ya revisé este envío en el ERP</button>}
       </div>;

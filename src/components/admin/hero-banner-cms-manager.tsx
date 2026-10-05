@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DateTimeInput } from "./date-time-input";
 import { useActionState, useMemo, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import {
@@ -81,6 +82,7 @@ function formatSchedule(value: string | null) {
   }
 
   return new Intl.DateTimeFormat("es-PE", {
+    hour12: true,
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -735,25 +737,19 @@ export function HeroBannerCmsManager({
               </label>
 
               <div className="hero-banner-schedule-grid">
-                <label className="field">
-                  <span>Fecha inicio</span>
-                  <input
-                    name="startsAt"
-                    type="datetime-local"
-                    value={draft.startsAt}
-                    onChange={(event) => updateDraft("startsAt", event.target.value)}
-                  />
-                </label>
+                <DateTimeInput
+                  label="Fecha inicio"
+                  name="startsAt"
+                  value={draft.startsAt}
+                  onChange={(value) => updateDraft("startsAt", value)}
+                />
 
-                <label className="field">
-                  <span>Fecha fin</span>
-                  <input
-                    name="endsAt"
-                    type="datetime-local"
-                    value={draft.endsAt}
-                    onChange={(event) => updateDraft("endsAt", event.target.value)}
-                  />
-                </label>
+                <DateTimeInput
+                  label="Fecha fin"
+                  name="endsAt"
+                  value={draft.endsAt}
+                  onChange={(value) => updateDraft("endsAt", value)}
+                />
 
                 <label className="field field-inline-check hero-banner-active-field">
                   <input
