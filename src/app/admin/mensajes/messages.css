@@ -865,7 +865,7 @@
 .message-pdf-page { width: 100%; min-height: 180px; }
 .message-pdf-page canvas { display: block; margin: 0 auto; background: white; }
 .message-pdf-thumbnail { pointer-events: none; }
-.message-document-dialog { width: min(1200px, calc(100vw - 32px)); max-width: none; height: calc(100dvh - 32px); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 14px; color: #0f172a; background: #f8fafc; box-shadow: 0 24px 80px #0005; }
+.message-document-dialog { width: min(1200px, calc(var(--admin-viewport-width, 100vw) - 32px)); max-width: none; height: calc(var(--admin-viewport-height, 100dvh) - 32px); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 14px; color: #0f172a; background: #f8fafc; box-shadow: 0 24px 80px #0005; }
 .message-document-dialog::backdrop { background: #020617bf; }
 .message-document-viewer { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 16px; gap: 12px; overflow: hidden; }
 .message-document-viewer header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -1522,7 +1522,7 @@
   --radius-lg: 18px;
   --shadow-sm: 0 12px 30px rgba(var(--brand-ink-rgb), 0.08);
   flex-direction: column;
-  height: calc(100dvh - 1.5rem);
+  height: calc(var(--admin-viewport-height, 100dvh) - 1.5rem);
   min-height: 680px;
   margin-top: 0;
   border-color: var(--line);

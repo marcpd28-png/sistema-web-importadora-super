@@ -1,6 +1,6 @@
 /* Fit the inbox to the available viewport; scroll each pane independently. */
 .admin-shell:has(.messages-inbox-page) {
-  height: 100dvh;
+  height: var(--admin-viewport-height, 100dvh);
   min-height: 0;
   overflow: hidden;
 }

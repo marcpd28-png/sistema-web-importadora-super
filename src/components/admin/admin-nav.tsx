@@ -28,6 +28,7 @@ import {
 import { logoutAction } from "@/app/admin/actions";
 import type { AdminNavBadges } from "@/lib/admin";
 import { cn } from "@/lib/utils";
+import { getAdminViewportBounds } from "@/lib/admin-viewport";
 import { useAdminMobile } from "./use-admin-mobile";
 
 type AdminNavLink = {
@@ -107,8 +108,8 @@ export function AdminNav({ badges }: AdminNavProps) {
   const [tooltip, setTooltip] = useState<{ label: string; left: number; top: number } | null>(null);
   const showTooltip = (element: HTMLElement, label: string) => {
     if (window.matchMedia("(max-width: 920px)").matches || !document.body.classList.contains("admin-sidebar-collapsed")) return;
-    const rect = element.getBoundingClientRect();
-    setTooltip({ label, left: Math.min(rect.right + 10, window.innerWidth - 250), top: Math.max(8, Math.min(rect.top, window.innerHeight - 60)) });
+    const rect = getAdminViewportBounds(element);
+    setTooltip({ label, left: Math.min(rect.right + 10, rect.viewportWidth - 250), top: Math.max(8, Math.min(rect.top, rect.viewportHeight - 60)) });
   };
   useEffect(() => {
     const hide = () => setTooltip(null);

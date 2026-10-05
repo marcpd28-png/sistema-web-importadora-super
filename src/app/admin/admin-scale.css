@@ -1,0 +1,23 @@
+/* Keep touch layouts and printed documents at their normal size. */
+@media screen and (min-width: 921px) {
+  @supports (zoom: 0.9) {
+    /* The route selector also covers dialogs portaled to body and resets on exit. */
+    body:has(.admin-shell) {
+      --admin-ui-scale: 0.9;
+      --admin-viewport-height: calc(100dvh / var(--admin-ui-scale));
+      --admin-viewport-width: calc(100vw / var(--admin-ui-scale));
+      zoom: var(--admin-ui-scale);
+      max-width: none;
+      min-height: var(--admin-viewport-height);
+    }
+
+    body:has(.admin-shell) .admin-sidebar {
+      height: var(--admin-viewport-height) !important;
+      min-height: var(--admin-viewport-height) !important;
+    }
+
+    .admin-content:not(:has(.messages-inbox-page)) {
+      min-height: var(--admin-viewport-height);
+    }
+  }
+}
