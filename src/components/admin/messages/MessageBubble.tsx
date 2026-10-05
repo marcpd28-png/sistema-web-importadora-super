@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Expand, X } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
+import { DocumentAttachment } from "./DocumentAttachment";
 
 interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void; }
 
@@ -17,7 +18,7 @@ function MediaAttachment({ message, onOpen }: { message: ChatMessage; onOpen: ()
   if (!src) return <span className="message-media-unavailable">{label} recibido. Archivo no disponible.</span>;
   if (message.messageType === "VIDEO") return <div className="message-media-attachment"><video controls preload="metadata" src={src}>Tu navegador no permite reproducir este video.</video><button className="message-media-open" onClick={onOpen} type="button"><Expand size={14} /> Ver video</button>{message.content && !/^video recibido$/i.test(message.content.trim()) ? <span>{message.content}</span> : null}</div>;
   if (message.messageType === "AUDIO") return <div className="message-media-attachment"><audio controls preload="metadata" src={src}>Tu navegador no permite reproducir este audio.</audio><button className="message-media-open" onClick={onOpen} type="button"><Expand size={14} /> Abrir audio</button></div>;
-  return <a href={src} rel="noreferrer" target="_blank">Abrir documento adjunto</a>;
+  return <DocumentAttachment key={src} src={src} originalUrl={message.mediaUrl || src} caption={message.content} />;
 }
 
 export function MessageBubble({ message, onRetry }: Props) {

@@ -10,6 +10,20 @@ const originalFetch = globalThis.fetch;
 const originalApiKey = process.env.YCLOUD_API_KEY;
 const originalFrom = process.env.YCLOUD_WHATSAPP_FROM;
 
+test("catalog document filename is separate from its accompanying caption", async () => {
+  process.env.YCLOUD_API_KEY = "test-key";
+  process.env.YCLOUD_WHATSAPP_FROM = "+15005550006";
+  let body = "";
+  globalThis.fetch = async (_url, init) => { body = String(init?.body); return Response.json({ id: "document-test" }); };
+  const content = "Aquí tienes el PDF catálogo de drones (3 productos).";
+  await sendYCloudOutboundMessage({ recipient: "+15005550007", type: "document", content,
+    mediaUrl: "https://tiendavirtualsuper.com/uploads/catalogs/catalogo-drones-f89a7bf050824e78.pdf" });
+  const payload = JSON.parse(body);
+  assert.equal(payload.document.filename, "Catálogo de drones.pdf");
+  assert.equal(payload.document.caption, content);
+  assert.ok(payload.document.link.endsWith("f89a7bf050824e78.pdf"));
+});
+
 afterEach(() => {
   globalThis.fetch = originalFetch;
   if (originalApiKey === undefined) delete process.env.YCLOUD_API_KEY;

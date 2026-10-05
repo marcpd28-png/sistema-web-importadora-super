@@ -1,3 +1,5 @@
+import { documentFilename } from "./document-filename";
+
 export class YCloudOutboundError extends Error {
   readonly code: string;
   readonly statusCode: number;
@@ -68,7 +70,8 @@ function buildMessage(input: YCloudOutboundMessageInput) {
 
   const media = input.type === "audio"
     ? { link: input.mediaUrl }
-    : { link: input.mediaUrl, caption: input.content || undefined };
+    : { link: input.mediaUrl, caption: input.content || undefined,
+        ...(input.type === "document" ? { filename: documentFilename(input.mediaUrl) } : {}) };
 
   return { type: input.type, [input.type]: media };
 }
