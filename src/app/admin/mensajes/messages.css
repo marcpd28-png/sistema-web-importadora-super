@@ -843,26 +843,46 @@
 .message-media-attachment { display: grid; gap: 6px; margin: 4px 0; }
 .message-media-attachment video { max-width: 100%; max-height: 320px; border-radius: 10px; }
 .message-media-attachment audio { width: min(300px, 100%); max-width: 100%; }
-.message-document-card { display: grid; gap: 10px; width: min(360px, 100%); min-width: 0; padding: 12px; border: 1px solid #94a3b866; border-radius: 12px; background: #ffffffb3; color: #0f172a; }
-.message-document-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.message-document-heading svg { flex-shrink: 0; color: #2563eb; }
-.message-document-heading strong, .message-document-caption { overflow-wrap: anywhere; font-size: 13px; }
+.message-document-card { display: grid; gap: 12px; width: 320px; max-width: 100%; min-width: 0; padding: 10px; border: 1px solid #cbd5e1; border-radius: 14px; background: #fff; color: #0f172a; }
+.message-document-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.message-document-info svg { flex-shrink: 0; color: #dc2626; }
+.message-document-info > div { min-width: 0; display: grid; gap: 3px; }
+.message-document-info strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.message-document-info span, .message-document-detail { display: block; font-size: 12px; color: #64748b; }
+.message-document-caption, .message-document-error { overflow-wrap: anywhere; font-size: 13px; }
+.message-document-error { color: #9f1239; }
 .message-document-actions, .message-document-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .message-document-card button, .message-document-dialog button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #0f172a; cursor: pointer; font: inherit; font-size: 13px; }
 .message-document-card button:disabled, .message-document-dialog button:disabled { opacity: .55; cursor: wait; }
 .message-document-card a, .message-document-dialog a { display: inline-flex; align-items: center; gap: 5px; color: #1d4ed8; text-decoration: underline; font-size: 13px; }
 .message-document-card button:focus-visible, .message-document-dialog button:focus-visible, .message-document-card a:focus-visible, .message-document-dialog a:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
-.message-document-dialog { width: min(1000px, calc(100vw - 32px)); max-width: none; height: min(900px, calc(100dvh - 32px)); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 14px; color: #0f172a; background: #f8fafc; box-shadow: 0 24px 80px #0005; }
+.message-document-card button.message-document-preview { display: block; position: relative; width: 100%; height: 230px; padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 8px; background: #f1f5f9; }
+.message-document-placeholder { display: grid; place-content: center; justify-items: center; gap: 12px; height: 100%; color: #64748b; }
+.message-document-placeholder svg { color: #dc2626; }
+.message-document-preview-overlay { position: absolute; right: 8px; bottom: 8px; display: inline-flex; gap: 6px; align-items: center; padding: 7px 10px; border-radius: 7px; background: #0f172ade; color: white; font-size: 12px; }
+.message-document-actions > button { flex: 1; }
+.message-document-card button.message-document-primary { background: #2563eb; color: white; border-color: #2563eb; }
+.message-pdf-page { width: 100%; min-height: 180px; }
+.message-pdf-page canvas { display: block; margin: 0 auto; background: white; }
+.message-pdf-thumbnail { pointer-events: none; }
+.message-document-dialog { width: min(1200px, calc(100vw - 32px)); max-width: none; height: calc(100dvh - 32px); max-height: none; margin: auto; padding: 0; border: 0; border-radius: 14px; color: #0f172a; background: #f8fafc; box-shadow: 0 24px 80px #0005; }
 .message-document-dialog::backdrop { background: #020617bf; }
-.message-document-viewer { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 16px; gap: 12px; overflow: auto; }
+.message-document-viewer { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 16px; gap: 12px; overflow: hidden; }
 .message-document-viewer header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.message-document-viewer header > div { min-width: 0; }
 .message-document-viewer header strong { overflow-wrap: anywhere; min-width: 0; font-size: 15px; }
 .message-document-viewer header button { flex-shrink: 0; }
-.message-document-viewer iframe { flex: 1; width: 100%; min-height: 180px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
-.message-document-hint { margin: 0; color: #475569; font-size: 12px; }
+.message-document-toolbar { flex-shrink: 0; padding-bottom: 10px; border-bottom: 1px solid #cbd5e1; }
+.message-document-controls { display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.message-document-controls span { white-space: nowrap; padding: 0 6px; }
+.message-document-stage { flex: 1; min-height: 0; overflow: auto; background: #dce2ea; padding: 18px; border-radius: 8px; }
+.message-document-stage canvas { box-shadow: 0 2px 10px #0f172a33; }
 @media (max-width: 600px) {
   .message-document-dialog { width: calc(100vw - 12px); height: calc(100dvh - 12px); border-radius: 10px; }
   .message-document-viewer { padding: 10px; gap: 8px; }
+  .message-document-stage { padding: 8px; }
+  .message-document-toolbar { gap: 6px; }
+  .message-document-controls button { padding: 7px; }
 }
 .message-media-unavailable { font-size: 13px; font-style: italic; opacity: .8; }
 .message-delivery-status, .message-sending-status, .message-failure-status { font-size: 10px; }

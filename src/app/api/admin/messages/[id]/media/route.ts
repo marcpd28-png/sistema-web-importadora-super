@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ycloudMediaKind } from "@/lib/ycloud-media";
 
 export const runtime = "nodejs";
-
-function isYCloudMediaUrl(value: string | null) {
-  try {
-    const url = new URL(value ?? "");
-    return url.protocol === "https:" && url.hostname === "api.ycloud.com" && url.pathname.startsWith("/v2/");
-  } catch {
-    return false;
-  }
-}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -21,13 +13,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: { id },
       select: { mediaUrl: true, messageType: true, conversation: { select: { channel: true } } },
     });
-    if (!message || message.conversation.channel !== "WHATSAPP" || !isYCloudMediaUrl(message.mediaUrl)) {
+    const mediaKind = ycloudMediaKind(message?.mediaUrl ?? null);
+    if (!message || message.conversation.channel !== "WHATSAPP" || !mediaKind) {
       return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
     }
 
     const apiKey = process.env.YCLOUD_API_KEY?.trim();
-    if (!apiKey) return NextResponse.json({ error: "YCloud no está configurado" }, { status: 503 });
-    const headers = new Headers({ "X-API-Key": apiKey, "Accept-Encoding": "identity" });
+    if (mediaKind === "api" && !apiKey) return NextResponse.json({ error: "YCloud no está configurado" }, { status: 503 });
+    const headers = new Headers({ "Accept-Encoding": "identity" });
+    // Signed CDN links authenticate through their query; never forward the API key.
+    if (mediaKind === "api") headers.set("X-API-Key", apiKey!);
     const range = request.headers.get("range");
     if (range && /^bytes=\d*-\d*$/.test(range)) headers.set("Range", range);
     const response = await fetch(message.mediaUrl!, { headers, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000) });
@@ -47,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     return new NextResponse(response.body, { status: response.status, headers: output });
   } catch (error) {
-    console.error("Error serving YCloud media:", error);
+    console.error("Error serving YCloud media:", error instanceof Error ? error.name : "Unknown error");
     return NextResponse.json({ error: "No se pudo cargar el archivo" }, { status: 502 });
   }
 }

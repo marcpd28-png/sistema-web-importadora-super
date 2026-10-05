@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Expand, X } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
 import { DocumentAttachment } from "./DocumentAttachment";
+import { ycloudMediaKind } from "@/lib/ycloud-media";
 
 interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void; }
 
 function getMediaSource(message: ChatMessage) {
   return message.mediaUrl && (() => {
-    try { return new URL(message.mediaUrl).hostname === "api.ycloud.com" ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
+    try { return ycloudMediaKind(message.mediaUrl) ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
     catch { return message.mediaUrl; }
   })();
 }
@@ -18,7 +19,7 @@ function MediaAttachment({ message, onOpen }: { message: ChatMessage; onOpen: ()
   if (!src) return <span className="message-media-unavailable">{label} recibido. Archivo no disponible.</span>;
   if (message.messageType === "VIDEO") return <div className="message-media-attachment"><video controls preload="metadata" src={src}>Tu navegador no permite reproducir este video.</video><button className="message-media-open" onClick={onOpen} type="button"><Expand size={14} /> Ver video</button>{message.content && !/^video recibido$/i.test(message.content.trim()) ? <span>{message.content}</span> : null}</div>;
   if (message.messageType === "AUDIO") return <div className="message-media-attachment"><audio controls preload="metadata" src={src}>Tu navegador no permite reproducir este audio.</audio><button className="message-media-open" onClick={onOpen} type="button"><Expand size={14} /> Abrir audio</button></div>;
-  return <DocumentAttachment key={src} src={src} originalUrl={message.mediaUrl || src} caption={message.content} />;
+  return <DocumentAttachment key={src} src={src} originalUrl={message.mediaUrl || src} caption={message.content} metadata={message.metadata} />;
 }
 
 export function MessageBubble({ message, onRetry }: Props) {
