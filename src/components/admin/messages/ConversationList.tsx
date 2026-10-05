@@ -1,7 +1,7 @@
-import type { UIEvent } from "react";
+import { useId, useState, type UIEvent } from "react";
 import type { Conversation, ConversationState } from "@/types/messages";
 import { ConversationItem } from "./ConversationItem";
-import { CalendarDays, Hash, Phone, RotateCw, Search } from "lucide-react";
+import { CalendarDays, Hash, Phone, RotateCw, Search, SlidersHorizontal } from "lucide-react";
 
 export type ConversationFilters = {
   dateFrom: string;
@@ -60,6 +60,9 @@ export function ConversationList({
   total,
 }: Props) {
   const activeFilter = getActiveFilter(filters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersId = useId();
+  const extraFilterCount = [filters.phone, filters.q, filters.dateFrom, filters.dateTo].filter(Boolean).length;
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const element = event.currentTarget;
@@ -89,67 +92,75 @@ export function ConversationList({
           </button>
         </div>
 
-        <div className="messages-filter-grid">
-          <div className="messages-field">
-            <Phone size={15} />
-            <input
-              className="messages-search"
-              inputMode="tel"
-              onChange={(event) => onFiltersChange({ phone: event.target.value })}
-              placeholder="Número"
-              type="search"
-              value={filters.phone}
-            />
+        <div className="messages-advanced-filters" id={filtersId} hidden={!filtersOpen}>
+          <div className="messages-filter-grid">
+            <div className="messages-field">
+              <Phone size={15} />
+              <input
+                className="messages-search"
+                inputMode="tel"
+                onChange={(event) => onFiltersChange({ phone: event.target.value })}
+                placeholder="Número"
+                type="search"
+                value={filters.phone}
+              />
+            </div>
+            <div className="messages-field">
+              <Hash size={15} />
+              <input
+                className="messages-search"
+                onChange={(event) => onFiltersChange({ q: event.target.value })}
+                placeholder="Palabra clave"
+                type="search"
+                value={filters.q}
+              />
+            </div>
           </div>
-          <div className="messages-field">
-            <Hash size={15} />
-            <input
-              className="messages-search"
-              onChange={(event) => onFiltersChange({ q: event.target.value })}
-              placeholder="Palabra clave"
-              type="search"
-              value={filters.q}
-            />
+
+          <div className="messages-date-row">
+            <label className="messages-date-field">
+              <CalendarDays size={14} />
+              <input
+                aria-label="Fecha desde"
+                onChange={(event) => onFiltersChange({ dateFrom: event.target.value })}
+                type="date"
+                value={filters.dateFrom}
+              />
+            </label>
+            <label className="messages-date-field">
+              <CalendarDays size={14} />
+              <input
+                aria-label="Fecha hasta"
+                onChange={(event) => onFiltersChange({ dateTo: event.target.value })}
+                type="date"
+                value={filters.dateTo}
+              />
+            </label>
           </div>
+
         </div>
 
-        <div className="messages-date-row">
-          <label className="messages-date-field">
-            <CalendarDays size={14} />
-            <input
-              aria-label="Fecha desde"
-              onChange={(event) => onFiltersChange({ dateFrom: event.target.value })}
-              type="date"
-              value={filters.dateFrom}
-            />
-          </label>
-          <label className="messages-date-field">
-            <CalendarDays size={14} />
-            <input
-              aria-label="Fecha hasta"
-              onChange={(event) => onFiltersChange({ dateTo: event.target.value })}
-              type="date"
-              value={filters.dateTo}
-            />
-          </label>
-        </div>
-
-        <div className="messages-filters">
-          {FILTERS.map((filter) => (
-            <button
-              className={`messages-filter-btn ${activeFilter === filter.id ? "active" : ""}`}
-              key={filter.id}
-              onClick={() =>
-                onFiltersChange({
-                  status: filter.status,
-                  unreadOnly: Boolean(filter.unreadOnly),
-                })
-              }
-              type="button"
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div className="messages-filter-toolbar">
+          <div className="messages-filters">
+            {FILTERS.map((filter) => (
+              <button
+                className={`messages-filter-btn ${activeFilter === filter.id ? "active" : ""}`}
+                key={filter.id}
+                onClick={() =>
+                  onFiltersChange({
+                    status: filter.status,
+                    unreadOnly: Boolean(filter.unreadOnly),
+                  })
+                }
+                type="button"
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <button className={`messages-filter-btn messages-extra-filters ${extraFilterCount ? "active" : ""}`} type="button" aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(open => !open)}>
+            <SlidersHorizontal size={14} /> Filtros{extraFilterCount ? ` (${extraFilterCount})` : ""}
+          </button>
         </div>
 
         <div className="messages-result-count">

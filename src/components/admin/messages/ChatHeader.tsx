@@ -20,7 +20,7 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
         <ArrowLeft size={20} />
       </button>
       <div className="chat-header-info">
-        <div style={{ width: '40px', height: '40px', marginRight: '12px' }}>
+        <div className="chat-header-avatar">
           {contact.avatar ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img 

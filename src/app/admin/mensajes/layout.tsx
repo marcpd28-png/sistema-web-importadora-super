@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { MessagesSidebar } from "@/components/admin/messages/layout/MessagesSidebar";
 import "./messages.css";
+import "./messages-compact.css";
 
 export const metadata: Metadata = {
   title: "Plataforma Conversacional | Importadora Super",
