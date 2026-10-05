@@ -692,7 +692,7 @@ export function MessagesWorkspace() {
             </div>
 
             <div className="chat-count">{activeMessages.length} de {messageTotal} mensajes cargados</div>
-            <MessageInput onSendMessage={handleSendMessage} />
+            <MessageInput key={activeId} onSendMessage={handleSendMessage} />
           </div>
 
           <CustomerPanel conversation={activeConversation} />

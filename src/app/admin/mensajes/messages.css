@@ -946,6 +946,31 @@
   min-height: 24px;
 }
 
+.chat-input-attachment {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+.chat-input-attachment img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.chat-input-attachment > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.chat-input-attachment small {
+  display: block;
+  color: var(--text-muted);
+}
+
 .chat-input-actions {
   display: flex;
   gap: 4px;
