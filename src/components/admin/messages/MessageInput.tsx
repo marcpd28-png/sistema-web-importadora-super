@@ -146,7 +146,7 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
           <button type="button" className="icon-btn" aria-label="Quitar archivo adjunto" disabled={isUploading} onClick={() => { setAttachment(null); setPreviewUrl(null); setUploadError(null); }}><X size={18} /></button>
         </div>
       ) : null}
-      <div className="chat-input-wrapper">
+      <div className={`chat-input-wrapper${isRecording ? " is-recording" : ""}`}>
         <input 
           type="file" 
           ref={fileInputRef} 
@@ -180,7 +180,8 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
         />
         
         <div className="chat-input-actions">
-          <button 
+          <AudioRecorder disabled={isUploading || Boolean(attachment) || Boolean(message.trim())} onRecorded={selectAttachment} onBusyChange={setIsRecording} onError={setUploadError} />
+          {!isRecording ? <button 
             aria-label="Enviar mensaje"
             className="icon-btn" 
             onClick={handleSend}
@@ -189,10 +190,9 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
             type="button"
           >
             <Send size={18} />
-          </button>
+          </button> : null}
         </div>
       </div>
-      <div className="chat-recorder-row"><AudioRecorder disabled={isUploading || Boolean(attachment) || Boolean(message.trim())} onRecorded={selectAttachment} onBusyChange={setIsRecording} onError={setUploadError} />{!isRecording ? <small>Graba un audio de hasta 5 minutos.</small> : null}</div>
       <div className="chat-input-help" id="message-input-help">
         Puedes pegar texto o imágenes con Ctrl+V (⌘+V en Mac). Enter para enviar; Shift + Enter para salto de línea.
       </div>

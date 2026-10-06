@@ -1744,7 +1744,7 @@
   background: transparent !important;
 }
 
-.chat-input-actions .icon-btn:last-child:not(:disabled) {
+.chat-input-actions > .icon-btn:last-child:not(:disabled) {
   color: white;
   background: var(--brand-primary);
 }

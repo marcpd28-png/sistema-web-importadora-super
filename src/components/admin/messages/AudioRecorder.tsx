@@ -109,7 +109,7 @@ export function AudioRecorder({ disabled, onRecorded, onBusyChange, onError }: P
     }
   }
 
-  if (phase === "idle") return <button type="button" className="icon-btn" aria-label="Grabar audio" title="Grabar audio" disabled={disabled} onClick={() => void start()}><Mic size={18} /></button>;
+  if (phase === "idle") return <button type="button" className="icon-btn" aria-label="Grabar audio" title="Grabar audio (hasta 5 minutos)" disabled={disabled} onClick={() => void start()}><Mic size={18} /></button>;
   return <div className="chat-recording-controls">
     <span role="status">{phase === "permission" ? "Esperando micrófono…" : phase === "stopping" ? "Preparando audio…" : `Grabando ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} / 5:00`}</span>
     {phase === "recording" ? <button type="button" className="icon-btn" aria-label="Detener grabación" title="Detener y escuchar" onClick={stop}><Square size={18} /></button> : <Loader2 size={18} className="animate-spin" />}
