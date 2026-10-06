@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Expand, X } from "lucide-react";
+import { Expand, X, ChevronDown, Reply } from "lucide-react";
+import { readMessageReply } from "@/lib/message-reply";
 import type { ChatMessage } from "@/types/messages";
 import { DocumentAttachment } from "./DocumentAttachment";
 import { ycloudMediaKind } from "@/lib/ycloud-media";
 
-interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void; }
+interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void; onReply?: (message: ChatMessage) => void; }
 
 function getMediaSource(message: ChatMessage) {
   return message.mediaUrl && (() => {
@@ -22,7 +23,10 @@ function MediaAttachment({ message, onOpen }: { message: ChatMessage; onOpen: ()
   return <DocumentAttachment key={src} src={src} originalUrl={message.mediaUrl || src} caption={message.content} metadata={message.metadata} />;
 }
 
-export function MessageBubble({ message, onRetry }: Props) {
+export function MessageBubble({ message, onRetry, onReply }: Props) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const reply = readMessageReply(message.metadata);
+  const canReply = Boolean(onReply && message.senderType === "CUSTOMER" && message.externalMessageId?.startsWith("wamid."));
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
@@ -37,8 +41,15 @@ export function MessageBubble({ message, onRetry }: Props) {
   const timeStr = dateObj.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: true });
   const isTextLike = message.messageType === "TEXT" || message.messageType === "UNKNOWN";
 
-  return <div className={`message-bubble ${bubbleClass} ${isFailed ? "message-failed" : ""}`}>
+  return <div className={`message-bubble ${bubbleClass} ${isFailed ? "message-failed" : ""}`} onClick={(event) => {
+    if (canReply && !(event.target as HTMLElement).closest("button, a, audio, video, [role=dialog]")) setMenuOpen(!menuOpen);
+  }}>
+    {canReply ? <div className="message-reply-actions" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false); }} onKeyDown={(event) => { if (event.key === "Escape") setMenuOpen(false); }}>
+      <button type="button" className="message-options-toggle" aria-label="Opciones del mensaje" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}><ChevronDown size={16} /></button>
+      {menuOpen ? <button className="message-reply-option" type="button" onClick={() => { onReply?.(message); setMenuOpen(false); }}><Reply size={16} /> Responder</button> : null}
+    </div> : null}
     <div className="message-sender">{senderName} {isBot ? <span className="message-bot-badge">🤖 Rocky</span> : null}</div>
+    {reply ? <div className="message-quoted-reply"><strong>{reply.senderType === "CUSTOMER" ? "Cliente" : "Asesor"}</strong><span>{reply.content}</span></div> : null}
     <div className="message-content">
       {isTextLike ? <span>{message.content}</span> : null}
       {message.messageType === "IMAGE" && mediaSource ? <div className="message-media-attachment"><button className="message-image-preview" onClick={() => setIsMediaOpen(true)} type="button"><img alt={message.content || "Imagen enviada"} src={mediaSource} /><span><Expand size={16} /> Ampliar imagen</span></button>{message.content ? <span>{message.content}</span> : null}</div> : null}

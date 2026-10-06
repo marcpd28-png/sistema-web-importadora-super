@@ -156,7 +156,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "El archivo está vacío." }, { status: 400 });
   }
 
-  if (!allowedMimeTypes.has(fileEntry.type)) {
+  const mimeType = fileEntry.type.split(";")[0].trim().toLowerCase();
+  if (!allowedMimeTypes.has(mimeType)) {
     return NextResponse.json(
       { error: "Formato no permitido. Usa una imagen, video, audio o PDF válido." },
       { status: 400 },
@@ -187,7 +188,7 @@ export async function POST(request: Request) {
 
   if (folder === "documents") {
     try {
-      const prepared = await prepareWhatsAppUpload(buffer, fileEntry.type);
+      const prepared = await prepareWhatsAppUpload(buffer, mimeType);
       const fileName = `${fileBase}${prepared.extension}`;
       await writeFile(path.join(uploadDir, fileName), prepared.buffer);
       return NextResponse.json({ fileName, folder, url: `/uploads/${folder}/${fileName}` });

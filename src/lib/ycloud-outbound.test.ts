@@ -10,6 +10,23 @@ const originalFetch = globalThis.fetch;
 const originalApiKey = process.env.YCLOUD_API_KEY;
 const originalFrom = process.env.YCLOUD_WHATSAPP_FROM;
 
+test("envía la referencia de WhatsApp en respuestas de texto y multimedia", async () => {
+  process.env.YCLOUD_API_KEY = "test-key";
+  process.env.YCLOUD_WHATSAPP_FROM = "+15005550006";
+  const bodies: Record<string, unknown>[] = [];
+  globalThis.fetch = async (_url, init) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return new Response(JSON.stringify({ id: "ycloud-reply" }), { status: 200 });
+  };
+  for (const type of ["text", "image", "video", "audio", "document"] as const) {
+    await sendYCloudOutboundMessage({ content: "Respuesta", recipient: "+51967426958", type,
+      mediaUrl: "https://example.com/file", replyToExternalMessageId: "wamid.original" });
+  }
+  for (const body of bodies) assert.deepEqual(body.context, { message_id: "wamid.original" });
+  await sendYCloudOutboundMessage({ content: "Sin cita", recipient: "+51967426958", type: "text" });
+  assert.equal(bodies.at(-1)?.context, undefined);
+});
+
 test("catalog document filename is separate from its accompanying caption", async () => {
   process.env.YCLOUD_API_KEY = "test-key";
   process.env.YCLOUD_WHATSAPP_FROM = "+15005550006";

@@ -141,3 +141,19 @@
   .chat-header-name { font-size: 14px; }
   .chat-header-meta { font-size: 11px; }
 }
+.message-bubble { position: relative; }
+.message-reply-actions { position: absolute; top: 4px; right: 4px; z-index: 2; }
+.message-options-toggle { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: #f1f5f9; color: #475569; cursor: pointer; }
+.message-reply-actions ~ .message-sender { padding-right: 28px; }
+.message-reply-option { position: absolute; right: 0; top: 30px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid #dbe4ee; border-radius: 8px; background: white; color: #1e293b; box-shadow: 0 4px 16px #0f172a20; cursor: pointer; white-space: nowrap; }
+.message-quoted-reply { min-width: 0; border-left: 3px solid #059669; border-radius: 5px; background: #05966912; padding: 8px 10px; margin: 4px 0 8px; font-size: 12px; }
+.message-quoted-reply strong { display: block; color: #047857; margin-bottom: 3px; }
+.message-quoted-reply span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; color: #475569; }
+.chat-reply-preview { display: flex; align-items: center; gap: 8px; }
+.chat-reply-preview .message-quoted-reply { flex: 1; }
+.chat-reply-preview > button { flex-shrink: 0; }
+.chat-recorder-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: #64748b; }
+.chat-recording-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: #be123c; font-size: 12px; }
+.chat-recording-controls .icon-btn, .chat-recorder-row > .icon-btn { min-width: 36px; min-height: 36px; }
+.chat-input-attachment:has(.chat-audio-preview) { flex-wrap: wrap; }
+.chat-audio-preview { width: 100%; min-width: 0; height: 40px; }

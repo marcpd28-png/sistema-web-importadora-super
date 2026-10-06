@@ -23,6 +23,7 @@ export class YCloudOutboundError extends Error {
 export type YCloudOutboundMessageType = "text" | "image" | "video" | "document" | "audio";
 
 export type YCloudOutboundMessageInput = {
+  replyToExternalMessageId?: string;
   externalId?: string;
   content: string;
   mediaUrl?: string | null;
@@ -96,7 +97,9 @@ export async function sendYCloudOutboundMessage(
         "Content-Type": "application/json",
         "X-API-Key": apiKey,
       },
-      body: JSON.stringify({ from, to, externalId: input.externalId, ...buildMessage(input) }),
+      body: JSON.stringify({ from, to, externalId: input.externalId, ...buildMessage(input),
+        ...(input.replyToExternalMessageId ? { context: { message_id: input.replyToExternalMessageId } } : {}),
+      }),
       signal: AbortSignal.timeout(15_000),
     });
   } catch {

@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { convertRecordedAudio } from "./recorded-audio";
 
 const MIB = 1024 * 1024;
 const MEDIA: Record<string, { extension: string; max: number }> = {
@@ -15,7 +16,12 @@ const MEDIA: Record<string, { extension: string; max: number }> = {
 
 /** Panel chat uploads are provider media, not storefront WebP thumbnails. */
 export async function prepareWhatsAppUpload(buffer: Buffer, mime: string) {
+  mime = mime.split(";")[0].trim().toLowerCase();
   if (buffer.length > 25 * MIB || !buffer.length) throw new Error("El archivo debe tener contenido y pesar como máximo 25 MB.");
+  if (mime === "audio/webm") {
+    if (buffer.length > 16 * MIB) throw new Error("El audio supera el límite de 16 MB de WhatsApp.");
+    return { buffer: await convertRecordedAudio(buffer), extension: ".ogg" };
+  }
   if (mime.startsWith("image/")) {
     const image = await sharp(buffer, { limitInputPixels: 40_000_000 }).rotate().resize({ width: 1920, height: 1920, fit: "inside", withoutEnlargement: true }).flatten({ background: "#ffffff" }).toColourspace("srgb").withIccProfile("srgb").jpeg({ quality: 85 }).toBuffer();
     if (image.length > 5 * MIB) throw new Error("La imagen optimizada supera el límite de 5 MB de WhatsApp.");

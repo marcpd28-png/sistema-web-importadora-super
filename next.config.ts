@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "25mb",
   },
   output: "standalone",
+  serverExternalPackages: ["ffmpeg-static"],
+  outputFileTracingIncludes: {
+    "/api/admin/uploads": ["./node_modules/ffmpeg-static/ffmpeg", "./node_modules/ffmpeg-static/ffmpeg.exe"],
+  },
   images: {
     remotePatterns: [
       {

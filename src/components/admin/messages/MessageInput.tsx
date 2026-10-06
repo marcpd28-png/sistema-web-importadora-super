@@ -1,14 +1,21 @@
 import { useState, useRef, useEffect } from "react";
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent } from "react";
 import { Paperclip, Send, Loader2, X } from "lucide-react";
+import type { MessageReply } from "@/lib/message-reply";
+import { AudioRecorder } from "./AudioRecorder";
 
 interface Props {
+  replyTo?: MessageReply | null;
+  onCancelReply?: () => void;
   onSendMessage: (content: string, mediaUrl?: string, type?: string) => Promise<void> | void;
 }
 
-export function MessageInput({ onSendMessage }: Props) {
+export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { if (replyTo) textareaRef.current?.focus(); }, [replyTo]);
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -26,7 +33,7 @@ export function MessageInput({ onSendMessage }: Props) {
     }
     setUploadError(null);
     setAttachment(file);
-    setPreviewUrl(file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+    setPreviewUrl(file.type.startsWith("image/") || file.type.startsWith("audio/") ? URL.createObjectURL(file) : null);
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
@@ -41,7 +48,7 @@ export function MessageInput({ onSendMessage }: Props) {
     }
     if (!files.length) return; // Preserve the browser's normal text paste.
     event.preventDefault();
-    if (sendingRef.current) return;
+    if (sendingRef.current || isRecording) return;
     if (files.length > 1) {
       setUploadError("Pega una sola imagen o archivo a la vez.");
       return;
@@ -50,7 +57,7 @@ export function MessageInput({ onSendMessage }: Props) {
   };
 
   const handleSend = () => {
-    if (sendingRef.current) return;
+    if (sendingRef.current || isRecording) return;
     if (attachment) {
       void uploadAndSend(attachment);
       return;
@@ -127,9 +134,10 @@ export function MessageInput({ onSendMessage }: Props) {
 
   return (
     <div className="chat-input-container">
+      {replyTo ? <div className="chat-reply-preview" role="status"><div className="message-quoted-reply"><strong>Respondiendo al cliente</strong><span>{replyTo.content}</span></div><button type="button" className="icon-btn" aria-label="Cancelar respuesta" onClick={onCancelReply}><X size={18} /></button></div> : null}
       {attachment ? (
         <div className="chat-input-attachment" role="group" aria-label="Archivo listo para enviar">
-          {previewUrl ? (
+          {previewUrl && attachment.type.startsWith("audio/") ? <audio className="chat-audio-preview" controls src={previewUrl} aria-label="Escuchar audio antes de enviar" /> : previewUrl ? (
             // Clipboard previews use a local blob URL, not a server image.
             // eslint-disable-next-line @next/next/no-img-element
             <img src={previewUrl} alt="Vista previa de la imagen adjunta" />
@@ -152,12 +160,13 @@ export function MessageInput({ onSendMessage }: Props) {
           title="Adjuntar" 
           type="button" 
           onClick={triggerFileInput}
-          disabled={isUploading}
+          disabled={isUploading || isRecording}
         >
           {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Paperclip size={18} />}
         </button>
         
         <textarea 
+          ref={textareaRef}
           aria-describedby="message-input-help"
           aria-label="Mensaje para el cliente"
           className="chat-input-textarea" 
@@ -166,7 +175,7 @@ export function MessageInput({ onSendMessage }: Props) {
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          disabled={isUploading}
+          disabled={isUploading || isRecording}
           rows={1}
         />
         
@@ -175,7 +184,7 @@ export function MessageInput({ onSendMessage }: Props) {
             aria-label="Enviar mensaje"
             className="icon-btn" 
             onClick={handleSend}
-            disabled={(!message.trim() && !attachment) || isUploading}
+            disabled={(!message.trim() && !attachment) || isUploading || isRecording}
             title="Enviar"
             type="button"
           >
@@ -183,6 +192,7 @@ export function MessageInput({ onSendMessage }: Props) {
           </button>
         </div>
       </div>
+      <div className="chat-recorder-row"><AudioRecorder disabled={isUploading || Boolean(attachment) || Boolean(message.trim())} onRecorded={selectAttachment} onBusyChange={setIsRecording} onError={setUploadError} />{!isRecording ? <small>Graba un audio de hasta 5 minutos.</small> : null}</div>
       <div className="chat-input-help" id="message-input-help">
         Puedes pegar texto o imágenes con Ctrl+V (⌘+V en Mac). Enter para enviar; Shift + Enter para salto de línea.
       </div>

@@ -8,6 +8,7 @@ import { CustomerPanel } from "./CustomerPanel";
 import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import type { ChatMessage, Conversation, MessageType } from "@/types/messages";
+import { createMessageReply, readMessageReply, type MessageReply } from "@/lib/message-reply";
 
 const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
@@ -208,6 +209,7 @@ export function MessagesWorkspace() {
   const [conversationHasMore, setConversationHasMore] = useState(false);
   const [activeMessages, setActiveMessages] = useState<ChatMessage[]>([]);
   const [activeId, setActiveId] = useState<string | undefined>();
+  const [replyTo, setReplyTo] = useState<MessageReply | null>(null);
   const [messageTotal, setMessageTotal] = useState(0);
   const [messageHasMore, setMessageHasMore] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -443,6 +445,7 @@ export function MessagesWorkspace() {
 
   const handleSelectConversation = (id: string) => {
     setActiveId(id);
+    setReplyTo(null);
     setConversations((current) =>
       current.map((conversation) =>
         conversation.id === id ? { ...conversation, unreadCount: 0 } : conversation,
@@ -459,18 +462,21 @@ export function MessagesWorkspace() {
   };
 
   const handleBackToConversations = () => {
+    setReplyTo(null);
     setActiveId(undefined);
     setActiveMessages([]);
     setMessageTotal(0);
     setMessageHasMore(false);
   };
 
-  const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT") => {
+  const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT", reply: MessageReply | null = replyTo) => {
     if (!activeId) {
       return;
     }
 
     const now = new Date();
+    setReplyTo(null);
+    const replyMetadata = reply ? { replyTo: reply } : {};
     const requestId = crypto.randomUUID();
     const messageType = asMessageType(type);
     const tempMessage: ChatMessage = {
@@ -482,7 +488,7 @@ export function MessagesWorkspace() {
       id: `m-new-${now.getTime()}`,
       mediaUrl: mediaUrl || null,
       messageType,
-      metadata: { requestId },
+      metadata: { requestId, ...replyMetadata },
       senderType: "AGENT",
       status: "sending",
     };
@@ -512,7 +518,7 @@ export function MessagesWorkspace() {
 
     try {
       const response = await fetch(`/api/admin/conversations/${activeId}/messages`, {
-        body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined, requestId }),
+        body: JSON.stringify({ content, type, mediaUrl: mediaUrl || undefined, requestId, replyToMessageId: reply?.id }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -534,7 +540,7 @@ export function MessagesWorkspace() {
       console.error("Send error", { requestId, reason });
       setActiveMessages((current) =>
         current.map((message) => (message.id === tempMessage.id
-          ? { ...message, status: "failed", metadata: { requestId, error: reason } }
+          ? { ...message, status: "failed", metadata: { requestId, ...replyMetadata, error: reason } }
           : message)),
       );
     }
@@ -677,7 +683,8 @@ export function MessagesWorkspace() {
                   <MessageBubble
                     key={message.id}
                     message={message}
-                    onRetry={(failed) => void handleSendMessage(failed.content, failed.mediaUrl ?? undefined, failed.messageType)}
+                    onReply={(message) => setReplyTo(createMessageReply(message))}
+                    onRetry={(failed) => void handleSendMessage(failed.content, failed.mediaUrl ?? undefined, failed.messageType, readMessageReply(failed.metadata))}
                   />
                 ))
               )}
@@ -692,7 +699,7 @@ export function MessagesWorkspace() {
             </div>
 
             <div className="chat-count">{activeMessages.length} de {messageTotal} mensajes cargados</div>
-            <MessageInput key={activeId} onSendMessage={handleSendMessage} />
+            <MessageInput key={activeId} onSendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} />
           </div>
 
           <CustomerPanel conversation={activeConversation} />
