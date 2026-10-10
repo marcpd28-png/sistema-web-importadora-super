@@ -1,7 +1,9 @@
 export type SocialChannel = "messenger" | "tiktok";
+export type SocialSystemEvent = "meta_ai_handover";
 export type SocialMessage = {
   id: string; text: string | null; createdAt: string; contactInboxId: string;
   messageType: string; deletedAt: string | null; sendError: string | null;
+  sourceId?: string | null; senderType?: string | null; systemEvent?: SocialSystemEvent | null;
   attachments?: { id: string; name: string | null; url: string | null; fileType?: string; mimeType?: string }[];
 };
 export type SocialConversation = {
@@ -16,6 +18,39 @@ export class SocialInboxError extends Error {
 }
 
 const DEFAULT_MESSENGER_META_RESUME_MINUTES = 15;
+const SOCIAL_REPLY_DEDUPLICATION_MS = 10_000;
+const SOCIAL_REPLY_PENDING_MS = 30_000;
+const recentSocialReplies = new Map<string, { expiresAt: number; result: Promise<SocialMessage> }>();
+
+function compactText(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function socialReplyKey(channel: SocialChannel, conversationId: string, text: string, mediaFileId?: string) {
+  return [channel, conversationId, compactText(text), mediaFileId || ""].join("\u0001");
+}
+
+function socialSystemEvent(message: SocialMessage): SocialSystemEvent | null {
+  // Meta writes this ownership notification as an outgoing provider message. It is
+  // a status event for the adviser, not text that should be presented as a reply.
+  return /^you took over this chat from your ai agent\.?$/i.test(compactText(message.text || ""))
+    ? "meta_ai_handover"
+    : null;
+}
+
+export function dedupeSocialMessages(messages: SocialMessage[]) {
+  const unique = new Map<string, SocialMessage>();
+  for (const message of messages) {
+    // The provider can return the API acknowledgement and its webhook echo as
+    // distinct rows. They carry the same sourceId and represent one delivery.
+    const key = message.sourceId ? `source:${message.sourceId}` : `message:${message.id}`;
+    const current = unique.get(key);
+    const currentPriority = current?.senderType === "user" ? 2 : current?.senderType === "api" ? 1 : 0;
+    const messagePriority = message.senderType === "user" ? 2 : message.senderType === "api" ? 1 : 0;
+    if (!current || messagePriority >= currentPriority) unique.set(key, message);
+  }
+  return [...unique.values()];
+}
 
 export function messengerMetaResumeMinutes(value = process.env.MESSENGER_META_AI_RESUME_MINUTES) {
   if (value === undefined || value.trim() === "") return DEFAULT_MESSENGER_META_RESUME_MINUTES;
@@ -81,8 +116,10 @@ export async function socialConversation(id: string, channel: SocialChannel) {
 }
 
 export function safeSocialMessage(message: SocialMessage): SocialMessage {
-  return { id: message.id, text: message.deletedAt ? null : message.text, createdAt: message.createdAt,
+  const systemEvent = socialSystemEvent(message);
+  return { id: message.id, text: message.deletedAt || systemEvent ? null : message.text, createdAt: message.createdAt,
     contactInboxId: message.contactInboxId, messageType: message.messageType,
+    systemEvent,
     deletedAt: message.deletedAt, sendError: message.sendError
       ? /\b2018300\b/.test(message.sendError)
         ? "Facebook rechazó el envío porque otra app controla esta conversación. Revisa el enrutamiento de Messenger de la página."
@@ -102,7 +139,7 @@ export async function socialReplyInbox(channel: SocialChannel, conversationId: s
   return inbox;
 }
 
-export async function sendSocialReply(channel: SocialChannel, conversationId: string, text: string, requestId: string, mediaFileId?: string) {
+async function sendSocialReplyOnce(channel: SocialChannel, conversationId: string, text: string, requestId: string, mediaFileId?: string) {
   if (mediaFileId && (channel !== "messenger" || !/^\d+$/.test(mediaFileId))) throw new SocialInboxError("Adjunto no válido para este canal.", 400);
   const inbox = await socialReplyInbox(channel, conversationId);
   if (channel === "messenger" && process.env.MESSENGER_CONTROL_TOKEN) {
@@ -113,4 +150,28 @@ export async function sendSocialReply(channel: SocialChannel, conversationId: st
   const message = await socialRequest<SocialMessage>(`/conversations/${conversationId}/messages`, { ...(text ? { text } : {}), inboxId: inbox.inboxId, ...(mediaFileId ? { mediaFileId } : {}) }, requestId);
   if (!message?.id) throw new SocialInboxError("El envío no está confirmado. Revisa la conversación antes de repetirlo.");
   return safeSocialMessage(message);
+}
+
+export function sendSocialReply(channel: SocialChannel, conversationId: string, text: string, requestId: string, mediaFileId?: string) {
+  const key = socialReplyKey(channel, conversationId, text, mediaFileId);
+  const now = Date.now();
+  for (const [cachedKey, cached] of recentSocialReplies) {
+    if (cached.expiresAt <= now) recentSocialReplies.delete(cachedKey);
+  }
+  const existing = recentSocialReplies.get(key);
+  if (existing && existing.expiresAt > now) return existing.result;
+  if (existing) recentSocialReplies.delete(key);
+
+  const result = sendSocialReplyOnce(channel, conversationId, text, requestId, mediaFileId);
+  const entry = { expiresAt: now + SOCIAL_REPLY_PENDING_MS, result };
+  recentSocialReplies.set(key, entry);
+  void result.then(
+    () => {
+      if (recentSocialReplies.get(key) === entry) entry.expiresAt = Date.now() + SOCIAL_REPLY_DEDUPLICATION_MS;
+    },
+    () => {
+      if (recentSocialReplies.get(key) === entry) recentSocialReplies.delete(key);
+    },
+  );
+  return result;
 }

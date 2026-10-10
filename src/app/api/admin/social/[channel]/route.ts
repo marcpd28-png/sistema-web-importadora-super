@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { parseSocialChannel, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
+import { dedupeSocialMessages, parseSocialChannel, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,8 @@ export async function GET(request: NextRequest, context: Context) {
     if (id) {
       const { conversation, inbox } = await socialConversation(id, channel);
       const page = await socialRequest<SocialPage<SocialMessage>>(`/conversations/${id}/messages?${query}`);
-      return NextResponse.json({ ...page, data: page.data.filter(m => m.contactInboxId === inbox.id).map(safeSocialMessage), botEnabled: conversation.botEnabled }, { headers: { "Cache-Control": "no-store" } });
+      const channelMessages = page.data.filter(m => m.contactInboxId === inbox.id);
+      return NextResponse.json({ ...page, data: dedupeSocialMessages(channelMessages).map(safeSocialMessage), botEnabled: conversation.botEnabled }, { headers: { "Cache-Control": "no-store" } });
     }
     query.set("channel", channel);
     query.set("botCategory", "all");

@@ -11,6 +11,7 @@ import styles from "./SocialInbox.module.css";
 
 type Conversation = { id: string; name: string; preview: string; botEnabled: boolean };
 type Page<T> = { data: T[]; nextCursor: string | null };
+type SystemNotice = Pick<SocialMessage, "id" | "createdAt" | "systemEvent">;
 async function get<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: "no-store" });
   const body = await response.json();
@@ -24,6 +25,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SocialMessage[]>([]);
+  const [systemNotice, setSystemNotice] = useState<SystemNotice | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [messageCursor, setMessageCursor] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -67,8 +69,12 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
     const page = await get<Page<SocialMessage> & { botEnabled: boolean }>(`${base}?conversationId=${id}${older ? `&cursor=${encodeURIComponent(older)}` : ""}`);
     if (selectedId.current !== id) return;
     setSelected(current => current?.id === id ? { ...current, botEnabled: page.botEnabled } : current);
+    const notices = page.data.filter((message): message is SocialMessage & { systemEvent: NonNullable<SocialMessage["systemEvent"]> } => Boolean(message.systemEvent));
+    const newestNotice = notices.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
+    if (newestNotice) setSystemNotice(current => !current || Date.parse(newestNotice.createdAt) > Date.parse(current.createdAt) ? newestNotice : current);
     setMessages(previous => {
-      const unique = new Map([...previous, ...page.data].map(message => [message.id, message]));
+      const visibleMessages = page.data.filter(message => !message.systemEvent);
+      const unique = new Map([...previous, ...visibleMessages].map(message => [message.id, message]));
       return [...unique.values()].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
     });
     if (older || initial) setMessageCursor(page.nextCursor);
@@ -79,7 +85,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
     return () => clearInterval(timer);
   }, [selected, loadMessages]);
   async function select(conversation: Conversation) {
-    selectedId.current = conversation.id; setSelected(conversation); setMessages([]); setMessageCursor(null); followBottom.current = true; setUncertain(false); setMessageLoading(true); setError("");
+    selectedId.current = conversation.id; setSelected(conversation); setMessages([]); setSystemNotice(null); setMessageCursor(null); followBottom.current = true; setUncertain(false); setMessageLoading(true); setError("");
     try { await loadMessages(conversation.id, undefined, true); } catch (e) { setError((e as Error).message); }
     finally { if (selectedId.current === conversation.id) setMessageLoading(false); }
   }
@@ -134,6 +140,11 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
         {!selected ? <div className="empty-state"><MessageCircle size={64} /><h2>Centro de Mensajes</h2><p>Selecciona una conversación de {title} para responder.</p></div> : <>
           <div className="chat-header"><button className="icon-btn chat-header-back" aria-label="Volver a conversaciones" disabled={controlling || sending || uploading} onClick={() => { selectedId.current = null; setSelected(null); }}><ArrowLeft size={20} /></button><div className="chat-header-info"><div className="chat-header-avatar"><DynamicAvatar name={selected.name} /></div><div><h3 className="chat-header-name">{selected.name}</h3><div className="chat-header-meta">{title}{channel !== "messenger" && ` · ${selected.botEnabled ? "Bot activo" : "Atención por asesor"}`}</div></div></div></div>
           {channel === "messenger" && <MessengerControl key={`control:${selected.id}:${controlRevision}`} conversationId={selected.id} disabled={controlling || sending || uploading} onBusyChange={setControlling} />}
+          {systemNotice?.systemEvent === "meta_ai_handover" && <div className={styles.handoverNotice} role="status">
+            <span className={styles.handoverIcon} aria-hidden="true">✓</span>
+            <div><strong>Control manual activado</strong><p>Tomaste el control de este chat desde tu agente de IA.</p></div>
+            <time dateTime={systemNotice.createdAt}>{new Date(systemNotice.createdAt).toLocaleString("es-PE")}</time>
+          </div>}
           <div className="chat-messages" aria-live="polite" onScroll={e => { const el = e.currentTarget; followBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
             {messageLoading && <p>Cargando mensajes…</p>}
             {messageCursor && <button className="messages-load-older" onClick={() => { followBottom.current = false; void loadMessages(selected.id, messageCursor).catch(e => setError(e.message)); }}>Ver mensajes anteriores</button>}
