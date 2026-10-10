@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Zap, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore } from "lucide-react";
+import { Inbox, Zap, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore, Send } from "lucide-react";
 
 export function MessagesSidebar() {
   const pathname = usePathname();
 
   const navItems = [
     { name: "Bandeja", href: "/admin/mensajes", icon: Inbox, exact: true },
+    { name: "Telegram", href: "/admin/mensajes/telegram", icon: Send, exact: true },
+    { name: "Messenger", href: "/admin/mensajes/messenger", icon: MessageCircleMore, exact: true },
+    { name: "TikTok", href: "/admin/mensajes/tiktok", icon: MessageCircleMore, exact: true },
     { name: "Automatizaciones", href: "/admin/mensajes/automatizaciones", icon: Zap, exact: false },
     { name: "Plantillas", href: "/admin/mensajes/plantillas", icon: FileCode2, exact: false },
     { name: "Contactos", href: "/admin/mensajes/contactos", icon: Users, exact: false },

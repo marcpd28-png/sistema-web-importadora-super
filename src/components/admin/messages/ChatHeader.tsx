@@ -35,7 +35,7 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
         <div>
           <h3 className="chat-header-name">{contact.name}</h3>
           <div className="chat-header-meta">
-            <span>{contact.phone || contact.phoneNormalized || 'Sin teléfono'}</span>
+            <span>{conversation.channel === "TELEGRAM" ? 'Telegram · Super Importaciones' : contact.phone || contact.phoneNormalized || 'Sin teléfono'}</span>
           </div>
         </div>
       </div>

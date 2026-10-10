@@ -12,7 +12,7 @@ export function documentFilename(url: string) {
 /** Prefer the provider's original filename over an opaque storage identifier. */
 export function documentAttachmentName(url: string, metadata?: unknown) {
   const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
-  const originalName = record(record(record(metadata).raw).document).filename;
+  const originalName = record(metadata).filename ?? record(record(record(metadata).raw).document).filename;
   if (typeof originalName === "string" && originalName.trim()) {
     return originalName.replace(/[\\/\x00-\x1f]/g, "_").trim().slice(0, 180);
   }

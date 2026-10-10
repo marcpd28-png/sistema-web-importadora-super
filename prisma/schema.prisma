@@ -150,6 +150,7 @@ enum ComplaintStatus {
 enum Channel {
   WHATSAPP
   WEB
+  TELEGRAM
 }
 
 enum ConversationState {
@@ -877,6 +878,10 @@ model Conversation {
   updatedAt            DateTime                @updatedAt
   unreadCount          Int                     @default(0)
   lastReadAt           DateTime?
+  telegramConnectionId String?                 @db.VarChar(180)
+  telegramChatId       String?                 @db.VarChar(32)
+  telegramLastInboundAt DateTime?
+  telegramRevision     Int                     @default(0)
   messages             ChatMessage[]
   salesState           ConversationSalesState?
   automationExecutions AutomationExecution[]
@@ -889,6 +894,11 @@ model Conversation {
   @@index([lastMessageAt(sort: Desc)])
   @@index([botEnabled])
   @@index([assignedUserId])
+}
+
+model TelegramInboxEvent {
+  id        String   @id @db.VarChar(120)
+  createdAt DateTime @default(now())
 }
 
 model ChatMessage {

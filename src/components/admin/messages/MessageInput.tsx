@@ -5,12 +5,18 @@ import type { MessageReply } from "@/lib/message-reply";
 import { AudioRecorder } from "./AudioRecorder";
 
 interface Props {
+  disabled?: boolean;
+  maxFileSizeMB?: number;
+  maxLength?: number;
+  attachmentsEnabled?: boolean;
+  accept?: string;
+  onUploadFile?: (file: File) => Promise<string>;
   replyTo?: MessageReply | null;
   onCancelReply?: () => void;
   onSendMessage: (content: string, mediaUrl?: string, type?: string) => Promise<void> | void;
 }
 
-export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
+export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", onUploadFile }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (replyTo) textareaRef.current?.focus(); }, [replyTo]);
   const [message, setMessage] = useState("");
@@ -27,8 +33,9 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
   }, [previewUrl]);
 
   const selectAttachment = (file: File) => {
-    if (!file.size || file.size > 25 * 1024 * 1024) {
-      setUploadError(file.size ? "El archivo supera el tamaño permitido de 25 MB." : "El archivo está vacío.");
+    if (disabled || !attachmentsEnabled) return;
+    if (!file.size || file.size > maxFileSizeMB * 1024 * 1024) {
+      setUploadError(file.size ? `El archivo supera el tamaño permitido de ${maxFileSizeMB} MB.` : "El archivo está vacío.");
       return;
     }
     setUploadError(null);
@@ -56,22 +63,26 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
     selectAttachment(files[0]);
   };
 
-  const handleSend = () => {
-    if (sendingRef.current || isRecording) return;
+  const handleSend = async () => {
+    if (disabled || sendingRef.current || isRecording) return;
     if (attachment) {
       void uploadAndSend(attachment);
       return;
     }
     if (message.trim()) {
-      onSendMessage(message.trim());
-      setMessage("");
+      sendingRef.current = true;
+      setIsUploading(true);
+      setUploadError(null);
+      try { await onSendMessage(message.trim()); setMessage(""); }
+      catch (error) { setUploadError(error instanceof Error ? error.message : "No se pudo enviar el mensaje."); }
+      finally { sendingRef.current = false; setIsUploading(false); }
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   };
 
@@ -92,6 +103,12 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
     setIsUploading(true);
     setUploadError(null);
     try {
+      if (onUploadFile) {
+        const mediaId = await onUploadFile(file);
+        await onSendMessage(message.trim(), mediaId);
+        setMessage(""); setAttachment(null); setPreviewUrl(null);
+        return;
+      }
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", "documents");
@@ -121,7 +138,7 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
       setPreviewUrl(null);
     } catch (err) {
       console.error(err);
-      setUploadError("No se pudo enviar el archivo. Revisa tu conexión e intenta nuevamente.");
+      setUploadError(err instanceof Error ? err.message : "No se pudo enviar el archivo. Revisa tu conexión e intenta nuevamente.");
     } finally {
       sendingRef.current = false;
       setIsUploading(false);
@@ -152,18 +169,18 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
           ref={fileInputRef} 
           style={{ display: "none" }} 
           onChange={handleFileChange}
-          accept="image/*,video/*,audio/*,application/pdf"
+          accept={accept}
         />
-        <button 
+        {attachmentsEnabled && <button
           aria-label="Adjuntar archivo"
           className="icon-btn" 
           title="Adjuntar" 
           type="button" 
           onClick={triggerFileInput}
-          disabled={isUploading || isRecording}
+          disabled={disabled || isUploading || isRecording}
         >
           {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Paperclip size={18} />}
-        </button>
+        </button>}
         
         <textarea 
           ref={textareaRef}
@@ -172,20 +189,21 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply }: Props) {
           className="chat-input-textarea" 
           placeholder={isUploading ? "Subiendo archivo..." : "Escribe un mensaje..."}
           value={message}
+          maxLength={maxLength}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          disabled={isUploading || isRecording}
+          disabled={disabled || isUploading || isRecording}
           rows={1}
         />
         
         <div className="chat-input-actions">
-          <AudioRecorder disabled={isUploading || Boolean(attachment) || Boolean(message.trim())} onRecorded={selectAttachment} onBusyChange={setIsRecording} onError={setUploadError} />
+          {attachmentsEnabled && <AudioRecorder disabled={disabled || isUploading || Boolean(attachment) || Boolean(message.trim())} onRecorded={selectAttachment} onBusyChange={setIsRecording} onError={setUploadError} />}
           {!isRecording ? <button 
             aria-label="Enviar mensaje"
             className="icon-btn" 
             onClick={handleSend}
-            disabled={(!message.trim() && !attachment) || isUploading || isRecording}
+            disabled={disabled || (!message.trim() && !attachment) || isUploading || isRecording}
             title="Enviar"
             type="button"
           >

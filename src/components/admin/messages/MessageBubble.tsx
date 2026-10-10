@@ -9,7 +9,7 @@ interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void
 
 function getMediaSource(message: ChatMessage) {
   return message.mediaUrl && (() => {
-    try { return ycloudMediaKind(message.mediaUrl) ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
+    try { return message.mediaUrl.startsWith('telegram-file:') || ycloudMediaKind(message.mediaUrl) ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
     catch { return message.mediaUrl; }
   })();
 }
@@ -26,7 +26,7 @@ function MediaAttachment({ message, onOpen }: { message: ChatMessage; onOpen: ()
 export function MessageBubble({ message, onRetry, onReply }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reply = readMessageReply(message.metadata);
-  const canReply = Boolean(onReply && message.senderType === "CUSTOMER" && message.externalMessageId?.startsWith("wamid."));
+  const canReply = Boolean(onReply && message.status !== "deleted" && message.senderType === "CUSTOMER" && (message.externalMessageId?.startsWith("wamid.") || message.externalMessageId?.startsWith("tg:")));
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";
@@ -60,7 +60,8 @@ export function MessageBubble({ message, onRetry, onReply }: Props) {
     {(isAgent || isBot) && message.status === "accepted" ? <span className="message-delivery-status">Aceptado; entrega no confirmada.</span> : null}
     {message.status === "queued" ? <span className="message-sending-status">En cola; todavía no enviado.</span> : null}
     {message.status === "cancelled" ? <span className="message-delivery-status">Cancelado; no se envió.</span> : null}
-    {message.status === "uncertain" ? <span className="message-failure-status">Entrega sin confirmar. Revisa WhatsApp antes de volver a enviar.</span> : null}
+    {message.status === "uncertain" ? <span className="message-failure-status">Entrega sin confirmar. Revisa la conversación antes de volver a enviar.</span> : null}
+    {message.status === "deleted" ? <span className="message-delivery-status">Eliminado en Telegram · copia conservada en la tienda.</span> : null}
     {isSending ? <span className="message-sending-status">Enviando...</span> : null}
     {isFailed ? <span className="message-failure-status">{failureReason}</span> : null}
     {isFailed && onRetry ? <button className="message-retry" onClick={() => onRetry(message)} type="button">Reintentar</button> : null}

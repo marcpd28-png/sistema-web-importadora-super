@@ -1,0 +1,43 @@
+"""Focused regression tests for the Messenger ownership fallback."""
+import importlib.util
+import pathlib
+import unittest
+
+
+MODULE_PATH = pathlib.Path(__file__).with_name("service.py")
+SPEC = importlib.util.spec_from_file_location("messenger_control", MODULE_PATH)
+service = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(service)
+
+
+class ProviderOwnerFallbackTests(unittest.TestCase):
+    def test_unsupported_owner_lookup_does_not_block_take_control(self):
+        provider = service.Provider("internal-token")
+        requests = []
+
+        def request(url, _token, data=None, allow_owner_lookup_fallback=False):
+            requests.append((url, data, allow_owner_lookup_fallback))
+            if "thread_owner" in url:
+                self.assertTrue(allow_owner_lookup_fallback)
+                return None
+            return {"success": True}
+
+        provider.request = request
+        context = {"recipient": "123", "auth": {"version": "v25.0", "tokens": {"accessToken": "page-token"}}}
+        provider.graph(context, "take")
+
+        self.assertTrue(any(url.endswith("/me/take_thread_control") for url, _, _ in requests))
+        self.assertTrue(all(not url.endswith("/extend_thread_control") for url, _, _ in requests))
+
+    def test_owner_state_is_marked_unverified_when_graph_hides_it(self):
+        provider = service.Provider("internal-token")
+        provider.request = lambda *_args, **_kwargs: None
+        context = {"recipient": "123", "auth": {"version": "v25.0", "tokens": {"accessToken": "page-token"}}}
+
+        self.assertEqual(provider.graph(context, "owner"), {
+            "owner": "unknown", "expiresAt": None, "ownerVerified": False,
+        })
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,128 @@
+--- a/app.py
++++ b/app.py
+@@ -144,6 +144,7 @@
+         self.db.commit()
+         self.api, self.forward, self.owner_username, self.now = api, forward, owner_username, now
+         self.lock = threading.Lock()
++        self.inbox = None
+         self.inventory, self.deliveries = inventory, deliveries
+         self.shopping = Shopping(self.db,self.send,self.now,store=store,send_photo=self.send_payment_photo)
+         from orders import Orders
+@@ -220,10 +221,16 @@
+         if not isinstance(uid, int): raise ValueError('update_id required')
+         with self.lock:
+             if self.db.execute('SELECT 1 FROM events WHERE id=?', (uid,)).fetchone(): return
++            if self.inbox: self.inbox.observe(update, self)
+             self.db.execute('INSERT INTO events VALUES (?,?,?)', (uid,'processing',self.now()))
+             self.db.commit()
++
+             try:
+-                if admin:self.orders.admin(direct['text'])
++                if admin:
++                    if self.inbox:self.inbox.explicit.allowed = True
++                    try:self.orders.admin(direct['text'])
++                    finally:
++                        if self.inbox:self.inbox.explicit.allowed = False
+                 else:self._process_business(update)
+                 self.db.execute('UPDATE events SET state=? WHERE id=?', ('done',uid))
+             except Exception as error:
+@@ -241,6 +248,9 @@
+                     print('business_error_type '+type(error).__name__,flush=True)
+             self.db.execute('DELETE FROM events WHERE at < ?', (self.now()-7*86400,))
+             self.db.commit()
++            if self.inbox:
++                message = update.get('business_message') or update.get('edited_business_message') or (update.get('callback_query') or {}).get('message') or {}
++                self.inbox.snapshot(self, message.get('business_connection_id'), message.get('chat', {}).get('id'))
+
+     def _process_business(self, u):
+         if 'business_connection' in u:
+@@ -264,6 +274,9 @@
+                 self.shopping.human_support(cid,chat)
+             return
+         if sender.get('id') != chat: return
++        if self.inbox and self.inbox.paused(cid, chat):
++            if callback: self.api('answerCallbackQuery', {'callback_query_id': callback['id'], 'text': 'Una asesora está atendiendo este chat.'})
++            return
+         support=self.shopping.support_session(cid,chat)
+         if support and support[0]=='human':
+             if callback and callback.get('data')=='rocky:resume':
+@@ -376,6 +389,7 @@
+
+     def delivery_allowed(self, cid, chat, created):
+         with self.lock:
++            if self.inbox and self.inbox.paused(cid, chat): return False
+             if self.shopping.support_session(cid,chat): return False
+             row=self.db.execute('''SELECT connections.enabled,connections.reply,chats.human
+                 FROM connections JOIN chats ON chats.connection=connections.id
+@@ -388,7 +402,13 @@
+     MINIAPP_ENABLED = bool(config.get('miniapp_enabled'))
+     from outbound_archive import OutboundArchive
+     archive=OutboundArchive("/data/outbound-history.sqlite")
++    inbox = None
+     def raw_api(method, body):
++        body = dict(body)
++        inbox_request_id = body.pop('_inbox_request_id', None)
++        explicit_send = body.pop('_inbox_explicit', False)
++        if inbox and not inbox_request_id and not explicit_send and method.startswith('send') and body.get('business_connection_id') and inbox.paused(body['business_connection_id'], body.get('chat_id')):
++            return {}
+         from retention_gate import require_retention
+         require_retention(method, body)
+         body = style_bot_buttons(body)
+@@ -399,10 +419,17 @@
+         if not data.get('ok'): raise RuntimeError('Telegram request failed')
+         try: archive.finish(archive_key,'sent',data['result'])
+         except Exception as exc: print('archive_result_failed '+type(exc).__name__,flush=True)
++        if inbox and method.startswith('send') and body.get('business_connection_id') and isinstance(data['result'], dict):
++            inbox.message(dict(data['result'], business_connection_id=body['business_connection_id']), 'AGENT' if inbox_request_id else 'BOT', local_id=inbox_request_id)
+         return data['result']
++    from inbox import Inbox, handle as handle_inbox
++    inbox = Inbox('/data/store-inbox.sqlite', config, raw_api)
+     from sending import FloodSender
+-    api=FloodSender('/data/telegram-retries.sqlite',raw_api)
+-    api.start()
++    sender=FloodSender('/data/telegram-retries.sqlite',raw_api)
++    sender.start()
++    def api(method, body):
++        if inbox and getattr(inbox.explicit, 'allowed', False): body=dict(body, _inbox_explicit=True)
++        return sender(method,body)
+     def forward(update):
+         req=urllib.request.Request(config['upstream'],data=json.dumps(update).encode(),
+             headers={'Content-Type':'application/json'})
+@@ -422,6 +449,8 @@
+         from store import StoreClient
+         store=StoreClient(Path('/run/config/store-key.secret').read_text().strip())
+     adapter=Adapter('/data/state.sqlite',api,forward,config['owner_username'],inventory=inventory,deliveries=deliveries,store=store)
++    adapter.inbox = inbox
++    inbox.start()
+     if deliveries:
+         deliveries.allowed=adapter.delivery_allowed
+         deliveries.start()
+@@ -432,6 +461,7 @@
+             self.send_response(status); self.send_header('Content-Type','application/json')
+             self.send_header('Content-Length',str(len(body))); self.end_headers(); self.wfile.write(body)
+         def do_GET(self):
++            if handle_inbox(inbox, adapter, self): return
+             from urllib.parse import urlsplit,parse_qs
+             path=urlsplit(self.path).path
+             if path in ('/catalog/','/catalog/app.js','/catalog/style.css','/catalog/payments.jpeg'):
+@@ -453,6 +483,7 @@
+             elif self.path == '/health': self.reply(200,adapter.status())
+             else: self.reply(404,{'ok':False})
+         def do_POST(self):
++            if handle_inbox(inbox, adapter, self): return
+             if self.path in ('/catalog/cart','/catalog/cart/state','/catalog/cart/checkout'):
+                 try:
+                     if self.headers.get('Origin') != 'https://chatbot.tiendavirtualsuper.com':
+@@ -464,7 +495,11 @@
+                     from miniapp import telegram_user,import_cart,read_cart,checkout_cart
+                     user=telegram_user(payload.get('init_data'),config['token'])
+                     with adapter.lock:
+-                        result=read_cart(adapter,user,payload.get('order_reference')) if self.path.endswith('/state') else checkout_cart(adapter,user,payload) if self.path.endswith('/checkout') else import_cart(adapter,user,payload)
++                        # Explicit checkout confirmations remain deliverable during human attention.
++                        inbox.explicit.allowed = self.path.endswith('/checkout')
++                        try:
++                            result=read_cart(adapter,user,payload.get('order_reference')) if self.path.endswith('/state') else checkout_cart(adapter,user,payload) if self.path.endswith('/checkout') else import_cart(adapter,user,payload)
++                        finally: inbox.explicit.allowed = False
+                     self.reply(200,result)
+                 except ValueError as e: self.reply(400,{'error':str(e)})
+                 except Exception: self.reply(503,{'error':'No pude completar la consulta. Tu selección se conserva; intenta de nuevo.'})

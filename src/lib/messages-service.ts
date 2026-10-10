@@ -14,6 +14,7 @@ import {
 } from "@/lib/conversation-context";
 import { scheduleRockyTurn } from "./rocky-inbox-intake";
 import { buildPublicUrl } from "@/lib/site-url";
+import { sendTelegramMessage, controlTelegram } from "./telegram-messages";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
@@ -439,6 +440,8 @@ export async function sendInternalMessage(
     throw new Error("Conversation not found");
   }
 
+  if (conversation.channel === "TELEGRAM") return sendTelegramMessage(conversation, parsed, agentId);
+
   const replyTarget = parsed.replyToMessageId ? await prisma.chatMessage.findFirst({
     where: { id: parsed.replyToMessageId, conversationId, senderType: "CUSTOMER" },
   }) : null;
@@ -572,6 +575,12 @@ export type UpdateConversationInput = z.infer<typeof updateConversationSchema>;
 export async function updateConversation(id: string, input: UpdateConversationInput) {
   const parsed = updateConversationSchema.parse(input);
   const { markAsRead, ...conversationChanges } = parsed;
+  const existing = await prisma.conversation.findUniqueOrThrow({ where: { id } });
+  let telegramRevision: number | undefined;
+  if (existing.channel === "TELEGRAM" && (parsed.botEnabled !== undefined || parsed.assignedUserId || parsed.status)) {
+    const enabled = parsed.botEnabled ?? (parsed.assignedUserId || parsed.status !== "AUTOMATICO" ? false : existing.botEnabled);
+    telegramRevision = (await controlTelegram(existing, enabled)).revision;
+  }
 
   // Activar Rocky devuelve la conversación a la cola automática. Esto evita
   // conservar una asignación anterior que impediría al bot retomarla.
@@ -583,6 +592,7 @@ export async function updateConversation(id: string, input: UpdateConversationIn
     where: { id },
     data: {
       ...data,
+      ...(telegramRevision !== undefined ? { telegramRevision } : {}),
       ...(markAsRead ? { unreadCount: 0, lastReadAt: new Date() } : {}),
     },
     include: {

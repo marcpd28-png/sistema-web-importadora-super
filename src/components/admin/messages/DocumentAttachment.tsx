@@ -8,11 +8,12 @@ import { documentAttachmentName } from "@/lib/document-filename";
 import { PdfPage } from "./PdfPage";
 
 interface Props { src: string; originalUrl: string; caption?: string; metadata?: unknown; }
-type LoadedDocument = { url: string; pdf: boolean; pages?: PDFDocumentProxy; size: number };
+type LoadedDocument = { url: string; pdf: boolean; pages?: PDFDocumentProxy; size: number; remote?: boolean };
 
 export function DocumentAttachment({ src, originalUrl, caption, metadata }: Props) {
   const name = documentAttachmentName(originalUrl, metadata);
   const isPdf = /\.pdf$/i.test(name);
+  const isTelegram = Boolean(metadata && typeof metadata === "object" && "provider" in metadata && metadata.provider === "telegram");
   const dialog = useRef<HTMLDialogElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const controller = useRef<AbortController | null>(null);
@@ -59,6 +60,13 @@ export function DocumentAttachment({ src, originalUrl, caption, metadata }: Prop
       try {
         const response = await fetch(src, { credentials: "same-origin", signal: abort.signal });
         if (!response.ok) throw new Error("unavailable");
+        const size = Number(response.headers.get("content-length"));
+        if (isTelegram && size > 25 * 1024 * 1024) {
+          await response.body?.cancel();
+          if (!mounted.current || abort.signal.aborted) return null;
+          const file: LoadedDocument = { url: src, pdf: isPdf, size, remote: true };
+          loaded.current = file; setDocument(file); return file;
+        }
         const blob = await response.blob();
         const signature = await blob.slice(0, 5).text();
         if (!blob.size || /text\/html|application\/json/i.test(blob.type)) throw new Error("unavailable");
@@ -98,7 +106,7 @@ export function DocumentAttachment({ src, originalUrl, caption, metadata }: Prop
       }
     })();
     return pending.current;
-  }, [src]);
+  }, [src, isTelegram, isPdf]);
 
   useEffect(() => {
     if (!card.current || !isPdf) return;
@@ -151,6 +159,7 @@ export function DocumentAttachment({ src, originalUrl, caption, metadata }: Prop
         {loading ? <p role="status">Cargando documento…</p> : null}
         {error ? <div role="alert"><p>{error}</p>{!document ? <button type="button" onClick={() => void load()}>Reintentar</button> : null}</div> : null}
         {document?.pages ? <div className="message-document-stage"><PdfPage document={document.pages} page={page} zoom={zoom} /></div> : null}
+        {document?.remote ? <p>Este archivo es grande. Descárgalo para abrirlo sin mantener la conversación esperando.</p> : null}
         {document && !document.pdf ? <p>Este formato no tiene vista previa. Puedes descargarlo o abrirlo en otra pestaña.</p> : null}
       </div>
     </dialog>, window.document.body) : null}

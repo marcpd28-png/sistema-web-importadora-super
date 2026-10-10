@@ -7,6 +7,7 @@ import {
 } from "@/lib/messages-service";
 import { YCloudOutboundError } from "@/lib/ycloud-outbound";
 import { z } from "zod";
+import { TelegramBridgeError } from "@/lib/telegram-bridge";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ export async function POST(
 
     return NextResponse.json(message);
   } catch (error: unknown) {
+    if (error instanceof TelegramBridgeError) return NextResponse.json({ error: error.message }, { status: error.statusCode });
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }

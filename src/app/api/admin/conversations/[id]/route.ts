@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { getConversation, updateConversation } from "@/lib/messages-service";
 import { z } from "zod";
+import { TelegramBridgeError } from "@/lib/telegram-bridge";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export async function PATCH(
 
     return NextResponse.json(conversation);
   } catch (error) {
+    if (error instanceof TelegramBridgeError) return NextResponse.json({ error: error.message }, { status: error.statusCode });
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }
