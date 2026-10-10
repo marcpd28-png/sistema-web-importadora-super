@@ -38,6 +38,23 @@ class ProviderOwnerFallbackTests(unittest.TestCase):
             "owner": "unknown", "expiresAt": None, "ownerVerified": False,
         })
 
+    def test_taking_an_already_owned_thread_is_a_safe_noop(self):
+        provider = service.Provider("internal-token")
+        requests = []
+
+        def request(url, _token, data=None, allow_owner_lookup_fallback=False):
+            requests.append((url, data, allow_owner_lookup_fallback))
+            if "thread_owner" in url:
+                return {"data": [{"thread_owner": {"app_id": service.APP}}]}
+            self.fail("No ownership mutation is needed when the store already controls the thread.")
+
+        provider.request = request
+        context = {"recipient": "123", "auth": {"version": "v25.0", "tokens": {"accessToken": "page-token"}}}
+        provider.graph(context, "take")
+
+        self.assertEqual(len(requests), 1)
+        self.assertTrue(requests[0][0].endswith("/me/thread_owner?recipient=123"))
+
 
 if __name__ == "__main__":
     unittest.main()

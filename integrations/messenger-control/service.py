@@ -91,7 +91,10 @@ class Provider:
             return {'owner': 'store' if str(owner.get('app_id')) == APP else 'meta' if str(owner.get('app_id')) == META_AI_APP else 'other' if owner.get('app_id') else 'unknown',
                     'expiresAt': owner.get('expiration'), 'ownerVerified': True}
         owner = self.graph(context, 'owner')
-        if operation == 'meta' and owner['owner'] == 'meta':
+        # Meta rejects another take_thread_control while this Page application
+        # already owns the thread (observed as provider code 27). Treat the
+        # handoff action as idempotent instead of making a redundant mutation.
+        if (operation == 'take' and owner['owner'] == 'store') or (operation == 'meta' and owner['owner'] == 'meta'):
             return
         result = self.request(url+'take_thread_control', auth['tokens']['accessToken'],
                               {'recipient': {'id': context['recipient']}})
