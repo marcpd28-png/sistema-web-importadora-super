@@ -94,12 +94,16 @@ class Provider:
         # Meta rejects another take_thread_control while this Page application
         # already owns the thread (observed as provider code 27). Treat the
         # handoff action as idempotent instead of making a redundant mutation.
-        if (operation == 'take' and owner['owner'] == 'store') or (operation == 'meta' and owner['owner'] == 'meta'):
+        if operation == 'meta' and owner['owner'] == 'meta':
             return
-        result = self.request(url+'take_thread_control', auth['tokens']['accessToken'],
-                              {'recipient': {'id': context['recipient']}})
-        if result.get('success') is not True:
-            raise ControlError('Facebook no confirmó que la tienda tomara el control.')
+        if owner['owner'] == 'store':
+            if operation == 'take':
+                return
+        else:
+            result = self.request(url+'take_thread_control', auth['tokens']['accessToken'],
+                                  {'recipient': {'id': context['recipient']}})
+            if result.get('success') is not True:
+                raise ControlError('Facebook no confirmó que la tienda tomara el control.')
         if operation == 'meta':
             result = self.request(url+'pass_thread_control', auth['tokens']['accessToken'],
                 {'recipient': {'id': context['recipient']}, 'target_app_id': META_AI_APP})

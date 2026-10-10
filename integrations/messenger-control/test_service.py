@@ -55,6 +55,29 @@ class ProviderOwnerFallbackTests(unittest.TestCase):
         self.assertEqual(len(requests), 1)
         self.assertTrue(requests[0][0].endswith("/me/thread_owner?recipient=123"))
 
+    def test_meta_activation_passes_directly_when_the_store_already_owns_the_thread(self):
+        provider = service.Provider("internal-token")
+        requests = []
+        passed_to_meta = False
+
+        def request(url, _token, data=None, allow_owner_lookup_fallback=False):
+            nonlocal passed_to_meta
+            requests.append((url, data, allow_owner_lookup_fallback))
+            if "thread_owner" in url:
+                owner = service.META_AI_APP if passed_to_meta else service.APP
+                return {"data": [{"thread_owner": {"app_id": owner}}]}
+            if url.endswith("/pass_thread_control"):
+                passed_to_meta = True
+                return {"success": True}
+            self.fail("Taking control again is unnecessary before passing it to Meta.")
+
+        provider.request = request
+        context = {"recipient": "123", "auth": {"version": "v25.0", "tokens": {"accessToken": "page-token"}}}
+        provider.graph(context, "meta")
+
+        self.assertTrue(any(url.endswith("/me/pass_thread_control") for url, _, _ in requests))
+        self.assertFalse(any(url.endswith("/me/take_thread_control") for url, _, _ in requests))
+
 
 if __name__ == "__main__":
     unittest.main()
