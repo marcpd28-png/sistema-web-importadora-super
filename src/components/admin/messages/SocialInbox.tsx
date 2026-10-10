@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SocialChannel, SocialMessage } from "@/lib/social-inbox";
+import { dedupeSocialMessages, type SocialChannel, type SocialMessage } from "@/lib/social-inbox";
 import { ArrowLeft, RefreshCw, MessageCircle } from "lucide-react";
 import { MessageInput } from "./MessageInput";
 import { MessengerControl } from "./MessengerControl";
@@ -71,8 +71,11 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
     setSelected(current => current?.id === id ? { ...current, botEnabled: page.botEnabled } : current);
     setMessages(previous => {
       const visibleMessages = page.data.filter(message => !message.systemEvent);
-      const unique = new Map([...previous, ...visibleMessages].map(message => [message.id, message]));
-      return [...unique.values()].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+      // Messenger returns an API acknowledgement first and later its webhook
+      // echo. They use different row ids but share sourceId, so dedupe after
+      // merging with earlier refreshes as well as within this page.
+      return dedupeSocialMessages([...previous, ...visibleMessages])
+        .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
     });
     if (older || initial) setMessageCursor(page.nextCursor);
   }, [base]);

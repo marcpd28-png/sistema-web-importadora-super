@@ -119,6 +119,9 @@ export function safeSocialMessage(message: SocialMessage): SocialMessage {
   const systemEvent = socialSystemEvent(message);
   return { id: message.id, text: message.deletedAt || systemEvent ? null : message.text, createdAt: message.createdAt,
     contactInboxId: message.contactInboxId, messageType: message.messageType,
+    // Keep these provider identifiers so the browser can merge an API
+    // acknowledgement with its later Messenger echo across separate refreshes.
+    sourceId: message.sourceId || null, senderType: message.senderType || null,
     systemEvent,
     deletedAt: message.deletedAt, sendError: message.sendError
       ? /\b2018300\b/.test(message.sendError)

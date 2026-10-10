@@ -136,10 +136,12 @@ test("A provider echo or repeated request cannot create two visible social repli
     assert.equal(sendCount, 1);
 
     const messages = dedupeSocialMessages([
-      { id: "api-row", sourceId: "provider-message", senderType: "api", createdAt: "2026-10-10T20:55:39.749Z" },
-      { id: "echo-row", sourceId: "provider-message", senderType: "user", createdAt: "2026-10-10T20:55:41Z" },
-    ] as SocialMessage[]);
+      safeSocialMessage({ id: "api-row", sourceId: "provider-message", senderType: "api", createdAt: "2026-10-10T20:55:39.749Z" } as SocialMessage),
+      safeSocialMessage({ id: "echo-row", sourceId: "provider-message", senderType: "user", createdAt: "2026-10-10T20:55:41Z" } as SocialMessage),
+    ]);
     assert.deepEqual(messages.map(message => message.id), ["echo-row"]);
+    assert.equal(messages[0].sourceId, "provider-message");
+    assert.equal(messages[0].senderType, "user");
   } finally {
     global.fetch = original;
     if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN;
