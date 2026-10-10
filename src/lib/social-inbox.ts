@@ -142,11 +142,15 @@ export async function socialReplyInbox(channel: SocialChannel, conversationId: s
 async function sendSocialReplyOnce(channel: SocialChannel, conversationId: string, text: string, requestId: string, mediaFileId?: string) {
   if (mediaFileId && (channel !== "messenger" || !/^\d+$/.test(mediaFileId))) throw new SocialInboxError("Adjunto no válido para este canal.", 400);
   const inbox = await socialReplyInbox(channel, conversationId);
-  if (channel === "messenger" && process.env.MESSENGER_CONTROL_TOKEN) {
+  const managesMessengerHandoff = channel === "messenger" && Boolean(process.env.MESSENGER_CONTROL_TOKEN);
+  if (managesMessengerHandoff) {
     const { messengerControl } = await import("./messenger-control");
     await messengerControl(conversationId, { action: "manual", minutes: messengerMetaResumeMinutes(), actor: "store-reply", resumeTarget: "meta" });
   }
-  await socialRequest(`/conversations/${conversationId}/disable-bot`, {}, `${requestId}:handoff`);
+  // The local Messenger controller already pauses ChatbotX as part of the
+  // ownership handoff. Avoiding this duplicate provider call removes a full
+  // network round trip from every adviser reply.
+  if (!managesMessengerHandoff) await socialRequest(`/conversations/${conversationId}/disable-bot`, {}, `${requestId}:handoff`);
   const message = await socialRequest<SocialMessage>(`/conversations/${conversationId}/messages`, { ...(text ? { text } : {}), inboxId: inbox.inboxId, ...(mediaFileId ? { mediaFileId } : {}) }, requestId);
   if (!message?.id) throw new SocialInboxError("El envío no está confirmado. Revisa la conversación antes de repetirlo.");
   return safeSocialMessage(message);

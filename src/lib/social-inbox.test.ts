@@ -32,7 +32,9 @@ test("Social channels fail closed and cannot fall through to WhatsApp or Telegra
 test("Sending enforces channel and Messenger window before mutation, pauses bot first, and selects the exact inbox", async () => {
   const original = global.fetch;
   const originalToken = process.env.SOCIAL_INBOX_API_TOKEN;
+  const originalControlToken = process.env.MESSENGER_CONTROL_TOKEN;
   process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  delete process.env.MESSENGER_CONTROL_TOKEN;
   const calls: { url: string; body?: string }[] = [];
   let lastIncoming = new Date(Date.now() - 86400001).toISOString();
   let failHandoff = false;
@@ -66,7 +68,38 @@ test("Sending enforces channel and Messenger window before mutation, pauses bot 
     await assert.rejects(sendSocialReply("tiktok", "123", "", "request-file", "789"));
     await assert.rejects(sendSocialReply("messenger", "123", "", "request-file", "../789"));
     assert.equal(calls.length, beforeInvalid);
-  } finally { global.fetch = original; if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = originalToken; }
+  } finally {
+    global.fetch = original;
+    if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = originalToken;
+    if (originalControlToken === undefined) delete process.env.MESSENGER_CONTROL_TOKEN; else process.env.MESSENGER_CONTROL_TOKEN = originalControlToken;
+  }
+});
+
+test("Messenger controller owns the handoff without a duplicate ChatbotX pause", async () => {
+  const original = global.fetch;
+  const originalToken = process.env.SOCIAL_INBOX_API_TOKEN;
+  const originalControlToken = process.env.MESSENGER_CONTROL_TOKEN;
+  process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  process.env.MESSENGER_CONTROL_TOKEN = "control-secret";
+  const calls: string[] = [];
+  try {
+    global.fetch = async (url) => {
+      const target = String(url);
+      calls.push(target);
+      if (target.startsWith("http://127.0.0.1:19120/")) return Response.json({ owner: "store", botEnabled: false, mode: "manual", resumeAt: null, resumeTarget: "meta", error: null, metaAiAvailable: true });
+      if (target.endsWith("/disable-bot")) throw new Error("The handoff must not be duplicated.");
+      if (target.endsWith("/messages")) return Response.json({ id: "fast-message", text: "sin doble pausa", attachments: [] });
+      return Response.json({ data: { id: "988", contactInboxes: [{ id: "1", inboxId: "456", channel: "messenger", lastIncomingMessageAt: new Date().toISOString() }] } });
+    };
+    const message = await sendSocialReply("messenger", "988", "sin doble pausa", "b414c3b6-fdbf-4673-9a27-1ce4a0103612");
+    assert.equal(message.id, "fast-message");
+    assert.equal(calls.some(call => call.endsWith("/disable-bot")), false);
+    assert.ok(calls.some(call => call.startsWith("http://127.0.0.1:19120/")));
+  } finally {
+    global.fetch = original;
+    if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = originalToken;
+    if (originalControlToken === undefined) delete process.env.MESSENGER_CONTROL_TOKEN; else process.env.MESSENGER_CONTROL_TOKEN = originalControlToken;
+  }
 });
 
 test("Provider response cannot leak secrets, deleted contents, or executable attachment links", () => {

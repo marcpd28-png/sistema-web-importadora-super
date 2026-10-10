@@ -44,6 +44,8 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
   const [connectedAccounts, setConnectedAccounts] = useState(0);
   const selectedId = useRef<string | null>(null);
   const sendLock = useRef(false);
+  const sendQueue = useRef<Promise<void>>(Promise.resolve());
+  const pendingSendCount = useRef(0);
   useEffect(() => { const timer = setTimeout(() => setKeyword(search.trim()), 300); return () => clearTimeout(timer); }, [search]);
   useEffect(() => { if (followBottom.current) bottom.current?.scrollIntoView({ block: "end" }); }, [messages]);
   const refresh = useCallback(async () => {
@@ -85,26 +87,70 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
     finally { if (selectedId.current === conversation.id) setMessageLoading(false); }
   }
   async function send(text: string, mediaFileId?: string) {
-    if (!selected || (!text.trim() && !mediaFileId) || sendLock.current || uncertain) throw new Error("Revisa la conversación antes de enviar.");
-    sendLock.current = true; setSending(true); setError("");
+    if (!selected || (!text.trim() && !mediaFileId) || uncertain) throw new Error("Revisa la conversación antes de enviar.");
     const id = selected.id;
-    let accepted = false;
-    let definitiveFailure = false;
-    try {
-      const response = await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: id, text: text.trim(), mediaFileId, requestId: crypto.randomUUID() }) });
-      const result = await response.json();
-      if (!response.ok) { definitiveFailure = response.status < 500; setUncertain(!definitiveFailure); throw new Error(result.error || "No se pudo enviar."); }
-      accepted = true;
-      followBottom.current = true;
-      setSelected(current => current?.id === id ? { ...current, botEnabled: false } : current);
-      if (channel === "messenger") setControlRevision(current => current + 1);
-      await loadMessages(id);
-    } catch (e) {
-      setError((e as Error).message);
-      if (accepted) return; // Already queued: never invite the user to resend after a refresh failure.
-      if (!definitiveFailure) setUncertain(true);
-      throw e;
-    } finally { sendLock.current = false; setSending(false); }
+    const requestId = crypto.randomUUID();
+    const pendingId = `pending:${requestId}`;
+    const optimisticMessage: SocialMessage = {
+      id: pendingId, text: text.trim() || "Archivo adjunto", createdAt: new Date().toISOString(),
+      contactInboxId: "", messageType: "outgoing", deletedAt: null, sendError: null,
+    };
+    const replacePendingMessage = (message: SocialMessage) => {
+      if (selectedId.current !== id) return;
+      setMessages(current => {
+        const next = current.map(item => item.id === pendingId ? message : item);
+        // A provider acknowledgement and its echo can have the same id. Keep
+        // only the confirmed delivery so a fast double-click never shows twice.
+        return [...new Map(next.map(item => [item.id, item])).values()]
+          .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+      });
+    };
+
+    followBottom.current = true;
+    setError("");
+    setMessages(current => [...current, optimisticMessage]);
+    pendingSendCount.current += 1;
+    sendLock.current = true;
+    setSending(true);
+
+    const operation = async () => {
+      let definitiveFailure = false;
+      try {
+        const response = await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversationId: id, text: text.trim(), mediaFileId, requestId }) });
+        const result = await response.json().catch(() => ({})) as { error?: string; message?: SocialMessage };
+        if (!response.ok) {
+          definitiveFailure = response.status < 500;
+          const message = result.error || "No se pudo enviar.";
+          replacePendingMessage({ ...optimisticMessage, sendError: message });
+          setError(message);
+          if (!definitiveFailure) setUncertain(true);
+          return;
+        }
+
+        const confirmed = result.message ? { ...optimisticMessage, ...result.message, sendError: null } : optimisticMessage;
+        replacePendingMessage(confirmed);
+        setSelected(current => current?.id === id ? { ...current, botEnabled: false } : current);
+        if (channel === "messenger") setControlRevision(current => current + 1);
+        // Reconcile in the background. The acknowledgement has already made
+        // the reply visible, so this must never hold up the composer.
+        void loadMessages(id).catch(error => setError((error as Error).message));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "No se pudo confirmar el envío.";
+        replacePendingMessage({ ...optimisticMessage, sendError: message });
+        setError(message);
+        if (!definitiveFailure) setUncertain(true);
+      }
+    };
+
+    const queued = sendQueue.current.catch(() => undefined).then(operation);
+    sendQueue.current = queued;
+    void queued.finally(() => {
+      pendingSendCount.current -= 1;
+      if (pendingSendCount.current === 0) {
+        sendLock.current = false;
+        setSending(false);
+      }
+    });
   }
   async function upload(file: File) {
     if (!selected) throw new Error("Selecciona una conversación.");
@@ -142,7 +188,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
           </div>
           <div className="chat-count">{messages.length} mensajes cargados · {channel === "messenger" ? "Responde dentro de las 24 horas del último mensaje del cliente." : "La disponibilidad depende de tu cuenta de TikTok."}</div>
           {uncertain && <p className={styles.notice}>Comprueba el envío antes de repetirlo. <button className="btn btn-outline" onClick={async () => { try { await loadMessages(selected.id); setUncertain(false); setError(""); } catch (e) { setError((e as Error).message); } }}>Revisar conversación</button></p>}
-          <MessageInput key={`composer:${selected.id}`} disabled={controlling || sending || uploading || messageLoading || uncertain} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
+          <MessageInput key={`composer:${selected.id}`} disabled={controlling || uploading || messageLoading || uncertain} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
           <div className={styles.help}>{channel === "messenger" ? "Adjunta imágenes, PDF, documentos, videos o audio (hasta 5 MB). " : ""}Al responder se pausa la automatización de esta conversación.</div>
         </>}
       </section>
