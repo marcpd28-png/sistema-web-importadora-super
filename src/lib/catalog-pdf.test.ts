@@ -6,7 +6,9 @@ import {
   isGeneralCatalogRequest,
   isProjectorCatalogRequest,
   parseCatalogRequest,
+  createCatalogPhotoUnavailablePlaceholder,
   prepareCatalogImage,
+  renderCatalogImagePdf,
 } from "@/lib/catalog-pdf";
 
 test("detecta solicitudes del catálogo general aunque usen lenguaje cortés", () => {
@@ -42,6 +44,13 @@ test("quita márgenes transparentes sin convertir la foto rectangular en un cuad
   assert.equal(metadata.width, 200);
   assert.equal(metadata.height, 400);
   assert.equal(metadata.format, "jpeg");
+});
+
+test("representa explícitamente productos sin foto en lugar de omitirlos", async () => {
+  const placeholder = await createCatalogPhotoUnavailablePlaceholder({ name: "DRON SIN FOTO", code: "DRON-0" });
+  const pdf = await renderCatalogImagePdf([{ image: placeholder, name: "DRON SIN FOTO", code: "DRON-0", unitPrice: 99 }], "CATÁLOGO DE DRONES");
+  assert.ok(placeholder.byteLength > 1_000);
+  assert.equal(pdf.subarray(0, 4).toString(), "%PDF");
 });
 
 test("no intercepta consultas comunes ni catálogos de otra categoría", () => {

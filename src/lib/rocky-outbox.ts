@@ -7,9 +7,10 @@ import { normalizeYCloudPhone, sendYCloudOutboundMessage, YCloudOutboundMessageI
 
 export type RockyTurn = { conversationId: string; triggerMessageId: string; conversationRevision: number; globalRevision: number; inboundVersion?: number | null };
 type Turn = RockyTurn;
-type Reply = { conversationId: string; recipient: string; content: string; source: string; mediaUrl?: string; type?: YCloudOutboundMessageInput["type"] };
+type Reply = { conversationId: string; recipient: string; content: string; source: string; mediaUrl?: string; type?: YCloudOutboundMessageInput["type"]; metadata?: Record<string, unknown> };
 type Tx = Prisma.TransactionClient;
 type Plan = { replies: Reply[]; handoff?: Reply; writes: Array<(tx: Tx) => Promise<unknown>> };
+type CatalogGenerationInput = { scopeKey: string; title: string; snapshot: Prisma.InputJsonValue; snapshotHash: string };
 const turnContext = new AsyncLocalStorage<Turn & { plan?: Plan; simulation?: boolean }>();
 const REPLY_TTL_MS = 5 * 60_000;
 const DEDUPE_MS = 30 * 60_000;
@@ -78,6 +79,32 @@ export class RockyOutbox {
     const context = turnContext.getStore();
     if (!context?.plan) throw new Error("Sales-state writes require a durable input plan");
     context.plan.writes.push(write);
+  }
+
+  /** Catalog jobs are staged with the same input completion transaction as the
+   * acknowledgement. A crash can therefore never promise a PDF without a
+   * durable generation record. */
+  async enqueueCatalogGeneration(input: CatalogGenerationInput) {
+    const context = turnContext.getStore();
+    if (!context?.plan) throw new Error("Catalog jobs require a durable input plan");
+    if (context.simulation) return null;
+    const data = {
+      conversationId: context.conversationId,
+      triggerMessageId: context.triggerMessageId,
+      conversationRevision: context.conversationRevision,
+      globalRevision: context.globalRevision,
+      inboundVersion: context.inboundVersion ?? null,
+      scopeKey: input.scopeKey,
+      title: input.title,
+      snapshot: input.snapshot,
+      snapshotHash: input.snapshotHash,
+    };
+    context.plan.writes.push(tx => tx.catalogGenerationJob.upsert({
+      where: { conversationId_triggerMessageId_scopeKey: { conversationId: data.conversationId, triggerMessageId: data.triggerMessageId, scopeKey: data.scopeKey } },
+      create: data,
+      update: {},
+    }));
+    return data;
   }
 
   /** Same planner/state transitions, an isolated chat-only sink. A simulation
@@ -159,7 +186,7 @@ export class RockyOutbox {
     const message = await tx.chatMessage.create({ data: {
       conversationId: input.conversationId, direction: "OUTBOUND", senderType: "BOT",
       messageType: type.toUpperCase() as MessageType, content: input.content, mediaUrl: input.mediaUrl,
-      status: "queued", metadata: { provider: "ycloud", source: input.source, dispatcher: "rocky-outbox-v1" },
+      status: "queued", metadata: { provider: "ycloud", source: input.source, dispatcher: "rocky-outbox-v1", ...(input.metadata ?? {}) },
     } });
     await tx.rockyOutboundJob.create({ data: {
       conversationId: turn.conversationId, triggerMessageId: turn.triggerMessageId,

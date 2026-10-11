@@ -26,4 +26,8 @@ export async function scheduleRockyTurn(tx: Prisma.TransactionClient, conversati
   const stale = await tx.rockyOutboundJob.findMany({ where: { conversationId, state: "queued" }, select: { messageId: true } });
   await tx.rockyOutboundJob.updateMany({ where: { conversationId, state: "queued" }, data: { state: "cancelled", reason: "new_customer_fragment", finishedAt: now } });
   await tx.chatMessage.updateMany({ where: { id: { in: stale.map(job => job.messageId) } }, data: { status: "cancelled" } });
+  await tx.catalogGenerationJob.updateMany({
+    where: { conversationId, state: { in: ["queued", "running", "ready"] } },
+    data: { state: "cancelled", reason: "new_customer_fragment", processingToken: null, finishedAt: now },
+  });
 }

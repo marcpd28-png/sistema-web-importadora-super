@@ -4,9 +4,9 @@ import { prisma } from "./prisma";
 import { getAutomationConversationContext } from "./messages-service";
 import { AutomationCancelledError, rockyOutbox } from "./rocky-outbox";
 import { buildPublicUrl } from "./site-url";
-import { generateCatalogPdf, isGeneralCatalogRequest, parseCatalogRequest } from "./catalog-pdf";
+import { isGeneralCatalogRequest, parseCatalogRequest } from "./catalog-pdf";
+import { prepareCatalogRequest } from "./catalog-generation";
 type JsonRecord = Record<string, unknown>;
-function text(value: unknown) { return typeof value === "string" && value.trim() ? value.trim() : null; }
 function asRecord(value: unknown): JsonRecord | null { return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null; }
 
 const WELCOME_MESSAGE = `👋 ¡Hola! Buen día. Bienvenido a *Importaciones Super*. Soy *Rocky*, tu asistente virtual.
@@ -30,6 +30,7 @@ const LOCATION_MESSAGE = "Nuestra tienda está en Av. Abancay 752, Cercado de Li
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
 const HOURS_MESSAGE = "Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos.";
 const GENERAL_CATALOG_MESSAGE = "📚 Nuestros catálogos en PDF: https://mc.ht/s/rwQ7BMz\n🛍️ Tienda virtual: https://tiendavirtualsuper.com\nPuedes pedirme un catálogo por categoría. Un asesor te ayudará con precios, disponibilidad y detalles de productos.";
+const WEB_CATALOG_MESSAGE = "Para recibir un catálogo PDF actualizado y completo, escríbenos por WhatsApp con “catálogo general” o una categoría, por ejemplo “catálogo de drones”.";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg");
 const PAYMENT_NOTICE_MESSAGE = "Gracias. Te comparto nuestras cuentas autorizadas y medios de pago. Por seguridad, realiza depósitos únicamente a las cuentas indicadas en este comunicado.";
 async function sendWelcomeMessage(conversationId: string, recipient: string) {
@@ -98,28 +99,20 @@ async function sendBotImage(conversationId: string, recipient: string, mediaUrl:
 }
 
 async function sendCatalog(conversationId: string, recipient: string, content: string) {
-  if (isGeneralCatalogRequest(content)) {
-    await sendBotText(conversationId, recipient, GENERAL_CATALOG_MESSAGE, "general_catalog");
-
+  const prepared = await prepareCatalogRequest(content);
+  if (prepared.kind === "not-catalog") return false;
+  if (prepared.kind === "ambiguous" || prepared.kind === "empty") {
+    await sendBotText(conversationId, recipient, prepared.message, "catalog_scope_clarification");
     return true;
   }
-
-  const request = parseCatalogRequest(content);
-  if (!request) return false;
-
-  try {
-    const catalog = await generateCatalogPdf(request);
-    const caption = `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos).`;
-    await rockyOutbox.enqueue({ conversationId, recipient, content: caption, mediaUrl: catalog.absoluteUrl, type: "document", source: "requested_catalog" });
-
-  } catch (error) {
-
-    if (error instanceof AutomationCancelledError) throw error;
-    console.error("YCloud catalog generation failed:", error);
-    // Never promise an empty catalog. A person can confirm the product name,
-    // stock, or a suitable alternative without misleading the customer.
-    await handOffToAdvisor(conversationId, recipient, "catalog_unavailable_handoff");
-  }
+  await rockyOutbox.enqueueCatalogGeneration({
+    scopeKey: prepared.scope.key,
+    title: prepared.scope.title,
+    snapshot: prepared.snapshot as Prisma.InputJsonValue,
+    snapshotHash: prepared.snapshotHash,
+  });
+  const partHint = prepared.snapshot.products.length > 32 ? " Se enviará en varias partes para incluir todos los productos." : "";
+  await sendBotText(conversationId, recipient, `¡Hola! Estoy preparando ${prepared.scope.title.toLowerCase()} con datos actuales.${partHint}`, "catalog_generation_queued");
   return true;
 }
 
@@ -141,8 +134,10 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
   const content = (requests.length ? requests : fragments).join("\n") || latest.content;
   const result = { ok: true, duplicate: false, conversation: { botEnabled: true }, conversationId, messageId: triggerMessageId };
 
-  // The inbox already waits for ten seconds of silence. For a new automated
-  // conversation, send only the welcome regardless of the first message's intent.
+  // A catalog intent is useful on the first message too. The acknowledgement
+  // and durable job are committed together; a generic welcome must not consume
+  // "hola, catálogo de drones" and lose the request.
+  if (await sendCatalog(conversationId, from, content)) return result;
   if (await sendWelcomeIfNeeded(conversationId, from)) return result;
   if (isGreeting(content)) {
     await sendBotText(conversationId, from, PRODUCT_PROMPT_MESSAGE, "greeting_product_prompt");
@@ -156,8 +151,6 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
     await sendBotText(conversationId, from, GENERAL_CATALOG_MESSAGE, "store_links");
     return result;
   }
-  if (await sendCatalog(conversationId, from, content)) return result;
-
   // Explicit service questions outrank any previously pending sales question.
   if (isLocationRequest(content)) { await sendBotText(conversationId, from, LOCATION_MESSAGE, "store_location"); return result; }
   if (isHoursRequest(content)) { await sendBotText(conversationId, from, HOURS_MESSAGE, "store_hours"); return result; }
@@ -189,7 +182,8 @@ export async function planRockyResponse(conversationId: string, triggerMessageId
 export function rockyInformationReply(content: string, firstTurn = false) {
   if (firstTurn) return WELCOME_MESSAGE;
   if (isGreeting(content)) return PRODUCT_PROMPT_MESSAGE;
-  if (isGeneralCatalogRequest(content) || parseCatalogRequest(content) || hasIntent(content, ["link", "enlace", "tienda virtual", "pagina web"])) return GENERAL_CATALOG_MESSAGE;
+  if (isGeneralCatalogRequest(content) || parseCatalogRequest(content)) return WEB_CATALOG_MESSAGE;
+  if (hasIntent(content, ["link", "enlace", "tienda virtual", "pagina web"])) return GENERAL_CATALOG_MESSAGE;
   if (isLocationRequest(content)) return LOCATION_MESSAGE;
   if (isHoursRequest(content)) return HOURS_MESSAGE;
   if (isShippingRequest(content)) return SHIPPING_MESSAGE;
