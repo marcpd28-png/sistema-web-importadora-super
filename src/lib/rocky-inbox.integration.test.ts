@@ -203,11 +203,12 @@ test("a slow conversation does not block another customer's input", async () => 
 });
 
 test("first greeting with a catalog request queues the catalog instead of losing the intent to welcome", async () => {
-  await db.product.create({ data: { code: "FIRST-CATALOG-DRONE", slug: "first-catalog-drone", name: "DRON MINI CON CÁMARA", unitPrice: 399, stockUnits: 5 } });
+  await db.product.create({ data: { code: "FIRST-CATALOG-DRONE", slug: "first-catalog-drone", name: "DRON MINI CON CÁMARA", unitPrice: 399, stockUnits: 5, imageUrl: "https://example.invalid/drone.jpg" } });
   const first = await receive("Hola, catálogo de drones");
   await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1);
+  assert.match(replies[0].content, /soy rocky/i);
   assert.match(replies[0].content, /preparando.*catálogo de drones/i);
   assert.doesNotMatch(replies[0].content, /14 catálogos en PDF/);
   const job = await db.catalogGenerationJob.findFirstOrThrow();

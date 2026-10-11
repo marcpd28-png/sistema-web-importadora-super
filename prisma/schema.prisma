@@ -987,7 +987,8 @@ model RockyInboundTurn {
 
 // PDF rendering is intentionally independent from both the webhook and the
 // WhatsApp outbox. The immutable snapshot makes multipart retries reproducible
-// even while the ERP keeps updating products.
+// even while the ERP keeps updating products. `enqueued` means all document
+// intents reached RockyOutboundJob; YCloud receipts own actual delivery state.
 model CatalogGenerationJob {
   id                   String   @id @default(cuid())
   sequence             Int      @unique @default(autoincrement())
@@ -1020,7 +1021,8 @@ model CatalogGenerationJob {
 }
 
 // A stable row per generated PDF part bridges catalog rendering to the existing
-// Rocky outbox without replacing its delivery and consent safeguards.
+// Rocky outbox without replacing its delivery and consent safeguards. An
+// `outbox_queued` row is not a provider delivery confirmation.
 model CatalogGenerationDelivery {
   id             String               @id @default(cuid())
   jobId          String

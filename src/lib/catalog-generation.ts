@@ -6,7 +6,7 @@ import { CatalogPdfPart, CatalogSnapshotProduct, generateCatalogSnapshotPdfs } f
 import { isRealProductPhotoUrl } from "./product-media";
 import { prisma } from "./prisma";
 import { RockyOutbox, rockyOutbox } from "./rocky-outbox";
-import { buildSellableProductWhere } from "./store-shared";
+import { BLOCKED_PUBLIC_PRODUCT_CODES } from "./public-product-blocklist";
 import { getStorefrontCategorySlug, normalizeCatalogText } from "./storefront-taxonomy";
 
 const MAX_GENERATION_ATTEMPTS = 3;
@@ -52,7 +52,15 @@ export type CatalogPreparedRequest =
   | { kind: "not-catalog" }
   | { kind: "ambiguous"; message: string }
   | { kind: "empty"; message: string }
-  | { kind: "ready"; scope: Exclude<CatalogScope, { kind: "ambiguous" }>; snapshot: CatalogSnapshot; snapshotHash: string };
+  | {
+    kind: "ready";
+    scope: Exclude<CatalogScope, { kind: "ambiguous" }>;
+    snapshot: CatalogSnapshot;
+    snapshotHash: string;
+    /** Visible, priced and in-stock products withheld by the storefront's
+     * real-photo publishing policy. They never enter a PDF as a workaround. */
+    excludedForPhotoPolicy: number;
+  };
 
 function imageUrls(product: CatalogSourceProduct) {
   return Array.from(new Set([
@@ -65,6 +73,14 @@ function imageUrls(product: CatalogSourceProduct) {
 
 function sourceBrandNames(products: CatalogSourceProduct[]) {
   return products.map(product => product.brand?.trim() ?? "").filter(Boolean);
+}
+
+function hasStorefrontPhoto(product: CatalogSourceProduct) {
+  // Keep this predicate intentionally equivalent to buildRealProductPhotoWhere:
+  // a source-only URL is not enough to make an ERP item public, and only IMAGE
+  // media can satisfy the storefront photo policy.
+  return isRealProductPhotoUrl(product.localImageUrl) || isRealProductPhotoUrl(product.imageUrl) ||
+    product.media.some(media => media.type === "IMAGE" && isRealProductPhotoUrl(media.url));
 }
 
 export function selectCatalogProducts(products: CatalogSourceProduct[], scope: Exclude<CatalogScope, { kind: "ambiguous" }>) {
@@ -141,7 +157,11 @@ export function snapshotProductsForPdf(snapshot: CatalogSnapshot): CatalogSnapsh
   }));
 }
 
-function catalogEmptyMessage(scope: Exclude<CatalogScope, { kind: "ambiguous" }>) {
+function catalogEmptyMessage(scope: Exclude<CatalogScope, { kind: "ambiguous" }>, excludedForPhotoPolicy: number) {
+  if (excludedForPhotoPolicy > 0) {
+    const products = excludedForPhotoPolicy === 1 ? "producto visible" : "productos visibles";
+    return `Aún no hay productos publicables para ${scope.title.toLowerCase()}: ${excludedForPhotoPolicy} ${products} ${excludedForPhotoPolicy === 1 ? "no se incluye" : "no se incluyen"} hasta contar con una foto válida en tienda.`;
+  }
   return scope.kind === "general"
     ? "No encontramos productos publicables para el catálogo general en este momento."
     : `No encontramos productos publicables para ${scope.title.toLowerCase()}. Verifica la categoría o la marca.`;
@@ -150,9 +170,17 @@ function catalogEmptyMessage(scope: Exclude<CatalogScope, { kind: "ambiguous" }>
 export async function prepareCatalogRequest(content: string, db: Pick<PrismaClient, "product"> = prisma): Promise<CatalogPreparedRequest> {
   if (!isCatalogRequest(content)) return { kind: "not-catalog" };
   // This is a single bounded database snapshot. It intentionally does not load
-  // a single image or generate a PDF in the inbox/webhook path.
+  // a single image or generate a PDF in the inbox/webhook path. We first load
+  // the commercial candidates, then apply the same photo rule as the public
+  // storefront in memory so the acknowledgement can account for items withheld
+  // by policy without ever leaking hidden or blocked products into a PDF.
   const products = await db.product.findMany({
-    where: { AND: [buildSellableProductWhere(), { stockUnits: { gt: 0 } }, { unitPrice: { gt: 0 } }] },
+    where: {
+      isVisible: true,
+      NOT: { code: { in: BLOCKED_PUBLIC_PRODUCT_CODES } },
+      stockUnits: { gt: 0 },
+      unitPrice: { gt: 0 },
+    },
     select: {
       id: true, name: true, code: true, brand: true, category: true,
       imageUrl: true, localImageUrl: true, sourceImageUrl: true, updatedAt: true,
@@ -165,10 +193,12 @@ export async function prepareCatalogRequest(content: string, db: Pick<PrismaClie
   if (scope.kind === "ambiguous") {
     return { kind: "ambiguous", message: catalogAmbiguityMessage(scope) };
   }
-  const selected = selectCatalogProducts(products, scope);
-  if (!selected.length) return { kind: "empty", message: catalogEmptyMessage(scope) };
+  const commercialMatches = selectCatalogProducts(products, scope);
+  const selected = commercialMatches.filter(hasStorefrontPhoto);
+  const excludedForPhotoPolicy = commercialMatches.length - selected.length;
+  if (!selected.length) return { kind: "empty", message: catalogEmptyMessage(scope, excludedForPhotoPolicy) };
   const snapshot = createCatalogSnapshot(selected, scope);
-  return { kind: "ready", scope, snapshot, snapshotHash: catalogSnapshotHash(snapshot) };
+  return { kind: "ready", scope, snapshot, snapshotHash: catalogSnapshotHash(snapshot), excludedForPhotoPolicy };
 }
 
 export function catalogRetryAt(now: Date, attempts: number) {
@@ -248,7 +278,7 @@ export class CatalogGenerationWorker {
       const [locked] = await tx.$queryRaw<{ locked: boolean }[]>`SELECT pg_try_advisory_xact_lock(hashtextextended(${"catalog-generation:" + id}, 6)) AS locked`;
       if (!locked.locked) return null;
       const job = await tx.catalogGenerationJob.findUnique({ where: { id } });
-      if (!job || job.state === "cancelled" || job.state === "failed" || job.state === "delivered") return null;
+      if (!job || job.state === "cancelled" || job.state === "failed" || job.state === "enqueued") return null;
       const expiredLease = job.state === "running" && (!job.leaseExpiresAt || job.leaseExpiresAt <= now);
       const due = job.state === "queued" && job.dueAt <= now;
       const ready = job.state === "ready";
@@ -319,12 +349,14 @@ export class CatalogGenerationWorker {
         await this.db.catalogGenerationJob.updateMany({ where: { id: jobId, state: "running", processingToken: token }, data: { state: "cancelled", reason: "delivery_no_longer_permitted", processingToken: null, leaseExpiresAt: null, finishedAt: new Date() } });
         return true;
       }
-      await this.db.catalogGenerationDelivery.updateMany({ where: { id: delivery.id, messageId: null }, data: { messageId: persisted.id, state: "queued" } });
+      await this.db.catalogGenerationDelivery.updateMany({ where: { id: delivery.id, messageId: null }, data: { messageId: persisted.id, state: "outbox_queued" } });
     }
     const pending = await this.db.catalogGenerationDelivery.count({ where: { jobId, messageId: null } });
     if (!pending) await this.db.catalogGenerationJob.updateMany({
       where: { id: jobId, state: "running", processingToken: token },
-      data: { state: "delivered", processingToken: null, leaseExpiresAt: null, finishedAt: new Date(), reason: null },
+      // Persistence in RockyOutboundJob is not WhatsApp delivery. The existing
+      // outbox and YCloud receipt pipeline own submitted/delivered status.
+      data: { state: "enqueued", processingToken: null, leaseExpiresAt: null, finishedAt: new Date(), reason: null },
     });
     return true;
   }
