@@ -1004,6 +1004,7 @@ model CatalogGenerationJob {
   snapshotHash         String   @db.VarChar(64)
   state                String   @default("queued") @db.VarChar(32)
   attempts             Int      @default(0)
+  deliveryAttempts     Int      @default(0)
   processingToken      String?  @db.VarChar(64)
   leaseExpiresAt       DateTime?
   dueAt                DateTime @default(now())
