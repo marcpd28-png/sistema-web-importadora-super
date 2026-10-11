@@ -1,5 +1,5 @@
 import { getStorefrontIndex, getStorefrontCategories, getStorefrontFamilies } from "@/lib/storefront-index";
-import { categoryMatches, canonicalCategorySlug, groupColorVariants, getStorefrontCategorySlug, variantGroupKey } from "@/lib/storefront-taxonomy";
+import { categoryMatches, canonicalCategorySlug, getCuratedRelatedProductCodes, groupColorVariants, getStorefrontCategorySlug, variantGroupKey } from "@/lib/storefront-taxonomy";
 import { getStorefrontCampaigns } from "@/lib/storefront-campaigns";
 import { getErpBestSellerSnapshot } from "@/lib/erp-sales";
 import { Prisma } from "@prisma/client";
@@ -626,8 +626,15 @@ export async function getCatalogProductBySlug(slug: string) {
 
   const [settings, index] = await Promise.all([getStoreSettings(), getStorefrontIndex()]);
   const leaf = getStorefrontCategorySlug(product);
-  const relatedGroups = groupColorVariants(index.filter(item => item.storefrontCategory === leaf &&
-    variantGroupKey(item) !== variantGroupKey(product)).sort((a, b) => Number(b.stockUnits > 0) - Number(a.stockUnits > 0))).slice(0, 8);
+  const currentVariantGroup = variantGroupKey(product);
+  const curatedCodes = new Set(getCuratedRelatedProductCodes(leaf));
+  const sameCategoryGroups = groupColorVariants(index.filter(item => item.storefrontCategory === leaf &&
+    variantGroupKey(item) !== currentVariantGroup).sort((a, b) => Number(b.stockUnits > 0) - Number(a.stockUnits > 0)));
+  const curatedGroups = groupColorVariants(index.filter(item => curatedCodes.has(item.code) &&
+    variantGroupKey(item) !== currentVariantGroup));
+  const relatedGroups = [...curatedGroups, ...sameCategoryGroups]
+    .filter((group, index, groups) => groups.findIndex(item => variantGroupKey(item[0]) === variantGroupKey(group[0])) === index)
+    .slice(0, 8);
   const relatedIds = relatedGroups.flat().map(item => item.id);
   const relatedRows = relatedIds.length ? await prisma.product.findMany({
     where: { AND: [buildSellableProductWhere(), { id: { in: relatedIds } }] },

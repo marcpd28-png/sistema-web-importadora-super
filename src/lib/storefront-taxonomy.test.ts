@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { categoryMatches, getStorefrontCategorySlug, groupColorVariants, variantColor } from "./storefront-taxonomy";
+import { categoryMatches, getCuratedRelatedProductCodes, getStorefrontCategorySlug, groupColorVariants, variantColor } from "./storefront-taxonomy";
 
 const cases = [
   ["N33", "GANCHO BRAZO FLEXIBLE PARA CELULAR", "soportes-celular"],
@@ -29,6 +29,7 @@ const cases = [
   ["O1014-NEGRO", "MOUSE ERGONOMICO VERTICAL", "mouse-teclados"],
   ["L500", "CEPILLO ALISADOR RAF R412", "cabello"],
   ["PC401", "EXTENSOR DE PANTALLA PARA LAPTOP", "monitores"],
+  ["N2207", "SQ ARO LED MAGNETIC PARA CELULAR S5-BGD-07 TELESIN", "foto-video"],
 ];
 for (const [code, name, expected] of cases) test(`clasificación comercial: ${code}`, () => {
   assert.equal(getStorefrontCategorySlug({ code, name, category: "NOVEDADES" }), expected);
@@ -40,6 +41,10 @@ test("la categoría antigua y el acceso de proyectores coinciden sin incluir ecr
   assert.ok(categoryMatches("pantallas-proyeccion", "familia-tv-videojuegos"));
   assert.ok(categoryMatches("smartwatches", "smart-watch-y-sus-complementos"));
   assert.ok(categoryMatches("correas", "smart-watch-y-sus-accesorios"));
+});
+test("los complementos móviles son recomendaciones curadas, no una categoría primaria", () => {
+  assert.deepEqual(getCuratedRelatedProductCodes("celulares"), ["N2207"]);
+  assert.deepEqual(getCuratedRelatedProductCodes("foto-video"), []);
 });
 test("colores del mismo SKU y modelo se agrupan, modelos distintos no", () => {
   const rows = [
