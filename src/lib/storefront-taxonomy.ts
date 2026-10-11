@@ -55,7 +55,21 @@ const OVERRIDES: Record<string, string> = {
   N1246: "hogar-inteligente", PC401: "monitores", PC402: "monitores", N2318: "herramientas",
   P1006: "radios", N2282: "radios", N2028: "hogar-inteligente", P373: "parlantes",
   "RGLO-TAPE": "hogar", "RGLO-MATE": "cocina", "RGLO-BOT": "hogar",
+  // A ring light is a camera/phone accessory, not a handset. Keep this explicit
+  // until the upstream commercial feed exposes a sufficiently precise category.
+  N2207: "foto-video",
 };
+
+// Curated cross-sells belong in the visual "Productos relacionados" section;
+// they must not force a product into the primary browsing category of the item
+// they complement. Codes keep this deliberately narrow and reviewable.
+const CURATED_RELATED_CODES_BY_CATEGORY: Record<string, readonly string[]> = {
+  celulares: ["N2207"],
+};
+
+export function getCuratedRelatedProductCodes(categorySlug: string): readonly string[] {
+  return CURATED_RELATED_CODES_BY_CATEGORY[categorySlug] ?? [];
+}
 
 type Classifiable = { code: string; name: string; category?: string | null };
 export function getStorefrontCategorySlug(product: Classifiable): string {

@@ -25,6 +25,7 @@ test("accessories and descriptive mentions cannot masquerade as devices", () => 
   assert.equal(matchesProductQuery({ name: "TV BOX XIAOMI" }, "tv box"), true);
   assert.equal(matchesProductQuery({ name: "COOLER PARA CELULAR" }, "celular"), false);
   assert.equal(matchesProductQuery({ name: "DADO IPHONE DE 20W" }, "celular"), false);
+  assert.equal(matchesProductQuery({ code: "N2207", name: "SQ ARO LED MAGNETIC PARA CELULAR S5-BGD-07 TELESIN" }, "catalogo celulares"), false);
 });
 test("catalogue parsing preserves category and brand and does not intercept ordinary prose", () => {
   assert.equal(parseCatalogRequest("muy buen día habrá tv"), null);
