@@ -98,11 +98,23 @@ async function sendBotImage(conversationId: string, recipient: string, mediaUrl:
   await rockyOutbox.enqueue({ conversationId, recipient, mediaUrl, content: caption, source, type: "image" });
 }
 
+async function catalogGreeting(conversationId: string) {
+  const priorBotReply = await prisma.chatMessage.findFirst({
+    where: { conversationId, senderType: "BOT", status: { notIn: ["cancelled", "failed", "uncertain"] } },
+    select: { id: true },
+  });
+  // Catalog intent is handled before the legacy welcome. Preserve a useful
+  // first-turn greeting here, without sending the long static-catalog welcome
+  // or asking the customer to repeat their request.
+  return priorBotReply ? "" : "👋 ¡Hola! Soy Rocky, asistente virtual de *Importaciones Super*. ";
+}
+
 async function sendCatalog(conversationId: string, recipient: string, content: string) {
   const prepared = await prepareCatalogRequest(content);
   if (prepared.kind === "not-catalog") return false;
+  const greeting = await catalogGreeting(conversationId);
   if (prepared.kind === "ambiguous" || prepared.kind === "empty") {
-    await sendBotText(conversationId, recipient, prepared.message, "catalog_scope_clarification");
+    await sendBotText(conversationId, recipient, `${greeting}${prepared.message}`, "catalog_scope_clarification");
     return true;
   }
   await rockyOutbox.enqueueCatalogGeneration({
@@ -112,7 +124,10 @@ async function sendCatalog(conversationId: string, recipient: string, content: s
     snapshotHash: prepared.snapshotHash,
   });
   const partHint = prepared.snapshot.products.length > 32 ? " Se enviará en varias partes para incluir todos los productos." : "";
-  await sendBotText(conversationId, recipient, `¡Hola! Estoy preparando ${prepared.scope.title.toLowerCase()} con datos actuales.${partHint}`, "catalog_generation_queued");
+  const excluded = prepared.excludedForPhotoPolicy > 0
+    ? ` ${prepared.excludedForPhotoPolicy} ${prepared.excludedForPhotoPolicy === 1 ? "producto visible no se incluye" : "productos visibles no se incluyen"} porque la tienda exige una foto válida antes de publicarlos.`
+    : "";
+  await sendBotText(conversationId, recipient, `${greeting}Estoy preparando ${prepared.scope.title.toLowerCase()} con datos actuales.${partHint}${excluded}`, "catalog_generation_queued");
   return true;
 }
 

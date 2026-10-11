@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { catalogParts } from "./catalog-pdf";
-import { catalogPartCaption, catalogRetryAt, catalogSnapshotHash, createCatalogSnapshot, selectCatalogProducts } from "./catalog-generation";
+import { CatalogDocumentTooLargeError, CATALOG_DOCUMENT_MAX_BYTES, catalogParts, splitCatalogPartsForDocumentLimit } from "./catalog-pdf";
+import { catalogPartCaption, catalogRetryAt, catalogSnapshotHash, createCatalogSnapshot, prepareCatalogRequest, selectCatalogProducts } from "./catalog-generation";
 import { resolveCatalogScope } from "./catalog-request";
 
 const scope = resolveCatalogScope("catálogo de celulares")!;
@@ -39,10 +39,54 @@ test("el snapshot conserva nombres/SKU y productos sin foto; no los omite", () =
   assert.equal(catalogSnapshotHash(snapshot), catalogSnapshotHash(snapshot));
 });
 
+test("la preparación deja fuera solo las fichas sin foto por la misma política de tienda y lo contabiliza", async () => {
+  const db = {
+    product: {
+      findMany: async () => [
+        { ...products[0], id: "with-photo", code: "DRONE-WITH-PHOTO", name: "DRON CON FOTO", category: "Drones", imageUrl: "https://example.invalid/drone.jpg" },
+        { ...products[0], id: "without-photo", code: "DRONE-WITHOUT-PHOTO", name: "DRON SIN FOTO", category: "Drones", imageUrl: null },
+      ],
+    },
+  };
+  const prepared = await prepareCatalogRequest("catálogo de drones", db as never);
+  assert.equal(prepared.kind, "ready");
+  if (prepared.kind !== "ready") return;
+  assert.deepEqual(prepared.snapshot.products.map(product => product.code), ["DRONE-WITH-PHOTO"]);
+  assert.equal(prepared.excludedForPhotoPolicy, 1);
+});
+
 test("un catálogo grande se parte de forma estable sin truncarlo", () => {
   const parts = catalogParts(Array.from({ length: 65 }, (_, index) => index));
   assert.deepEqual(parts.map(part => part.length), [32, 32, 1]);
   assert.deepEqual(parts.flat(), Array.from({ length: 65 }, (_, index) => index));
+});
+
+test("un snapshot general de 1901 fichas conserva todas sus partes sin cargar fotos", () => {
+  const many = Array.from({ length: 1901 }, (_, index) => ({
+    ...products[0], id: `product-${index}`, code: `SKU-${index}`, name: `PRODUCTO ${index}`,
+  }));
+  const snapshot = createCatalogSnapshot(many, { kind: "general", key: "general", title: "CATÁLOGO GENERAL" }, now);
+  const parts = catalogParts(snapshot.products);
+  assert.equal(snapshot.products.length, 1901);
+  assert.equal(parts.length, 60);
+  assert.deepEqual(parts.map(part => part.length).slice(-3), [32, 32, 13]);
+  assert.equal(parts.flat().at(-1)?.code, "SKU-1900");
+});
+
+test("el renderizador divide determinísticamente una parte que supera el límite seguro", async () => {
+  const products = ["a", "b", "c", "d", "e"];
+  const fakeRenderer = async (part: string[]) => ({ byteLength: part.length > 2 ? CATALOG_DOCUMENT_MAX_BYTES + 1 : 1_000 });
+  const once = await splitCatalogPartsForDocumentLimit(products, fakeRenderer, { perPart: 5 });
+  const twice = await splitCatalogPartsForDocumentLimit(products, fakeRenderer, { perPart: 5 });
+  assert.deepEqual(once, [["a", "b"], ["c"], ["d", "e"]]);
+  assert.deepEqual(twice, once);
+});
+
+test("un renderer que aún excede el límite con una sola ficha no encola un PDF rechazable", async () => {
+  await assert.rejects(
+    splitCatalogPartsForDocumentLimit(["oversized"], async () => ({ byteLength: CATALOG_DOCUMENT_MAX_BYTES + 1 })),
+    CatalogDocumentTooLargeError,
+  );
 });
 
 test("el adaptador conserva el número de parte y los reintentos tienen espera acotada", () => {
