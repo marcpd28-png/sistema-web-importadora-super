@@ -10,6 +10,7 @@ import { BLOCKED_PUBLIC_PRODUCT_CODES } from "./public-product-blocklist";
 import { getStorefrontCategorySlug, normalizeCatalogText } from "./storefront-taxonomy";
 
 const MAX_GENERATION_ATTEMPTS = 3;
+export const MAX_DELIVERY_ATTEMPTS = 3;
 const GENERATION_LEASE_MS = 30 * 60_000;
 const RETRY_DELAYS_MS = [10_000, 60_000, 5 * 60_000];
 
@@ -225,7 +226,7 @@ export class CatalogGenerationWorker {
         OR: [
           { state: "queued", dueAt: { lte: now } },
           { state: "running", leaseExpiresAt: { lte: now } },
-          { state: "ready" },
+          { state: "ready", dueAt: { lte: now } },
         ],
       },
       orderBy: { sequence: "asc" },
@@ -239,7 +240,7 @@ export class CatalogGenerationWorker {
   private async process(id: string, now: Date) {
     const claim = await this.claim(id, now);
     if (!claim) return false;
-    if (claim.stage === "delivery") return this.deliver(claim.job.id, claim.token);
+    if (claim.stage === "delivery") return this.deliverOrRetry(claim.job.id, claim.token, now);
     try {
       const snapshot = asSnapshot(claim.job.snapshot);
       const parts = await this.renderCatalog({
@@ -266,7 +267,7 @@ export class CatalogGenerationWorker {
       if (!published) return true;
       // Reclaim as delivery in the same tick; no PDF rendering happens twice.
       const delivery = await this.claim(claim.job.id, new Date());
-      return delivery?.stage === "delivery" ? this.deliver(delivery.job.id, delivery.token) : true;
+      return delivery?.stage === "delivery" ? this.deliverOrRetry(delivery.job.id, delivery.token, new Date()) : true;
     } catch (error) {
       await this.retryOrFail(claim.job.id, claim.token, now, error);
       return true;
@@ -281,11 +282,15 @@ export class CatalogGenerationWorker {
       if (!job || job.state === "cancelled" || job.state === "failed" || job.state === "enqueued") return null;
       const expiredLease = job.state === "running" && (!job.leaseExpiresAt || job.leaseExpiresAt <= now);
       const due = job.state === "queued" && job.dueAt <= now;
-      const ready = job.state === "ready";
+      const ready = job.state === "ready" && job.dueAt <= now;
       if (!expiredLease && !due && !ready) return null;
       const stage = job.result ? "delivery" : "render";
       if (stage === "render" && job.attempts >= MAX_GENERATION_ATTEMPTS) {
         await tx.catalogGenerationJob.update({ where: { id }, data: { state: "failed", reason: "generation_attempts_exhausted", processingToken: null, finishedAt: now } });
+        return null;
+      }
+      if (stage === "delivery" && job.deliveryAttempts >= MAX_DELIVERY_ATTEMPTS) {
+        await tx.catalogGenerationJob.update({ where: { id }, data: { state: "failed", reason: "delivery_attempts_exhausted", processingToken: null, leaseExpiresAt: null, finishedAt: now } });
         return null;
       }
       const token = randomUUID();
@@ -295,6 +300,7 @@ export class CatalogGenerationWorker {
           state: "running", processingToken: token, leaseExpiresAt: new Date(now.getTime() + GENERATION_LEASE_MS),
           startedAt: job.startedAt ?? now,
           ...(stage === "render" ? { attempts: { increment: 1 } } : {}),
+          ...(stage === "delivery" ? { deliveryAttempts: { increment: 1 } } : {}),
         },
       });
       if (!acquired.count) return null;
@@ -312,6 +318,29 @@ export class CatalogGenerationWorker {
       data: exhausted
         ? { state: "failed", processingToken: null, leaseExpiresAt: null, reason: "generation_attempts_exhausted", finishedAt: now }
         : { state: "queued", processingToken: null, leaseExpiresAt: null, dueAt: catalogRetryAt(now, job.attempts), reason: error instanceof Error ? "generation_retry_pending" : "generation_retry_unknown" },
+    });
+  }
+
+  private async deliverOrRetry(id: string, token: string, now: Date) {
+    try {
+      return await this.deliver(id, token);
+    } catch (error) {
+      await this.retryDeliveryOrFail(id, token, now, error);
+      return true;
+    }
+  }
+
+  private async retryDeliveryOrFail(id: string, token: string, now: Date, error: unknown) {
+    const job = await this.db.catalogGenerationJob.findUnique({ where: { id }, select: { deliveryAttempts: true } });
+    if (!job) return;
+    const exhausted = job.deliveryAttempts >= MAX_DELIVERY_ATTEMPTS;
+    await this.db.catalogGenerationJob.updateMany({
+      where: { id, state: "running", processingToken: token },
+      // The immutable render result and delivery rows remain intact. Retrying
+      // therefore cannot render again or create a second document intent.
+      data: exhausted
+        ? { state: "failed", processingToken: null, leaseExpiresAt: null, reason: "delivery_attempts_exhausted", finishedAt: now }
+        : { state: "ready", processingToken: null, leaseExpiresAt: null, dueAt: catalogRetryAt(now, job.deliveryAttempts), reason: error instanceof Error ? "delivery_retry_pending" : "delivery_retry_unknown" },
     });
   }
 
