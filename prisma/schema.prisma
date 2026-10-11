@@ -887,6 +887,7 @@ model Conversation {
   automationExecutions AutomationExecution[]
   rockyOutboundJobs    RockyOutboundJob[]
   rockyInboundTurn     RockyInboundTurn?
+  catalogGenerationJobs CatalogGenerationJob[]
 
   @@index([contactId])
   @@index([channel])
@@ -982,6 +983,58 @@ model RockyInboundTurn {
   updatedAt            DateTime     @updatedAt
 
   @@index([state, dueAt])
+}
+
+// PDF rendering is intentionally independent from both the webhook and the
+// WhatsApp outbox. The immutable snapshot makes multipart retries reproducible
+// even while the ERP keeps updating products.
+model CatalogGenerationJob {
+  id                   String   @id @default(cuid())
+  sequence             Int      @unique @default(autoincrement())
+  conversationId       String
+  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  triggerMessageId     String
+  conversationRevision Int
+  globalRevision       Int
+  inboundVersion       Int?
+  scopeKey             String   @db.VarChar(180)
+  title                String   @db.VarChar(180)
+  snapshot             Json
+  snapshotHash         String   @db.VarChar(64)
+  state                String   @default("queued") @db.VarChar(32)
+  attempts             Int      @default(0)
+  processingToken      String?  @db.VarChar(64)
+  leaseExpiresAt       DateTime?
+  dueAt                DateTime @default(now())
+  result               Json?
+  reason               String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  startedAt            DateTime?
+  finishedAt           DateTime?
+  deliveries           CatalogGenerationDelivery[]
+
+  @@unique([conversationId, triggerMessageId, scopeKey])
+  @@index([state, dueAt, sequence])
+  @@index([conversationId, state])
+}
+
+// A stable row per generated PDF part bridges catalog rendering to the existing
+// Rocky outbox without replacing its delivery and consent safeguards.
+model CatalogGenerationDelivery {
+  id             String               @id @default(cuid())
+  jobId          String
+  job            CatalogGenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  partNumber     Int
+  documentUrl    String               @db.Text
+  productCount   Int
+  messageId      String?              @unique
+  state          String               @default("pending") @db.VarChar(32)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([jobId, partNumber])
+  @@index([state, jobId])
 }
 
 model PromoCode {

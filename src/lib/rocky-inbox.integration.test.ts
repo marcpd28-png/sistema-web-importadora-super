@@ -202,16 +202,17 @@ test("a slow conversation does not block another customer's input", async () => 
   await pending;
 });
 
-test("first greeting and catalog request receive only the new universal welcome", async () => {
-  const first = await receive("Hola"); await receive("Me puede brindar su catálogo");
+test("first greeting with a catalog request queues the catalog instead of losing the intent to welcome", async () => {
+  await db.product.create({ data: { code: "FIRST-CATALOG-DRONE", slug: "first-catalog-drone", name: "DRON MINI CON CÁMARA", unitPrice: 399, stockUnits: 5 } });
+  const first = await receive("Hola, catálogo de drones");
   await due(new RockyInbox(db, outbox, planRockyResponse), first.conversationId);
   const replies = await db.chatMessage.findMany({ where: { senderType: "BOT" } });
   assert.equal(replies.length, 1);
-  assert.match(replies[0].content, /Bienvenido/);
-  assert.match(replies[0].content, /https:\/\/mc.ht\/s\/rwQ7BMz/);
-  assert.match(replies[0].content, /14 catálogos en PDF/);
-  assert.match(replies[0].content, /incluidos domingos/);
-  assert.doesNotMatch(replies[0].content, /9:00|Te derivé/);
+  assert.match(replies[0].content, /preparando.*catálogo de drones/i);
+  assert.doesNotMatch(replies[0].content, /14 catálogos en PDF/);
+  const job = await db.catalogGenerationJob.findFirstOrThrow();
+  assert.equal(job.scopeKey, "drones");
+  assert.equal((job.snapshot as { products: unknown[] }).products.length, 1);
 });
 
 test("established product-price requests hand off without product information", async () => {
@@ -394,6 +395,6 @@ test("public assistant stays informational for products, quotes and previous cod
     assert.match(rockyInformationReply(query), /asesor/);
     assert.doesNotMatch(rockyInformationReply(query), /S\/|Precio unitario|Disponibilidad:/);
   }
-  assert.match(rockyInformationReply("catálogo televisores"), /mc.ht/);
+  assert.match(rockyInformationReply("catálogo televisores"), /WhatsApp/);
   assert.match(rockyInformationReply("horarios"), /incluidos domingos/);
 });

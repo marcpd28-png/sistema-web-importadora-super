@@ -1,5 +1,5 @@
 import { findCatalogProductIds, productQueryTerms } from "./rocky-product-query";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -13,9 +13,10 @@ const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalog
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
 const BRAND_PRIMARY = "#2320DA";
-const MAX_CATALOG_PRODUCTS = 40;
+const LEGACY_QUERY_LIMIT = 80;
+export const CATALOG_PRODUCTS_PER_PART = 32;
 
-type CatalogProductImage = {
+export type CatalogProductImage = {
   id: string;
   name: string;
   code: string;
@@ -24,6 +25,21 @@ type CatalogProductImage = {
   unitPrice: unknown;
   wholesalePrice: unknown;
   wholesaleMinQty: number;
+};
+
+export type CatalogSnapshotProduct = CatalogProductImage & {
+  category?: string | null;
+  brand?: string | null;
+};
+
+export type CatalogPdfPart = {
+  absoluteUrl: string;
+  filename: string;
+  relativeUrl: string;
+  partNumber: number;
+  partCount: number;
+  productCount: number;
+  missingImageCount: number;
 };
 
 export type GeneratedCatalogPdf = {
@@ -119,7 +135,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
 }
 
 async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]> {
-  const ids = await findCatalogProductIds(terms.join(" "), MAX_CATALOG_PRODUCTS);
+  const ids = await findCatalogProductIds(terms.join(" "), LEGACY_QUERY_LIMIT);
   if (!ids.length) return [];
   const products = await prisma.product.findMany({
     where: { id: { in: ids }, isVisible: true, stockUnits: { gt: 0 }, unitPrice: { gt: 0 } },
@@ -266,17 +282,20 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
 
     images.forEach((product, index) => {
       document.addPage({ margin: 0, size: "A4" });
+      let titleSize = 23;
+      document.font("Helvetica-Bold").fontSize(titleSize);
+      while (document.heightOfString(title, { width: imageWidth }) > 28 && titleSize > 13) {
+        document.fontSize(--titleSize);
+      }
       document
         .fillColor(BRAND_PRIMARY)
-        .font("Helvetica-Bold")
-        .fontSize(23)
         .text(title, marginX, 30, {
           align: "center",
           width: imageWidth,
         });
       document.moveTo(marginX, 66).lineTo(pageWidth - marginX, 66)
         .lineWidth(2).strokeColor(BRAND_PRIMARY).stroke();
-      document.fillColor("#555555").font("Helvetica").fontSize(8).text("Imagen referencial. Consulta los precios vigentes al pie de esta página.", marginX, 71, { width: imageWidth, align: "center" });
+      document.fillColor("#555555").font("Helvetica").fontSize(8).text("Imagen referencial. Las fichas sin foto se señalan explícitamente. Consulta los precios vigentes.", marginX, 71, { width: imageWidth, align: "center" });
       document.image(product.image, marginX, headerHeight, {
         align: "center",
         fit: [imageWidth, 555],
@@ -300,6 +319,115 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
 
     document.end();
   });
+}
+
+function xml(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+export async function createCatalogPhotoUnavailablePlaceholder(product: Pick<CatalogSnapshotProduct, "name" | "code">) {
+  const source = Buffer.from(`
+    <svg width="1200" height="900" viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="900" fill="#f2f3f8"/>
+      <rect x="48" y="48" width="1104" height="804" rx="28" fill="#ffffff" stroke="#2320DA" stroke-width="8"/>
+      <path d="M485 305h230a36 36 0 0 1 36 36v188a36 36 0 0 1-36 36H485a36 36 0 0 1-36-36V341a36 36 0 0 1 36-36Z" fill="#e4e6f7" stroke="#2320DA" stroke-width="12"/>
+      <circle cx="555" cy="405" r="35" fill="#2320DA"/>
+      <path d="m475 535 83-83 55 55 42-42 70 70" fill="none" stroke="#2320DA" stroke-width="15" stroke-linejoin="round"/>
+      <text x="600" y="650" text-anchor="middle" font-family="Arial, sans-serif" font-size="46" font-weight="700" fill="#17172B">FOTO NO DISPONIBLE</text>
+      <text x="600" y="715" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#555555">${xml(product.code)}</text>
+      <text x="600" y="765" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" fill="#555555">Se conserva el producto en el catálogo.</text>
+    </svg>`);
+  return sharp(source).jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+}
+
+async function loadSnapshotProductImage(product: CatalogSnapshotProduct) {
+  try {
+    return { image: await loadFirstAvailableImage(product), missing: false };
+  } catch {
+    return { image: await createCatalogPhotoUnavailablePlaceholder(product), missing: true };
+  }
+}
+
+function partFilename(scopeKey: string, snapshotHash: string, partNumber: number, partCount: number) {
+  const slug = scopeKey.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 72) || "general";
+  return `catalogo-${slug}-${snapshotHash}-parte-${partNumber}-de-${partCount}.pdf`;
+}
+
+function validPartManifest(value: unknown, expected: { partNumber: number; partCount: number; productCount: number }) {
+  if (!value || typeof value !== "object") return false;
+  const manifest = value as Record<string, unknown>;
+  return manifest.version === 1 && manifest.partNumber === expected.partNumber && manifest.partCount === expected.partCount &&
+    manifest.productCount === expected.productCount && Number.isInteger(manifest.missingImageCount) && Number(manifest.missingImageCount) >= 0;
+}
+
+async function createCatalogPdfPart(
+  products: CatalogSnapshotProduct[],
+  input: { scopeKey: string; title: string; snapshotHash: string; partNumber: number; partCount: number },
+): Promise<CatalogPdfPart> {
+  const filename = partFilename(input.scopeKey, input.snapshotHash, input.partNumber, input.partCount);
+  const relativeUrl = `/uploads/catalogs/${filename}`;
+  const outputPath = path.join(CATALOG_DIRECTORY, filename);
+  const expected = { partNumber: input.partNumber, partCount: input.partCount, productCount: products.length };
+  await mkdir(CATALOG_DIRECTORY, { recursive: true });
+
+  try {
+    await access(outputPath);
+    const manifest = JSON.parse(await readFile(`${outputPath}.json`, "utf8"));
+    if (!validPartManifest(manifest, expected)) throw new Error("Invalid catalog part manifest");
+    return {
+      absoluteUrl: buildPublicUrl(relativeUrl), filename, relativeUrl, ...expected,
+      missingImageCount: Number((manifest as Record<string, unknown>).missingImageCount),
+    };
+  } catch {
+    // The exact immutable part is generated below. A partial PDF is never reused.
+  }
+
+  const rendered: Array<CatalogSnapshotProduct & { image: Buffer }> = [];
+  let missingImageCount = 0;
+  for (let index = 0; index < products.length; index += 4) {
+    const batch = await Promise.all(products.slice(index, index + 4).map(async product => ({ product, ...(await loadSnapshotProductImage(product)) })));
+    for (const item of batch) {
+      if (item.missing) missingImageCount++;
+      rendered.push({ ...item.product, image: item.image });
+    }
+  }
+  const title = input.partCount > 1 ? `${input.title} · PARTE ${input.partNumber}/${input.partCount}` : input.title;
+  const pdf = await renderCatalogImagePdf(rendered, title);
+  const temporaryPath = `${outputPath}.${process.pid}.${randomUUID()}.tmp`;
+  const manifest = { version: 1, ...expected, missingImageCount };
+  try {
+    await writeFile(temporaryPath, pdf, { flag: "wx" });
+    await rename(temporaryPath, outputPath);
+    await writeFile(`${outputPath}.json`, JSON.stringify(manifest), { flag: "w" });
+  } catch (error) {
+    await unlink(temporaryPath).catch(() => undefined);
+    // A second worker can finish the same immutable part between our access
+    // check and rename. Its valid manifest is safe to reuse on the next retry.
+    throw error;
+  }
+  return { absoluteUrl: buildPublicUrl(relativeUrl), filename, relativeUrl, ...expected, missingImageCount };
+}
+
+export function catalogParts<T>(products: readonly T[], perPart = CATALOG_PRODUCTS_PER_PART): T[][] {
+  if (!Number.isInteger(perPart) || perPart < 1) throw new Error("Invalid catalog part size");
+  const result: T[][] = [];
+  for (let index = 0; index < products.length; index += perPart) result.push([...products.slice(index, index + perPart)]);
+  return result;
+}
+
+/** Render from a previously persisted snapshot only. This intentionally never
+ * queries ERP data, so retries and all parts use the same names, SKUs and prices. */
+export async function generateCatalogSnapshotPdfs(input: { scopeKey: string; title: string; snapshotHash: string; products: CatalogSnapshotProduct[] }) {
+  if (!input.products.length) throw new Error("A catalog snapshot must contain at least one product.");
+  const parts = catalogParts(input.products);
+  const generated: CatalogPdfPart[] = [];
+  for (let index = 0; index < parts.length; index++) {
+    generated.push(await createCatalogPdfPart(parts[index], {
+      scopeKey: input.scopeKey, title: input.title, snapshotHash: input.snapshotHash,
+      partNumber: index + 1, partCount: parts.length,
+    }));
+  }
+  return generated;
 }
 
 async function createCatalogPdf(products: CatalogProductImage[], slug: string, title: string, fingerprint: string) {
@@ -401,9 +529,9 @@ export async function generateCatalogPdf(request: CatalogRequest) {
   return generation;
 }
 
-// Compatibility surface used by the internal Rocky routes.  The live WhatsApp
-// webhook uses generateCatalogPdf directly, while these helpers retain the
-// structured result expected by the existing assistant flows.
+// Compatibility surface used by legacy internal Rocky routes. The live
+// WhatsApp flow uses the durable catalog-generation queue; these helpers retain
+// the structured result expected by older assistant surfaces.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function generateRequestedCatalogPdf(
   content: string,
@@ -413,6 +541,7 @@ export async function generateRequestedCatalogPdf(
   // richer product snapshot type in a separately deployed release.
   selection?: any,
 ) {
+  void _includeScreenExtenders;
   const request = parseCatalogRequest(content);
   const catalog = request ? await generateCatalogPdf(request) : null;
   return {
