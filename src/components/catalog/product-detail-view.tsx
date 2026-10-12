@@ -17,6 +17,7 @@ import {
   getProductDiscountPercent,
   ProductStockChip,
 } from "@/components/catalog/product-display";
+import { announceCartAddition } from "@/components/catalog/cart-feedback";
 
 type ProductDetailViewProps = {
   product: CatalogProduct;
@@ -215,6 +216,7 @@ export function ProductDetailView({ product, settings }: ProductDetailViewProps)
       price: product.unitPrice,
       quantity: safeQuantity,
     });
+    announceCartAddition({ productName: displayName, quantity: safeQuantity });
   };
 
   return (

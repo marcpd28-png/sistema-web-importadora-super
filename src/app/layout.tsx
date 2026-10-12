@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import { getPublicSiteUrl } from "@/lib/site-url";
 import { StoreAnalytics } from "@/components/catalog/store-analytics";
+import { CartFeedback } from "@/components/catalog/cart-feedback";
 import { getClarityProjectId } from "@/lib/clarity";
 import "./globals.css";
 import "./storefront-responsive.css";
@@ -59,6 +60,7 @@ export default function RootLayout({
           }}
         />
         {children}
+        <CartFeedback />
         <StoreAnalytics projectId={getClarityProjectId(process.env.CLARITY_PROJECT_ID)} />
       </body>
     </html>

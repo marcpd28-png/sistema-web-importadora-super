@@ -11,7 +11,6 @@ import {
   QuoteLineValidationError,
 } from "@/lib/quote-pricing";
 import { getStoreSettings } from "@/lib/store";
-import { cleanWhatsappNumber, formatCurrency, PUBLIC_WHATSAPP_NUMBER } from "@/lib/utils";
 
 type QuoteRequestItem = {
   code: string;
@@ -205,7 +204,6 @@ export async function POST(request: Request) {
       },
     });
     localQuoteId = localQuote.id;
-    const quoteWhatsappNumber = cleanWhatsappNumber(PUBLIC_WHATSAPP_NUMBER);
     const client = new FacturadorClient({ ...getFacturadorConfig(), maxRetries: 0, timeoutMs: 10000 });
     const result = await client.createQuotation({
       customer: {
@@ -221,15 +219,7 @@ export async function POST(request: Request) {
     });
 
     const { quoteNumber, externalId: quoteExternalId } = confirmQuotationResponse(result.response);
-    const whatsappHref = buildAdvisorWhatsappHref({
-      businessName: settings.businessName,
-      currencySymbol: settings.currencySymbol,
-      customerName,
-      quoteNumber,
-      advisorPhone: quoteWhatsappNumber,
-      total,
-      items,
-    });
+    const messengerHref = buildMessengerHref(localQuote.id, quoteNumber);
     const warnings = result.warnings.filter(Boolean);
     const messageBase = quoteNumber
       ? `Cotización ${quoteNumber} registrada en el ERP.`
@@ -267,7 +257,7 @@ export async function POST(request: Request) {
         quoteNumber,
         status: "ERP_REGISTERED",
         statusSteps: toJson(statusSteps),
-        whatsappHref,
+        whatsappHref: messengerHref,
 
       },
     });
@@ -280,7 +270,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({
       localQuoteId: localQuote.id, message: messageBase, quoteNumber,
-      statusSteps, whatsappHref, warnings,
+      statusSteps, messengerHref, warnings,
     });
   } catch (error) {
     if (requestId && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -318,63 +308,16 @@ function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value ?? null)) as Prisma.InputJsonValue;
 }
 
-function normalizeCustomerWhatsappNumber(value: string) {
-  const digits = cleanWhatsappNumber(value);
-
-  if (digits.startsWith("51") && digits.length >= 11) {
-    return digits;
-  }
-
-  if (digits.length === 9) {
-    return `51${digits}`;
-  }
-
-  return digits;
+function buildMessengerHref(localQuoteId: string, quoteNumber: string | null) {
+  const reference = quoteNumber || localQuoteId;
+  return `https://m.me/importacionessuperoficial?ref=${encodeURIComponent(`cotizacion-${reference}`)}`;
 }
-
-function buildAdvisorWhatsappHref(input: {
-  businessName: string;
-  currencySymbol: string;
-  customerName: string;
-  advisorPhone: string;
-  quoteNumber: string | null;
-  total: number;
-  items: PreparedCustomerWhatsappItem[];
-}) {
-  const phone = normalizeCustomerWhatsappNumber(input.advisorPhone);
-
-  if (!phone || phone.length < 11) {
-    return null;
-  }
-
-  const text = [
-    `Hola,`,
-    input.quoteNumber
-      ? `quiero revisar la cotización ${input.quoteNumber} registrada en ${input.businessName}.`
-      : `quiero revisar mi cotización registrada en ${input.businessName}.`,
-    "",
-    `Cliente: ${input.customerName}`,
-    ...input.items.map(
-      (item) =>
-        `- ${item.name} (${item.code}) x${item.quantity} · ${formatCurrency(item.unitPrice * item.quantity, input.currencySymbol)}`,
-    ),
-    "",
-    `Total referencial: ${formatCurrency(input.total, input.currencySymbol)}`,
-  ].join("\n");
-
-  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-}
-
-type PreparedCustomerWhatsappItem = QuoteRequestItem & {
-  name: string;
-  unitPrice: number;
-};
 import { buildSellableProductWhere } from "@/lib/store-shared";
 
 function existingQuoteResponse(quote: { id: string; status: string; quoteNumber: string | null; erpExternalId: string | null; whatsappHref: string | null; statusSteps: unknown }) {
   if (quote.status === "ERP_REGISTERED" && quote.quoteNumber && quote.erpExternalId) {
     return NextResponse.json({ localQuoteId: quote.id, quoteNumber: quote.quoteNumber,
-      message: `Cotización ${quote.quoteNumber} registrada en el ERP.`, whatsappHref: quote.whatsappHref, statusSteps: quote.statusSteps });
+      message: `Cotización ${quote.quoteNumber} registrada en el ERP.`, messengerHref: quote.whatsappHref, statusSteps: quote.statusSteps });
   }
   return NextResponse.json({ localQuoteId: quote.id,
     message: "Esta solicitud ya fue recibida. Su registro no está confirmado; consulta con un asesor antes de repetirla." }, { status: 409 });

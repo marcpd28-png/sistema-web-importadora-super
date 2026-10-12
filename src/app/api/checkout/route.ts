@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 const CULQI_SECRET_KEY = process.env.CULQI_SECRET_KEY || "";
-const WHATSAPP_BUSINESS_NUMBER = process.env.WHATSAPP_ALERT_NUMBER || "51999999999";
 const DELIVERY_TYPES = new Set(["DELIVERY", "PICKUP", "PROVINCE"]);
 
 // ─────────────────────────────────────────────
@@ -38,12 +37,11 @@ async function chargeCulqi(token: string, amountCentavos: number, email: string,
 }
 
 // ─────────────────────────────────────────────
-// Helper: build WhatsApp confirmation link
+// Messenger does not support prefilled messages. Its referral token carries the
+// order reference to the Page inbox, where a human adviser can continue it.
 // ─────────────────────────────────────────────
-function buildWhatsAppLink(orderNumber: string, customerName: string, total: number, promoCode?: string | null) {
-  const discountLine = promoCode ? `%0A🎟️ Cupón aplicado: ${promoCode}` : "";
-  const msg = `Hola! Acabo de realizar un pedido 🛒%0ANúmero de orden: *${orderNumber}*%0ACliente: ${customerName}%0ATotal pagado: *S/ ${total.toFixed(2)}*${discountLine}%0A%0A¿Pueden confirmar mi pedido?`;
-  return `https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${msg}`;
+function buildMessengerLink(orderNumber: string) {
+  return `https://m.me/importacionessuperoficial?ref=${encodeURIComponent(`pedido-${orderNumber}`)}`;
 }
 
 // ─────────────────────────────────────────────
@@ -187,12 +185,7 @@ export async function POST(request: Request) {
     });
 
     // ── 7. Build WhatsApp confirmation link ───────────────────────────
-    const whatsappLink = buildWhatsAppLink(
-      orderNumber,
-      customer.name,
-      finalTotal,
-      promoCode
-    );
+    const messengerHref = buildMessengerLink(orderNumber);
 
     // ── 8. Return success response ────────────────────────────────────
     return NextResponse.json({
@@ -202,10 +195,10 @@ export async function POST(request: Request) {
       status: orderStatus,
       total: finalTotal,
       discountAmount,
-      whatsappLink,
+      messengerHref,
       message: orderStatus === "PAID"
         ? `¡Pago aprobado! Tu pedido ${orderNumber} ha sido registrado.`
-        : `¡Pedido ${orderNumber} recibido! Envíanos tu voucher de pago por WhatsApp para confirmar.`,
+        : `¡Pedido ${orderNumber} recibido! Envíanos tu voucher por Messenger para confirmarlo.`,
       // Receipt data for frontend display
       receipt: {
         orderNumber,

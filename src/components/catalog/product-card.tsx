@@ -15,6 +15,7 @@ import type { CatalogProduct, StoreSettingsView } from "@/lib/store";
 import { ProductPriceRows } from "@/components/catalog/product-display";
 import { ProductMediaFrame } from "@/components/catalog/product-media-frame";
 import { formatCurrency } from "@/lib/utils";
+import { announceCartAddition } from "@/components/catalog/cart-feedback";
 
 type ProductCardProps = {
   className?: string;
@@ -42,6 +43,7 @@ export function ProductCard({ product: initialProduct, settings, className = "" 
       price: product.unitPrice,
       quantity: requestedQuantity,
     });
+    announceCartAddition({ productName: displayName, quantity: requestedQuantity });
     setQuantity(1);
   };
 

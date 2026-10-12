@@ -103,11 +103,7 @@ export function StoreAnalytics({ projectId }: { projectId: string }) {
             <button type="button" onClick={() => choose("accepted")}>Aceptar analítica</button>
           </div>
         </section>
-      ) : (
-        <button className={styles.preferences} type="button" onClick={() => setEditing(true)}>
-          Privacidad y cookies
-        </button>
-      )}
+      ) : null}
     </>
   );
 }
