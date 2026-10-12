@@ -3,7 +3,6 @@
 import { StoreHomeLink } from "@/components/catalog/store-home-link";
 import {
   House,
-  MessageCircle,
   ShoppingCart,
 } from "lucide-react";
 import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
@@ -65,7 +64,14 @@ export function StoreSideActions({
         aria-label="Abrir Messenger de Importaciones Super"
         title="Escríbenos por Messenger"
       >
-        <MessageCircle className="store-side-action-messenger-icon" aria-hidden="true" size={32} />
+        <svg
+          aria-hidden="true"
+          className="store-side-action-messenger-icon"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path clipRule="evenodd" d="M12 0C5.282 0 0 4.922 0 11.566c0 3.78 1.72 7.05 4.52 9.246V24l3.096-1.698c1.356.374 2.8.564 4.384.564 6.718 0 12-4.922 12-11.566S18.718 0 12 0Zm1.192 15.57-3.058-3.262-5.966 3.262 6.564-6.966 3.134 3.262 5.89-3.262-6.564 6.966Z" fillRule="evenodd" />
+        </svg>
         <span>Messenger</span>
       </a>
     </div>
