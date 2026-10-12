@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  type Dispatch,
-  type SetStateAction,
   useEffect,
   useRef,
   useState,
@@ -60,38 +58,10 @@ type QuoteStatusStep = {
 
 type QuoteState = "idle" | "loading" | "success" | "error";
 
-type AppliedPromo = {
-  success: true;
-  discountAmount: number;
-  code?: string;
-  newTotal?: number;
-  promoCodeId?: string;
-};
-
-type PromoValidationResponse =
-  | AppliedPromo
-  | {
-      success: false;
-      message?: string;
-    };
-
 type CartLine = {
   item: ReturnType<typeof useCartStore.getState>["items"][number];
   pricing: ReturnType<typeof getLinePricing>;
 };
-
-function isPromoValidationResponse(value: unknown): value is PromoValidationResponse {
-  if (!value || typeof value !== "object" || !("success" in value)) {
-    return false;
-  }
-
-  const response = value as { discountAmount?: unknown; success?: unknown };
-
-  return (
-    typeof response.success === "boolean" &&
-    (!response.success || typeof response.discountAmount === "number")
-  );
-}
 
 function EmptyCartState() {
   return (
@@ -211,80 +181,18 @@ function CartFooter({
   quoteFormOpen,
   totalAmount,
   totalSavings,
-  appliedPromo,
-  promoCodeInput,
-  setPromoCodeInput,
-  setAppliedPromo,
-  handleVerifyPromo,
-  isVerifyingPromo,
-  promoError,
-  finalTotalAmount
 }: {
   onOpenQuoteForm: () => void;
   quoteFormOpen: boolean;
   totalAmount: number;
   totalSavings: number;
-  appliedPromo?: AppliedPromo | null;
-  promoCodeInput?: string;
-  setPromoCodeInput?: Dispatch<SetStateAction<string>>;
-  setAppliedPromo?: Dispatch<SetStateAction<AppliedPromo | null>>;
-  handleVerifyPromo?: () => void | Promise<void>;
-  isVerifyingPromo?: boolean;
-  promoError?: string;
-  finalTotalAmount?: number;
 }) {
   return (
     <div className="cart-footer">
-      {!quoteFormOpen && (
-        <div style={{ marginBottom: "16px", padding: "12px", background: "#f9fafb", borderRadius: "8px", border: "1px dashed #d1d5db" }}>
-          <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "8px", color: "#374151" }}>¿Tienes un código de promotor?</label>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input 
-              type="text" 
-              value={promoCodeInput || ''}
-              onChange={(e) => setPromoCodeInput?.(e.target.value)}
-              placeholder="Ingresa tu código" 
-              style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "14px", textTransform: "uppercase" }}
-              disabled={!!appliedPromo}
-            />
-            {!appliedPromo ? (
-              <button 
-                onClick={handleVerifyPromo} 
-                disabled={isVerifyingPromo || !promoCodeInput}
-                style={{ padding: "8px 16px", background: "#111827", color: "#fff", borderRadius: "6px", fontWeight: 500, fontSize: "14px", opacity: (!promoCodeInput || isVerifyingPromo) ? 0.5 : 1 }}
-              >
-                {isVerifyingPromo ? "..." : "Aplicar"}
-              </button>
-            ) : (
-              <button 
-                onClick={() => { setPromoCodeInput?.(""); setAppliedPromo?.(null); }} 
-                style={{ padding: "8px 16px", background: "#fee2e2", color: "#b91c1c", borderRadius: "6px", fontWeight: 500, fontSize: "14px" }}
-              >
-                Quitar
-              </button>
-            )}
-          </div>
-          {promoError && <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "8px" }}>{promoError}</p>}
-          {appliedPromo && <p style={{ color: "#10b981", fontSize: "12px", marginTop: "8px" }}>¡Cupón aplicado! Ahorraste - S/ {appliedPromo.discountAmount}</p>}
-        </div>
-      )}
-
       <div className="summary-row is-total">
         <span>Subtotal</span>
         <strong>S/ {totalAmount.toFixed(2)}</strong>
       </div>
-      {appliedPromo && (
-        <div className="summary-row is-savings" style={{ color: "#10b981" }}>
-          <span>Descuento Promotor</span>
-          <strong>- S/ {appliedPromo.discountAmount.toFixed(2)}</strong>
-        </div>
-      )}
-      {appliedPromo && (
-        <div className="summary-row is-total" style={{ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid #e5e7eb", fontSize: "18px" }}>
-          <span>Total a Pagar</span>
-          <strong>S/ {finalTotalAmount?.toFixed(2) || totalAmount.toFixed(2)}</strong>
-        </div>
-      )}
       {totalSavings > 0 ? (
         <div className="summary-row is-savings">
           <span>Ahorro por mayorista</span>
@@ -688,12 +596,6 @@ export function CartDrawer({
   const quoteRequestRef = useRef<{ fingerprint: string; id: string } | null>(null);
   const [quoteDraft, setQuoteDraft] = useState<QuoteDraft>(() => buildInitialQuoteDraft(settings, quoteDefaults));
 
-  // Promociones
-  const [promoCodeInput, setPromoCodeInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
-  const [promoError, setPromoError] = useState("");
-  const [isVerifyingPromo, setIsVerifyingPromo] = useState(false);
-
   useEffect(() => {
     rehydrateCartStore();
   }, []);
@@ -752,37 +654,6 @@ export function CartDrawer({
   }));
   const totalAmount = orderLines.reduce((sum, line) => sum + line.pricing.total, 0);
 
-  const handleVerifyPromo = async () => {
-    if (!promoCodeInput.trim()) return;
-    setIsVerifyingPromo(true);
-    setPromoError("");
-    try {
-      const res = await fetch("/api/promo/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: promoCodeInput, cartTotal: totalAmount }),
-      });
-      const data: unknown = await res.json();
-      if (!isPromoValidationResponse(data)) {
-        setPromoError("Respuesta inválida del cupón");
-        setAppliedPromo(null);
-        return;
-      }
-
-      if (data.success) {
-        setAppliedPromo(data);
-      } else {
-        setPromoError(data.message ?? "No se pudo aplicar el cupón");
-        setAppliedPromo(null);
-      }
-    } catch {
-      setPromoError("Error al verificar código");
-    } finally {
-      setIsVerifyingPromo(false);
-    }
-  };
-  
-  const finalTotalAmount = totalAmount - (appliedPromo?.discountAmount || 0);
   const totalSavings = orderLines.reduce((sum, line) => sum + line.pricing.savings, 0);
 
   const isQuoteReady =
@@ -807,7 +678,7 @@ export function CartDrawer({
         price: Number(item.unitPrice),
         quantity: item.quantity,
       })),
-      finalTotalAmount,
+      totalAmount,
     );
     setQuoteFormOpen(true);
   };
@@ -848,7 +719,6 @@ export function CartDrawer({
           note: quoteDraft.note,
           deliveryType: quoteDraft.deliveryType,
           address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(", ") || undefined,
-          promoCodeId: appliedPromo?.promoCodeId,
         }),
       });
       const responseText = await response.text();
@@ -924,8 +794,7 @@ export function CartDrawer({
             quantity: item.quantity,
             unitPrice: Number(item.unitPrice),
           })),
-          amount: Math.round(finalTotalAmount * 100),
-          promoCode: appliedPromo?.code || undefined,
+          amount: Math.round(totalAmount * 100),
           deliveryType: quoteDraft.deliveryType,
           address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(", ") || undefined,
           currency: "PEN",
@@ -972,7 +841,6 @@ export function CartDrawer({
             quantity: item.quantity,
             unitPrice: Number(item.unitPrice),
           })),
-          promoCode: appliedPromo?.code || undefined,
           deliveryType: quoteDraft.deliveryType,
           address: [quoteDraft.address, quoteDraft.district].filter(Boolean).join(', ') || undefined,
         }),
@@ -1023,14 +891,6 @@ export function CartDrawer({
               quoteFormOpen={quoteFormOpen}
               totalAmount={totalAmount}
               totalSavings={totalSavings}
-              appliedPromo={appliedPromo}
-              promoCodeInput={promoCodeInput}
-              setPromoCodeInput={setPromoCodeInput}
-              setAppliedPromo={setAppliedPromo}
-              handleVerifyPromo={handleVerifyPromo}
-              isVerifyingPromo={isVerifyingPromo}
-              promoError={promoError}
-              finalTotalAmount={finalTotalAmount}
             />
           </>
         ) : (
@@ -1065,7 +925,7 @@ export function CartDrawer({
             />
             <CulqiCheckout
               publicKey="pk_test_a0437cd3339ed240"
-              amount={Math.round(finalTotalAmount * 100)}
+              amount={Math.round(totalAmount * 100)}
               currency="PEN"
               title={settings.businessName}
               isOpen={culqiOpen}
