@@ -2526,7 +2526,7 @@ body {
   text-align: center;
 }
 
-.store-side-action-whatsapp {
+.store-side-action-messenger {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2537,11 +2537,11 @@ body {
   min-width: var(--store-whatsapp-float-size);
   min-height: var(--store-whatsapp-float-size);
   padding: 0;
-  border: 1px solid rgba(6, 95, 70, 0.18);
+  border: 1px solid rgba(0, 132, 255, 0.24);
   border-radius: 9999px;
-  background: linear-gradient(180deg, #34d399 0%, #22c55e 42%, #16a34a 100%);
+  background: linear-gradient(180deg, #29b6ff 0%, #0084ff 48%, #0069d9 100%);
   box-shadow:
-    0 22px 48px rgba(22, 163, 74, 0.22),
+    0 22px 48px rgba(0, 132, 255, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
   color: #ffffff;
   gap: 0;
@@ -2549,7 +2549,7 @@ body {
   overflow: hidden;
 }
 
-.store-side-action-whatsapp-icon {
+.store-side-action-messenger-icon {
   display: block;
   width: var(--store-whatsapp-float-icon-size);
   height: var(--store-whatsapp-float-icon-size);
@@ -2579,7 +2579,7 @@ body {
   color: #1f1a00;
 }
 
-.store-side-action-whatsapp-icon svg {
+.store-side-action-messenger-icon svg {
   width: 100%;
   height: 100%;
   display: block;
@@ -13387,7 +13387,7 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
     flex: 0 0 auto;
   }
 
-  .store-side-action-whatsapp-icon {
+  .store-side-action-messenger-icon {
     width: var(--store-whatsapp-float-icon-size);
     height: var(--store-whatsapp-float-icon-size);
   }
@@ -16634,8 +16634,8 @@ main,
 }
 
 @media (max-width: 1360px) {
-  .store-side-actions .store-side-action-whatsapp,
-  .store-side-actions-product .store-side-action-whatsapp {
+  .store-side-actions .store-side-action-messenger,
+  .store-side-actions-product .store-side-action-messenger {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -16650,19 +16650,19 @@ main,
     border-radius: 9999px !important;
   }
 
-  .store-side-actions .store-side-action-whatsapp span,
-  .store-side-actions-product .store-side-action-whatsapp span {
+  .store-side-actions .store-side-action-messenger span,
+  .store-side-actions-product .store-side-action-messenger span {
     display: none !important;
   }
 
-  .store-side-actions .store-side-action-whatsapp-icon,
-  .store-side-actions-product .store-side-action-whatsapp-icon {
+  .store-side-actions .store-side-action-messenger-icon,
+  .store-side-actions-product .store-side-action-messenger-icon {
     width: var(--store-whatsapp-float-icon-size) !important;
     height: var(--store-whatsapp-float-icon-size) !important;
   }
 
-  .store-side-actions .store-side-action-whatsapp-icon svg,
-  .store-side-actions-product .store-side-action-whatsapp-icon svg {
+  .store-side-actions .store-side-action-messenger-icon svg,
+  .store-side-actions-product .store-side-action-messenger-icon svg {
     width: 100%;
     height: 100%;
   }
