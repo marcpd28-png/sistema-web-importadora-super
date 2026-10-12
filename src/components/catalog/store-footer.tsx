@@ -4,7 +4,7 @@ import Link from "next/link";
 import { BookOpenText, Clock3, Mail, MapPin } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
 
-const WHATSAPP_URL = "https://wa.me/51955252609?text=Hola%20quiero%20hacer%20una%20consulta";
+const MESSENGER_URL = "https://m.me/importacionessuperoficial";
 
 export function StoreFooter() {
   const currentYear = new Date().getFullYear();
@@ -114,13 +114,13 @@ export function StoreFooter() {
           height: 36px;
           box-sizing: border-box;
         }
-        .store-footer-btn-whatsapp {
-          background: #10b981;
+        .store-footer-btn-messenger {
+          background: #168aff;
           color: #ffffff;
-          box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+          box-shadow: 0 4px 10px rgba(22, 138, 255, 0.2);
         }
-        .store-footer-btn-whatsapp:hover {
-          background: #059669;
+        .store-footer-btn-messenger:hover {
+          background: #0b74df;
           transform: translateY(-1.5px);
         }
         .store-footer-btn-complaints {
@@ -224,11 +224,17 @@ export function StoreFooter() {
 
         {/* Derecha: Botones de Acción */}
         <div className="store-footer-actions">
-          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="store-footer-btn store-footer-btn-whatsapp">
+          <a
+            href={MESSENGER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="store-footer-btn store-footer-btn-messenger"
+            aria-label="Comprar por Messenger"
+          >
             <svg aria-hidden="true" focusable="false" height="12" viewBox="0 0 24 24" width="12" fill="currentColor">
-              <path d="M20.2 3.8A10.7 10.7 0 0 0 12.6 1h-.2C6.8 1 2.2 5.5 2.2 11.1c0 1.9.5 3.8 1.5 5.4L2 23l6.6-1.7c1.6.9 3.3 1.4 5.2 1.4h.1c5.6 0 10.1-4.5 10.1-10.1 0-2.7-1.1-5.2-3.1-7.1ZM14 19.3h-.1c-1.6 0-3.2-.4-4.6-1.3l-.3-.2-3.9 1 1-3.8-.2-.3a8 8 0 0 1-1.3-4.4c0-4.4 3.6-8 8.1-8h.1a8 8 0 0 1 5.7 2.3 8 8 0 0 1 2.4 5.7c0 4.4-3.6 8-8 8ZM18.4 14.2c-.3-.2-1.7-.9-2-.9-.3-.1-.5-.2-.7.2s-.8.9-1 .1-.5-.9-.9-1.2c-.4-.3-.7-.3-.5-.6.1-.2.6-.7.7-1 .2-.2.1-.5 0-.7-.1-.2-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5H11c-.2 0-.5.1-.8.4-.3.3-1.1 1-1.1 2.4s1.2 2.7 1.4 2.9c.2.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 1.9-1.3.2-.6.2-1.1.1-1.2-.1-.2-.3-.2-.6-.4Z" />
+              <path d="M12 1.5C5.93 1.5 1 5.86 1 11.24c0 3.05 1.58 5.8 4.06 7.57V23l4.1-2.26c.9.25 1.85.38 2.84.38 6.07 0 11-4.36 11-9.88S18.07 1.5 12 1.5Zm1.08 13.27-2.8-2.98-5.46 2.98 6.01-6.39 2.86 2.98 5.38-2.98-5.99 6.39Z" />
             </svg>
-            Comprar WhatsApp
+            Comprar por Messenger
           </a>
 
           <a href="/libro-reclamaciones" className="store-footer-btn store-footer-btn-complaints">
