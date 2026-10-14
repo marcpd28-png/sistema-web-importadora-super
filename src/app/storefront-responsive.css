@@ -191,6 +191,7 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
 
 .product-detail-qty-control {
   grid-template-columns: 44px minmax(20px, auto) 44px;
+  min-height: 44px;
 }
 
 .product-detail-buy-actions .button {
@@ -366,15 +367,46 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
   }
 
   .product-detail-layout .product-detail-qty-row {
-    flex-direction: row;
+    display: contents;
+  }
+
+  .product-detail-layout .product-detail-buybox {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .product-detail-layout .product-detail-qty-control,
+  .product-detail-layout .product-detail-buy-actions .button-primary {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: 44px;
+    margin: 0;
+  }
+
+  .product-detail-layout .product-detail-qty-control {
+    grid-column: 1;
+    padding: 0.2rem;
+  }
+
+  .product-detail-layout .product-detail-buy-actions {
+    display: contents;
+  }
+
+  .product-detail-layout .product-detail-buy-actions .button-primary {
+    grid-column: 2;
+  }
+
+  .product-detail-layout .product-detail-total,
+  .product-detail-layout .product-detail-buy-note,
+  .product-detail-layout .product-detail-buy-actions .button-secondary {
+    grid-column: 1 / -1;
   }
 
   .product-detail-layout .product-detail-total {
-    width: auto;
-    text-align: right;
+    width: 100%;
+    text-align: center;
   }
 }
 
