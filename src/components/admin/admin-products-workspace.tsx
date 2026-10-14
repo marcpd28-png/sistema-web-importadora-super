@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Boxes,
+  Download,
   Eye,
   EyeOff,
   ImageOff,
@@ -395,10 +396,23 @@ export function AdminProductsWorkspace({
           <h1><span className="admin-desktop-copy">Catálogo de productos</span><span className="admin-mobile-copy">Productos</span></h1>
           <p className="panel-copy">Busca, corrige y publica productos desde una sola vista.</p>
         </div>
-        <Link className="button button-primary admin-products-new-button" href="/admin/products/new" aria-label="Nuevo producto">
-          <Plus size={17} />
-          <span className="admin-desktop-copy">Nuevo producto</span><span className="admin-mobile-copy">Nuevo</span>
-        </Link>
+        <div className="admin-products-head-actions">
+          <form className="admin-products-export" action="/api/admin/products/export" method="get">
+            <label className="sr-only" htmlFor="published-product-image-format">Formato de imágenes</label>
+            <select id="published-product-image-format" name="format" defaultValue="jpg" aria-label="Formato de imágenes">
+              <option value="jpg">Fotos JPG</option>
+              <option value="png">Fotos PNG</option>
+            </select>
+            <button className="button button-secondary" type="submit">
+              <Download size={16} />
+              <span>Exportar publicados</span>
+            </button>
+          </form>
+          <Link className="button button-primary admin-products-new-button" href="/admin/products/new" aria-label="Nuevo producto">
+            <Plus size={17} />
+            <span className="admin-desktop-copy">Nuevo producto</span><span className="admin-mobile-copy">Nuevo</span>
+          </Link>
+        </div>
       </div>
 
       {toast ? (

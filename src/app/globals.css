@@ -3288,6 +3288,30 @@ body {
   margin-top: 0.35rem;
 }
 
+.admin-products-head-actions,
+.admin-products-export {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.admin-products-head-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-products-export select {
+  min-height: 2.35rem;
+  padding: 0 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--surface-strong);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
 .admin-products-new-button {
   flex: 0 0 auto;
 }
@@ -4089,7 +4113,25 @@ body[data-admin-theme="dark"] .category-danger-form .button-danger { border-colo
   }
 
   .admin-products-new-button {
+    width: auto;
+  }
+
+  .admin-products-head-actions {
     width: 100%;
+    justify-content: stretch;
+  }
+
+  .admin-products-export {
+    flex: 1 1 auto;
+  }
+
+  .admin-products-export select {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .admin-products-export .button {
+    flex: 0 0 auto;
   }
 
   .admin-filters,
