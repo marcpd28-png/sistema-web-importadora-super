@@ -6259,7 +6259,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 }
 
 .product-detail-price-wholesale strong {
-  color: var(--danger);
+  color: var(--success);
   font-family: var(--font-display), sans-serif;
   font-size: 1.05rem;
   line-height: 1;
@@ -6293,7 +6293,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 }
 
 .product-detail-price-savings strong {
-  color: var(--success);
+  color: var(--danger);
   font-family: var(--font-display), sans-serif;
   font-size: 1.05rem;
   line-height: 1;
