@@ -6261,6 +6261,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 }
 
 .product-detail-price-savings span {
+  color: var(--danger);
   font-size: 0.8rem;
   line-height: 1.2;
   letter-spacing: 0.08em;
