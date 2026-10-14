@@ -3,11 +3,7 @@ import { variantColor } from "@/lib/storefront-taxonomy";
 
 import { CatalogPrefetchLink } from "@/components/catalog/catalog-prefetch-link";
 import { useState } from "react";
-import { Bot, Minus, Plus, ShoppingCart } from "lucide-react";
-import {
-  STORE_ASSISTANT_OPEN_EVENT,
-  type StoreAssistantOpenDetail,
-} from "@/components/catalog/assistant-events";
+import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { trackAddToCart } from "@/lib/analytics";
 import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "@/components/catalog/cart-store";
 import { getPublicProductName } from "@/lib/product-name";
@@ -42,16 +38,6 @@ export function ProductCard({ product: initialProduct, className = "" }: Product
     });
     announceCartAddition({ productName: displayName, quantity: requestedQuantity });
     setQuantity(1);
-  };
-
-  const openAssistantForProduct = () => {
-    const detail: StoreAssistantOpenDetail = {
-      prompt: `Dame todas las especificaciones y detalles de este producto: ${displayName}.`,
-      productContextCode: product.code,
-      contextCategorySlug: null,
-    };
-
-    window.dispatchEvent(new CustomEvent(STORE_ASSISTANT_OPEN_EVENT, { detail }));
   };
 
   return (
@@ -96,7 +82,7 @@ export function ProductCard({ product: initialProduct, className = "" }: Product
           </button>
         </div>
 
-        <div className="product-actions product-actions-dual">
+        <div className="product-actions product-actions-single">
           <button
             className="button button-primary"
             disabled={product.stockUnits <= 0}
@@ -107,10 +93,6 @@ export function ProductCard({ product: initialProduct, className = "" }: Product
           >
             <ShoppingCart size={16} />
             <span className="product-card-action-label">{product.stockUnits <= 0 ? "Sin stock" : "Añadir"}</span>
-          </button>
-          <button className="button button-secondary" onClick={openAssistantForProduct} type="button">
-            <Bot size={16} />
-            <span className="product-card-action-label">Consultar</span>
           </button>
         </div>
 
