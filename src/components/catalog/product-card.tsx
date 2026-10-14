@@ -60,53 +60,35 @@ export function ProductCard({ product: initialProduct, className = "" }: Product
             {initialProduct.colorVariants.map(variant => <option key={variant.id} value={variant.id}>{variantColor(variant) ?? variant.code}{variant.stockUnits <= 0 ? " · Agotado" : ""}</option>)}
           </select>
         </label> : null}
-        <div className="product-card-qty-row" aria-label="Cantidad">
+        <div className="product-card-purchase-row">
+          <div className="product-card-qty-row" aria-label="Cantidad">
+            <button
+              aria-label="Disminuir cantidad"
+              className="product-card-qty-button"
+              disabled={product.stockUnits <= 0 || quantity <= 1}
+              onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+              type="button"
+            >
+              <Minus size={14} />
+            </button>
+            <strong className="product-card-qty-value">{quantity}</strong>
+            <button
+              aria-label="Aumentar cantidad"
+              className="product-card-qty-button"
+              disabled={product.stockUnits <= 0 || quantity >= product.stockUnits}
+              onClick={() => setQuantity((value) => Math.min(product.stockUnits, value + 1))}
+              type="button"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
           <button
-            aria-label="Disminuir cantidad"
-            className="product-card-qty-button"
-            disabled={product.stockUnits <= 0 || quantity <= 1}
-            onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-            type="button"
-          >
-            <Minus size={14} />
-          </button>
-          <strong className="product-card-qty-value">{quantity}</strong>
-          <button
-            aria-label="Aumentar cantidad"
-            className="product-card-qty-button"
-            disabled={product.stockUnits <= 0 || quantity >= product.stockUnits}
-            onClick={() => setQuantity((value) => Math.min(product.stockUnits, value + 1))}
-            type="button"
-          >
-            <Plus size={14} />
-          </button>
-        </div>
-
-        <div className="product-actions product-actions-single">
-          <button
-            className="button button-primary"
+            className="button button-primary product-card-add"
             disabled={product.stockUnits <= 0}
             onClick={() => void handleAddToCart()}
             title={product.stockUnits <= 0 ? "Sin stock" : "Añadir al carrito"}
             type="button"
-            aria-label={product.stockUnits <= 0 ? "Sin stock" : "Añadir al carrito"}
-          >
-            <ShoppingCart size={16} />
-            <span className="product-card-action-label">{product.stockUnits <= 0 ? "Sin stock" : "Añadir"}</span>
-          </button>
-        </div>
-
-        <div className="product-card-mobile-summary">
-          <CatalogPrefetchLink className="product-card-mobile-details" href={`/producto/${product.slug}`}>
-            Ver detalles
-          </CatalogPrefetchLink>
-          <button
-            className="button button-primary product-card-mobile-add"
-            disabled={product.stockUnits <= 0}
-            onClick={() => void handleAddToCart(1)}
-            aria-label={product.stockUnits <= 0 ? `${displayName}: sin stock` : `Añadir una unidad de ${displayName} al carrito`}
-            title={product.stockUnits <= 0 ? "Sin stock" : "Añadir una unidad al carrito"}
-            type="button"
+            aria-label={product.stockUnits <= 0 ? `${displayName}: sin stock` : `Añadir ${quantity} unidad${quantity === 1 ? "" : "es"} de ${displayName} al carrito`}
           >
             <ShoppingCart size={18} aria-hidden="true" />
           </button>
