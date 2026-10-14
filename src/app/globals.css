@@ -6218,12 +6218,8 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   flex-wrap: nowrap;
 }
 
-.product-detail-price-wholesale span,
-.product-detail-price-wholesale strong {
-  color: var(--success);
-}
-
 .product-detail-price-wholesale span {
+  color: var(--success);
   font-size: 0.8rem;
   line-height: 1.2;
   letter-spacing: 0.08em;
@@ -6256,11 +6252,6 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   flex-wrap: nowrap;
 }
 
-.product-detail-price-savings span,
-.product-detail-price-savings strong {
-  color: var(--success);
-}
-
 .product-detail-price-savings span {
   color: var(--danger);
   font-size: 0.8rem;
@@ -6274,6 +6265,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
 }
 
 .product-detail-price-savings strong {
+  color: var(--success);
   font-family: var(--font-display), sans-serif;
   font-size: 1.05rem;
   line-height: 1;
