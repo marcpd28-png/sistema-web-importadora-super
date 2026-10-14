@@ -35,7 +35,6 @@ type ProductSectionProps = {
   title: string;
   subtitle?: string;
   products: CatalogProduct[];
-  settings: StoreSettingsView;
   href: string;
   featured?: boolean;
   limit?: number;
@@ -196,7 +195,6 @@ function ProductSection({
   title,
   subtitle,
   products,
-  settings,
   href,
   featured = false,
   limit,
@@ -282,7 +280,7 @@ function ProductSection({
         <div className="catalog-featured-slider" ref={sliderRef}>
           {sectionProducts.map((product, index) => (
             <div className={`catalog-featured-slide${index >= 4 ? " catalog-home-extra" : ""}`} key={product.id}>
-              <ProductCard product={product} settings={settings} />
+              <ProductCard product={product} />
             </div>
           ))}
         </div>
@@ -293,7 +291,6 @@ function ProductSection({
               className={index >= 4 ? "catalog-home-extra" : undefined}
               key={product.id}
               product={product}
-              settings={settings}
             />
           ))}
         </div>
@@ -305,11 +302,9 @@ function ProductSection({
 
 function ProductGridView({
   products,
-  settings,
   title = "Productos",
 }: {
   products: CatalogProduct[];
-  settings: StoreSettingsView;
   title?: string;
 }) {
   return (
@@ -324,7 +319,7 @@ function ProductGridView({
       {products.length ? (
         <div className="catalog-grid">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} settings={settings} />
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       ) : (
@@ -388,7 +383,6 @@ export function CatalogExperience({
             subtitle={hasRealBestSellers ? (salesSummary?.hasDatedSales ? "Los más vendidos de los últimos 15 días." : "Los más vendidos según las unidades acumuladas en el ERP.") : undefined}
             href={hasRealBestSellers ? "/?collection=mas-vendidos" : featuredProducts.length ? "/?collection=destacados" : "/?view=all"}
             products={topProducts}
-            settings={settings}
           />
 
           {categorySections.map(({ category, products: categoryProducts }) => (
@@ -396,13 +390,12 @@ export function CatalogExperience({
               key={category.id}
               href={`/categoria/${category.slug}`}
               products={categoryProducts}
-              settings={settings}
               title={category.name}
             />
           ))}
         </div>
       ) : (
-        <ProductGridView products={products} settings={settings} title={catalogTitle} />
+        <ProductGridView products={products} title={catalogTitle} />
       )}
 
       <CartDrawer

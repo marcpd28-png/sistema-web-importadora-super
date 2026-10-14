@@ -11,18 +11,15 @@ import {
 import { trackAddToCart } from "@/lib/analytics";
 import { isCartStoreHydrated, rehydrateCartStore, useCartStore } from "@/components/catalog/cart-store";
 import { getPublicProductName } from "@/lib/product-name";
-import type { CatalogProduct, StoreSettingsView } from "@/lib/store";
-import { ProductPriceRows } from "@/components/catalog/product-display";
+import type { CatalogProduct } from "@/lib/store";
 import { ProductMediaFrame } from "@/components/catalog/product-media-frame";
-import { formatCurrency } from "@/lib/utils";
 
 type ProductCardProps = {
   className?: string;
   product: CatalogProduct;
-  settings: StoreSettingsView;
 };
 
-export function ProductCard({ product: initialProduct, settings, className = "" }: ProductCardProps) {
+export function ProductCard({ product: initialProduct, className = "" }: ProductCardProps) {
   const [selectedId, setSelectedId] = useState(initialProduct.id);
   const product = initialProduct.colorVariants?.find(item => item.id === selectedId) ?? initialProduct;
   const addItem = useCartStore((state) => state.addItem);
@@ -75,10 +72,6 @@ export function ProductCard({ product: initialProduct, settings, className = "" 
             {initialProduct.colorVariants.map(variant => <option key={variant.id} value={variant.id}>{variantColor(variant) ?? variant.code}{variant.stockUnits <= 0 ? " · Agotado" : ""}</option>)}
           </select>
         </label> : null}
-        <div className="price-box product-price-box">
-          <ProductPriceRows currencySymbol={settings.currencySymbol} product={product} />
-        </div>
-
         <div className="product-card-qty-row" aria-label="Cantidad">
           <button
             aria-label="Disminuir cantidad"
@@ -120,16 +113,9 @@ export function ProductCard({ product: initialProduct, settings, className = "" 
         </div>
 
         <div className="product-card-mobile-summary">
-          <div className="product-card-mobile-prices">
-            <div aria-label={`Precio unitario: ${formatCurrency(product.unitPrice, settings.currencySymbol)}`}>
-              <span>Un.</span>
-              <strong>{formatCurrency(product.unitPrice, settings.currencySymbol)}</strong>
-            </div>
-            <div className="is-wholesale" aria-label={`Precio mayorista desde ${product.wholesaleMinQty} unidades: ${formatCurrency(product.wholesalePrice ?? product.unitPrice, settings.currencySymbol)}`}>
-              <span>{product.wholesaleMinQty}+</span>
-              <strong>{formatCurrency(product.wholesalePrice ?? product.unitPrice, settings.currencySymbol)}</strong>
-            </div>
-          </div>
+          <CatalogPrefetchLink className="product-card-mobile-details" href={`/producto/${product.slug}`}>
+            Ver detalles
+          </CatalogPrefetchLink>
           <button
             className="button button-primary product-card-mobile-add"
             disabled={product.stockUnits <= 0}

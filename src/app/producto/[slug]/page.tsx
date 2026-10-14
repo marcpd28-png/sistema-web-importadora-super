@@ -155,7 +155,7 @@ export default async function ProductDetailPage({
 
           <div className="catalog-grid">
             {data.relatedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} settings={data.settings} />
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </section>

@@ -468,27 +468,14 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
     gap: 4px;
   }
 
-  .product-card-mobile-prices > div {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 2px 4px;
+  .product-card-mobile-details {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--brand-primary);
     font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .product-card-mobile-prices span {
-    color: var(--muted);
-  }
-
-  .product-card-mobile-prices strong {
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .product-card-mobile-prices .is-wholesale,
-  .product-card-mobile-prices .is-wholesale span {
-    color: var(--brand-success, #138768);
+    font-weight: 700;
+    text-decoration: none;
   }
 
   .product-card-mobile-add {
