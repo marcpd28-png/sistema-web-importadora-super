@@ -125,7 +125,7 @@
   .product-detail-layout .product-detail-stage-media { display: flex; align-items: center; justify-content: center; padding: 0; }
   .product-detail-layout .product-detail-stage img, .product-detail-layout .product-detail-stage video { object-fit: contain; object-position: center center; margin-inline: auto; }
   .product-detail-layout .product-detail-copy-card { padding: 12px; gap: 10px; }
-  .product-detail-layout .product-detail-buybox { display: grid; grid-template-columns: 120px minmax(0, 1fr); padding: 12px; gap: 8px; border: 1px solid #e4e7ee; border-radius: 14px; background: #fff; }
+  .product-detail-layout .product-detail-buybox { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 8px; border: 1px solid #e4e7ee; border-radius: 14px; background: #fff; }
   .product-detail-layout .product-detail-qty-row, .product-detail-layout .product-detail-buy-actions { display: contents; }
   .product-detail-layout .product-detail-total { grid-column: 1 / -1; grid-row: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; }
   .product-detail-layout .product-detail-total.is-total span { font-size: 13px; font-weight: 500; color: #526078; letter-spacing: 0; text-transform: none; }
