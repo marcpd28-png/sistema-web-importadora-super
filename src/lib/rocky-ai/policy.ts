@@ -200,6 +200,23 @@ export function renderDecision(
   if (decision.intent === "policy" && decision.policyKey === "pricing") {
     return { text: policies.pricing.trim() || defaultPricingPolicy, safe: true, reason: "verified_policy" };
   }
+  // The model deliberately emits clarify/ambiguous when it cannot identify a
+  // catalog item.  This is not a commercial promise: reply with the same
+  // neutral intake used by the migrated test bot instead of needlessly
+  // handing an otherwise routine first contact to an adviser.
+  if (
+    decision.intent === "clarify" &&
+    decision.reason === "ambiguous" &&
+    decision.productIds.length === 0 &&
+    decision.policyKey === "none" &&
+    decision.catalog === null
+  ) {
+    return {
+      text: "Para ayudarte mejor, envíame una foto clara o el nombre, código o modelo exacto del producto. Si puedes, indícame también la cantidad que necesitas.",
+      safe: true,
+      reason: "product_clarification",
+    };
+  }
   if (decision.reason !== "routine" || decision.intent === "handoff") {
     return { text: "Un asesor revisará tu consulta y te atenderá por este mismo chat.", safe: false, reason: decision.reason };
   }

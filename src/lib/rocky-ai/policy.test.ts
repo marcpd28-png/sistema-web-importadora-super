@@ -127,9 +127,20 @@ test("unknown products, insufficient stock and invalid prices cannot be automate
     assert.equal(renderDecision(decision, products, policies).safe, false);
   }
 });
-test("empty policies and ambiguous results go to review", () => {
+test("empty policies and unverified product results go to review, while neutral clarification is automatic", () => {
   assert.equal(renderDecision({ ...decision, intent: "policy", policyKey: "shipping" }, [], policies).safe, false);
   assert.equal(renderDecision({ ...decision, reason: "ambiguous" }, [product], policies).safe, false);
+  const clarification = renderDecision({
+    ...decision,
+    intent: "clarify",
+    productIds: [],
+    policyKey: "none",
+    reason: "ambiguous",
+  }, [], policies);
+  assert.equal(clarification.safe, true);
+  assert.equal(clarification.reason, "product_clarification");
+  assert.match(clarification.text, /foto clara|nombre, código o modelo exacto/i);
+  assert.equal(automaticAllowed("AUTO", { ...decision, intent: "clarify", productIds: [], policyKey: "none", reason: "ambiguous" }, clarification.safe), true);
 });
 test("modes distinguish bulk automation from hybrid and never auto-send copilot or off", () => {
   assert.equal(automaticAllowed("AUTO", decision, true), true);

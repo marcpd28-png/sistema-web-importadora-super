@@ -18,10 +18,12 @@ let ycloudPayloads: Record<string, unknown>[] = [];
 let telegramPayloads: Record<string, unknown>[] = [];
 let telegramControlPayloads: Record<string, unknown>[] = [];
 let openAiPayloads: Record<string, unknown>[] = [];
+let openAiDecision: Record<string, unknown>;
 let messengerMock: ((url: string, init?: RequestInit) => Response | Promise<Response>) | null = null;
 let duringGeneration: (() => Promise<void>) | null = null;
 let duringTelegramControl: (() => Promise<void>) | null = null;
 const greeting = { intent: "greeting", productIds: [], quantity: 1, priceMode: null, policyKey: "none", reason: "routine", catalog: null };
+const clarification = { intent: "clarify", productIds: [], quantity: 1, priceMode: null, policyKey: "none", reason: "ambiguous", catalog: null };
 const catalogDecision = { intent: "catalog", productIds: [], quantity: 1, priceMode: null, policyKey: "none", reason: "routine", catalog: {
   state: "ready", scopeKey: "parlantes:jbl", title: "CATÁLOGO DE PARLANTES JBL", productCount: 1, message: null,
 } };
@@ -53,7 +55,7 @@ beforeEach(async () => {
   process.env.SOCIAL_INBOX_API_URL = "http://social-inbox-rocky-ai.test";
   delete process.env.SOCIAL_INBOX_API_TOKEN;
   delete process.env.MESSENGER_CONTROL_TOKEN;
-  sends = 0; calls = 0; failDelivery = false; duringGeneration = null; duringTelegramControl = null; ycloudPayloads = []; telegramPayloads = []; telegramControlPayloads = []; openAiPayloads = []; messengerMock = null;
+  sends = 0; calls = 0; failDelivery = false; duringGeneration = null; duringTelegramControl = null; ycloudPayloads = []; telegramPayloads = []; telegramControlPayloads = []; openAiPayloads = []; openAiDecision = greeting; messengerMock = null;
   global.fetch = async (input, init) => {
     const url = String(input);
     if (messengerMock && (url.startsWith("http://social-inbox-rocky-ai.test/") || url.startsWith("http://127.0.0.1:19120/"))) return messengerMock(url, init);
@@ -62,7 +64,7 @@ beforeEach(async () => {
       openAiPayloads.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
       if (duringGeneration) { const hook = duringGeneration; duringGeneration = null; await hook(); }
       return Response.json({ status: "completed", usage: { input_tokens: 50, output_tokens: 30 },
-        output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(greeting) }] }] });
+        output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(openAiDecision) }] }] });
     }
     if (url === "https://api.ycloud.com/v2/whatsapp/messages") {
       ycloudPayloads.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
@@ -484,6 +486,28 @@ test("Messenger AUTO is independently gated, uses gpt-6-sol, and leaves WhatsApp
   assert.equal(remote.botEnabled, false);
   assert.equal((await prisma.storeSettings.findUniqueOrThrow({ where: { id: 1 } })).botMasterSwitch, false);
   assert.equal(sends, 0);
+});
+test("Messenger AUTO replies with neutral intake when the model cannot identify a product", async () => {
+  const remote = installMessengerMock();
+  openAiDecision = clarification;
+  process.env.MESSENGER_SUPER_BOT_COMPATIBLE = "true";
+  process.env.SOCIAL_INBOX_API_TOKEN = "messenger-social-test";
+  process.env.MESSENGER_CONTROL_TOKEN = "messenger-control-test";
+  await prisma.storeSettings.update({ where: { id: 1 }, data: { botMasterSwitch: false } });
+  const current = await settings();
+  await prisma.rockyAiSettings.update({ where: { id: 1 }, data: {
+    enabled: true,
+    channelDefaults: { ...(current.channelDefaults as Record<string, string>), messenger: "AUTO" },
+    channelActivationSince: { messenger: new Date(Date.now() - 30_000).toISOString() },
+  } });
+
+  await workerTick();
+
+  const draft = await prisma.rockyAiDraft.findFirstOrThrow({ where: { conversationId: targetKey("messenger", remote.conversationId) } });
+  assert.equal(draft.state, "SUBMITTED");
+  assert.equal(draft.reason, "product_clarification");
+  assert.match(draft.text, /foto clara|nombre, código o modelo exacto/i);
+  assert.equal(remote.deliveries.length, 1);
 });
 test("Messenger store/unmanaged control stays paused until its separate opt-in is set", async () => {
   const remote = installMessengerMock({ owner: "store", mode: "unmanaged" });
