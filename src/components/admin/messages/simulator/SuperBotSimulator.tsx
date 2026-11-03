@@ -8,9 +8,9 @@ type CatalogPreviewDocument = { relativeUrl: string; filename: string; partNumbe
 type CatalogPreview = { state: "ready" | "clarify" | "empty"; title: string | null; productCount: number; fromConversationContext: boolean; documents?: CatalogPreviewDocument[] };
 type ProductPresentation = { id: string; name: string; code: string; price: number; imageUrl: string | null };
 type PaymentPresentation = { imageUrl: string; alt: string };
-type Turn = { role: "user" | "assistant"; text: string; catalog?: CatalogPreview | null; product?: ProductPresentation | null; recommendations?: ProductPresentation[]; payment?: PaymentPresentation | null; awaitingQuantity?: boolean };
+type Turn = { role: "user" | "assistant"; text: string; opening?: string; catalog?: CatalogPreview | null; product?: ProductPresentation | null; recommendations?: ProductPresentation[]; payment?: PaymentPresentation | null; awaitingQuantity?: boolean };
 type Connection = "checking" | "missing" | "ready" | "verified" | "rejected";
-type SimulationReply = { text?: string; model?: string; providerUsed?: boolean; reason?: string; notice?: string; error?: string; catalog?: CatalogPreview | null; product?: ProductPresentation; recommendations?: ProductPresentation[]; payment?: PaymentPresentation; awaitingQuantity?: boolean };
+type SimulationReply = { text?: string; model?: string; providerUsed?: boolean; reason?: string; notice?: string; error?: string; opening?: string; catalog?: CatalogPreview | null; product?: ProductPresentation; recommendations?: ProductPresentation[]; payment?: PaymentPresentation; awaitingQuantity?: boolean };
 
 const examples = [
   "Hola, busco una licuadora.",
@@ -88,6 +88,7 @@ export function SuperBotSimulator() {
       setTurns(current => [...current, {
         role: "assistant" as const,
         text: payload.text!,
+        opening: payload.opening,
         catalog: payload.catalog,
         product: payload.product ?? null,
         recommendations: payload.recommendations ?? [],
@@ -156,6 +157,7 @@ export function SuperBotSimulator() {
               <img alt={turn.payment.alt} src={turn.payment.imageUrl} />
             </a> : null}
             {turn.role === "assistant" && turn.recommendations?.length ? <section aria-label="Opciones verificadas" className={styles.recommendationShelf}>
+              {turn.opening && <p className={styles.welcomeLine}>{turn.opening}</p>}
               <div className={styles.recommendationGrid}>{turn.recommendations.map(product => <button aria-label={`Elegir ${product.name}, código ${product.code}, S/ ${product.price.toFixed(2)}`} className={styles.recommendationCard} disabled={busy} key={product.id} onClick={() => void send(product.code)} type="button">
                 <ProductImage fallbackClassName={styles.recommendationImageFallback} imageClassName={styles.recommendationImage} product={product} />
                 <span className={styles.recommendationCode}>{product.code}</span>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
-import { automaticAllowed, currentDraft, decisionSchema, hash, maskPersonalData, needsHuman, officialPaymentImagePath, renderDecision, requestedQuantity, settingsSchema, simulationHistorySchema, targetKey, type Decision, type Snapshot } from "./policy";
+import { automaticAllowed, currentDraft, decisionSchema, hash, maskPersonalData, needsHuman, officialPaymentImagePath, renderDecision, requestedQuantity, settingsSchema, simulationHistorySchema, targetKey, warmWelcome, withWarmWelcome, type Decision, type Snapshot } from "./policy";
 const policies = { hours: "De 8 a 20 horas.", location: "", payment: "", shipping: "", returns: "", pricing: "Precios por unidad o mayorista; no hay descuentos." };
 const product = { id: "p1", code: "HY300", name: "Proyector", price: 100, stock: 20, wholesalePrice: 90, wholesaleMinQty: 3 };
 const decision: Decision = { intent: "product", productIds: ["p1"], quantity: 3, priceMode: null, policyKey: "none", reason: "routine", catalog: null };
@@ -34,6 +34,18 @@ test("a unique verified product is presented with its photo and asks for quantit
     id: "p1", name: "Proyector", code: "HY300", price: 100, imageUrl: "/uploads/products/hy300.webp",
   });
   assert.ok(!reply.text.includes("20 unidades"));
+});
+test("the first safe reply introduces Super Bot once and still answers the request", () => {
+  const base = renderDecision({ ...decision, quantity: 1 }, [product], policies);
+  const first = withWarmWelcome(base, true);
+  assert.equal(first.opening, warmWelcome);
+  assert.equal(first.text, `${warmWelcome}\n${base.text}`);
+  assert.deepEqual(withWarmWelcome(base, false), base);
+  const unsafe = renderDecision({ ...decision, reason: "ambiguous" }, [product], policies);
+  assert.deepEqual(withWarmWelcome(unsafe, true), unsafe);
+  const greeting = withWarmWelcome(renderDecision({ ...decision, intent: "greeting", productIds: [] }, [], policies), true);
+  assert.match(greeting.text, /^¡Hola! Soy Super Bot, el asistente virtual de Importaciones Super\./);
+  assert.equal(greeting.text.match(/Soy Super Bot/g)?.length, 1);
 });
 test("only an explicit amount activates the quantity follow-up", () => {
   assert.equal(requestedQuantity("2"), 2);

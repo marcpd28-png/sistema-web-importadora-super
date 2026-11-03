@@ -9,7 +9,7 @@ import { claimChannel, deliver, snapshot, isLocal } from "./adapters";
 import { prepareSuperBotCatalog, type SuperBotCatalogPlan } from "./catalog";
 import { generateDecision } from "./provider";
 import { automaticAllowed, channels, currentDraft, decisionSchema, defaultPricingPolicy, hash, needsHuman, renderDecision, settingsSchema,
-  requestedQuantity, targetKey, type AiChannel, type AiMode, type Decision, type HistoryItem, type Policies, type ProductFact, type SimulationHistoryTurn } from "./policy";
+  requestedQuantity, targetKey, withWarmWelcome, type AiChannel, type AiMode, type Decision, type HistoryItem, type Policies, type ProductFact, type SimulationHistoryTurn } from "./policy";
 import { socialRequest, type SocialPage, type SocialConversation } from "../social-inbox";
 import type { CatalogPdfPart, CatalogSnapshotProduct } from "../catalog-pdf";
 
@@ -331,9 +331,9 @@ export async function simulateSuperBot(turns: SimulationHistoryTurn[], actor: st
       }
     }
   }
-  const rendered = renderDecision(decision, products, policies, {
+  const rendered = withWarmWelcome(renderDecision(decision, products, policies, {
     promptForQuantity: quantity === null && decision.intent === "product" && decision.productIds.length === 1,
-  });
+  }), !turns.some(turn => turn.role === "assistant"));
   const catalog = await catalogPreview(catalogPlan);
   await audit(actor, "live_simulation", undefined, { turns: history.length, providerUsed, intent: decision.intent, policyKey: decision.policyKey, reason: rendered.reason,
     ...(catalog ? { catalog: { state: catalog.state, title: catalog.title, productCount: catalog.productCount, fromConversationContext: catalog.fromConversationContext, pdfParts: catalog.documents?.length ?? 0 } } : {}) });
@@ -399,9 +399,9 @@ export async function generateDraft(id: string, actor: string, explicit = false)
         }
       }
     }
-    const rendered = renderDecision(decision, products, policies, {
+    const rendered = withWarmWelcome(renderDecision(decision, products, policies, {
       promptForQuantity: quantity === null && decision.intent === "product" && decision.productIds.length === 1,
-    });
+    }), !state.history.some(turn => turn.role === "assistant"));
     const freshState = await snapshot(c.channel as AiChannel, c.externalId);
     if (freshState.contextHash !== state.contextHash) throw new Error("CONTEXT_CHANGED");
     return prisma.$transaction(async tx => {

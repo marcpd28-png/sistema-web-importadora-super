@@ -123,11 +123,24 @@ export type RenderedDecision = {
   text: string;
   safe: boolean;
   reason: string;
+  /** A one-time introduction, rendered separately when the reply is visual. */
+  opening?: string;
   product?: ProductPresentation;
   recommendations?: ProductPresentation[];
   payment?: PaymentPresentation;
   awaitingQuantity?: boolean;
 };
+export const warmWelcome = "¡Hola! Soy Super Bot, el asistente virtual de Importaciones Super. Con gusto te ayudo.";
+
+/**
+ * The first safe reply welcomes the client and still answers their question in
+ * the same turn. Visual product choices keep this string separate so their
+ * compact presentation never exposes the hidden textual fallback.
+ */
+export function withWarmWelcome(rendered: RenderedDecision, isFirstReply: boolean): RenderedDecision {
+  if (!isFirstReply || !rendered.safe) return rendered;
+  return { ...rendered, text: `${warmWelcome}\n${rendered.text}`, opening: warmWelcome };
+}
 
 export function requestedQuantity(value: string) {
   const normalized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -157,7 +170,7 @@ export function renderDecision(
   if (decision.reason !== "routine" || decision.intent === "handoff") {
     return { text: "Un asesor revisará tu consulta y te atenderá por este mismo chat.", safe: false, reason: decision.reason };
   }
-  if (decision.intent === "greeting") return { text: "¡Hola! Soy Super Bot. ¿Qué producto buscas?", safe: true, reason: "greeting" };
+  if (decision.intent === "greeting") return { text: "¿Qué producto buscas hoy?", safe: true, reason: "greeting" };
   if (decision.intent === "policy" && decision.policyKey === "payment") {
     return {
       text: "Te comparto nuestras cuentas oficiales. Envía tu comprobante; un asesor lo valida antes del despacho.",

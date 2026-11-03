@@ -70,6 +70,7 @@ async function inbound(externalId: string, content = "Hola de nuevo") {
 test("Copilot persists a draft without sending; concurrent approvals and dispatch send only once", async () => {
   const c = await fixture(); const d = await generateDraft(c.id, "test-admin", true);
   assert.ok(d); assert.equal(d.state, "DRAFT"); assert.equal(sends, 0);
+  assert.match(d.text, /Soy Super Bot, el asistente virtual de Importaciones Super/);
   await Promise.allSettled([approveDraft(d.id, d.text, "admin"), approveDraft(d.id, d.text, "admin")]);
   await Promise.all([dispatchDraft(d.id), dispatchDraft(d.id)]);
   assert.equal(sends, 1); assert.equal((await prisma.rockyAiDraft.findUniqueOrThrow({ where: { id: d.id } })).state, "SUBMITTED");
