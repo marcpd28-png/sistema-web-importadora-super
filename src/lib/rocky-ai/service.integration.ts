@@ -4,7 +4,8 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "../prisma";
 import { RockyAiCatalogWorker } from "./catalog-worker";
 import { approveDraft, configureConversation, dispatchDraft, emergencyStop, generateDraft, pauseForHuman, saveSettings, settings, workerTick } from "./service";
-import { targetKey } from "./policy";
+import { officialPaymentImagePath, targetKey } from "./policy";
+import { buildPublicUrl } from "../site-url";
 
 const url = new URL(process.env.DATABASE_URL || "http://invalid");
 if (url.hostname !== "127.0.0.1" || url.pathname !== "/rocky_ai_test" || process.env.ROCKY_AI_TEST_DATABASE_URL !== process.env.DATABASE_URL) {
@@ -12,6 +13,7 @@ if (url.hostname !== "127.0.0.1" || url.pathname !== "/rocky_ai_test" || process
 }
 const originalFetch = global.fetch;
 let sends = 0, calls = 0, failDelivery = false;
+let ycloudPayloads: Record<string, unknown>[] = [];
 let duringGeneration: (() => Promise<void>) | null = null;
 const greeting = { intent: "greeting", productIds: [], quantity: 1, priceMode: null, policyKey: "none", reason: "routine", catalog: null };
 const catalogDecision = { intent: "catalog", productIds: [], quantity: 1, priceMode: null, policyKey: "none", reason: "routine", catalog: {
@@ -36,8 +38,8 @@ beforeEach(async () => {
   process.env.OPENAI_API_KEY = "synthetic-not-real";
   process.env.YCLOUD_API_KEY = "synthetic-not-real";
   process.env.YCLOUD_WHATSAPP_FROM = "+15005550006";
-  sends = 0; calls = 0; failDelivery = false; duringGeneration = null;
-  global.fetch = async (input) => {
+  sends = 0; calls = 0; failDelivery = false; duringGeneration = null; ycloudPayloads = [];
+  global.fetch = async (input, init) => {
     const url = String(input);
     if (url === "https://api.openai.com/v1/responses") {
       calls++;
@@ -46,6 +48,7 @@ beforeEach(async () => {
         output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(greeting) }] }] });
     }
     if (url === "https://api.ycloud.com/v2/whatsapp/messages") {
+      ycloudPayloads.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
       sends++; if (failDelivery) throw new Error("ambiguous network timeout");
       return Response.json({ id: `provider-${randomUUID()}` });
     }
@@ -70,6 +73,20 @@ test("Copilot persists a draft without sending; concurrent approvals and dispatc
   await Promise.allSettled([approveDraft(d.id, d.text, "admin"), approveDraft(d.id, d.text, "admin")]);
   await Promise.all([dispatchDraft(d.id), dispatchDraft(d.id)]);
   assert.equal(sends, 1); assert.equal((await prisma.rockyAiDraft.findUniqueOrThrow({ where: { id: d.id } })).state, "SUBMITTED");
+});
+test("approved payment responses send the official notice as a single image", async () => {
+  const c = await fixture();
+  const d = (await generateDraft(c.id, "test-admin", true))!;
+  const paymentDecision = { intent: "policy", productIds: [], quantity: 1, priceMode: null, policyKey: "payment", reason: "routine", catalog: null };
+  const caption = "Te comparto nuestras cuentas oficiales. Envía tu comprobante; un asesor lo valida antes del despacho.";
+  await prisma.rockyAiDraft.update({ where: { id: d.id }, data: { decision: paymentDecision, evidence: [], text: caption } });
+  await approveDraft(d.id, caption, "admin");
+  await dispatchDraft(d.id);
+  assert.equal(sends, 1);
+  assert.deepEqual(ycloudPayloads[0].image, { link: buildPublicUrl(officialPaymentImagePath), caption });
+  const sent = await prisma.chatMessage.findUniqueOrThrow({ where: { id: `ai:${d.id}` } });
+  assert.equal(sent.messageType, "IMAGE");
+  assert.equal(sent.mediaUrl, buildPublicUrl(officialPaymentImagePath));
 });
 test("catalog PDF waits for the acknowledged draft before rendering and delivering", async () => {
   const c = await fixture();

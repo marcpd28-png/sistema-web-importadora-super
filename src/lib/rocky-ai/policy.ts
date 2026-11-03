@@ -43,6 +43,11 @@ export type ProductPresentation = {
   price: number;
   imageUrl: string | null;
 };
+export type PaymentPresentation = {
+  imageUrl: string;
+  alt: string;
+};
+export const officialPaymentImagePath = "/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg";
 export const catalogDecisionSchema = z.object({
   // Catalog requests are resolved by the server from an immutable storefront
   // snapshot. These fields record that server decision; they are not facts the
@@ -105,11 +110,22 @@ function productReference(product: ProductFact) {
   const code = product.code.trim();
   return code && !product.name.toLowerCase().includes(code.toLowerCase()) ? `${product.name} (${code})` : product.name;
 }
+function productPresentation(product: ProductFact): ProductPresentation {
+  return {
+    id: product.id,
+    name: product.name,
+    code: product.code,
+    price: product.price,
+    imageUrl: product.imageUrl ?? null,
+  };
+}
 export type RenderedDecision = {
   text: string;
   safe: boolean;
   reason: string;
   product?: ProductPresentation;
+  recommendations?: ProductPresentation[];
+  payment?: PaymentPresentation;
   awaitingQuantity?: boolean;
 };
 
@@ -142,6 +158,17 @@ export function renderDecision(
     return { text: "Un asesor revisará tu consulta y te atenderá por este mismo chat.", safe: false, reason: decision.reason };
   }
   if (decision.intent === "greeting") return { text: "¡Hola! Soy Super Bot. ¿Qué producto buscas?", safe: true, reason: "greeting" };
+  if (decision.intent === "policy" && decision.policyKey === "payment") {
+    return {
+      text: "Te comparto nuestras cuentas oficiales. Envía tu comprobante; un asesor lo valida antes del despacho.",
+      safe: true,
+      reason: "verified_payment",
+      payment: {
+        imageUrl: officialPaymentImagePath,
+        alt: "Cuentas oficiales de Original J.J. S.A.C.",
+      },
+    };
+  }
   if (decision.intent === "policy" && decision.policyKey !== "none") {
     const policy = policies[decision.policyKey]?.trim();
     if (policy) return { text: policy, safe: true, reason: "verified_policy" };
@@ -161,7 +188,10 @@ export function renderDecision(
       ? "¿Qué código te interesa? Si es para un equipo específico, indícame cuál para afinar la recomendación."
       : "¿Quieres una o el catálogo PDF?";
     const reply = `${recommendation ? "Opciones verificadas, ordenadas desde la más económica:" : "Opciones verificadas:"}\n${lines.join("\n")}\n${closing}`;
-    return reply.length > 1000 ? { text: "Encontré varias opciones verificadas. ¿Deseas que te prepare el catálogo?", safe: true, reason: "verified_catalog" } : { text: reply, safe: true, reason: "verified_catalog" };
+    const recommendations = ordered.map(productPresentation);
+    return reply.length > 1000
+      ? { text: "Encontré varias opciones verificadas. ¿Deseas que te prepare el catálogo?", safe: true, reason: "verified_catalog", recommendations }
+      : { text: reply, safe: true, reason: "verified_catalog", recommendations };
   }
   if (decision.intent === "recommendation") {
     return {
@@ -186,13 +216,7 @@ export function renderDecision(
         safe: true,
         reason: "awaiting_quantity",
         awaitingQuantity: true,
-        product: {
-          id: product.id,
-          name: product.name,
-          code: product.code,
-          price: product.price,
-          imageUrl: product.imageUrl ?? null,
-        },
+        product: productPresentation(product),
       };
     }
     if (decision.priceMode === "BOX") {

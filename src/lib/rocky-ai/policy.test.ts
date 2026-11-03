@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
-import { automaticAllowed, currentDraft, decisionSchema, hash, maskPersonalData, needsHuman, renderDecision, requestedQuantity, settingsSchema, simulationHistorySchema, targetKey, type Decision, type Snapshot } from "./policy";
+import { automaticAllowed, currentDraft, decisionSchema, hash, maskPersonalData, needsHuman, officialPaymentImagePath, renderDecision, requestedQuantity, settingsSchema, simulationHistorySchema, targetKey, type Decision, type Snapshot } from "./policy";
 const policies = { hours: "De 8 a 20 horas.", location: "", payment: "", shipping: "", returns: "", pricing: "Precios por unidad o mayorista; no hay descuentos." };
 const product = { id: "p1", code: "HY300", name: "Proyector", price: 100, stock: 20, wholesalePrice: 90, wholesaleMinQty: 3 };
 const decision: Decision = { intent: "product", productIds: ["p1"], quantity: 3, priceMode: null, policyKey: "none", reason: "routine", catalog: null };
@@ -50,7 +50,7 @@ test("browsing verified options remains natural and never reveals stock", () => 
   assert.match(reply.text, /catálogo PDF/i);
 });
 test("recommendations are ranked by verified unit price and never reveal stock", () => {
-  const affordable = { ...product, id: "p2", name: "Soporte económico", code: "SUP-2", price: 15, stock: 8 };
+  const affordable = { ...product, id: "p2", name: "Soporte económico", code: "SUP-2", price: 15, stock: 8, imageUrl: "/uploads/products/sup-2.webp" };
   const standard = { ...product, price: 27 };
   const premium = { ...product, id: "p3", name: "Soporte premium", code: "SUP-3", price: 39, stock: 2 };
   const reply = renderDecision({ ...decision, intent: "recommendation", productIds: ["p3", "p1", "p2"] }, [premium, standard, affordable], policies);
@@ -60,6 +60,26 @@ test("recommendations are ranked by verified unit price and never reveal stock",
   assert.ok(reply.text.indexOf("HY300") < reply.text.indexOf("SUP-3"));
   assert.ok(!reply.text.includes("8 unidades"));
   assert.ok(!reply.text.includes("2 unidades"));
+  assert.deepEqual(reply.recommendations, [
+    { id: "p2", name: "Soporte económico", code: "SUP-2", price: 15, imageUrl: "/uploads/products/sup-2.webp" },
+    { id: "p1", name: "Proyector", code: "HY300", price: 27, imageUrl: null },
+    { id: "p3", name: "Soporte premium", code: "SUP-3", price: 39, imageUrl: null },
+  ]);
+  assert.deepEqual(Object.keys(reply.recommendations![0]).sort(), ["code", "id", "imageUrl", "name", "price"]);
+});
+test("payment requests present the official image and do not transcribe account data", () => {
+  const reply = renderDecision({ ...decision, intent: "policy", productIds: [], policyKey: "payment" }, [], {
+    ...policies,
+    payment: "Banco de prueba 12345678901234567890",
+  });
+  assert.equal(reply.safe, true);
+  assert.equal(reply.reason, "verified_payment");
+  assert.deepEqual(reply.payment, {
+    imageUrl: officialPaymentImagePath,
+    alt: "Cuentas oficiales de Original J.J. S.A.C.",
+  });
+  assert.match(reply.text, /comprobante/i);
+  assert.ok(!reply.text.includes("12345678901234567890"));
 });
 test("an unmatched recommendation asks for the missing context instead of handing off", () => {
   const reply = renderDecision({ ...decision, intent: "recommendation", productIds: [] }, [], policies);

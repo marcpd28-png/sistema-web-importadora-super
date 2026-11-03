@@ -4,6 +4,7 @@ import { buildSellableProductWhere } from "../store-shared";
 import { getPreferredProductImageUrl } from "../product-media";
 import { productQueryTerms, productRecommendationQuery, searchCatalogIdentity, wantsProductRecommendation } from "../rocky-product-query";
 import { productWhatsAppImage } from "../whatsapp-product-image";
+import { buildPublicUrl } from "../site-url";
 import { claimChannel, deliver, snapshot, isLocal } from "./adapters";
 import { prepareSuperBotCatalog, type SuperBotCatalogPlan } from "./catalog";
 import { generateDecision } from "./provider";
@@ -514,13 +515,18 @@ export async function dispatchDraft(id: string) {
     });
     if (!claimed) return;
     try {
-      let productImageUrl: string | null = null;
-      if (rendered.awaitingQuantity && rendered.product && isLocal(c.channel as AiChannel)) {
+      let mediaUrl: string | null = null;
+      if (isLocal(c.channel as AiChannel) && rendered.payment) {
+        // This is the administration-approved public payment notice. The image
+        // keeps bank data out of a long chat message while the caption preserves
+        // the mandatory human validation before dispatch.
+        mediaUrl = buildPublicUrl(rendered.payment.imageUrl);
+      } else if (rendered.awaitingQuantity && rendered.product && isLocal(c.channel as AiChannel)) {
         // A delivery image is generated from the latest verified catalog record;
         // if it cannot be prepared, the same safe text still reaches the client.
-        productImageUrl = await productWhatsAppImage(rendered.product.id).catch(() => null);
+        mediaUrl = await productWhatsAppImage(rendered.product.id).catch(() => null);
       }
-      const providerMessageId = await deliver(c.channel as AiChannel, c.externalId, d.text, d.id, d.approvedBy, productImageUrl);
+      const providerMessageId = await deliver(c.channel as AiChannel, c.externalId, d.text, d.id, d.approvedBy, mediaUrl);
       await prisma.$transaction(async tx => {
         const submitted = await tx.rockyAiDraft.updateMany({ where: { id, state: "SENDING" }, data: { state: "SUBMITTED", providerMessageId } });
         if (!submitted.count) throw new Error("DRAFT_SUBMISSION_LOST");
