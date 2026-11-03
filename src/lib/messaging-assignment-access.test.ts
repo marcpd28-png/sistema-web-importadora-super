@@ -16,6 +16,8 @@ test("la bandeja de asesores está limitada a la cola compartida y sus propios c
   assert.match(messages, /isAdvisorConversationAccessible\(id, session\.userId\)/);
   assert.match(messages, /expectedAssigneeId:\s*session\.userId/);
   assert.match(service, /assignedUserId:\s*options\.expectedAssigneeId/);
+  assert.match(service, /isAdvisorSupportedChannel\(conversation\.channel\)/);
+  assert.match(service, /isAdvisorSupportedChannel\(existing\.channel\)/);
 });
 
 test("la toma y derivación usan una ruta protegida y el propietario actual", () => {

@@ -210,12 +210,14 @@ function asMessageType(value: string): MessageType {
 export function MessagesWorkspace({
   initialChannel = "",
   canManageBot = true,
+  showChannelFilter = true,
   uploadEndpoint,
   viewer,
   advisorTargets,
 }: {
   initialChannel?: ConversationFilters["channel"];
   canManageBot?: boolean;
+  showChannelFilter?: boolean;
   uploadEndpoint?: string;
   viewer: AssignmentViewer;
   advisorTargets: AdvisorTarget[];
@@ -742,6 +744,7 @@ export function MessagesWorkspace({
         onLoadMore={handleLoadMoreConversations}
         onRefresh={() => setRefreshNonce((current) => current + 1)}
         onSelect={handleSelectConversation}
+        showChannelFilter={showChannelFilter}
         total={conversationTotal}
       />
 

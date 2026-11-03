@@ -19,9 +19,23 @@ async function get<T>(url: string): Promise<T> {
   return body as T;
 }
 
-export function SocialInbox({ channel, authorizationUrl, configured }: { channel: SocialChannel; authorizationUrl: string; configured: boolean }) {
+export function SocialInbox({
+  apiBase = "/api/admin/social",
+  authorizationUrl,
+  canManageBot = true,
+  canManageConnection = true,
+  channel,
+  configured,
+}: {
+  apiBase?: string;
+  authorizationUrl?: string;
+  canManageBot?: boolean;
+  canManageConnection?: boolean;
+  channel: SocialChannel;
+  configured: boolean;
+}) {
   const title = channel === "messenger" ? "Messenger de Facebook" : channel === "instagram" ? "Instagram" : "TikTok";
-  const base = `/api/admin/social/${channel}`;
+  const base = `${apiBase}/${channel}`;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SocialMessage[]>([]);
@@ -169,9 +183,9 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
   }
   return <div className="messages-inbox-page">
     <header className="messages-page-header"><div><p className="eyebrow">Centro de Mensajes</p><h1>{title}</h1></div>
-      <div className={styles.connection}><span className="messages-live-indicator"><i aria-hidden="true" />{authorizedAccounts === null ? "Comprobando conexión…" : connectedAccounts > 0 ? `${connectedAccounts} cuenta conectada` : "Sin conexión"}</span><a className="btn btn-outline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">{authorizedAccounts ? "Administrar cuentas" : "Vincular cuenta"}</a></div>
+      <div className={styles.connection}><span className="messages-live-indicator"><i aria-hidden="true" />{authorizedAccounts === null ? "Comprobando conexión…" : connectedAccounts > 0 ? `${connectedAccounts} cuenta conectada` : "Sin conexión"}</span>{canManageConnection && authorizationUrl ? <a className="btn btn-outline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">{authorizedAccounts ? "Administrar cuentas" : "Vincular cuenta"}</a> : null}</div>
     </header>
-    {authorizedAccounts !== null && !connectedAccounts && <p className={styles.notice}>{configured ? "Vincula tu cuenta o revisa su autorización para recibir y responder mensajes." : "La conexión del servidor está pendiente de configuración."}</p>}
+    {authorizedAccounts !== null && !connectedAccounts && <p className={styles.notice}>{configured ? canManageConnection ? "Vincula tu cuenta o revisa su autorización para recibir y responder mensajes." : "Este canal aún no tiene una cuenta conectada." : "La conexión del servidor está pendiente de configuración."}</p>}
     <div className="messages-inbox-workspace"><div className={`messages-workspace ${selected ? "chat-open" : ""}`}>
       {error && <div className="messages-workspace-alert" role="alert"><span>{error}</span><button className="icon-btn" aria-label="Cerrar aviso" onClick={() => setError("")}>×</button></div>}
       <aside className="messages-sidebar" aria-label="Conversaciones">
@@ -183,8 +197,8 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
       </aside>
       <section className="messages-main" aria-label="Mensajes">
         {!selected ? <div className="empty-state"><MessageCircle size={64} /><h2>Centro de Mensajes</h2><p>Selecciona una conversación de {title} para responder.</p></div> : <>
-          <div className="chat-header"><button className="icon-btn chat-header-back" aria-label="Volver a conversaciones" disabled={controlling || sending || uploading} onClick={() => { selectedId.current = null; setSelected(null); }}><ArrowLeft size={20} /></button><div className="chat-header-info"><div className="chat-header-avatar"><DynamicAvatar name={selected.name} /></div><div><h3 className="chat-header-name">{selected.name}</h3><div className="chat-header-meta">{title}{channel !== "messenger" && ` · ${selected.botEnabled ? "Bot activo" : "Atención por asesor"}`}</div></div></div>{channel === "messenger" && <div className="chat-header-actions chat-header-messenger-control"><MessengerControl key={`control:${selected.id}:${controlRevision}`} conversationId={selected.id} disabled={controlling || sending || uploading} onBusyChange={setControlling} /></div>}</div>
-          <RockyAiPanel key={`ai:${selected.id}`} channel={channel} externalId={selected.id} />
+          <div className="chat-header"><button className="icon-btn chat-header-back" aria-label="Volver a conversaciones" disabled={controlling || sending || uploading} onClick={() => { selectedId.current = null; setSelected(null); }}><ArrowLeft size={20} /></button><div className="chat-header-info"><div className="chat-header-avatar"><DynamicAvatar name={selected.name} /></div><div><h3 className="chat-header-name">{selected.name}</h3><div className="chat-header-meta">{title}{channel !== "messenger" && ` · ${selected.botEnabled ? "Bot activo" : "Atención por asesor"}`}</div></div></div>{canManageBot && channel === "messenger" && <div className="chat-header-actions chat-header-messenger-control"><MessengerControl key={`control:${selected.id}:${controlRevision}`} conversationId={selected.id} disabled={controlling || sending || uploading} onBusyChange={setControlling} /></div>}</div>
+          {canManageBot ? <RockyAiPanel key={`ai:${selected.id}`} channel={channel} externalId={selected.id} /> : null}
           <div className="chat-messages" aria-live="polite" onScroll={e => { const el = e.currentTarget; followBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
             {messageLoading && <p>Cargando mensajes…</p>}
             {messageCursor && <button className="messages-load-older" onClick={() => { followBottom.current = false; void loadMessages(selected.id, messageCursor).catch(e => setError(e.message)); }}>Ver mensajes anteriores</button>}

@@ -25,6 +25,7 @@ interface Props {
   onLoadMore: () => void;
   onRefresh: () => void;
   onSelect: (id: string) => void;
+  showChannelFilter?: boolean;
   total: number;
 }
 
@@ -58,6 +59,7 @@ export function ConversationList({
   onLoadMore,
   onRefresh,
   onSelect,
+  showChannelFilter = true,
   total,
 }: Props) {
   const activeFilter = getActiveFilter(filters);
@@ -77,13 +79,15 @@ export function ConversationList({
   return (
     <div className="messages-sidebar">
       <div className="messages-sidebar-header">
-        <div className="messages-filters" aria-label="Canal de mensajes" style={{ marginBottom: 12 }}>
-          {([['', 'Todos'], ['WHATSAPP', 'WhatsApp'], ['TELEGRAM', 'Telegram']] as const).map(([channel, label]) => (
-            <button key={channel} type="button" aria-pressed={filters.channel === channel}
-              className={`messages-filter-btn ${filters.channel === channel ? 'active' : ''}`}
-              onClick={() => onFiltersChange({ channel })}>{label}</button>
-          ))}
-        </div>
+        {showChannelFilter ? (
+          <div className="messages-filters" aria-label="Canal de mensajes" style={{ marginBottom: 12 }}>
+            {([['', 'Todos'], ['WHATSAPP', 'WhatsApp'], ['TELEGRAM', 'Telegram']] as const).map(([channel, label]) => (
+              <button key={channel} type="button" aria-pressed={filters.channel === channel}
+                className={`messages-filter-btn ${filters.channel === channel ? 'active' : ''}`}
+                onClick={() => onFiltersChange({ channel })}>{label}</button>
+            ))}
+          </div>
+        ) : null}
         <div className="messages-search-row">
           <div className="messages-field messages-field-grow">
             <Search size={16} />
