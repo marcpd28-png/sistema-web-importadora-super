@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { messengerSuperBotCompatible } from "@/lib/messenger-control";
 import { approveDraft, audit, configureConversation, conversationStatus, discardDraft, emergencyStop, generateDraft, saveSettings, settings, simulateSuperBot } from "@/lib/rocky-ai/service";
 import { targetSchema, targetKey, modes, simulationHistorySchema } from "@/lib/rocky-ai/policy";
 import { analyzeVisualEvidence } from "@/lib/rocky-ai/visual-evidence";
@@ -41,6 +42,7 @@ function failure(error: unknown) {
     CONTROL_CHANGED: "Cambió el control de la conversación.",
     DAILY_LIMIT: "Se alcanzó el límite diario de uso.",
     MESSENGER_CONTROL_REQUIRED: "Configura el control de Messenger antes de activar IA.",
+    MESSENGER_SUPER_BOT_INCOMPATIBLE: "Messenger Super Bot sigue apagado: configura sus accesos privados y confirma la compatibilidad del canal en el servidor.",
     CHANNEL_NOT_OWNED: "No se pudo confirmar el control exclusivo del canal.",
   };
   return NextResponse.json({ error: known[message] ?? "No se pudo completar la operación. Revisa la conexión y el control del canal." }, { status: 409 });
@@ -61,7 +63,7 @@ export async function GET(request: NextRequest) {
       prisma.rockyAiAudit.findMany({ orderBy: { createdAt: "desc" }, take: 30 }),
       prisma.rockyAiConversation.findMany({ orderBy: { updatedAt: "desc" }, take: 50 }),
     ]);
-    return NextResponse.json({ config, configured: Boolean(process.env.OPENAI_API_KEY), usage, drafts, events, conversations }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ config, configured: Boolean(process.env.OPENAI_API_KEY), messengerSuperBotCompatible: messengerSuperBotCompatible(), usage, drafts, events, conversations }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return failure(error); }
 }
 export async function POST(request: NextRequest) {

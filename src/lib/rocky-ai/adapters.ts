@@ -1,11 +1,10 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "../prisma";
-import { socialConversation, socialRequest, socialReplyInbox, type SocialChannel, type SocialMessage, type SocialPage } from "../social-inbox";
+import { dedupeSocialMessages, safeSocialMessage, socialConversation, socialConversationHasHumanAssignee, socialRequest, socialReplyInbox, type SocialChannel, type SocialMessage, type SocialPage } from "../social-inbox";
 import { SOCIAL_FILE_LIMIT, uploadSocialFile } from "../social-media";
-import { messengerControl } from "../messenger-control";
-import { controlTelegram } from "../telegram-messages";
-import { telegramCommand, telegramReplyWindow } from "../telegram-bridge";
+import { messengerControl, messengerSuperBotCompatible } from "../messenger-control";
+import { controlTelegramSuperBot, sendTelegramSuperBot, telegramReplyWindow, telegramSuperBotBridgeReady } from "../telegram-bridge";
 import { telegramMessageKey } from "../telegram-events";
 import { normalizeYCloudPhone, sendYCloudOutboundMessage } from "../ycloud-outbound";
 import { hash, type AiChannel, type HistoryItem, type Snapshot } from "./policy";
@@ -20,7 +19,10 @@ export async function snapshot(channel: AiChannel, externalId: string): Promise<
     if (c.channel.toLowerCase() !== channel || c.contact.externalId?.startsWith("SIMULATOR:")) throw new Error("INVALID_CONVERSATION");
     history = c.messages.filter(m => !["cancelled", "failed"].includes(m.status ?? "")).reverse()
       .map(m => ({ id: m.id, role: m.senderType === "CUSTOMER" ? "user" : "assistant", text: m.content, at: m.createdAt.toISOString(), attachment: m.messageType !== "TEXT" }));
-    owned = !c.botEnabled;
+    // Telegram's legacy `botEnabled` flag alone cannot distinguish a Super
+    // Bot claim from an adviser takeover. A claimed AI thread must also stay
+    // unassigned and visibly automatic.
+    owned = !c.botEnabled && !c.assignedUserId && (channel !== "telegram" || c.status === "AUTOMATICO");
     control = [c.automationRevision, c.telegramRevision, c.botEnabled, c.status, c.assignedUserId];
     const lastInbound = history.filter(m => m.role === "user").at(-1);
     // Text-only automation never opens a new messaging session.
@@ -29,11 +31,20 @@ export async function snapshot(channel: AiChannel, externalId: string): Promise<
   } else {
     const { conversation, inbox } = await socialConversation(externalId, channel as SocialChannel);
     const page = await socialRequest<SocialPage<SocialMessage>>(`/conversations/${externalId}/messages?perPage=30`);
-    history = page.data.filter(m => m.contactInboxId === inbox.id && !m.deletedAt && !m.sendError)
+    // Meta emits an outbound ownership notice when Super Bot takes a chat.
+    // It is not a customer or adviser turn, and treating it as one would pause
+    // the bot before it can answer the customer that triggered the claim.
+    history = dedupeSocialMessages(page.data.map(safeSocialMessage).filter(m =>
+      m.contactInboxId === inbox.id && !m.deletedAt && !m.sendError && !m.systemEvent,
+    ))
       .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id.localeCompare(b.id, undefined, { numeric: true }))
       .map(m => ({ id: m.id, role: m.messageType === "incoming" ? "user" : "assistant", text: m.text || "", at: m.createdAt, attachment: Boolean(m.attachments?.length) }));
-    owned = !conversation.botEnabled;
-    control = [conversation.botEnabled, inbox.id];
+    // An adviser assignment is an independent human-takeover signal.  It can
+    // arrive after Super Bot already claimed the ChatbotX conversation, so it
+    // must both revoke ownership and change the context hash before delivery.
+    owned = !conversation.botEnabled && !socialConversationHasHumanAssignee(conversation);
+    control = [conversation.botEnabled, inbox.id, conversation.assignedUserId, conversation.assigneeId,
+      conversation.assignedUser?.id, conversation.assignee?.id];
     if (channel === "messenger") {
       if (!process.env.MESSENGER_CONTROL_TOKEN) owned = false;
       else {
@@ -54,14 +65,39 @@ export async function claimChannel(channel: AiChannel, externalId: string) {
   if (isLocal(channel)) {
     const c = await prisma.conversation.findUniqueOrThrow({ where: { id: externalId } });
     if (c.channel.toLowerCase() !== channel) throw new Error("INVALID_CONVERSATION");
-    let telegramRevision: number | undefined;
-    if (channel === "telegram") telegramRevision = (await controlTelegram(c, false)).revision;
-    await prisma.conversation.update({ where: { id: externalId }, data: { botEnabled: false, ...(telegramRevision === undefined ? {} : { telegramRevision }) } });
+    if (channel === "telegram") {
+      if (!c.botEnabled || c.assignedUserId || c.status !== "AUTOMATICO") throw new Error("CONTROL_CHANGED");
+      if (!c.telegramConnectionId || !c.telegramChatId) throw new Error("TELEGRAM_NOT_READY");
+      const telegramRevision = (await controlTelegramSuperBot({
+        connectionId: c.telegramConnectionId, chatId: c.telegramChatId, expectedRevision: c.telegramRevision,
+      })).revision;
+      // The bridge's expected revision protects its side; this conditional
+      // write protects the local inbox if an adviser took the chat in between.
+      const claimed = await prisma.conversation.updateMany({ where: {
+        id: externalId, assignedUserId: null, status: "AUTOMATICO",
+      }, data: { botEnabled: false, telegramRevision } });
+      if (!claimed.count) throw new Error("CONTROL_CHANGED");
+    } else {
+      await prisma.conversation.update({ where: { id: externalId }, data: { botEnabled: false } });
+    }
   } else {
-    await socialConversation(externalId, channel as SocialChannel);
+    const { conversation } = await socialConversation(externalId, channel as SocialChannel);
+    // A thread with ChatbotX's bot disabled is already owned by a human or
+    // another integration. Never use an automatic default to take it back.
+    if (!conversation.botEnabled || socialConversationHasHumanAssignee(conversation)) throw new Error("CONTROL_CHANGED");
     if (channel === "messenger") {
-      if (!process.env.MESSENGER_CONTROL_TOKEN) throw new Error("MESSENGER_CONTROL_REQUIRED");
-      await messengerControl(externalId, { action: "manual", minutes: 0, actor: "rocky-ai" });
+      if (!messengerSuperBotCompatible()) throw new Error("MESSENGER_SUPER_BOT_INCOMPATIBLE");
+      // The controller is the only authority that can distinguish Meta's
+      // automated owner from a human handoff. Unknown, other, resumed, or
+      // already-store states are deliberately not claimable by polling.
+      const before = await messengerControl(externalId);
+      if (before.error || before.owner !== "meta" || before.mode !== "meta" || before.resumeAt !== null || before.ownerVerified === false) {
+        throw new Error("CONTROL_CHANGED");
+      }
+      const claimed = await messengerControl(externalId, { action: "manual", minutes: 0, actor: "rocky-ai" });
+      if (claimed.error || claimed.owner !== "store" || claimed.mode !== "manual" || claimed.resumeAt !== null || claimed.ownerVerified === false) {
+        throw new Error("CHANNEL_NOT_OWNED");
+      }
     }
     await socialRequest(`/conversations/${externalId}/disable-bot`, {});
   }
@@ -87,6 +123,9 @@ export async function deliver(
     if (!message?.id || message.sendError) throw new Error("DELIVERY_UNCONFIRMED");
     return message.id;
   }
+  if (channel === "telegram" && !await telegramSuperBotBridgeReady()) {
+    throw new Error("TELEGRAM_BOT_BRIDGE_INCOMPATIBLE");
+  }
   const c = await prisma.conversation.findUniqueOrThrow({ where: { id: externalId }, include: { contact: true } });
   const id = `ai:${draftId}`;
   const messageType: "TEXT" | "IMAGE" = mediaUrl ? "IMAGE" : "TEXT";
@@ -96,7 +135,7 @@ export async function deliver(
     let providerId: string;
     if (channel === "telegram") {
       if (!c.telegramConnectionId || !c.telegramChatId || !telegramReplyWindow(c.telegramLastInboundAt)) throw new Error("TELEGRAM_NOT_READY");
-      const sent = await telegramCommand<{ messageId: number }>("send", {
+      const sent = await sendTelegramSuperBot({
         connectionId: c.telegramConnectionId, chatId: c.telegramChatId, requestId: id, type: "TEXT", content: text,
         ...(mediaUrl ? { type: "IMAGE", mediaUrl } : {}),
       });
@@ -172,6 +211,10 @@ export async function deliverCatalogDocument(channel: AiChannel, externalId: str
     return deliver(channel, externalId, publicDocumentMessage(input), `catalog:${input.deliveryId}`, null);
   }
 
+  if (channel === "telegram" && !await telegramSuperBotBridgeReady()) {
+    throw new Error("TELEGRAM_BOT_BRIDGE_INCOMPATIBLE");
+  }
+
   const c = await prisma.conversation.findUniqueOrThrow({ where: { id: externalId }, include: { contact: true } });
   if (c.channel.toLowerCase() !== channel) throw new Error("INVALID_CONVERSATION");
   const id = `ai:catalog:${input.deliveryId}`;
@@ -187,7 +230,7 @@ export async function deliverCatalogDocument(channel: AiChannel, externalId: str
     let providerId: string;
     if (channel === "telegram") {
       if (!c.telegramConnectionId || !c.telegramChatId || !telegramReplyWindow(c.telegramLastInboundAt)) throw new Error("TELEGRAM_NOT_READY");
-      const sent = await telegramCommand<{ messageId: number }>("send", {
+      const sent = await sendTelegramSuperBot({
         connectionId: c.telegramConnectionId, chatId: c.telegramChatId, requestId: id,
         type: "DOCUMENT", content: input.caption, mediaUrl: input.documentUrl,
       });

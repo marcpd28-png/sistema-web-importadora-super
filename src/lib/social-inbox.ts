@@ -8,6 +8,11 @@ export type SocialMessage = {
 };
 export type SocialConversation = {
   id: string; botEnabled: boolean; contact?: { fullName: string | null } | null;
+  // The current ChatbotX read API may omit assignment fields. When it does
+  // return any of these common shapes, automatic workers must treat the chat
+  // as human-owned and leave it alone.
+  assignedUserId?: string | null; assigneeId?: string | null;
+  assignedUser?: { id?: string | null } | null; assignee?: { id?: string | null } | null;
   contactInboxes: { id: string; inboxId: string; channel: string; lastIncomingMessageAt: string | null; inbox: { name: string } }[];
   messages?: SocialMessage[];
 };
@@ -90,6 +95,15 @@ export function channelInbox(conversation: SocialConversation, channel: SocialCh
   const matches = conversation.contactInboxes.filter((inbox) => inbox.channel === channel);
   if (matches.length !== 1) throw new SocialInboxError("No se puede identificar una única cuenta para esta conversación.", 409);
   return matches[0];
+}
+
+/**
+ * ChatbotX deployments differ in the assignment field they expose. Any
+ * explicit assignee is enough to make polling fail closed; absent fields are
+ * deliberately not fabricated as a claim of assignment support.
+ */
+export function socialConversationHasHumanAssignee(conversation: SocialConversation) {
+  return Boolean(conversation.assignedUserId || conversation.assigneeId || conversation.assignedUser?.id || conversation.assignee?.id);
 }
 
 export async function socialConnectionStatus(channel: SocialChannel) {

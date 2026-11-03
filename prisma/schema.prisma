@@ -338,6 +338,8 @@ model RockyAiSettings {
   dailyTokens    Int      @default(200000)
   maxOutputTokens Int     @default(700)
   channelDefaults Json   @default("{}")
+  channelRevisions Json  @default("{}")
+  channelActivationSince Json @default("{}")
   defaultsSince  DateTime @default(now())
   policies       Json     @default("{}")
   workerSeenAt   DateTime?
@@ -374,6 +376,7 @@ model RockyAiDraft {
   contextHash    String
   controlRevision Int
   settingsRevision Int
+  channelRevision Int @default(0)
   state          String   @default("DRAFT") @db.VarChar(24)
   text           String   @db.Text
   decision       Json
@@ -404,6 +407,7 @@ model RockyAiCatalogJob {
   triggerId        String   @db.VarChar(180)
   controlRevision  Int
   settingsRevision Int
+  channelRevision  Int @default(0)
   scopeKey         String   @db.VarChar(180)
   title            String   @db.VarChar(180)
   snapshot         Json

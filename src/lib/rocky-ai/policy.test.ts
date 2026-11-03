@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { z } from "zod";
-import { automaticAllowed, currentDraft, decisionSchema, hash, maskPersonalData, needsHuman, officialPaymentImagePath, renderDecision, requestedQuantity, settingsSchema, simulationHistorySchema, targetKey, warmWelcome, withWarmWelcome, type Decision, type Snapshot } from "./policy";
+import { automaticAllowed, channelActivationSince, currentDraft, decisionSchema, hash, maskPersonalData, needsHuman, officialPaymentImagePath, renderDecision, requestedQuantity, settingsSchema, simulationHistorySchema, targetKey, warmWelcome, withWarmWelcome, type Decision, type Snapshot } from "./policy";
 const policies = { hours: "De 8 a 20 horas.", location: "", payment: "", shipping: "", returns: "", pricing: "Precios por unidad o mayorista; no hay descuentos." };
 const product = { id: "p1", code: "HY300", name: "Proyector", price: 100, stock: 20, wholesalePrice: 90, wholesaleMinQty: 3 };
 const decision: Decision = { intent: "product", productIds: ["p1"], quantity: 3, priceMode: null, policyKey: "none", reason: "routine", catalog: null };
 test("evidence fingerprints survive PostgreSQL JSONB property reordering", () => {
   assert.equal(hash([{ price: 12, id: "p", stock: 2 }]), hash([{ stock: 2, id: "p", price: 12 }]));
+});
+test("a missing or malformed Messenger activation fence stays unarmed", () => {
+  assert.equal(channelActivationSince({}, "messenger"), null);
+  assert.equal(channelActivationSince({ messenger: "not-a-date" }, "messenger"), null);
+  const activated = channelActivationSince({ messenger: "2026-11-03T12:00:00.000Z" }, "messenger");
+  assert.equal(activated?.toISOString(), "2026-11-03T12:00:00.000Z");
 });
 test("catalog quote uses exact published wholesale thresholds and totals", () => {
   assert.match(renderDecision(decision, [product], policies).text, /S\/ 270.00/);
@@ -146,12 +152,13 @@ test("pricing policy confirms that discounts are unavailable", () => {
 });
 test("draft checks reject stale context, control, configuration, expiration and channel ownership", () => {
   const state: Snapshot = { triggerId: "m1", contextHash: "same", history: [], owned: true, canSend: true };
-  const draft = { contextHash: "same", controlRevision: 2, settingsRevision: 3, expiresAt: new Date(Date.now() + 60000) };
-  assert.equal(currentDraft(draft, state, 2, 3), true);
-  for (const change of [{ contextHash: "new-message" }, { owned: false }, { canSend: false }]) assert.equal(currentDraft(draft, { ...state, ...change }, 2, 3), false);
-  assert.equal(currentDraft(draft, state, 3, 3), false);
-  assert.equal(currentDraft(draft, state, 2, 4), false);
-  assert.equal(currentDraft(draft, state, 2, 3, Date.now() + 70000), false);
+  const draft = { contextHash: "same", controlRevision: 2, settingsRevision: 3, channelRevision: 4, expiresAt: new Date(Date.now() + 60000) };
+  assert.equal(currentDraft(draft, state, 2, 3, 4), true);
+  for (const change of [{ contextHash: "new-message" }, { owned: false }, { canSend: false }]) assert.equal(currentDraft(draft, { ...state, ...change }, 2, 3, 4), false);
+  assert.equal(currentDraft(draft, state, 3, 3, 4), false);
+  assert.equal(currentDraft(draft, state, 2, 4, 4), false);
+  assert.equal(currentDraft(draft, state, 2, 3, 5), false);
+  assert.equal(currentDraft(draft, state, 2, 3, 4, Date.now() + 70000), false);
 });
 test("personal identifiers are redacted while product codes remain available", () => {
   const safe = maskPersonalData("Escríbeme a cliente@example.com +51 999 888 777, 11111111111111111111 o 111-111-111111111111-11 por el HY300");

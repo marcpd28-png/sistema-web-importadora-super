@@ -5,7 +5,7 @@ import type { AiMode, AiChannel, Policies } from "@/lib/rocky-ai/policy";
 import styles from "./RockyAi.module.css";
 
 type Config = { enabled: boolean; model: string; dailyRequests: number; dailyTokens: number; maxOutputTokens: number; channelDefaults: Record<AiChannel, AiMode>; policies: Policies; workerSeenAt: string | null; workerError: string | null };
-type Dashboard = { config: Config; configured: boolean; usage: { _count: number; _sum: { inputTokens: number | null; outputTokens: number | null; reservedTokens: number | null } };
+type Dashboard = { config: Config; configured: boolean; messengerSuperBotCompatible: boolean; usage: { _count: number; _sum: { inputTokens: number | null; outputTokens: number | null; reservedTokens: number | null } };
   drafts: { state: string; _count: number }[]; events: { id: string; action: string; actor: string; createdAt: string }[];
   conversations: { id: string; channel: string; externalId: string; mode: AiMode; humanControl: boolean; lastError: string | null }[] };
 const channels: AiChannel[] = ["whatsapp", "telegram", "messenger", "instagram", "tiktok"];
@@ -39,12 +39,14 @@ export function RockyAiSettings() {
       <section className={styles.card}>
         <div className={styles.sectionHead}><h2>Canales</h2><label className={styles.activation}><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} />Activar Super Bot</label></div>
         <div className={styles.channelList}>{channels.map(c => <label className={styles.channelRow} key={c}><span>{channelNames[c]}</span><select aria-label={"Modo de " + channelNames[c]} value={form.channelDefaults[c] || "OFF"} onChange={e => setForm({ ...form, channelDefaults: { ...form.channelDefaults, [c]: e.target.value as AiMode } })}>{Object.entries(modeLabels).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>)}</div>
+        {form.channelDefaults.messenger !== "OFF" && !dashboard.messengerSuperBotCompatible && <p className={styles.help}>Messenger permanece apagado hasta configurar sus dos accesos privados y MESSENGER_SUPER_BOT_COMPATIBLE=true en el servidor. No actives autoReply de ChatbotX.</p>}
         <div className={styles.channelFoot}><span>Se aplica a conversaciones nuevas.</span><details className={styles.modeHelp}><summary>¿Qué modo elegir?</summary><p><b>Copiloto:</b> tú apruebas cada respuesta.<br /><b>Híbrido:</b> automatiza consultas sencillas.<br /><b>Automático:</b> también prepara cotizaciones.</p></details></div>
       </section>
       <div className={styles.saveBar}><span>{busy ? "Guardando…" : "Los cambios se aplican al guardar."}</span><button disabled={busy} onClick={() => void perform({ action: "settings", settings: form }, "Cambios guardados.")}>Guardar cambios</button></div>
       <details className={styles.fold}><summary>Información del negocio</summary><div className={styles.foldBody}><div className={styles.grid}>{Object.entries(policyLabels).map(([key, label]) => <label className={styles.field} key={key}>{label}<textarea rows={3} maxLength={key === "payment" ? 1200 : 600} placeholder="Lo confirma un asesor" value={form.policies[key as keyof Policies] || ""} onChange={e => setForm({ ...form, policies: { ...form.policies, [key]: e.target.value } })} /></label>)}</div></div></details>
       <details className={styles.fold}><summary>Ajustes avanzados</summary><div className={styles.foldBody}>
         {!dashboard.configured && <p className={styles.help}>Conexión pendiente: configurar OPENAI_API_KEY en el servidor.</p>}
+        <p className={styles.help}>Messenger automático usa siempre gpt-6-sol; el modelo de abajo aplica al resto de los canales y al simulador.</p>
         <div className={styles.grid}><label className={styles.field}>Modelo<input value={form.model} onChange={e => setForm({ ...form, model: e.target.value })} /></label>
         <label className={styles.field}>Solicitudes por día<input type="number" min={1} max={10000} value={form.dailyRequests} onChange={e => setForm({ ...form, dailyRequests: Number(e.target.value) })} /></label>
         <label className={styles.field}>Tokens por día<input type="number" min={10000} max={10000000} value={form.dailyTokens} onChange={e => setForm({ ...form, dailyTokens: Number(e.target.value) })} /></label>

@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { type CatalogPdfPart, type CatalogSnapshotProduct, generateCatalogSnapshotPdfs } from "../catalog-pdf";
 import { catalogPartCaption, catalogRetryAt, parseCatalogSnapshot, snapshotProductsForPdf } from "../catalog-generation";
+import { messengerSuperBotCompatible } from "../messenger-control";
+import { telegramSuperBotBridgeCompatible } from "../telegram-bridge";
 import { deliverCatalogDocument, snapshot } from "./adapters";
-import type { AiChannel } from "./policy";
+import { channelRevision, type AiChannel } from "./policy";
 
 const MAX_RENDER_ATTEMPTS = 3;
 const LEASE_MS = 30 * 60_000;
@@ -14,6 +16,15 @@ type JobState = "QUEUED" | "RENDERING" | "READY" | "DELIVERING";
 
 function isActiveState(state: string): state is JobState {
   return ["QUEUED", "RENDERING", "READY", "DELIVERING"].includes(state);
+}
+
+function runsOutsideLegacyMaster(channel: string) {
+  return channel === "telegram" || channel === "messenger" && messengerSuperBotCompatible();
+}
+
+function channelCompatibilityMissing(channel: string) {
+  return channel === "telegram" && !telegramSuperBotBridgeCompatible() ||
+    channel === "messenger" && !messengerSuperBotCompatible();
 }
 
 /**
@@ -81,11 +92,22 @@ export class RockyAiCatalogWorker {
       if (!due) return null;
 
       const settings = await tx.rockyAiSettings.findUnique({ where: { id: 1 } });
+      const legacyMasterRequired = !runsOutsideLegacyMaster(job.conversation.channel);
+      const global = !legacyMasterRequired
+        ? null
+        : await tx.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } });
       const approvalRequired = !job.draft.approvedBy && job.conversation.humanControl;
       const invalid = job.draft.state !== "SUBMITTED" || !settings?.enabled || settings.revision !== job.settingsRevision ||
-        job.conversation.revision !== job.controlRevision || job.conversation.mode === "OFF" || approvalRequired;
+        channelRevision(settings?.channelRevisions, job.conversation.channel as AiChannel) !== job.channelRevision ||
+        job.conversation.revision !== job.controlRevision || job.conversation.mode === "OFF" || approvalRequired ||
+        channelCompatibilityMissing(job.conversation.channel) || legacyMasterRequired && !global?.botMasterSwitch;
       if (invalid) {
-        await tx.rockyAiCatalogJob.update({ where: { id }, data: { state: "CANCELLED", processingToken: null, leaseExpiresAt: null, reason: "catalog_control_changed", finishedAt: now } });
+        const reason = channelCompatibilityMissing(job.conversation.channel)
+          ? "channel_unavailable"
+          : legacyMasterRequired && !global?.botMasterSwitch
+          ? "global_automation_stopped"
+          : "catalog_control_changed";
+        await tx.rockyAiCatalogJob.update({ where: { id }, data: { state: "CANCELLED", processingToken: null, leaseExpiresAt: null, reason, finishedAt: now } });
         return null;
       }
 
@@ -185,10 +207,18 @@ export class RockyAiCatalogWorker {
     const job = await this.db.rockyAiCatalogJob.findUnique({ where: { id }, include: { draft: true, conversation: true } });
     if (!job || job.state !== "DELIVERING" || job.processingToken !== token) return false;
     const settings = await this.db.rockyAiSettings.findUnique({ where: { id: 1 } });
+    const legacyMasterRequired = !runsOutsideLegacyMaster(job.conversation.channel);
+    const global = !legacyMasterRequired
+      ? null
+      : await this.db.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } });
     const requiresHumanApproval = !job.draft.approvedBy && job.conversation.humanControl;
     if (job.draft.state !== "SUBMITTED" || !settings?.enabled || settings.revision !== job.settingsRevision ||
-      job.conversation.revision !== job.controlRevision || job.conversation.mode === "OFF" || requiresHumanApproval) {
-      await this.cancel(id, token, "catalog_control_changed");
+      channelRevision(settings?.channelRevisions, job.conversation.channel as AiChannel) !== job.channelRevision ||
+      job.conversation.revision !== job.controlRevision || job.conversation.mode === "OFF" || requiresHumanApproval ||
+      channelCompatibilityMissing(job.conversation.channel) || legacyMasterRequired && !global?.botMasterSwitch) {
+      await this.cancel(id, token, channelCompatibilityMissing(job.conversation.channel)
+        ? "channel_unavailable"
+        : legacyMasterRequired && !global?.botMasterSwitch ? "global_automation_stopped" : "catalog_control_changed");
       return false;
     }
     const current = await snapshot(job.conversation.channel as AiChannel, job.conversation.externalId);

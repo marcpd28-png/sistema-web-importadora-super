@@ -6,6 +6,39 @@ export const modes = ["OFF", "COPILOT", "HYBRID", "AUTO"] as const;
 export const defaultPricingPolicy = "Trabajamos con precios publicados por unidad y por mayor según la cantidad indicada. No aplicamos descuentos adicionales. La presentación por cajón se cotiza sólo cuando la solicites y esté disponible.";
 export type AiChannel = typeof channels[number];
 export type AiMode = typeof modes[number];
+
+/**
+ * Channel defaults are persisted as JSON so deployments must treat an older or
+ * malformed row as disabled.  In particular, no channel becomes automatic
+ * merely because a new default was added to the application.
+ */
+export function channelDefaultMode(value: unknown, channel: AiChannel): AiMode {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "OFF";
+  const candidate = (value as Record<string, unknown>)[channel];
+  return typeof candidate === "string" && (modes as readonly string[]).includes(candidate)
+    ? candidate as AiMode
+    : "OFF";
+}
+
+export function channelRevision(value: unknown, channel: AiChannel) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return 0;
+  const candidate = (value as Record<string, unknown>)[channel];
+  return typeof candidate === "number" && Number.isInteger(candidate) && candidate >= 0 ? candidate : 0;
+}
+
+/**
+ * Automatic social polling needs a durable activation fence. An old inbound
+ * must not be claimed merely because a deployment later gains a capability
+ * flag. Missing or malformed values are intentionally treated as unarmed.
+ */
+export function channelActivationSince(value: unknown, channel: AiChannel) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const candidate = (value as Record<string, unknown>)[channel];
+  if (typeof candidate !== "string") return null;
+  const at = new Date(candidate);
+  return Number.isFinite(at.getTime()) ? at : null;
+}
+
 export const targetSchema = z.object({ channel: z.enum(channels), externalId: z.string().min(1).max(180).regex(/^[a-zA-Z0-9:_-]+$/) });
 export const settingsSchema = z.object({
   enabled: z.boolean(),
@@ -267,7 +300,7 @@ export function automaticAllowed(mode: AiMode, decision: Decision, safe: boolean
     decision.intent === "product" && decision.priceMode !== "BOX" && decision.productIds.length === 1 && decision.quantity === 1
   );
 }
-export function currentDraft(draft: { contextHash: string; controlRevision: number; settingsRevision: number; expiresAt: Date }, snapshot: Snapshot, revision: number, settingsRevision: number, now = Date.now()) {
+export function currentDraft(draft: { contextHash: string; controlRevision: number; settingsRevision: number; channelRevision: number; expiresAt: Date }, snapshot: Snapshot, revision: number, settingsRevision: number, channelRevision: number, now = Date.now()) {
   return snapshot.owned && snapshot.canSend && draft.contextHash === snapshot.contextHash &&
-    draft.controlRevision === revision && draft.settingsRevision === settingsRevision && draft.expiresAt.getTime() > now;
+    draft.controlRevision === revision && draft.settingsRevision === settingsRevision && draft.channelRevision === channelRevision && draft.expiresAt.getTime() > now;
 }
