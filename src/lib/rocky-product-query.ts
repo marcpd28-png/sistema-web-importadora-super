@@ -31,7 +31,8 @@ const RECOMMENDATION_MODIFIERS = new Set([
   "opcion", "opciones", "adecuado", "adecuada", "adecuados", "adecuadas",
   "conviene", "conveniente", "convenientes", "recomienda", "recomiendas", "recomiendame",
 ]);
-const RECOMMENDATION_SIGNAL = /\b(?:recomiend(?:a|as|ame|o)?|recomendacion(?:es)?|(?:mas|menos)\s+(?:barat[oa]s?|economic[oa]s?|accesibles?)|(?:barat[oa]s?|economic[oa]s?|accesibles?)\b|mejor\s+opcion)\b/;
+const RECOMMENDATION_SIGNAL = /\b(?:recomiend(?:a|as|ame|o)?|recomendacion(?:es)?|(?:mas|menos)\s+(?:barat[oa]s?|economic[oa]s?|accesibles?|adecuad[oa]s?|convenientes?)|menor\s+precio|(?:barat[oa]s?|economic[oa]s?|accesibles?)\b|mejor\s+opcion)\b/;
+const PRICING_NEGOTIATION_SIGNAL = /\b(?:descuento|rebaja|rebajar|bajame|me\s+haces?\s+(?:mas\s+)?barat[oa])\b/;
 
 export function normalizeProductQuery(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -53,7 +54,8 @@ export function productQueryTerms(value: string) {
  * official name contains one of these words is not altered during ordinary
  * searches. */
 export function wantsProductRecommendation(value: string) {
-  return RECOMMENDATION_SIGNAL.test(normalizeProductQuery(value));
+  const normalized = normalizeProductQuery(value);
+  return !PRICING_NEGOTIATION_SIGNAL.test(normalized) && RECOMMENDATION_SIGNAL.test(normalized);
 }
 
 export function productRecommendationQuery(value: string) {

@@ -124,7 +124,7 @@ async function productCandidates(content: string) {
 }
 
 async function recommendationCandidates(content: string) {
-  if (!wantsProductRecommendation(content)) return [];
+  if (!wantsProductRecommendation(content)) return null;
   const query = productRecommendationQuery(content);
   if (!query) return [];
   // Price ordering is performed by the server after filtering the catalog to
@@ -300,7 +300,7 @@ export async function simulateSuperBot(turns: SimulationHistoryTurn[], actor: st
       decision = decisionForCatalog(catalogPlan);
     } else {
       const recommendations = await recommendationCandidates(latest.text);
-      if (recommendations.length) {
+      if (recommendations !== null) {
         decision = recommendationDecision(recommendations);
         products = recommendations;
       } else {
@@ -372,7 +372,7 @@ export async function generateDraft(id: string, actor: string, explicit = false)
         decision = decisionForCatalog(catalogPlan);
       } else {
         const recommendations = await recommendationCandidates(latest.text);
-        if (recommendations.length) {
+        if (recommendations !== null) {
           decision = recommendationDecision(recommendations);
           products = recommendations;
         } else {

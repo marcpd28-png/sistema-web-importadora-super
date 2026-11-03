@@ -79,5 +79,8 @@ test("recommendation modifiers do not become catalog constraints", () => {
   assert.equal(wantsProductRecommendation(request), true);
   assert.equal(productRecommendationQuery(request), "soporte");
   assert.equal(productRecommendationQuery("Recomiéndame un soporte para tablet económico"), "soporte tablet");
+  assert.equal(wantsProductRecommendation("¿Qué soporte es más adecuado?"), true);
+  assert.equal(wantsProductRecommendation("¿Qué soporte tiene menor precio?"), true);
+  assert.equal(wantsProductRecommendation("¿Me haces más barato?"), false);
   assert.equal(wantsProductRecommendation("¿Me haces descuento?"), false);
 });

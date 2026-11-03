@@ -61,6 +61,12 @@ test("recommendations are ranked by verified unit price and never reveal stock",
   assert.ok(!reply.text.includes("8 unidades"));
   assert.ok(!reply.text.includes("2 unidades"));
 });
+test("an unmatched recommendation asks for the missing context instead of handing off", () => {
+  const reply = renderDecision({ ...decision, intent: "recommendation", productIds: [] }, [], policies);
+  assert.equal(reply.safe, true);
+  assert.match(reply.text, /indícame qué producto o equipo buscas/i);
+  assert.ok(!reply.text.includes("Un asesor"));
+});
 test("catalog acknowledgement uses a server-verified scope, not model product facts", () => {
   const reply = renderDecision({ ...decision, intent: "catalog", productIds: [], catalog: {
     state: "ready", scopeKey: "parlantes:sony", title: "CATÁLOGO DE PARLANTES SONY", productCount: 5, message: null,
