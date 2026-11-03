@@ -1,0 +1,75 @@
+.navigation {
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color, #dbe3ef) 82%, transparent);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 14px;
+}
+
+.label {
+  color: var(--text-muted, #64748b);
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.links {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.link {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text-muted, #64748b);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 760;
+  gap: 6px;
+  line-height: 1;
+  min-height: 32px;
+  padding: 0 10px;
+  text-decoration: none;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.link:hover {
+  background: color-mix(in srgb, var(--primary, #2563eb) 8%, transparent);
+  color: var(--primary, #2563eb);
+}
+
+.link[data-active="true"] {
+  background: color-mix(in srgb, var(--primary, #2563eb) 13%, white);
+  border-color: color-mix(in srgb, var(--primary, #2563eb) 25%, transparent);
+  color: var(--primary, #2563eb);
+}
+
+.link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary, #2563eb) 38%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .navigation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 12px;
+  }
+
+  .links {
+    width: 100%;
+  }
+
+  .link {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

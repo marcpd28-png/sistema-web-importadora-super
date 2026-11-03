@@ -4,15 +4,24 @@ import {
   advisorConversationScope,
   canTransferConversation,
   isConversationAssignedToAdvisor,
+  isAdvisorSupportedChannel,
 } from "./conversation-assignment";
 
 test("la cola del asesor incluye chats libres y propios, nunca chats de otro asesor", () => {
   assert.deepEqual(advisorConversationScope("kimberly"), {
-    OR: [
-      { assignedUserId: null },
-      { assignedUserId: "kimberly" },
+    AND: [
+      { channel: "TELEGRAM" },
+      {
+        OR: [
+          { assignedUserId: null },
+          { assignedUserId: "kimberly" },
+        ],
+      },
     ],
   });
+  assert.equal(isAdvisorSupportedChannel("TELEGRAM"), true);
+  assert.equal(isAdvisorSupportedChannel("WHATSAPP"), false);
+  assert.equal(isAdvisorSupportedChannel("WEB"), false);
   assert.equal(isConversationAssignedToAdvisor(null, "kimberly"), false);
   assert.equal(isConversationAssignedToAdvisor("kimberly", "kimberly"), true);
   assert.equal(isConversationAssignedToAdvisor("candy", "kimberly"), false);

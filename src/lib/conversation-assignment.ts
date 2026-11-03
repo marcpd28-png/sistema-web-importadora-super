@@ -1,4 +1,14 @@
-import type { Prisma } from "@prisma/client";
+import type { Channel, Prisma } from "@prisma/client";
+
+/**
+ * Advisors work the supported commercial inbox only. WhatsApp remains in the
+ * administrator workspace so a hidden filter can never become a bypass.
+ */
+export const ADVISOR_MESSAGE_CHANNEL: Channel = "TELEGRAM";
+
+export function isAdvisorSupportedChannel(channel: Channel) {
+  return channel === ADVISOR_MESSAGE_CHANNEL;
+}
 
 /**
  * A controlled error for the advisor-workspace ownership boundary. Routes use
@@ -16,9 +26,14 @@ export class ConversationAssignmentError extends Error {
  */
 export function advisorConversationScope(advisorId: string): Prisma.ConversationWhereInput {
   return {
-    OR: [
-      { assignedUserId: null },
-      { assignedUserId: advisorId },
+    AND: [
+      { channel: ADVISOR_MESSAGE_CHANNEL },
+      {
+        OR: [
+          { assignedUserId: null },
+          { assignedUserId: advisorId },
+        ],
+      },
     ],
   };
 }

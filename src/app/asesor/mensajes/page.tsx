@@ -23,6 +23,8 @@ export default async function AdvisorInboxPage() {
       <div className="messages-inbox-workspace"><MessagesWorkspace
         advisorTargets={advisors}
         canManageBot={false}
+        initialChannel="TELEGRAM"
+        showChannelFilter={false}
         uploadEndpoint="/api/asesor/mensajes/uploads"
         viewer={{ id: session.userId, name: session.name, isMessagingOwner: false }}
       /></div>
