@@ -502,6 +502,8 @@ export async function transferConversation(
       assignedUserId: targetAdvisorId,
       botEnabled: false,
       status: "ATENDIENDO",
+      // Make the handoff visible as work pending for its new owner.
+      unreadCount: Math.max(existing.unreadCount, 1),
       lastReadAt: null,
       ...(telegramRevision === undefined ? {} : { telegramRevision }),
     },

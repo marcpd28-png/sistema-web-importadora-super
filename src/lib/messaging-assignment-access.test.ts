@@ -28,6 +28,7 @@ test("la toma y derivación usan una ruta protegida y el propietario actual", ()
   assert.match(assignment, /transferConversation/);
   assert.match(service, /canTransferConversation/);
   assert.match(service, /status:\s*\{ in: \["pending", "sending"\] \}/);
+  assert.match(service, /unreadCount:\s*Math\.max\(existing\.unreadCount, 1\)/);
 });
 
 test("los adjuntos respetan la misma propiedad de conversación", () => {
