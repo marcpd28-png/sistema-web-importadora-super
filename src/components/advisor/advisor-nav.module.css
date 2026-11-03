@@ -58,18 +58,6 @@
   background: rgba(20, 184, 166, 0.14);
 }
 
-.hint {
-  margin: 0.9rem 0.25rem 0;
-  padding: 0.75rem;
-  border: 1px solid rgba(var(--brand-rgb), 0.1);
-  border-radius: 0.8rem;
-  color: var(--muted);
-  background: rgba(var(--brand-rgb), 0.025);
-  font-size: 0.72rem;
-  line-height: 1.45;
-}
-
 @media (max-width: 920px) {
   .nav { padding-bottom: 1rem; }
-  .hint { display: none; }
 }
