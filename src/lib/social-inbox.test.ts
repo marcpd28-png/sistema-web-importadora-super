@@ -142,6 +142,30 @@ test("A provider echo or repeated request cannot create two visible social repli
     assert.deepEqual(messages.map(message => message.id), ["echo-row"]);
     assert.equal(messages[0].sourceId, "provider-message");
     assert.equal(messages[0].senderType, "user");
+
+    const missingSourceId = dedupeSocialMessages([
+      {
+        id: "api-ack", sourceId: null, senderType: "api", contactInboxId: "inbox-1", messageType: "outgoing",
+        text: "si es compatible", createdAt: "2026-11-03T17:41:55.000Z", deletedAt: null, sendError: null,
+      },
+      {
+        id: "webhook-echo", sourceId: null, senderType: "user", contactInboxId: "inbox-1", messageType: "outgoing",
+        text: "si es compatible", createdAt: "2026-11-03T17:41:57.000Z", deletedAt: null, sendError: null,
+      },
+    ]);
+    assert.deepEqual(missingSourceId.map(message => message.id), ["webhook-echo"]);
+
+    const repeatedCustomerMessages = dedupeSocialMessages([
+      {
+        id: "customer-one", sourceId: null, senderType: "user", contactInboxId: "inbox-1", messageType: "incoming",
+        text: "si es compatible", createdAt: "2026-11-03T17:41:55.000Z", deletedAt: null, sendError: null,
+      },
+      {
+        id: "customer-two", sourceId: null, senderType: "user", contactInboxId: "inbox-1", messageType: "incoming",
+        text: "si es compatible", createdAt: "2026-11-03T17:41:57.000Z", deletedAt: null, sendError: null,
+      },
+    ]);
+    assert.deepEqual(repeatedCustomerMessages.map(message => message.id), ["customer-one", "customer-two"]);
   } finally {
     global.fetch = original;
     if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN;

@@ -431,6 +431,20 @@ export async function sendInternalMessage(
   agentId: string,
 ) {
   const parsed = sendMessageSchema.parse(input);
+  // Keep the local id deterministic just like Telegram. A browser, proxy, or
+  // route retry can repeat the same request after YCloud has already accepted
+  // it; a new CUID here would turn that retry into a second real WhatsApp send.
+  const messageId = `waout:${parsed.requestId}`;
+  const previous = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (previous) {
+    if (previous.conversationId !== conversationId) {
+      throw new YCloudOutboundError("La solicitud pertenece a otra conversación.", {
+        code: "REQUEST_ID_CONFLICT", statusCode: 409,
+      });
+    }
+    return previous;
+  }
+
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: { contact: true },
@@ -483,9 +497,23 @@ export async function sendInternalMessage(
   // Pause Rocky before attempting delivery, not after YCloud responds. This
   // closes the race where a customer message can arrive while an advisor's
   // message is still being sent.
-  const message = await prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
+    // The early lookup above handles ordinary retries. This lock closes the
+    // race when two identical POSTs arrive before either has committed.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${messageId}, 0))`;
+    const duplicate = await tx.chatMessage.findUnique({ where: { id: messageId } });
+    if (duplicate) {
+      if (duplicate.conversationId !== conversationId) {
+        throw new YCloudOutboundError("La solicitud pertenece a otra conversación.", {
+          code: "REQUEST_ID_CONFLICT", statusCode: 409,
+        });
+      }
+      return null;
+    }
+
     const pendingMessage = await tx.chatMessage.create({
       data: {
+        id: messageId,
         conversationId,
         direction: "OUTBOUND",
         senderType: "AGENT",
@@ -510,6 +538,13 @@ export async function sendInternalMessage(
 
     return pendingMessage;
   });
+
+  // A concurrent request created the durable row. It owns the only provider
+  // call; returning its current state prevents another delivery attempt.
+  if (!created) {
+    return prisma.chatMessage.findUniqueOrThrow({ where: { id: messageId } });
+  }
+  const message = created;
 
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
   try {

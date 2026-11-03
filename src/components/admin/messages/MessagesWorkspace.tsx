@@ -10,6 +10,7 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import type { ChatMessage, Conversation, MessageType } from "@/types/messages";
 import { createMessageReply, readMessageReply, type MessageReply } from "@/lib/message-reply";
+import { mergeChatMessages } from "@/lib/message-client-dedupe";
 
 const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
@@ -166,21 +167,7 @@ function mergeConversations(base: Conversation[], incoming: Conversation[]) {
 }
 
 function mergeMessages(base: ChatMessage[], incoming: ChatMessage[]) {
-  const byId = new Map<string, ChatMessage>();
-
-  for (const message of base) {
-    byId.set(message.id, message);
-  }
-
-  for (const message of incoming) {
-    byId.set(message.id, message);
-  }
-
-  return [...byId.values()].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() ||
-      a.id.localeCompare(b.id),
-  );
+  return mergeChatMessages(base, incoming);
 }
 
 function isNearBottom(element: HTMLDivElement | null) {

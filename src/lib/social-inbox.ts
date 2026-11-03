@@ -20,6 +20,7 @@ export class SocialInboxError extends Error {
 const DEFAULT_MESSENGER_META_RESUME_MINUTES = 15;
 const SOCIAL_REPLY_DEDUPLICATION_MS = 10_000;
 const SOCIAL_REPLY_PENDING_MS = 30_000;
+const SOCIAL_ECHO_FALLBACK_MS = 15_000;
 const recentSocialReplies = new Map<string, { expiresAt: number; result: Promise<SocialMessage> }>();
 
 function compactText(value: string) {
@@ -38,6 +39,36 @@ function socialSystemEvent(message: SocialMessage): SocialSystemEvent | null {
     : null;
 }
 
+function messagePriority(message: SocialMessage) {
+  const sender = message.senderType?.toLowerCase();
+  return sender === "user" ? 2 : sender === "api" ? 1 : 0;
+}
+
+function attachmentFingerprint(message: SocialMessage) {
+  return (message.attachments || [])
+    .map((attachment) => [attachment.id, attachment.name || "", attachment.fileType || "", attachment.mimeType || "", attachment.url || ""].join("\u0002"))
+    .sort()
+    .join("\u0003");
+}
+
+function isUnidentifiedProviderEcho(first: SocialMessage, second: SocialMessage) {
+  // sourceId is the authoritative key. This fallback is deliberately narrow:
+  // it handles only the API acknowledgement + webhook echo shape observed for
+  // outgoing messages when one row lacks that provider identifier.
+  if (first.sourceId && second.sourceId) return false;
+  if (first.contactInboxId !== second.contactInboxId) return false;
+  if (first.messageType.toLowerCase() !== "outgoing" || second.messageType.toLowerCase() !== "outgoing") return false;
+  if (compactText(first.text || "") !== compactText(second.text || "")) return false;
+  if (attachmentFingerprint(first) !== attachmentFingerprint(second)) return false;
+
+  const senders = new Set([first.senderType?.toLowerCase(), second.senderType?.toLowerCase()]);
+  if (senders.size !== 2 || !senders.has("api") || !senders.has("user")) return false;
+
+  const firstAt = Date.parse(first.createdAt);
+  const secondAt = Date.parse(second.createdAt);
+  return Number.isFinite(firstAt) && Number.isFinite(secondAt) && Math.abs(firstAt - secondAt) <= SOCIAL_ECHO_FALLBACK_MS;
+}
+
 export function dedupeSocialMessages(messages: SocialMessage[]) {
   const unique = new Map<string, SocialMessage>();
   for (const message of messages) {
@@ -45,11 +76,24 @@ export function dedupeSocialMessages(messages: SocialMessage[]) {
     // distinct rows. They carry the same sourceId and represent one delivery.
     const key = message.sourceId ? `source:${message.sourceId}` : `message:${message.id}`;
     const current = unique.get(key);
-    const currentPriority = current?.senderType === "user" ? 2 : current?.senderType === "api" ? 1 : 0;
-    const messagePriority = message.senderType === "user" ? 2 : message.senderType === "api" ? 1 : 0;
-    if (!current || messagePriority >= currentPriority) unique.set(key, message);
+    if (!current || messagePriority(message) >= messagePriority(current)) unique.set(key, message);
   }
-  return [...unique.values()];
+
+  const visible: SocialMessage[] = [];
+  for (const message of unique.values()) {
+    const echoIndex = visible.findIndex((current) => isUnidentifiedProviderEcho(current, message));
+    if (echoIndex === -1) {
+      visible.push(message);
+      continue;
+    }
+
+    // The webhook copy includes the provider's final representation, so keep
+    // it over the provisional API acknowledgement.
+    if (messagePriority(message) >= messagePriority(visible[echoIndex])) {
+      visible[echoIndex] = message;
+    }
+  }
+  return visible;
 }
 
 export function messengerMetaResumeMinutes(value = process.env.MESSENGER_META_AI_RESUME_MINUTES) {

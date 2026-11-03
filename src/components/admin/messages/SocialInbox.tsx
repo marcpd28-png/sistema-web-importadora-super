@@ -92,6 +92,9 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
   }
   async function send(text: string, mediaFileId?: string) {
     if (!selected || (!text.trim() && !mediaFileId) || uncertain) throw new Error("Revisa la conversación antes de enviar.");
+    // MessageInput normally remains busy, but this synchronous guard also
+    // closes the tiny window before React has painted the disabled composer.
+    if (sendLock.current) return sendQueue.current;
     const id = selected.id;
     const requestId = crypto.randomUUID();
     const pendingId = `pending:${requestId}`;
@@ -148,13 +151,15 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
 
     const queued = sendQueue.current.catch(() => undefined).then(operation);
     sendQueue.current = queued;
-    void queued.finally(() => {
+    try {
+      await queued;
+    } finally {
       pendingSendCount.current -= 1;
       if (pendingSendCount.current === 0) {
         sendLock.current = false;
         setSending(false);
       }
-    });
+    }
   }
   async function upload(file: File) {
     if (!selected) throw new Error("Selecciona una conversación.");
@@ -193,7 +198,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
           </div>
           <div className="chat-count">{messages.length} mensajes cargados · {channel !== "tiktok" ? "Responde dentro de las 24 horas del último mensaje del cliente." : "La disponibilidad depende de tu cuenta de TikTok."}</div>
           {uncertain && <p className={styles.notice}>Comprueba el envío antes de repetirlo. <button className="btn btn-outline" onClick={async () => { try { await loadMessages(selected.id); setUncertain(false); setError(""); } catch (e) { setError((e as Error).message); } }}>Revisar conversación</button></p>}
-          <MessageInput key={`composer:${selected.id}`} disabled={controlling || uploading || messageLoading || uncertain} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
+          <MessageInput key={`composer:${selected.id}`} disabled={controlling || sending || uploading || messageLoading || uncertain} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
           <div className={styles.help}>{channel === "messenger" ? "Adjunta imágenes, PDF, documentos, videos o audio (hasta 5 MB). " : ""}Al responder se pausa la automatización de esta conversación.</div>
         </>}
       </section>
