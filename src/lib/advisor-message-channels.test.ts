@@ -17,6 +17,14 @@ test("el perfil de asesor muestra Telegram, Messenger y TikTok, nunca WhatsApp",
   assert.match(workspace, /showChannelFilter/);
 });
 
+test("el centro de mensajes no ofrece un filtro de WhatsApp", () => {
+  const conversationList = read("../components/admin/messages/ConversationList.tsx");
+
+  assert.match(conversationList, /\['', 'Todos'\]/);
+  assert.match(conversationList, /\['TELEGRAM', 'Telegram'\]/);
+  assert.doesNotMatch(conversationList, /\['WHATSAPP', 'WhatsApp'\]/);
+});
+
 test("Messenger y TikTok del asesor usan endpoints limitados y sin controles administrativos", () => {
   const messengerPage = read("../app/asesor/mensajes/messenger/page.tsx");
   const tiktokPage = read("../app/asesor/mensajes/tiktok/page.tsx");

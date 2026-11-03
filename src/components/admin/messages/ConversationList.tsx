@@ -81,7 +81,7 @@ export function ConversationList({
       <div className="messages-sidebar-header">
         {showChannelFilter ? (
           <div className="messages-filters" aria-label="Canal de mensajes" style={{ marginBottom: 12 }}>
-            {([['', 'Todos'], ['WHATSAPP', 'WhatsApp'], ['TELEGRAM', 'Telegram']] as const).map(([channel, label]) => (
+            {([['', 'Todos'], ['TELEGRAM', 'Telegram']] as const).map(([channel, label]) => (
               <button key={channel} type="button" aria-pressed={filters.channel === channel}
                 className={`messages-filter-btn ${filters.channel === channel ? 'active' : ''}`}
                 onClick={() => onFiltersChange({ channel })}>{label}</button>
