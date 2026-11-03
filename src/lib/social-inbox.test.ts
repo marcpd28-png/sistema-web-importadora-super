@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { channelInbox, dedupeSocialMessages, socialConnectionStatus, messengerMetaResumeMinutes, parseSocialChannel, safeSocialMessage, socialConversation, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
+import { channelInbox, dedupeSocialMessages, socialConnectionStatus, messengerMetaResumeMinutes, parseSocialChannel, safeSocialMessage, socialConversation, socialConversationHasHumanAssignee, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
 
 test("Manual Messenger replies default to a safe, bounded Meta reactivation delay", () => {
   const original = process.env.MESSENGER_META_AI_RESUME_MINUTES;
@@ -27,6 +27,13 @@ test("Social channels fail closed and cannot fall through to WhatsApp or Telegra
   assert.throws(() => channelInbox(conversation, "tiktok"));
   conversation.contactInboxes.push(conversation.contactInboxes[0]);
   assert.throws(() => channelInbox(conversation, "messenger"));
+});
+
+test("An explicit ChatbotX adviser assignment prevents automatic Messenger claims", () => {
+  const base = { id: "1", botEnabled: true, contactInboxes: [] } as unknown as SocialConversation;
+  assert.equal(socialConversationHasHumanAssignee(base), false);
+  assert.equal(socialConversationHasHumanAssignee({ ...base, assignedUserId: "advisor-1" }), true);
+  assert.equal(socialConversationHasHumanAssignee({ ...base, assignee: { id: "advisor-2" } }), true);
 });
 
 test("Sending enforces channel and Messenger window before mutation, pauses bot first, and selects the exact inbox", async () => {

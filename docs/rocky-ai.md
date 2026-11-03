@@ -17,6 +17,19 @@ Al aplicar un modo se pausa el bot anterior y se comprueba el control del canal.
 
 Los adaptadores utilizan las conexiones existentes a YCloud, Telegram y ChatbotX. Instagram tiene su propia bandeja y selección de inbox. No se habilitan los antiguos workers de Super Bot.
 
+### Despliegue aislado de Messenger
+
+Messenger se mantiene apagado por defecto, incluso si el módulo general está activo. No activar el `autoReply` ni el agente predeterminado de ChatbotX: esos controles son globales para ese espacio y podrían afectar el mismo bot de Telegram. La ruta aislada usa únicamente la API de lectura/envío de la bandeja social y el controlador local de traspaso de Meta.
+
+1. Aplicar la migración y el nuevo release con `MESSENGER_SUPER_BOT_COMPATIBLE="false"`; conservar `botMasterSwitch=false` para que WhatsApp, Instagram y TikTok sigan apagados.
+2. Verificar en el servidor privado `SOCIAL_INBOX_API_TOKEN`, `MESSENGER_CONTROL_TOKEN` y la respuesta del controlador de Messenger. Después, establecer `MESSENGER_SUPER_BOT_COMPATIBLE="true"` y reiniciar el worker. El flag no concede permisos ni enciende ChatbotX.
+3. En `/admin/mensajes/ia`, guardar el modo de Messenger después del despliegue (por ejemplo, **Automático**). Ese guardado registra la cerca de activación del canal; no basta con el interruptor global. Sólo se consideran inbounds posteriores a esa cerca, de menos de 24 horas, con ChatbotX aún habilitado y con el controlador confirmando que Meta es dueño.
+4. El camino automático de Messenger usa siempre `gpt-6-sol`, aunque el campo de modelo histórico de Rocky tenga otro valor. La respuesta se envía con una clave de idempotencia durable por borrador; una entrega incierta se deja para revisión humana y no se reintenta automáticamente.
+
+Si un asesor responde desde la bandeja local, la conversación queda en control humano antes del envío. El polling también rechaza cualquier conversación que ya tenga ChatbotX deshabilitado, un dueño distinto de Meta, una reanudación pendiente o una confirmación de propiedad no verificable. Para detener sólo Messenger, guardar su modo en Apagado o establecer el flag en `false` y reiniciar el worker; no hace falta ni se debe encender WhatsApp. La migración es aditiva: conservar la columna al volver al release previo es seguro, pero apagar el flag y el modo antes de cualquier reversión operativa.
+
+Cuando ChatbotX expone un identificador de asesor asignado, el worker también rechaza esa conversación. La API actual de lectura/envío no garantiza ese campo ni ofrece una operación de asignación/transferencia por asesor; por ello este release no puede imponer la privacidad de bandeja ni reasignar entre los seis asesores dentro de ChatbotX. Para completar esa parte se necesita una API de asignaciones de ChatbotX o una bandeja local que persista las asignaciones. El control de propiedad actual sí evita que Super Bot responda a chats ya tomados por una persona.
+
 ## Respuestas y límites
 
 OpenAI clasifica la consulta mediante Responses y una herramienta de consulta de catálogo de solo lectura. El servidor compone precios, cantidades e importes con información verificada; el stock se valida internamente, pero su cantidad nunca se comunica al cliente. El modelo no puede escribir en inventario ni confirmar pedidos/pagos. Sólo se informa al modelo qué categorías de políticas están disponibles: el texto aprobado —incluidos datos de pago— permanece en el servidor y se compone después de validar la decisión. Antes de enviar historial al proveedor, cualquier respuesta que contenga la política de pago se sustituye por un marcador y también se ocultan correos, teléfonos, documentos y números de cuenta. Los cambios de configuración registran sólo que la política de pago está configurada, no sus datos. Las políticas vacías requieren asesor.
@@ -46,7 +59,7 @@ La cola persiste en PostgreSQL. El worker usa bloqueos para evitar envíos dupli
 3. Generar Prisma y compilar la aplicación.
 4. `npm start` inicia el sitio y `messages:ai` bajo el supervisor existente. No ejecutar otra copia sin necesidad; el bloqueo de PostgreSQL protege ejecuciones concurrentes.
 5. Verificar que el panel indica conexión pendiente y que el procesador registra señal.
-6. Cuando se decida conectar OpenAI, agregar `OPENAI_API_KEY` al entorno privado, reiniciar el servicio y seleccionar la activación/modos en el panel.
+6. Cuando se decida conectar OpenAI, agregar `OPENAI_API_KEY` al entorno privado, reiniciar el servicio y seleccionar la activación/modos en el panel. Para Messenger aislado, seguir además los pasos de la sección anterior; no usar el agente predeterminado/autoReply de ChatbotX.
 7. Mantener `ROCKY_AI_VISION_ENABLED=false` hasta completar las pruebas de imágenes. Al activarlo, probar primero con una conversación de Copiloto y una foto de catálogo conocida; no habilita por sí solo respuestas automáticas a adjuntos.
 
 La migración es aditiva. Para volver al código anterior, detener el servicio, restaurar los archivos modificados, el cliente Prisma y la compilación respaldados y reiniciar. Conservar las tablas nuevas y los mensajes posteriores; no restaurar un respaldo completo de la base de datos sobre conversaciones más recientes.

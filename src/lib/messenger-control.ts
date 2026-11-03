@@ -12,6 +12,26 @@ export type MessengerControlState = {
   ownerVerified?: boolean;
 };
 
+/**
+ * Messenger Super Bot deliberately has a separate operator acknowledgement
+ * from the legacy global automation switch.  The two secrets are also part of
+ * the gate: without the ChatbotX read/send API and the local Meta handoff
+ * controller, the worker must never claim a customer thread.
+ *
+ * This does not enable ChatbotX's workspace-wide default agent or autoReply.
+ * Super Bot sends only through the app's durable Rocky AI delivery path.
+ */
+export function messengerSuperBotCompatible(
+  value = process.env.MESSENGER_SUPER_BOT_COMPATIBLE,
+  socialToken = process.env.SOCIAL_INBOX_API_TOKEN,
+  controlToken = process.env.MESSENGER_CONTROL_TOKEN,
+) {
+  return value === "true" && Boolean(socialToken?.trim()) && Boolean(controlToken?.trim());
+}
+
+/** Messenger automatic responses are intentionally pinned to the approved complex model. */
+export const MESSENGER_SUPER_BOT_MODEL = "gpt-6-sol";
+
 export async function messengerControl(id: string, change?: { action: "manual" | "bot" | "meta"; minutes: number; actor: string; resumeTarget?: "meta" | "bot" }): Promise<MessengerControlState> {
   if (!/^\d{1,25}$/.test(id)) throw new SocialInboxError("Conversación no válida.", 400);
   const token = process.env.MESSENGER_CONTROL_TOKEN;

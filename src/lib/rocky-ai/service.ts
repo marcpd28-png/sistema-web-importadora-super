@@ -5,19 +5,48 @@ import { getPreferredProductImageUrl } from "../product-media";
 import { productQueryTerms, productRecommendationQuery, searchCatalogIdentity, wantsProductRecommendation } from "../rocky-product-query";
 import { productWhatsAppImage } from "../whatsapp-product-image";
 import { buildPublicUrl } from "../site-url";
+import { MESSENGER_SUPER_BOT_MODEL, messengerSuperBotCompatible } from "../messenger-control";
+import { telegramSuperBotBridgeCompatible, telegramSuperBotBridgeReady } from "../telegram-bridge";
 import { claimChannel, deliver, snapshot, isLocal } from "./adapters";
 import { prepareSuperBotCatalog, type SuperBotCatalogPlan } from "./catalog";
 import { generateDecision } from "./provider";
-import { automaticAllowed, channels, currentDraft, decisionSchema, defaultPricingPolicy, hash, needsHuman, renderDecision, settingsSchema,
+import { automaticAllowed, channelActivationSince, channelDefaultMode, channelRevision, channels, currentDraft, decisionSchema, defaultPricingPolicy, hash, needsHuman, renderDecision, settingsSchema,
   requestedQuantity, targetKey, withWarmWelcome, type AiChannel, type AiMode, type Decision, type HistoryItem, type Policies, type ProductFact, type SimulationHistoryTurn } from "./policy";
-import { socialRequest, type SocialPage, type SocialConversation } from "../social-inbox";
+import { socialConversationHasHumanAssignee, socialRequest, type SocialPage, type SocialConversation } from "../social-inbox";
 import type { CatalogPdfPart, CatalogSnapshotProduct } from "../catalog-pdf";
 
 export const emptyPolicies: Policies = { hours: "", shipping: "", location: "", payment: "", returns: "", pricing: defaultPricingPolicy };
 export const defaultChannels = Object.fromEntries(channels.map(c => [c, "OFF"]));
+export const defaultChannelRevisions = Object.fromEntries(channels.map(c => [c, 0]));
+export const defaultChannelActivationSince = Object.fromEntries(channels.map(c => [c, null]));
 const json = (value: unknown) => JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 const SIMULATION_DAILY_REQUESTS = 30;
 const SIMULATION_DAILY_TOKENS = 50000;
+
+/**
+ * Telegram and Messenger Super Bot have explicit, independent compatibility
+ * gates. Every remaining legacy channel stays behind the master switch, so a
+ * targeted rollout cannot accidentally re-enable WhatsApp, Instagram, or
+ * TikTok automation.
+ */
+async function channelAutomationAvailable(channel: AiChannel) {
+  if (channel === "telegram") return telegramSuperBotBridgeReady();
+  if (channel === "messenger") return messengerSuperBotCompatible();
+  return Boolean((await prisma.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }))?.botMasterSwitch);
+}
+
+function channelUnavailableError(channel: AiChannel) {
+  if (channel === "telegram") return "TELEGRAM_BOT_BRIDGE_INCOMPATIBLE";
+  if (channel === "messenger") return "MESSENGER_SUPER_BOT_INCOMPATIBLE";
+  return "GLOBAL_AUTOMATION_DISABLED";
+}
+
+function channelsAllowedWhileLegacyStopped(): AiChannel[] {
+  // Telegram's remote bridge is verified at claim and delivery time. Messenger
+  // has no remote probe, so its explicit local capability gate is required
+  // here before it is even selected by a stopped-legacy worker.
+  return messengerSuperBotCompatible() ? ["telegram", "messenger"] : ["telegram"];
+}
 export async function settings() {
   const existing = await prisma.rockyAiSettings.findUnique({ where: { id: 1 } });
   if (existing) {
@@ -30,7 +59,10 @@ export async function settings() {
   const policies = { ...emptyPolicies, hours: rockyInformationReply("horarios"),
     shipping: rockyInformationReply("envíos"), location: rockyInformationReply("ubicación"),
     payment: rockyInformationReply("medios de pago") };
-  return prisma.rockyAiSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1, policies, channelDefaults: defaultChannels } });
+  return prisma.rockyAiSettings.upsert({ where: { id: 1 }, update: {}, create: {
+    id: 1, policies, channelDefaults: defaultChannels, channelRevisions: defaultChannelRevisions,
+    channelActivationSince: defaultChannelActivationSince,
+  } });
 }
 export async function audit(actor: string, action: string, conversationId?: string, detail?: unknown) {
   return prisma.rockyAiAudit.create({ data: { actor, action, conversationId, ...(detail === undefined ? {} : { detail: json(detail) }) } });
@@ -40,19 +72,46 @@ export async function saveSettings(input: unknown, actor: string) {
   await settings();
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "RockyAiSettings" WHERE id = 1 FOR UPDATE`;
-    const [global] = await tx.$queryRaw<{ botMasterSwitch: boolean }[]>`SELECT "botMasterSwitch" FROM "StoreSettings" WHERE id = 1 FOR SHARE`;
-    // The legacy master switch remains the single emergency control for every
-    // automated channel. Do not allow the new module to silently bypass it.
-    if (data.enabled && global && !global.botMasterSwitch) throw new Error("GLOBAL_AUTOMATION_DISABLED");
-    const saved = await tx.rockyAiSettings.update({ where: { id: 1 }, data: { ...data, revision: { increment: 1 }, defaultsSince: new Date() } });
-    await tx.rockyAiDraft.updateMany({ where: { state: { in: ["DRAFT", "QUEUED"] } }, data: { state: "EXPIRED", reason: "La configuración cambió." } });
-    await tx.rockyAiCatalogJob.updateMany({ where: { state: { in: ["WAITING_ACK", "QUEUED", "RENDERING", "READY", "DELIVERING"] } }, data: {
-      state: "CANCELLED", processingToken: null, leaseExpiresAt: null, reason: "settings_changed", finishedAt: new Date(),
+    // Telegram has its own bridge gate. The legacy master switch continues to
+    // govern every existing channel; it is checked at control and delivery
+    // time rather than preventing safe Telegram-only settings from being saved.
+    const previous = await tx.rockyAiSettings.findUniqueOrThrow({ where: { id: 1 } });
+    const changedChannels = channels.filter(channel => channelDefaultMode(previous.channelDefaults, channel) !== channelDefaultMode(data.channelDefaults, channel));
+    const sharedChanged = previous.enabled !== data.enabled || previous.model !== data.model ||
+      previous.dailyRequests !== data.dailyRequests || previous.dailyTokens !== data.dailyTokens ||
+      previous.maxOutputTokens !== data.maxOutputTokens || hash(previous.policies) !== hash(data.policies);
+    const now = new Date();
+    const nextChannelRevisions = Object.fromEntries(channels.map(channel => [
+      channel,
+      channelRevision(previous.channelRevisions, channel) + (changedChannels.includes(channel) ? 1 : 0),
+    ]));
+    const nextChannelActivationSince = Object.fromEntries(channels.map(channel => {
+      const prior = channelActivationSince(previous.channelActivationSince, channel);
+      const explicitlyArmed = channel === "messenger" && channelDefaultMode(data.channelDefaults, channel) !== "OFF" && !prior;
+      return [channel, (changedChannels.includes(channel) || explicitlyArmed) && channelDefaultMode(data.channelDefaults, channel) !== "OFF"
+        ? now.toISOString()
+        : prior?.toISOString() ?? null];
+    }));
+    const saved = await tx.rockyAiSettings.update({ where: { id: 1 }, data: {
+      ...data,
+      revision: previous.revision + (sharedChanged ? 1 : 0),
+      channelRevisions: json(nextChannelRevisions),
+      channelActivationSince: json(nextChannelActivationSince),
+      defaultsSince: changedChannels.length || sharedChanged ? now : previous.defaultsSince,
     } });
+    if (sharedChanged || changedChannels.length) {
+      const channelFilter = sharedChanged ? undefined : { channel: { in: changedChannels } };
+      await tx.rockyAiDraft.updateMany({ where: { state: { in: ["DRAFT", "QUEUED"] }, ...(channelFilter ? { conversation: channelFilter } : {}) }, data: {
+        state: "EXPIRED", reason: "La configuración del canal cambió.",
+      } });
+      await tx.rockyAiCatalogJob.updateMany({ where: { state: { in: ["WAITING_ACK", "QUEUED", "RENDERING", "READY", "DELIVERING"] }, ...(channelFilter ? { conversation: channelFilter } : {}) }, data: {
+        state: "CANCELLED", processingToken: null, leaseExpiresAt: null, reason: "settings_changed", finishedAt: new Date(),
+      } });
+    }
     // The payment policy can contain bank accounts. Its existence is useful in
     // an audit trail, but its full content belongs only in RockyAiSettings.
     const auditData = { ...data, policies: { ...data.policies, payment: data.policies.payment.trim() ? "[configurada]" : "" } };
-    await tx.rockyAiAudit.create({ data: { actor, action: "settings_changed", detail: json(auditData) } });
+    await tx.rockyAiAudit.create({ data: { actor, action: "settings_changed", detail: json({ ...auditData, changedChannels }) } });
     return saved;
   });
 }
@@ -82,20 +141,60 @@ export async function pauseForHuman(channel: AiChannel, externalId: string, acto
 }
 export async function configureConversation(channel: AiChannel, externalId: string, mode: AiMode, humanControl: boolean, actor: string) {
   const id = targetKey(channel, externalId);
+  if (mode !== "OFF" && !await channelAutomationAvailable(channel)) throw new Error(channelUnavailableError(channel));
   // Invalidate before making external calls; a failed takeover leaves AI paused.
   await pauseForHuman(channel, externalId, actor);
   await snapshot(channel, externalId); // validates channel and existence
   const before = await prisma.rockyAiConversation.upsert({ where: { id }, create: { id, channel, externalId, mode: "OFF", humanControl: true },
     update: {} });
+  if (mode === "OFF") {
+    const changed = await prisma.rockyAiConversation.updateMany({ where: { id, revision: before.revision }, data: {
+      mode, humanControl: true, revision: { increment: 1 }, activatedAt: new Date(), lastError: null,
+    } });
+    if (!changed.count) throw new Error("CONTROL_CHANGED");
+    const saved = await prisma.rockyAiConversation.findUniqueOrThrow({ where: { id } });
+    await audit(actor, "mode_changed", id, { mode, humanControl: saved.humanControl });
+    return saved;
+  }
   const state = await claimChannel(channel, externalId);
   const changed = await prisma.rockyAiConversation.updateMany({ where: { id, revision: before.revision }, data: {
-    mode, humanControl: mode === "OFF" || humanControl, revision: { increment: 1 },
+    mode, humanControl, revision: { increment: 1 },
     activatedAt: new Date(), lastTrigger: state.triggerId || null, lastError: null,
   } });
   if (!changed.count) throw new Error("CONTROL_CHANGED");
   const saved = await prisma.rockyAiConversation.findUniqueOrThrow({ where: { id } });
   await audit(actor, "mode_changed", id, { mode, humanControl: saved.humanControl });
   return saved;
+}
+
+/**
+ * Arms only a new, unassigned Telegram conversation whose per-channel default
+ * opted into Super Bot. The bridge control handoff completes before the AI
+ * record is made active; an incompatible bridge therefore leaves the chat
+ * untouched rather than taking control and failing to answer.
+ */
+export async function scheduleTelegramInbound(conversationId: string) {
+  // An inbound webhook must not create or implicitly enable Super Bot. The
+  // admin settings row is an explicit prerequisite for automatic Telegram.
+  const config = await prisma.rockyAiSettings.findUnique({ where: { id: 1 } });
+  if (!config) return false;
+  const mode = channelDefaultMode(config.channelDefaults, "telegram");
+  if (!config.enabled || mode === "OFF" || !process.env.OPENAI_API_KEY || !await channelAutomationAvailable("telegram")) return false;
+
+  const conversation = await prisma.conversation.findUnique({ where: { id: conversationId }, select: {
+    id: true, channel: true, botEnabled: true, status: true, assignedUserId: true,
+  } });
+  if (!conversation || conversation.channel !== "TELEGRAM" || !conversation.botEnabled || conversation.status !== "AUTOMATICO" || conversation.assignedUserId) return false;
+
+  const id = targetKey("telegram", conversation.id);
+  const existing = await prisma.rockyAiConversation.findUnique({ where: { id } });
+  if (existing) return existing.mode !== "OFF" && !existing.humanControl;
+
+  await configureConversation("telegram", conversation.id, mode, mode === "COPILOT", "telegram_inbound");
+  // The ownership handoff reads the just-received message. Clearing the saved
+  // trigger asks the worker to process that first turn after its quiet period.
+  await prisma.rockyAiConversation.update({ where: { id }, data: { lastTrigger: null } });
+  return true;
 }
 export async function productsByIds(ids: string[]): Promise<ProductFact[]> {
   const rows = await prisma.product.findMany({ where: { AND: [buildSellableProductWhere(), { id: { in: ids.slice(0, 8) } }] },
@@ -244,7 +343,7 @@ export async function catalogPreview(plan: SuperBotCatalogPlan | null, renderCat
     documents: documents.map(({ relativeUrl, filename, partNumber, partCount, productCount }) => ({ relativeUrl, filename, partNumber, partCount, productCount })),
   };
 }
-export async function reserveUsage(config: RockyAiSettings, conversationId: string, tokens: number) {
+export async function reserveUsage(config: RockyAiSettings, conversationId: string, tokens: number, model = config.model) {
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "RockyAiSettings" WHERE id = 1 FOR UPDATE`;
     const fresh = await tx.rockyAiSettings.findUniqueOrThrow({ where: { id: 1 } });
@@ -253,7 +352,7 @@ export async function reserveUsage(config: RockyAiSettings, conversationId: stri
     const day = new Date(new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10) + "T05:00:00Z");
     const usage = await tx.rockyAiUsage.aggregate({ where: { createdAt: { gte: day } }, _count: true, _sum: { reservedTokens: true } });
     if (usage._count >= fresh.dailyRequests || (usage._sum.reservedTokens ?? 0) + tokens > fresh.dailyTokens) throw new Error("DAILY_LIMIT");
-    return (await tx.rockyAiUsage.create({ data: { conversationId, model: config.model, reservedTokens: tokens } })).id;
+    return (await tx.rockyAiUsage.create({ data: { conversationId, model, reservedTokens: tokens } })).id;
   });
 }
 export async function recordUsage(id: string, input: number, output: number) {
@@ -350,6 +449,12 @@ export async function generateDraft(id: string, actor: string, explicit = false)
     const config = await settings();
     const c = await prisma.rockyAiConversation.findUniqueOrThrow({ where: { id } });
     if (c.mode === "OFF") throw new Error("MODE_OFF");
+    const channel = c.channel as AiChannel;
+    const activeChannelRevision = channelRevision(config.channelRevisions, channel);
+    if (!await channelAutomationAvailable(channel)) {
+      if (explicit) throw new Error(channelUnavailableError(channel));
+      return null;
+    }
     const state = await snapshot(c.channel as AiChannel, c.externalId);
     if (!state.triggerId || !state.owned || !state.canSend) throw new Error(state.reason || "NO_CUSTOMER_MESSAGE");
     if (!explicit && (c.lastTrigger === state.triggerId || c.humanControl && c.mode !== "COPILOT")) return null;
@@ -360,6 +465,10 @@ export async function generateDraft(id: string, actor: string, explicit = false)
     if (!explicit && Date.now() - Date.parse(state.history.at(-1)!.at) < 10000) return null;
     if (!config.enabled || !process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED_OR_DISABLED");
     const policies = { ...emptyPolicies, ...(config.policies as object) };
+    // Messenger's automatic path is intentionally pinned to the approved
+    // complex model; a historic Rocky-wide default must not silently downgrade
+    // customer replies on this channel.
+    const model = channel === "messenger" ? MESSENGER_SUPER_BOT_MODEL : config.model;
     const latest = state.history.filter(m => m.role === "user").at(-1)!;
     const quantity = requestedQuantity(latest.text);
     let decision: ReturnType<typeof decisionSchema.parse>;
@@ -388,10 +497,10 @@ export async function generateDraft(id: string, actor: string, explicit = false)
             products = [uniqueProduct];
           } else {
             const result = await generateDecision({
-              model: config.model, maxOutputTokens: config.maxOutputTokens, history: state.history, policies,
+              model, maxOutputTokens: config.maxOutputTokens, history: state.history, policies,
               search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
               initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
-              reserve: tokens => reserveUsage(config, id, tokens),
+              reserve: tokens => reserveUsage(config, id, tokens, model),
               record: recordUsage,
             });
             decision = result.decision; products = result.products;
@@ -408,11 +517,11 @@ export async function generateDraft(id: string, actor: string, explicit = false)
       await tx.$queryRaw`SELECT id FROM "RockyAiSettings" WHERE id = 1 FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM "RockyAiConversation" WHERE id = ${id} FOR UPDATE`;
       const [fresh, current] = await Promise.all([tx.rockyAiSettings.findUniqueOrThrow({ where: { id: 1 } }), tx.rockyAiConversation.findUniqueOrThrow({ where: { id } })]);
-      if (!fresh.enabled || fresh.revision !== config.revision || current.revision !== c.revision) throw new Error("CONTROL_CHANGED");
+      if (!fresh.enabled || fresh.revision !== config.revision || channelRevision(fresh.channelRevisions, channel) !== activeChannelRevision || current.revision !== c.revision) throw new Error("CONTROL_CHANGED");
       await tx.rockyAiDraft.updateMany({ where: { conversationId: id, state: { in: ["DRAFT", "QUEUED"] } }, data: { state: "EXPIRED", reason: "Sugerencia reemplazada." } });
       const auto = !explicit && !c.humanControl && automaticAllowed(c.mode, decision, rendered.safe);
       const draft = await tx.rockyAiDraft.create({ data: { conversationId: id, triggerId: state.triggerId, contextHash: state.contextHash,
-        controlRevision: c.revision, settingsRevision: config.revision, state: auto ? "QUEUED" : "DRAFT",
+        controlRevision: c.revision, settingsRevision: config.revision, channelRevision: activeChannelRevision, state: auto ? "QUEUED" : "DRAFT",
         text: rendered.text, decision: json(decision), evidence: json(products), reason: rendered.reason,
         expiresAt: new Date(Date.now() + 5 * 60000) } });
       // A ready catalog is a durable, immutable snapshot. It stays inert until
@@ -420,7 +529,7 @@ export async function generateDraft(id: string, actor: string, explicit = false)
       if (catalogPlan?.prepared.kind === "ready") {
         await tx.rockyAiCatalogJob.create({ data: {
           draftId: draft.id, conversationId: id, triggerId: state.triggerId,
-          controlRevision: c.revision, settingsRevision: config.revision,
+          controlRevision: c.revision, settingsRevision: config.revision, channelRevision: activeChannelRevision,
           scopeKey: catalogPlan.prepared.scope.key, title: catalogPlan.prepared.scope.title,
           snapshot: json(catalogPlan.prepared.snapshot), snapshotHash: catalogPlan.prepared.snapshotHash,
           state: "WAITING_ACK",
@@ -444,7 +553,8 @@ export async function approveDraft(id: string, text: string, actor: string) {
       await tx.$queryRaw`SELECT id FROM "RockyAiConversation" WHERE id = ${draft.conversationId} FOR UPDATE`;
       const config = await tx.rockyAiSettings.findUniqueOrThrow({ where: { id: 1 } });
       const c = await tx.rockyAiConversation.findUniqueOrThrow({ where: { id: draft.conversationId } });
-      if (!config.enabled || c.mode === "OFF" || !currentDraft(draft, state, c.revision, config.revision)) throw new Error("DRAFT_EXPIRED");
+      const channel = c.channel as AiChannel;
+      if (!config.enabled || c.mode === "OFF" || !currentDraft(draft, state, c.revision, config.revision, channelRevision(config.channelRevisions, channel))) throw new Error("DRAFT_EXPIRED");
       const changed = await tx.rockyAiDraft.updateMany({ where: { id, state: "DRAFT" }, data: { state: "QUEUED", text: text.trim(), approvedBy: actor, approvedAt: new Date() } });
       if (!changed.count) throw new Error("DRAFT_ALREADY_PROCESSED");
       await tx.rockyAiAudit.create({ data: { actor, action: "draft_approved", conversationId: c.id, detail: { draftId: id, edited: text.trim() !== draft.text } } });
@@ -468,6 +578,17 @@ export async function dispatchDraft(id: string) {
     const d = await prisma.rockyAiDraft.findUniqueOrThrow({ where: { id }, include: { conversation: true, catalogJob: true } });
     if (d.state !== "QUEUED") return;
     const c = d.conversation, config = await settings();
+    const channel = c.channel as AiChannel;
+    const activeChannelRevision = channelRevision(config.channelRevisions, channel);
+    if (!await channelAutomationAvailable(channel)) {
+      await prisma.$transaction(async tx => {
+        await tx.rockyAiDraft.updateMany({ where: { id, state: "QUEUED" }, data: { state: "EXPIRED", reason: "El canal automático no está disponible." } });
+        await tx.rockyAiCatalogJob.updateMany({ where: { draftId: id, state: { in: ["WAITING_ACK", "QUEUED", "RENDERING", "READY", "DELIVERING"] } }, data: {
+          state: "CANCELLED", processingToken: null, leaseExpiresAt: null, reason: "channel_unavailable", finishedAt: new Date(),
+        } });
+      });
+      return;
+    }
     const state = await snapshot(c.channel as AiChannel, c.externalId);
     // Drafts created before `priceMode` became an explicit nullable field can
     // still be reviewed safely. Live model responses remain strictly checked
@@ -494,7 +615,7 @@ export async function dispatchDraft(id: string) {
       d.catalogJob && d.catalogJob.state === "WAITING_ACK" && d.catalogJob.scopeKey === decision.catalog?.scopeKey &&
       d.catalogJob.snapshotHash && d.catalogJob.title === decision.catalog?.title,
     ));
-    const permitted = config.enabled && c.mode !== "OFF" && currentDraft(d, state, c.revision, config.revision) &&
+    const permitted = config.enabled && c.mode !== "OFF" && currentDraft(d, state, c.revision, config.revision, activeChannelRevision) &&
       (Boolean(d.approvedBy) || !c.humanControl && automaticAllowed(c.mode, decision, rendered.safe)) && factsUnchanged && catalogValid;
     if (!permitted) {
       await prisma.$transaction(async tx => {
@@ -508,8 +629,16 @@ export async function dispatchDraft(id: string) {
     const claimed = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "RockyAiSettings" WHERE id = 1 FOR SHARE`;
       await tx.$queryRaw`SELECT id FROM "RockyAiConversation" WHERE id = ${c.id} FOR UPDATE`;
-      const [fresh, current] = await Promise.all([tx.rockyAiSettings.findUniqueOrThrow({ where: { id: 1 } }), tx.rockyAiConversation.findUniqueOrThrow({ where: { id: c.id } })]);
-      if (!fresh.enabled || fresh.revision !== d.settingsRevision || current.revision !== d.controlRevision ||
+      const runsOutsideLegacyMaster = channel === "telegram" || channel === "messenger" && messengerSuperBotCompatible();
+      const [fresh, current, global] = await Promise.all([
+        tx.rockyAiSettings.findUniqueOrThrow({ where: { id: 1 } }),
+        tx.rockyAiConversation.findUniqueOrThrow({ where: { id: c.id } }),
+        runsOutsideLegacyMaster ? Promise.resolve(null) : tx.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } }),
+      ]);
+      if (!fresh.enabled || fresh.revision !== d.settingsRevision || channelRevision(fresh.channelRevisions, channel) !== d.channelRevision || current.revision !== d.controlRevision ||
+        (!runsOutsideLegacyMaster && !global?.botMasterSwitch) ||
+        (channel === "telegram" && !telegramSuperBotBridgeCompatible()) ||
+        (channel === "messenger" && !messengerSuperBotCompatible()) ||
         (!d.approvedBy && current.humanControl)) return false;
       return (await tx.rockyAiDraft.updateMany({ where: { id, state: "QUEUED", expiresAt: { gt: new Date() } }, data: { state: "SENDING" } })).count === 1;
     });
@@ -552,7 +681,7 @@ export async function conversationStatus(channel: AiChannel, externalId: string)
   const conversation = await prisma.rockyAiConversation.findUnique({ where: { id } });
   const state = await snapshot(channel, externalId);
   if (conversation) await prisma.rockyAiDraft.updateMany({ where: { conversationId: id, state: { in: ["DRAFT", "QUEUED"] },
-    OR: [{ expiresAt: { lte: new Date() } }, { contextHash: { not: state.contextHash } }, { controlRevision: { not: conversation.revision } }, { settingsRevision: { not: config.revision } }] },
+    OR: [{ expiresAt: { lte: new Date() } }, { contextHash: { not: state.contextHash } }, { controlRevision: { not: conversation.revision } }, { settingsRevision: { not: config.revision } }, { channelRevision: { not: channelRevision(config.channelRevisions, channel) } }] },
     data: { state: "EXPIRED", reason: "La sugerencia ya no está vigente." } });
   const drafts = await prisma.rockyAiDraft.findMany({ where: { conversationId: id }, orderBy: { createdAt: "desc" }, take: 8,
     select: { id: true, state: true, text: true, reason: true, approvedBy: true, expiresAt: true, createdAt: true } });
@@ -564,26 +693,58 @@ export async function conversationStatus(channel: AiChannel, externalId: string)
 }
 
 async function discoverDefaults(config: RockyAiSettings) {
-  const defaults = config.channelDefaults as Record<string, AiMode>;
   for (const channel of channels) {
-    const mode = defaults[channel];
-    if (!mode || mode === "OFF") continue;
+    const mode = channelDefaultMode(config.channelDefaults, channel);
+    if (mode === "OFF" || !await channelAutomationAvailable(channel)) continue;
+    // A Messenger mode saved before this feature was deployed has no durable
+    // activation fence. Keep it unarmed until an administrator saves the mode
+    // again, rather than polling and claiming historic customer chats.
+    const activationSince = channel === "messenger"
+      ? channelActivationSince(config.channelActivationSince, channel)
+      : config.defaultsSince;
+    if (!activationSince) continue;
     let ids: string[] = [];
     if (isLocal(channel)) {
+      // A Telegram customer may return to an old thread after its default is
+      // enabled. Its inbound time, not the conversation creation time, is the
+      // durable recovery signal if the webhook's short scheduling budget ends.
+      const activatedSince = channel === "telegram"
+        ? { telegramLastInboundAt: { gte: config.defaultsSince } }
+        : { createdAt: { gte: config.defaultsSince } };
       ids = (await prisma.conversation.findMany({ where: { channel: channel === "whatsapp" ? "WHATSAPP" : "TELEGRAM", botEnabled: true, assignedUserId: null, status: "AUTOMATICO",
-        createdAt: { gte: config.defaultsSince }, lastMessageAt: { gte: new Date(Date.now() - 86400000) } }, select: { id: true } })).map(c => c.id);
+        ...activatedSince, lastMessageAt: { gte: new Date(Date.now() - 86400000) } }, select: { id: true } })).map(c => c.id);
     } else {
       let cursor: string | null = null;
       for (let page = 0; page < 20; page++) {
         const result: SocialPage<SocialConversation & { createdAt?: string }> = await socialRequest(`/conversations?channel=${channel}&botCategory=all&perPage=50${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`);
-        ids.push(...result.data.filter(c => c.createdAt && Date.parse(c.createdAt) >= config.defaultsSince.getTime()).map(c => c.id));
+        if (channel === "messenger") {
+          // Never claim a thread already disabled for a human. Poll only a
+          // fresh customer inbound after the explicit Messenger activation;
+          // the 24-hour cutoff avoids taking a chat that cannot legally be
+          // answered through Meta anyway.
+          const after = Math.max(activationSince.getTime(), Date.now() - 86400000);
+          ids.push(...result.data.filter(c => c.botEnabled && !socialConversationHasHumanAssignee(c) && c.contactInboxes.some(inbox =>
+            inbox.channel === "messenger" && Boolean(inbox.lastIncomingMessageAt) &&
+            Date.parse(inbox.lastIncomingMessageAt!) >= after,
+          )).map(c => c.id));
+        } else {
+          ids.push(...result.data.filter(c => c.createdAt && Date.parse(c.createdAt) >= activationSince.getTime()).map(c => c.id));
+        }
         cursor = result.nextCursor; if (!cursor) break;
       }
     }
-    for (const externalId of ids) {
+    for (const externalId of new Set(ids)) {
       const id = targetKey(channel, externalId);
       if (await prisma.rockyAiConversation.findUnique({ where: { id } })) continue;
-      await configureConversation(channel, externalId, mode, mode === "COPILOT", "channel_default");
+      try {
+        await configureConversation(channel, externalId, mode, mode === "COPILOT", "channel_default");
+      } catch (error) {
+        // A human opened or took a conversation between the list poll and the
+        // handoff check. It is safer to leave that one untouched while still
+        // processing other fresh conversations in the page.
+        if (error instanceof Error && ["CONTROL_CHANGED", "CHANNEL_NOT_OWNED"].includes(error.message)) continue;
+        throw error;
+      }
       // New conversations only: handle the first inbound after taking ownership.
       await prisma.rockyAiConversation.update({ where: { id }, data: { lastTrigger: null } });
     }
@@ -598,13 +759,17 @@ export async function workerTick() {
     await lock.rockyAiVisualEvidence.deleteMany({ where: { expiresAt: { lte: new Date() } } });
     const config = await settings();
     const global = await lock.storeSettings.findUnique({ where: { id: 1 }, select: { botMasterSwitch: true } });
-    if (global && !global.botMasterSwitch) {
-      await lock.rockyAiSettings.updateMany({ where: { id: 1, enabled: true }, data: { enabled: false, revision: { increment: 1 } } });
-      await lock.rockyAiDraft.updateMany({ where: { state: { in: ["DRAFT", "QUEUED"] } }, data: { state: "EXPIRED", reason: "Automatización global detenida." } });
-      await lock.rockyAiCatalogJob.updateMany({ where: { state: { in: ["WAITING_ACK", "QUEUED", "RENDERING", "READY", "DELIVERING"] } }, data: {
+    const legacyAutomationStopped = Boolean(global && !global.botMasterSwitch);
+    const independentlyAllowedChannels = channelsAllowedWhileLegacyStopped();
+    if (legacyAutomationStopped) {
+      // Telegram and explicitly compatible Messenger are independently
+      // fail-closed. Do not let either exception reactivate any legacy channel.
+      await lock.rockyAiDraft.updateMany({ where: { conversation: { channel: { notIn: independentlyAllowedChannels } }, state: { in: ["DRAFT", "QUEUED"] } }, data: {
+        state: "EXPIRED", reason: "Automatización global detenida.",
+      } });
+      await lock.rockyAiCatalogJob.updateMany({ where: { conversation: { channel: { notIn: independentlyAllowedChannels } }, state: { in: ["WAITING_ACK", "QUEUED", "RENDERING", "READY", "DELIVERING"] } }, data: {
         state: "CANCELLED", processingToken: null, leaseExpiresAt: null, reason: "global_automation_stopped", finishedAt: new Date(),
       } });
-      return;
     }
     await prisma.rockyAiSettings.update({ where: { id: 1 }, data: { workerSeenAt: new Date(), workerError: null } });
     const abandoned = await prisma.rockyAiDraft.findMany({ where: { state: "SENDING", updatedAt: { lt: new Date(Date.now() - 180000) } } });
@@ -620,6 +785,7 @@ export async function workerTick() {
     }
     // Work in oldest-updated order; each scan touches processed rows for fairness.
     const conversations = await prisma.rockyAiConversation.findMany({ where: { mode: { not: "OFF" },
+      ...(legacyAutomationStopped ? { channel: { in: independentlyAllowedChannels } } : {}),
       OR: [{ humanControl: false }, { mode: "COPILOT" }] }, orderBy: { updatedAt: "asc" }, take: 10 });
     for (const c of conversations) {
       await prisma.rockyAiSettings.update({ where: { id: 1 }, data: { workerSeenAt: new Date() } });
@@ -632,7 +798,9 @@ export async function workerTick() {
       }
       await prisma.rockyAiConversation.update({ where: { id: c.id }, data: { updatedAt: new Date() } });
     }
-    for (const draft of await prisma.rockyAiDraft.findMany({ where: { state: "QUEUED" }, orderBy: { createdAt: "asc" }, take: 20 })) {
+    for (const draft of await prisma.rockyAiDraft.findMany({ where: {
+      state: "QUEUED", ...(legacyAutomationStopped ? { conversation: { channel: { in: independentlyAllowedChannels } } } : {}),
+    }, orderBy: { createdAt: "asc" }, take: 20 })) {
       try { await dispatchDraft(draft.id); }
       catch { await prisma.rockyAiDraft.updateMany({ where: { id: draft.id, state: "QUEUED" }, data: { state: "EXPIRED", reason: "No se pudo validar el canal antes del envío." } }); }
     }
