@@ -7,7 +7,7 @@ import { productWhatsAppImage } from "../whatsapp-product-image";
 import { buildPublicUrl } from "../site-url";
 import { MESSENGER_SUPER_BOT_MODEL, messengerSuperBotCompatible } from "../messenger-control";
 import { telegramSuperBotBridgeCompatible, telegramSuperBotBridgeReady } from "../telegram-bridge";
-import { claimChannel, deliver, snapshot, isLocal } from "./adapters";
+import { claimChannel, deliver, snapshot, isLocal, type ChannelClaimOptions } from "./adapters";
 import { prepareSuperBotCatalog, type SuperBotCatalogPlan } from "./catalog";
 import { generateDecision } from "./provider";
 import { automaticAllowed, channelActivationSince, channelDefaultMode, channelRevision, channels, currentDraft, decisionSchema, defaultPricingPolicy, hash, needsHuman, renderDecision, settingsSchema,
@@ -139,7 +139,14 @@ export async function pauseForHuman(channel: AiChannel, externalId: string, acto
     await tx.rockyAiAudit.create({ data: { actor, action: "human_takeover", conversationId: id } });
   });
 }
-export async function configureConversation(channel: AiChannel, externalId: string, mode: AiMode, humanControl: boolean, actor: string) {
+export async function configureConversation(
+  channel: AiChannel,
+  externalId: string,
+  mode: AiMode,
+  humanControl: boolean,
+  actor: string,
+  claimOptions: ChannelClaimOptions = {},
+) {
   const id = targetKey(channel, externalId);
   if (mode !== "OFF" && !await channelAutomationAvailable(channel)) throw new Error(channelUnavailableError(channel));
   // Invalidate before making external calls; a failed takeover leaves AI paused.
@@ -156,7 +163,7 @@ export async function configureConversation(channel: AiChannel, externalId: stri
     await audit(actor, "mode_changed", id, { mode, humanControl: saved.humanControl });
     return saved;
   }
-  const state = await claimChannel(channel, externalId);
+  const state = await claimChannel(channel, externalId, claimOptions);
   const changed = await prisma.rockyAiConversation.updateMany({ where: { id, revision: before.revision }, data: {
     mode, humanControl, revision: { increment: 1 },
     activatedAt: new Date(), lastTrigger: state.triggerId || null, lastError: null,
@@ -737,7 +744,8 @@ async function discoverDefaults(config: RockyAiSettings) {
       const id = targetKey(channel, externalId);
       if (await prisma.rockyAiConversation.findUnique({ where: { id } })) continue;
       try {
-        await configureConversation(channel, externalId, mode, mode === "COPILOT", "channel_default");
+        await configureConversation(channel, externalId, mode, mode === "COPILOT", "channel_default",
+          channel === "messenger" ? { minimumInboundAt: activationSince } : undefined);
       } catch (error) {
         // A human opened or took a conversation between the list poll and the
         // handoff check. It is safer to leave that one untouched while still

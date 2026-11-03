@@ -29,6 +29,34 @@ export function messengerSuperBotCompatible(
   return value === "true" && Boolean(socialToken?.trim()) && Boolean(controlToken?.trim());
 }
 
+/**
+ * Some pages report their own app as the Messenger thread owner before a
+ * controller row has been created. That state is deliberately opt-in: it is
+ * not evidence on its own that Super Bot may take a conversation.
+ */
+export function messengerSuperBotAllowsStoreUnmanaged(
+  value = process.env.MESSENGER_SUPER_BOT_ALLOW_STORE_UNMANAGED,
+) {
+  return value === "true";
+}
+
+/**
+ * The controller is authoritative for handoffs. Meta-owned threads use the
+ * established route; the store/unmanaged compatibility route is allowed only
+ * with the extra acknowledgement above and only when there is no pending
+ * resume or unverifiable ownership.
+ */
+export function messengerControlClaimableBySuperBot(
+  state: MessengerControlState,
+  allowStoreUnmanaged = messengerSuperBotAllowsStoreUnmanaged(),
+) {
+  if (state.error || state.resumeAt !== null || state.ownerVerified !== true) return false;
+  if (state.owner === "meta" && state.mode === "meta") return true;
+  // This newer fallback must not guess when an older controller response
+  // omits ownership verification; it is only safe with an affirmative result.
+  return allowStoreUnmanaged && state.owner === "store" && state.mode === "unmanaged" && state.ownerVerified === true;
+}
+
 /** Messenger automatic responses are intentionally pinned to the approved complex model. */
 export const MESSENGER_SUPER_BOT_MODEL = "gpt-6-sol";
 

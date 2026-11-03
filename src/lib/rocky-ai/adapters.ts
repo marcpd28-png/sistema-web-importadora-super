@@ -3,13 +3,33 @@ import path from "node:path";
 import { prisma } from "../prisma";
 import { dedupeSocialMessages, safeSocialMessage, socialConversation, socialConversationHasHumanAssignee, socialRequest, socialReplyInbox, type SocialChannel, type SocialMessage, type SocialPage } from "../social-inbox";
 import { SOCIAL_FILE_LIMIT, uploadSocialFile } from "../social-media";
-import { messengerControl, messengerSuperBotCompatible } from "../messenger-control";
+import { messengerControl, messengerControlClaimableBySuperBot, messengerSuperBotAllowsStoreUnmanaged, messengerSuperBotCompatible } from "../messenger-control";
 import { controlTelegramSuperBot, sendTelegramSuperBot, telegramReplyWindow, telegramSuperBotBridgeReady } from "../telegram-bridge";
 import { telegramMessageKey } from "../telegram-events";
 import { normalizeYCloudPhone, sendYCloudOutboundMessage } from "../ycloud-outbound";
 import { hash, type AiChannel, type HistoryItem, type Snapshot } from "./policy";
 
 export const isLocal = (channel: AiChannel) => channel === "whatsapp" || channel === "telegram";
+
+export type ChannelClaimOptions = {
+  /**
+   * Automatic Messenger discovery supplies the time at which an operator
+   * armed the channel. It prevents a compatibility fallback from taking a
+   * historical conversation merely because its controller row is absent.
+   */
+  minimumInboundAt?: Date;
+};
+
+function hasFreshMessengerCustomerTurn(state: Snapshot, minimumInboundAt?: Date) {
+  const latest = state.history.at(-1);
+  if (!state.canSend || latest?.role !== "user") return false;
+  const receivedAt = Date.parse(latest.at);
+  if (!Number.isFinite(receivedAt)) return false;
+  if (!minimumInboundAt) return true;
+  const minimum = minimumInboundAt.getTime();
+  return Number.isFinite(minimum) && receivedAt >= minimum;
+}
+
 export async function snapshot(channel: AiChannel, externalId: string): Promise<Snapshot> {
   let history: HistoryItem[], owned = false, canSend = false, control: unknown;
   if (isLocal(channel)) {
@@ -49,7 +69,7 @@ export async function snapshot(channel: AiChannel, externalId: string): Promise<
       if (!process.env.MESSENGER_CONTROL_TOKEN) owned = false;
       else {
         const state = await messengerControl(externalId);
-        owned = owned && state.owner === "store" && state.resumeAt === null && !state.error;
+        owned = owned && state.owner === "store" && state.mode === "manual" && state.resumeAt === null && !state.error && state.ownerVerified === true;
         control = [control, state.owner, state.mode, state.resumeAt, state.resumeTarget];
       }
     }
@@ -61,7 +81,7 @@ export async function snapshot(channel: AiChannel, externalId: string): Promise<
     reason: !owned ? "Otro bot o servicio controla esta conversación." : !canSend ? "Espera un nuevo mensaje del cliente para responder." : undefined };
 }
 
-export async function claimChannel(channel: AiChannel, externalId: string) {
+export async function claimChannel(channel: AiChannel, externalId: string, options: ChannelClaimOptions = {}) {
   if (isLocal(channel)) {
     const c = await prisma.conversation.findUniqueOrThrow({ where: { id: externalId } });
     if (c.channel.toLowerCase() !== channel) throw new Error("INVALID_CONVERSATION");
@@ -88,14 +108,30 @@ export async function claimChannel(channel: AiChannel, externalId: string) {
     if (channel === "messenger") {
       if (!messengerSuperBotCompatible()) throw new Error("MESSENGER_SUPER_BOT_INCOMPATIBLE");
       // The controller is the only authority that can distinguish Meta's
-      // automated owner from a human handoff. Unknown, other, resumed, or
-      // already-store states are deliberately not claimable by polling.
+      // automated owner from a human handoff. The normal route is Meta-owned.
+      // A small number of pages instead report our store app as owner before
+      // they have any controller row. That compatibility route needs a second
+      // explicit flag and checks the current customer turn below.
+      const allowStoreUnmanaged = messengerSuperBotAllowsStoreUnmanaged();
       const before = await messengerControl(externalId);
-      if (before.error || before.owner !== "meta" || before.mode !== "meta" || before.resumeAt !== null || before.ownerVerified === false) {
+      if (!messengerControlClaimableBySuperBot(before, allowStoreUnmanaged)) {
         throw new Error("CONTROL_CHANGED");
       }
+      if (before.owner === "store" && before.mode === "unmanaged") {
+        if (!before.botEnabled) throw new Error("CONTROL_CHANGED");
+        const pending = await snapshot(channel, externalId);
+        if (!hasFreshMessengerCustomerTurn(pending, options.minimumInboundAt)) throw new Error("CONTROL_CHANGED");
+        // Re-read the ChatbotX assignment immediately before the handoff. A
+        // bot-enabled store/unmanaged state is not permission to interrupt an
+        // adviser who opened the conversation while this worker was polling.
+        const current = await socialConversation(externalId, channel as SocialChannel);
+        if (!current.conversation.botEnabled || socialConversationHasHumanAssignee(current.conversation)) throw new Error("CONTROL_CHANGED");
+        const confirmed = await messengerControl(externalId);
+        if (!messengerControlClaimableBySuperBot(confirmed, allowStoreUnmanaged) ||
+          confirmed.owner !== "store" || confirmed.mode !== "unmanaged" || !confirmed.botEnabled) throw new Error("CONTROL_CHANGED");
+      }
       const claimed = await messengerControl(externalId, { action: "manual", minutes: 0, actor: "rocky-ai" });
-      if (claimed.error || claimed.owner !== "store" || claimed.mode !== "manual" || claimed.resumeAt !== null || claimed.ownerVerified === false) {
+      if (claimed.error || claimed.owner !== "store" || claimed.mode !== "manual" || claimed.resumeAt !== null || claimed.ownerVerified !== true) {
         throw new Error("CHANNEL_NOT_OWNED");
       }
     }

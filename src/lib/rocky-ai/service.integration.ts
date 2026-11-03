@@ -49,6 +49,7 @@ beforeEach(async () => {
   process.env.TELEGRAM_BRIDGE_SECRET = "t".repeat(40);
   process.env.TELEGRAM_BRIDGE_SUPER_BOT_COMPATIBLE = "true";
   process.env.MESSENGER_SUPER_BOT_COMPATIBLE = "false";
+  process.env.MESSENGER_SUPER_BOT_ALLOW_STORE_UNMANAGED = "false";
   process.env.SOCIAL_INBOX_API_URL = "http://social-inbox-rocky-ai.test";
   delete process.env.SOCIAL_INBOX_API_TOKEN;
   delete process.env.MESSENGER_CONTROL_TOKEN;
@@ -104,18 +105,30 @@ function telegramInbound(content = "Hola") {
   };
 }
 
-function installMessengerMock(options: { botEnabled?: boolean; owner?: "meta" | "store" | "other" | "unknown"; assignedUserId?: string | null } = {}) {
+function installMessengerMock(options: {
+  botEnabled?: boolean;
+  owner?: "meta" | "store" | "other" | "unknown";
+  mode?: "manual" | "bot" | "meta" | "unmanaged";
+  assignedUserId?: string | null;
+  inboundAt?: string;
+  outboundAfterInbound?: boolean;
+} = {}) {
   const conversationId = "9001";
   const inboxId = "messenger-contact-inbox";
   const outboundInboxId = "messenger-inbox";
   let botEnabled = options.botEnabled ?? true;
   let owner = options.owner ?? "meta";
+  let mode: "manual" | "bot" | "meta" | "unmanaged" = options.mode ?? (owner === "meta" ? "meta" : "manual");
   let assignedUserId = options.assignedUserId ?? null;
-  const inboundAt = new Date(Date.now() - 15_000).toISOString();
+  const inboundAt = options.inboundAt ?? new Date(Date.now() - 15_000).toISOString();
   const messages: Record<string, unknown>[] = [{
     id: "messenger-inbound-1", text: "Necesito ayuda con un producto", createdAt: inboundAt,
     contactInboxId: inboxId, messageType: "incoming", deletedAt: null, sendError: null, senderType: "user", sourceId: "messenger-inbound-1",
   }];
+  if (options.outboundAfterInbound) {
+    messages.push({ id: "messenger-adviser-1", text: "Un asesor ya respondió.", createdAt: new Date(Date.now() - 1_000).toISOString(),
+      contactInboxId: inboxId, messageType: "outgoing", deletedAt: null, sendError: null, senderType: "agent", sourceId: "messenger-adviser-1" });
+  }
   const controllerActions: Record<string, unknown>[] = [];
   const deliveries: Record<string, unknown>[] = [];
   const conversation = () => ({
@@ -131,13 +144,14 @@ function installMessengerMock(options: { botEnabled?: boolean; owner?: "meta" | 
         controllerActions.push(input);
         if (input.action !== "manual") return Response.json({ error: "unexpected action" }, { status: 400 });
         owner = "store";
+        mode = "manual";
         botEnabled = false;
         // Meta's ownership notification is an outgoing provider event, not an
         // adviser response. The adapter must omit it from AI history.
         messages.push({ id: `meta-handover-${controllerActions.length}`, text: "You took over this chat from your AI agent.", createdAt: new Date().toISOString(),
           contactInboxId: inboxId, messageType: "outgoing", deletedAt: null, sendError: null, senderType: "api", sourceId: `meta-handover-${controllerActions.length}` });
       }
-      return Response.json({ owner, botEnabled, mode: owner === "meta" ? "meta" : "manual", resumeAt: null, resumeTarget: null, error: null, metaAiAvailable: true, ownerVerified: true });
+      return Response.json({ owner, botEnabled, mode, resumeAt: null, resumeTarget: null, error: null, metaAiAvailable: true, ownerVerified: true });
     }
     if (target.pathname === `/v1/conversations/${conversationId}`) return Response.json({ data: conversation() });
     if (target.pathname === "/v1/conversations") return Response.json({ data: [conversation()], nextCursor: null });
@@ -470,6 +484,91 @@ test("Messenger AUTO is independently gated, uses gpt-6-sol, and leaves WhatsApp
   assert.equal(remote.botEnabled, false);
   assert.equal((await prisma.storeSettings.findUniqueOrThrow({ where: { id: 1 } })).botMasterSwitch, false);
   assert.equal(sends, 0);
+});
+test("Messenger store/unmanaged control stays paused until its separate opt-in is set", async () => {
+  const remote = installMessengerMock({ owner: "store", mode: "unmanaged" });
+  process.env.MESSENGER_SUPER_BOT_COMPATIBLE = "true";
+  process.env.SOCIAL_INBOX_API_TOKEN = "messenger-social-test";
+  process.env.MESSENGER_CONTROL_TOKEN = "messenger-control-test";
+  await prisma.storeSettings.update({ where: { id: 1 }, data: { botMasterSwitch: false } });
+  const current = await settings();
+  await prisma.rockyAiSettings.update({ where: { id: 1 }, data: {
+    enabled: true,
+    channelDefaults: { ...(current.channelDefaults as Record<string, string>), messenger: "AUTO" },
+    channelActivationSince: { messenger: new Date(Date.now() - 30_000).toISOString() },
+  } });
+
+  await workerTick();
+
+  assert.equal(remote.controllerActions.length, 0);
+  assert.equal(remote.deliveries.length, 0);
+  assert.equal(openAiPayloads.length, 0);
+});
+test("Messenger store/unmanaged control can answer only after its opt-in and a fresh customer inbound", async () => {
+  const remote = installMessengerMock({ owner: "store", mode: "unmanaged" });
+  process.env.MESSENGER_SUPER_BOT_COMPATIBLE = "true";
+  process.env.MESSENGER_SUPER_BOT_ALLOW_STORE_UNMANAGED = "true";
+  process.env.SOCIAL_INBOX_API_TOKEN = "messenger-social-test";
+  process.env.MESSENGER_CONTROL_TOKEN = "messenger-control-test";
+  await prisma.storeSettings.update({ where: { id: 1 }, data: { botMasterSwitch: false } });
+  const current = await settings();
+  await prisma.rockyAiSettings.update({ where: { id: 1 }, data: {
+    enabled: true,
+    channelDefaults: { ...(current.channelDefaults as Record<string, string>), messenger: "AUTO" },
+    channelActivationSince: { messenger: new Date(Date.now() - 30_000).toISOString() },
+  } });
+
+  await workerTick();
+
+  const id = targetKey("messenger", remote.conversationId);
+  assert.equal((await prisma.rockyAiConversation.findUniqueOrThrow({ where: { id } })).mode, "AUTO");
+  assert.equal(remote.controllerActions.length, 1);
+  assert.deepEqual(remote.controllerActions[0], { action: "manual", minutes: 0, actor: "rocky-ai" });
+  assert.equal(remote.deliveries.length, 1);
+  assert.equal(openAiPayloads.length, 1);
+  assert.equal((await prisma.storeSettings.findUniqueOrThrow({ where: { id: 1 } })).botMasterSwitch, false);
+});
+test("Messenger store/unmanaged polling keeps the activation fence", async () => {
+  const remote = installMessengerMock({
+    owner: "store", mode: "unmanaged", inboundAt: new Date(Date.now() - 90_000).toISOString(),
+  });
+  process.env.MESSENGER_SUPER_BOT_COMPATIBLE = "true";
+  process.env.MESSENGER_SUPER_BOT_ALLOW_STORE_UNMANAGED = "true";
+  process.env.SOCIAL_INBOX_API_TOKEN = "messenger-social-test";
+  process.env.MESSENGER_CONTROL_TOKEN = "messenger-control-test";
+  await prisma.storeSettings.update({ where: { id: 1 }, data: { botMasterSwitch: false } });
+  const current = await settings();
+  await prisma.rockyAiSettings.update({ where: { id: 1 }, data: {
+    enabled: true,
+    channelDefaults: { ...(current.channelDefaults as Record<string, string>), messenger: "AUTO" },
+    channelActivationSince: { messenger: new Date(Date.now() - 30_000).toISOString() },
+  } });
+
+  await workerTick();
+
+  assert.equal(await prisma.rockyAiConversation.count({ where: { channel: "messenger" } }), 0);
+  assert.equal(remote.controllerActions.length, 0);
+  assert.equal(remote.deliveries.length, 0);
+});
+test("Messenger store/unmanaged polling never interrupts a newer human outbound", async () => {
+  const remote = installMessengerMock({ owner: "store", mode: "unmanaged", outboundAfterInbound: true });
+  process.env.MESSENGER_SUPER_BOT_COMPATIBLE = "true";
+  process.env.MESSENGER_SUPER_BOT_ALLOW_STORE_UNMANAGED = "true";
+  process.env.SOCIAL_INBOX_API_TOKEN = "messenger-social-test";
+  process.env.MESSENGER_CONTROL_TOKEN = "messenger-control-test";
+  await prisma.storeSettings.update({ where: { id: 1 }, data: { botMasterSwitch: false } });
+  const current = await settings();
+  await prisma.rockyAiSettings.update({ where: { id: 1 }, data: {
+    enabled: true,
+    channelDefaults: { ...(current.channelDefaults as Record<string, string>), messenger: "AUTO" },
+    channelActivationSince: { messenger: new Date(Date.now() - 30_000).toISOString() },
+  } });
+
+  await workerTick();
+
+  assert.equal(remote.controllerActions.length, 0);
+  assert.equal(remote.deliveries.length, 0);
+  assert.equal(openAiPayloads.length, 0);
 });
 test("Messenger polling never claims a ChatbotX conversation already held for a human", async () => {
   const remote = installMessengerMock({ botEnabled: false, owner: "store" });
