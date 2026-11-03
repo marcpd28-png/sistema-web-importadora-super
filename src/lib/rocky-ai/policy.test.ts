@@ -49,6 +49,18 @@ test("browsing verified options remains natural and never reveals stock", () => 
   assert.ok(!reply.text.includes("20 unidades"));
   assert.match(reply.text, /catálogo PDF/i);
 });
+test("recommendations are ranked by verified unit price and never reveal stock", () => {
+  const affordable = { ...product, id: "p2", name: "Soporte económico", code: "SUP-2", price: 15, stock: 8 };
+  const standard = { ...product, price: 27 };
+  const premium = { ...product, id: "p3", name: "Soporte premium", code: "SUP-3", price: 39, stock: 2 };
+  const reply = renderDecision({ ...decision, intent: "recommendation", productIds: ["p3", "p1", "p2"] }, [premium, standard, affordable], policies);
+  assert.equal(reply.safe, true);
+  assert.match(reply.text, /ordenadas desde la más económica/i);
+  assert.ok(reply.text.indexOf("SUP-2") < reply.text.indexOf("HY300"));
+  assert.ok(reply.text.indexOf("HY300") < reply.text.indexOf("SUP-3"));
+  assert.ok(!reply.text.includes("8 unidades"));
+  assert.ok(!reply.text.includes("2 unidades"));
+});
 test("catalog acknowledgement uses a server-verified scope, not model product facts", () => {
   const reply = renderDecision({ ...decision, intent: "catalog", productIds: [], catalog: {
     state: "ready", scopeKey: "parlantes:sony", title: "CATÁLOGO DE PARLANTES SONY", productCount: 5, message: null,

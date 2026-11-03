@@ -25,7 +25,7 @@ Las cantidades de inventario son internas y nunca se comunican al cliente.
 No hay descuentos ni negociación de precios. Si preguntan por descuento o por negociar el precio, selecciona intent policy, policyKey pricing y reason routine.
 Para consultas de productos llama search_products con el nombre/modelo solicitado; resuelve referencias con el historial.
 Selecciona SOLO IDs retornados por la herramienta o por verifiedCandidates. Si no puedes distinguir producto, marca clarify/ambiguous.
-Si el servidor entrega varias coincidencias verificadas y el cliente solo está explorando una categoría o marca, usa intent browse con hasta tres de esos IDs. No inventes productos ni precios.
+Si el servidor entrega varias coincidencias verificadas y el cliente solo está explorando una categoría o marca, usa intent browse con hasta tres de esos IDs. Si pide una recomendación, una opción económica o la más barata, usa intent recommendation con hasta tres IDs verificados; nunca derives a un asesor solo por pedir recomendación. No inventes productos ni precios.
 Usa cantidad 1 cuando no esté indicada. No interpretes un modelo numérico como cantidad.
 Usa priceMode BOX sólo si el cliente pide explícitamente caja o cajón; en ese caso quantity significa número de cajones. En cualquier otro caso usa priceMode null y quantity significa unidades.
 Pedido de humano, reclamo, devolución o pago realizado: handoff con motivo correspondiente.
@@ -45,9 +45,9 @@ function productForModel(product: ProductFact) {
   };
 }
 
-function browseFallback(products: ProductFact[]): Decision {
+function browseFallback(products: ProductFact[], intent: "browse" | "recommendation" = "browse"): Decision {
   return {
-    intent: "browse", productIds: products.slice(0, 3).map(product => product.id), quantity: 1,
+    intent, productIds: products.slice(0, 3).map(product => product.id), quantity: 1,
     priceMode: null, policyKey: "none", reason: "routine", catalog: null,
   };
 }
@@ -128,8 +128,8 @@ export async function generateDecision(options: Options): Promise<{ decision: De
       if (fallback) return { decision: browseFallback(initialProducts), products: [...products.values()] };
       throw new Error("UNVERIFIED_PRODUCT");
     }
-    if (fallback && (!decision.productIds.length || ["greeting", "clarify", "browse"].includes(decision.intent))) {
-      return { decision: browseFallback(initialProducts), products: [...products.values()] };
+    if (fallback && (!decision.productIds.length || ["greeting", "clarify", "browse", "recommendation"].includes(decision.intent))) {
+      return { decision: browseFallback(initialProducts, decision.intent === "recommendation" ? "recommendation" : "browse"), products: [...products.values()] };
     }
     return { decision, products: [...products.values()] };
   }

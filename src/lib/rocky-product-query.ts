@@ -24,6 +24,15 @@ const CORRECTIONS: Record<string, string> = {
   blutut: "bluetooth", bluetoo: "bluetooth", smar: "smart", wach: "watch", cavle: "cable",
 };
 
+const RECOMMENDATION_MODIFIERS = new Set([
+  "modelo", "modelos", "mas", "menos", "barato", "barata", "baratos", "baratas",
+  "economico", "economica", "economicos", "economicas", "accesible", "accesibles",
+  "precio", "precios", "recomendacion", "recomendaciones", "mejor", "mejores",
+  "opcion", "opciones", "adecuado", "adecuada", "adecuados", "adecuadas",
+  "conviene", "conveniente", "convenientes", "recomienda", "recomiendas", "recomiendame",
+]);
+const RECOMMENDATION_SIGNAL = /\b(?:recomiend(?:a|as|ame|o)?|recomendacion(?:es)?|(?:mas|menos)\s+(?:barat[oa]s?|economic[oa]s?|accesibles?)|(?:barat[oa]s?|economic[oa]s?|accesibles?)\b|mejor\s+opcion)\b/;
+
 export function normalizeProductQuery(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
     .replace(/(\d+(?:[.,]\d+)?)\s*(?:["″]|pulgadas?\b|inches\b)/g, "$1 pulgadas ")
@@ -36,6 +45,19 @@ export function normalizeProductQuery(value: string) {
 export function productQueryTerms(value: string) {
   return [...new Set(normalizeProductQuery(value).split(/\s+/).map(word => CORRECTIONS[word] ?? word)
     .filter(word => word && !FILLER.has(word) && (word.length > 1 || /^\d$/.test(word))))];
+}
+
+/** A recommendation has two distinct parts: the product family and the
+ * preference (for example, "más barato"). Only the product family belongs in
+ * the catalog identity search. This is deliberately opt-in so a product whose
+ * official name contains one of these words is not altered during ordinary
+ * searches. */
+export function wantsProductRecommendation(value: string) {
+  return RECOMMENDATION_SIGNAL.test(normalizeProductQuery(value));
+}
+
+export function productRecommendationQuery(value: string) {
+  return productQueryTerms(value).filter(term => !RECOMMENDATION_MODIFIERS.has(term)).join(" ");
 }
 
 export function productTermAlternatives(term: string) {
@@ -89,6 +111,8 @@ type CatalogIdentity = {
   isVisible: boolean; stockUnits: number; unitPrice: unknown;
 };
 
+export type CatalogIdentitySearchOptions = { order?: "catalog" | "price" };
+
 /** One edit (including adjacent transposition), never an unrestricted fuzzy match. */
 export function oneSpellingEdit(a: string, b: string): boolean {
   if (a === b) return true;
@@ -115,7 +139,7 @@ export function resolveCatalogQuery(query: string, rows: CatalogIdentity[]) {
 
 /** Resolve identity before checking sale eligibility. Prices/stock are read
  * afresh, never cached in an approximate-search index or supplied by a model. */
-export async function searchCatalogIdentity(query: string, limit = 80) {
+export async function searchCatalogIdentity(query: string, limit = 80, options: CatalogIdentitySearchOptions = {}) {
   const terms = productQueryTerms(query);
   if (!terms.length || terms.length > 24) return { query, ids: [], unavailableIds: [] };
   const rows = await prisma.product.findMany({
@@ -126,9 +150,14 @@ export async function searchCatalogIdentity(query: string, limit = 80) {
   const matching = rows.filter(row => matchesProductQuery(row, resolved));
   const available = (row: CatalogIdentity) => row.isVisible && row.stockUnits > 0 && Number(row.unitPrice) > 0;
   const take = Math.max(1, Math.min(200, limit));
+  const availableMatches = matching.filter(available);
+  const orderedAvailable = options.order === "price"
+    ? availableMatches.slice().sort((left, right) => Number(left.unitPrice) - Number(right.unitPrice) ||
+      left.name.localeCompare(right.name, "es") || left.code.localeCompare(right.code, "es") || left.id.localeCompare(right.id))
+    : availableMatches;
   return {
     query: resolved,
-    ids: matching.filter(available).slice(0, take).map(row => row.id),
+    ids: orderedAvailable.slice(0, take).map(row => row.id),
     unavailableIds: matching.filter(row => !available(row)).slice(0, take).map(row => row.id),
   };
 }

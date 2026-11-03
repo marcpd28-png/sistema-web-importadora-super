@@ -2,7 +2,7 @@ import { Prisma, type RockyAiSettings } from "@prisma/client";
 import { prisma } from "../prisma";
 import { buildSellableProductWhere } from "../store-shared";
 import { getPreferredProductImageUrl } from "../product-media";
-import { productQueryTerms, searchCatalogIdentity } from "../rocky-product-query";
+import { productQueryTerms, productRecommendationQuery, searchCatalogIdentity, wantsProductRecommendation } from "../rocky-product-query";
 import { productWhatsAppImage } from "../whatsapp-product-image";
 import { claimChannel, deliver, snapshot, isLocal } from "./adapters";
 import { prepareSuperBotCatalog, type SuperBotCatalogPlan } from "./catalog";
@@ -123,9 +123,27 @@ async function productCandidates(content: string) {
   return productsByIds((await searchCatalogIdentity(content, 8)).ids);
 }
 
+async function recommendationCandidates(content: string) {
+  if (!wantsProductRecommendation(content)) return [];
+  const query = productRecommendationQuery(content);
+  if (!query) return [];
+  // Price ordering is performed by the server after filtering the catalog to
+  // products that are sellable. The model never chooses or supplies the price.
+  return (await productsByIds((await searchCatalogIdentity(query, 3, { order: "price" })).ids))
+    .filter(product => product.stock > 0 && product.price > 0)
+    .sort((left, right) => left.price - right.price || left.name.localeCompare(right.name, "es") || left.code.localeCompare(right.code, "es"));
+}
+
 function productDecision(product: ProductFact, quantity: number): Decision {
   return {
     intent: "product", productIds: [product.id], quantity, priceMode: null,
+    policyKey: "none", reason: "routine", catalog: null,
+  };
+}
+
+function recommendationDecision(products: ProductFact[]): Decision {
+  return {
+    intent: "recommendation", productIds: products.slice(0, 3).map(product => product.id), quantity: 1, priceMode: null,
     policyKey: "none", reason: "routine", catalog: null,
   };
 }
@@ -281,28 +299,34 @@ export async function simulateSuperBot(turns: SimulationHistoryTurn[], actor: st
     if (catalogPlan) {
       decision = decisionForCatalog(catalogPlan);
     } else {
-      const quantityOnlyReply = quantity !== null && productQueryTerms(latest.text).every(term => /^\d+$/.test(term));
-      const previousProduct = quantityOnlyReply
-        ? await simulatorQuantityFollowUp(turns, latestUserIndex, quantity)
-        : null;
-      const candidates = await productCandidates(latest.text);
-      const uniqueProduct = previousProduct ?? (candidates.length === 1 ? candidates[0] : null);
-      if (uniqueProduct) {
+      const recommendations = await recommendationCandidates(latest.text);
+      if (recommendations.length) {
+        decision = recommendationDecision(recommendations);
+        products = recommendations;
+      } else {
+        const quantityOnlyReply = quantity !== null && productQueryTerms(latest.text).every(term => /^\d+$/.test(term));
+        const previousProduct = quantityOnlyReply
+          ? await simulatorQuantityFollowUp(turns, latestUserIndex, quantity)
+          : null;
+        const candidates = await productCandidates(latest.text);
+        const uniqueProduct = previousProduct ?? (candidates.length === 1 ? candidates[0] : null);
+        if (uniqueProduct) {
         // A single verified match is a deterministic sales step. This removes
         // the model from product selection and preserves the selected item for
         // the quantity turn that follows.
-        decision = productDecision(uniqueProduct, quantity ?? 1);
-        products = [uniqueProduct];
-      } else {
-        const result = await generateDecision({
-          model: config.model, maxOutputTokens: config.maxOutputTokens, history, policies,
-          search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
-          initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
-          reserve: tokens => reserveSimulationUsage(config, actor, tokens), record: recordUsage,
-        });
-        providerUsed = true;
-        decision = result.decision;
-        products = result.products;
+          decision = productDecision(uniqueProduct, quantity ?? 1);
+          products = [uniqueProduct];
+        } else {
+          const result = await generateDecision({
+            model: config.model, maxOutputTokens: config.maxOutputTokens, history, policies,
+            search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
+            initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
+            reserve: tokens => reserveSimulationUsage(config, actor, tokens), record: recordUsage,
+          });
+          providerUsed = true;
+          decision = result.decision;
+          products = result.products;
+        }
       }
     }
   }
@@ -347,24 +371,30 @@ export async function generateDraft(id: string, actor: string, explicit = false)
       if (catalogPlan) {
         decision = decisionForCatalog(catalogPlan);
       } else {
-        const quantityOnlyReply = quantity !== null && productQueryTerms(latest.text).every(term => /^\d+$/.test(term));
-        const previousProduct = quantityOnlyReply
-          ? await liveQuantityFollowUp(id, state.history, quantity)
-          : null;
-        const candidates = await productCandidates(latest.text);
-        const uniqueProduct = previousProduct ?? (candidates.length === 1 ? candidates[0] : null);
-        if (uniqueProduct) {
-          decision = productDecision(uniqueProduct, quantity ?? 1);
-          products = [uniqueProduct];
+        const recommendations = await recommendationCandidates(latest.text);
+        if (recommendations.length) {
+          decision = recommendationDecision(recommendations);
+          products = recommendations;
         } else {
-          const result = await generateDecision({
-            model: config.model, maxOutputTokens: config.maxOutputTokens, history: state.history, policies,
-            search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
-            initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
-            reserve: tokens => reserveUsage(config, id, tokens),
-            record: recordUsage,
-          });
-          decision = result.decision; products = result.products;
+          const quantityOnlyReply = quantity !== null && productQueryTerms(latest.text).every(term => /^\d+$/.test(term));
+          const previousProduct = quantityOnlyReply
+            ? await liveQuantityFollowUp(id, state.history, quantity)
+            : null;
+          const candidates = await productCandidates(latest.text);
+          const uniqueProduct = previousProduct ?? (candidates.length === 1 ? candidates[0] : null);
+          if (uniqueProduct) {
+            decision = productDecision(uniqueProduct, quantity ?? 1);
+            products = [uniqueProduct];
+          } else {
+            const result = await generateDecision({
+              model: config.model, maxOutputTokens: config.maxOutputTokens, history: state.history, policies,
+              search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
+              initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
+              reserve: tokens => reserveUsage(config, id, tokens),
+              record: recordUsage,
+            });
+            decision = result.decision; products = result.products;
+          }
         }
       }
     }

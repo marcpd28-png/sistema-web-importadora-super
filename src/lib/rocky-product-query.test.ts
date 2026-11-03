@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { matchesProductQuery, productQueryTerms, resolveCatalogQuery, oneSpellingEdit } from "./rocky-product-query";
+import { matchesProductQuery, productQueryTerms, productRecommendationQuery, resolveCatalogQuery, oneSpellingEdit, wantsProductRecommendation } from "./rocky-product-query";
 import { isGeneralCatalogRequest, parseCatalogRequest } from "./catalog-pdf";
 
 test("informal greetings do not become product constraints", () => {
@@ -72,4 +72,12 @@ test("availability phrasing is not product identity and measurement units remain
   assert.equal(matchesProductQuery({ name: 'TABLET ANDROID 10" 32GB' }, "tablet 32 pulgadas"), false);
   assert.equal(matchesProductQuery({ name: 'TABLET ANDROID 32" 128GB' }, "tablet 32gb"), false);
   assert.equal(matchesProductQuery({ name: "TABLET ANDROID 32GB" }, "tablet 32 gb"), true);
+});
+
+test("recommendation modifiers do not become catalog constraints", () => {
+  const request = "¿Qué modelo de soporte me recomiendas, el más barato?";
+  assert.equal(wantsProductRecommendation(request), true);
+  assert.equal(productRecommendationQuery(request), "soporte");
+  assert.equal(productRecommendationQuery("Recomiéndame un soporte para tablet económico"), "soporte tablet");
+  assert.equal(wantsProductRecommendation("¿Me haces descuento?"), false);
 });

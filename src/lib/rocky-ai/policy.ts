@@ -55,7 +55,7 @@ export const catalogDecisionSchema = z.object({
 });
 export type CatalogDecision = z.infer<typeof catalogDecisionSchema>;
 export const decisionSchema = z.object({
-  intent: z.enum(["greeting", "product", "browse", "catalog", "policy", "clarify", "handoff"]),
+  intent: z.enum(["greeting", "product", "browse", "recommendation", "catalog", "policy", "clarify", "handoff"]),
   productIds: z.array(z.string()).max(3),
   quantity: z.number().int().min(1).max(10000),
   // Strict Structured Outputs requires every property to be present. `null`
@@ -146,15 +146,29 @@ export function renderDecision(
     const policy = policies[decision.policyKey]?.trim();
     if (policy) return { text: policy, safe: true, reason: "verified_policy" };
   }
-  if (decision.intent === "browse" && selected.length && selected.every((product): product is ProductFact => product != null)) {
-    const lines = selected.map(product => {
+  if (["browse", "recommendation"].includes(decision.intent) && selected.length && selected.every((product): product is ProductFact => product != null)) {
+    const recommendation = decision.intent === "recommendation";
+    const ordered = recommendation
+      ? selected.slice().sort((left, right) => left.price - right.price || left.name.localeCompare(right.name, "es") || left.code.localeCompare(right.code, "es"))
+      : selected;
+    const lines = ordered.map(product => {
       const wholesale = product.wholesalePrice && product.wholesalePrice > 0 && product.wholesaleMinQty > 1
         ? ` · por mayor desde ${product.wholesaleMinQty}: S/ ${product.wholesalePrice.toFixed(2)}`
         : "";
       return `• ${productReference(product)} — S/ ${product.price.toFixed(2)} c/u${wholesale}.`;
     });
-    const reply = `Opciones verificadas:\n${lines.join("\n")}\n¿Quieres una o el catálogo PDF?`;
+    const closing = recommendation
+      ? "¿Qué código te interesa? Si es para un equipo específico, indícame cuál para afinar la recomendación."
+      : "¿Quieres una o el catálogo PDF?";
+    const reply = `${recommendation ? "Opciones verificadas, ordenadas desde la más económica:" : "Opciones verificadas:"}\n${lines.join("\n")}\n${closing}`;
     return reply.length > 1000 ? { text: "Encontré varias opciones verificadas. ¿Deseas que te prepare el catálogo?", safe: true, reason: "verified_catalog" } : { text: reply, safe: true, reason: "verified_catalog" };
+  }
+  if (decision.intent === "recommendation") {
+    return {
+      text: "Para recomendarte una opción adecuada, indícame qué producto o equipo buscas y, si aplica, la medida o el uso.",
+      safe: true,
+      reason: "recommendation_clarification",
+    };
   }
   if (decision.intent === "product" && selected.length && selected.every((product): product is ProductFact => product != null)) {
     const selectedProducts = selected;
