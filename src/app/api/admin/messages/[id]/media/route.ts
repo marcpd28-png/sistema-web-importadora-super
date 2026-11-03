@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: { id },
       select: { mediaUrl: true, messageType: true, metadata: true, conversation: { select: { id: true, channel: true } } },
     });
-    if (!message || (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(message.conversation.id)))) {
+    if (!message || (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(message.conversation.id, session.userId)))) {
       return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
     }
     if (message?.conversation.channel === "TELEGRAM") {

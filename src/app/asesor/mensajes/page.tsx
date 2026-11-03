@@ -1,5 +1,6 @@
 import { MessagesWorkspace } from "@/components/admin/messages/MessagesWorkspace";
 import { canUseMessageCenter, requireAdvisor } from "@/lib/auth";
+import { getAssignableAdvisors } from "@/lib/messages-service";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -7,6 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function AdvisorInboxPage() {
   const session = await requireAdvisor();
   if (!canUseMessageCenter(session)) redirect("/asesor");
+  const advisors = await getAssignableAdvisors();
 
   return (
     <div className="messages-inbox-page">
@@ -18,7 +20,12 @@ export default async function AdvisorInboxPage() {
         </div>
         <span className="messages-live-indicator"><i aria-hidden="true" />Actualización activa</span>
       </header>
-      <div className="messages-inbox-workspace"><MessagesWorkspace canManageBot={false} uploadEndpoint="/api/asesor/mensajes/uploads" /></div>
+      <div className="messages-inbox-workspace"><MessagesWorkspace
+        advisorTargets={advisors}
+        canManageBot={false}
+        uploadEndpoint="/api/asesor/mensajes/uploads"
+        viewer={{ id: session.userId, name: session.name, isMessagingOwner: false }}
+      /></div>
     </div>
   );
 }

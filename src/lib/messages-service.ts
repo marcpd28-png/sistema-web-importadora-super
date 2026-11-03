@@ -15,6 +15,12 @@ import {
 import { scheduleRockyTurn } from "./rocky-inbox-intake";
 import { buildPublicUrl } from "@/lib/site-url";
 import { sendTelegramMessage, controlTelegram } from "./telegram-messages";
+import {
+  advisorConversationScope,
+  canTransferConversation,
+  ConversationAssignmentError,
+  isConversationAssignedToAdvisor,
+} from "./conversation-assignment";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
@@ -75,6 +81,11 @@ export const getConversationsSchema = z.object({
 });
 
 export type GetConversationsInput = z.infer<typeof getConversationsSchema>;
+
+export type ConversationAccessScope = {
+  /** Set only for an advisor: shared queue plus their own assigned chats. */
+  advisorId?: string;
+};
 
 export const getConversationMessagesSchema = z.object({
   conversationId: z.string().min(1),
@@ -215,7 +226,10 @@ function buildPhoneSearch(phone: string) {
   return conditions;
 }
 
-export async function getConversations(input: GetConversationsInput) {
+export async function getConversations(
+  input: GetConversationsInput,
+  scope: ConversationAccessScope = {},
+) {
   const {
     search,
     q,
@@ -247,6 +261,10 @@ export async function getConversations(input: GetConversationsInput) {
         },
       },
     });
+  }
+
+  if (scope.advisorId) {
+    and.push(advisorConversationScope(scope.advisorId));
   }
 
   if (search) {
@@ -302,7 +320,7 @@ export async function getConversations(input: GetConversationsInput) {
       where,
       include: {
         contact: true,
-        assignedUser: { select: { name: true, email: true } },
+        assignedUser: { select: { id: true, name: true, email: true } },
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -339,18 +357,165 @@ export async function getConversation(id: string) {
     where: { id },
     include: {
       contact: true,
-      assignedUser: { select: { name: true, email: true } },
+      assignedUser: { select: { id: true, name: true, email: true } },
     },
   });
 }
 
-export async function isAdvisorConversationAccessible(id: string) {
+export async function isAdvisorConversationAccessible(id: string, advisorId: string) {
   const conversation = await prisma.conversation.findUnique({
     where: { id },
-    select: { contact: { select: { externalId: true } } },
+    select: { assignedUserId: true, contact: { select: { externalId: true } } },
   });
 
-  return Boolean(conversation && !conversation.contact.externalId?.startsWith("SIMULATOR:"));
+  return Boolean(
+    conversation &&
+      !conversation.contact.externalId?.startsWith("SIMULATOR:") &&
+      isConversationAssignedToAdvisor(conversation.assignedUserId, advisorId),
+  );
+}
+
+const assignmentInclude = {
+  contact: true,
+  assignedUser: { select: { id: true, name: true, email: true } },
+} as const;
+
+async function assignmentConversation(id: string) {
+  return prisma.conversation.findUnique({ where: { id }, include: assignmentInclude });
+}
+
+function requireCustomerConversation<T extends { contact: { externalId: string | null } }>(conversation: T | null) {
+  if (!conversation || conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+    throw new ConversationAssignmentError("Conversación no encontrada.");
+  }
+  return conversation;
+}
+
+/**
+ * Stop every automation before publishing human ownership. This cannot be
+ * inside the transaction below because pauseForHuman owns its own transaction.
+ */
+async function pauseForHumanControl(
+  conversation: Awaited<ReturnType<typeof assignmentConversation>>,
+  actorId: string,
+) {
+  if (!conversation || (conversation.channel !== "WHATSAPP" && conversation.channel !== "TELEGRAM")) {
+    return undefined;
+  }
+
+  const { pauseForHuman } = await import("./rocky-ai/service");
+  await pauseForHuman(conversation.channel === "WHATSAPP" ? "whatsapp" : "telegram", conversation.id, actorId);
+
+  if (conversation.channel !== "TELEGRAM") {
+    return undefined;
+  }
+
+  return (await controlTelegram(conversation, false)).revision;
+}
+
+/**
+ * Atomically takes an unassigned chat for an advisor. A supervisor can take
+ * over a chat; advisors can never overwrite one another.
+ */
+export async function claimConversation(
+  id: string,
+  advisorId: string,
+  { canReassign = false }: { canReassign?: boolean } = {},
+) {
+  const existing = requireCustomerConversation(await assignmentConversation(id));
+  if (existing.assignedUserId === advisorId) return existing;
+  if (existing.assignedUserId && !canReassign) {
+    throw new ConversationAssignmentError("Otro asesor acaba de tomar esta conversación.", 409);
+  }
+
+  const telegramRevision = await pauseForHumanControl(existing, advisorId);
+  const claimed = await prisma.conversation.updateMany({
+    where: { id, assignedUserId: existing.assignedUserId },
+    data: {
+      assignedUserId: advisorId,
+      botEnabled: false,
+      status: "ATENDIENDO",
+      unreadCount: 0,
+      lastReadAt: new Date(),
+      ...(telegramRevision === undefined ? {} : { telegramRevision }),
+    },
+  });
+
+  if (!claimed.count) {
+    const current = await assignmentConversation(id);
+    if (current?.assignedUserId === advisorId) return current;
+    throw new ConversationAssignmentError("Otro asesor acaba de tomar esta conversación.", 409);
+  }
+
+  return requireCustomerConversation(await assignmentConversation(id));
+}
+
+export async function getAssignableAdvisors() {
+  return prisma.user.findMany({
+    where: { role: "ASESOR" },
+    orderBy: [{ name: "asc" }, { email: "asc" }],
+    select: { id: true, name: true },
+  });
+}
+
+/**
+ * Transfers an owned chat without exposing it to the rest of the team. The
+ * conditional write refuses a handoff while a human message is in flight.
+ */
+export async function transferConversation(
+  id: string,
+  targetAdvisorId: string,
+  actor: { id: string; isMessagingOwner: boolean },
+) {
+  const target = await prisma.user.findUnique({
+    where: { id: targetAdvisorId },
+    select: { id: true, role: true },
+  });
+  if (target?.role !== "ASESOR") {
+    throw new ConversationAssignmentError("Selecciona un asesor válido.", 409);
+  }
+
+  const existing = requireCustomerConversation(await assignmentConversation(id));
+  if (!canTransferConversation({
+    assignedUserId: existing.assignedUserId,
+    actorId: actor.id,
+    isMessagingOwner: actor.isMessagingOwner,
+  })) {
+    throw new ConversationAssignmentError("Conversación no encontrada.");
+  }
+  if (existing.assignedUserId === targetAdvisorId) return existing;
+
+  const telegramRevision = await pauseForHumanControl(existing, actor.id);
+  const transferred = await prisma.conversation.updateMany({
+    where: {
+      id,
+      assignedUserId: existing.assignedUserId,
+      messages: {
+        none: {
+          direction: "OUTBOUND",
+          senderType: "AGENT",
+          status: { in: ["pending", "sending"] },
+        },
+      },
+    },
+    data: {
+      assignedUserId: targetAdvisorId,
+      botEnabled: false,
+      status: "ATENDIENDO",
+      lastReadAt: null,
+      ...(telegramRevision === undefined ? {} : { telegramRevision }),
+    },
+  });
+
+  if (!transferred.count) {
+    const current = await assignmentConversation(id);
+    if (current?.assignedUserId !== existing.assignedUserId) {
+      throw new ConversationAssignmentError("La asignación cambió. Actualiza la bandeja.", 409);
+    }
+    throw new ConversationAssignmentError("Espera que termine el mensaje en envío antes de derivar el chat.", 409);
+  }
+
+  return requireCustomerConversation(await assignmentConversation(id));
 }
 
 export async function getConversationMessages(input: GetConversationMessagesInput) {
@@ -434,10 +599,16 @@ const sendMessageSchema = z.object({
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
+export type SendInternalMessageOptions = {
+  /** An advisor route supplies this to close a transfer/send race. */
+  expectedAssigneeId?: string;
+};
+
 export async function sendInternalMessage(
   conversationId: string,
   input: SendMessageInput,
   agentId: string,
+  options: SendInternalMessageOptions = {},
 ) {
   const parsed = sendMessageSchema.parse(input);
   const conversation = await prisma.conversation.findUnique({
@@ -460,7 +631,9 @@ export async function sendInternalMessage(
     await pauseForHuman(conversation.channel === "WHATSAPP" ? "whatsapp" : "telegram", conversationId, agentId);
   }
 
-  if (conversation.channel === "TELEGRAM") return sendTelegramMessage(conversation, parsed, agentId);
+  if (conversation.channel === "TELEGRAM") {
+    return sendTelegramMessage(conversation, parsed, agentId, options.expectedAssigneeId);
+  }
 
   const replyTarget = parsed.replyToMessageId ? await prisma.chatMessage.findFirst({
     where: { id: parsed.replyToMessageId, conversationId, senderType: "CUSTOMER" },
@@ -499,6 +672,19 @@ export async function sendInternalMessage(
   // closes the race where a customer message can arrive while an advisor's
   // message is still being sent.
   const message = await prisma.$transaction(async (tx) => {
+    if (options.expectedAssigneeId) {
+      // This conditional write locks the conversation row under the same
+      // transaction that creates the pending message. A concurrent transfer
+      // either wins first (and this fails) or sees the pending send and fails.
+      const owned = await tx.conversation.updateMany({
+        where: { id: conversationId, assignedUserId: options.expectedAssigneeId },
+        data: { lastReadAt: new Date() },
+      });
+      if (!owned.count) {
+        throw new ConversationAssignmentError("La conversación fue derivada a otro asesor.");
+      }
+    }
+
     const pendingMessage = await tx.chatMessage.create({
       data: {
         conversationId,
@@ -616,7 +802,7 @@ export async function updateConversation(id: string, input: UpdateConversationIn
     },
     include: {
       contact: true,
-      assignedUser: { select: { name: true, email: true } },
+      assignedUser: { select: { id: true, name: true, email: true } },
     },
   });
 }

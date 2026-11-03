@@ -47,9 +47,11 @@ test("a bare catalog request inherits the latest customer product wording", asyn
 
 test("the simulator renders a verified catalog snapshot as a PDF preview without a delivery job", async () => {
   const plan = await prepareSuperBotCatalog(history({ role: "user", text: "Catálogo de parlantes JBL" }), async () => ready("CATÁLOGO DE PARLANTES JBL"));
-  let renderedInput: { scopeKey: string; title: string; snapshotHash: string; products: Array<{ id: string }> } | null = null;
+  const rendered = {
+    input: null as { scopeKey: string; title: string; snapshotHash: string; products: Array<{ id: string }> } | null,
+  };
   const preview = await catalogPreview(plan, async input => {
-    renderedInput = input;
+    rendered.input = input;
     return [{
       absoluteUrl: "https://tiendavirtualsuper.com/uploads/catalogs/catalogo-jbl.pdf",
       relativeUrl: "/uploads/catalogs/catalogo-jbl.pdf",
@@ -61,7 +63,7 @@ test("the simulator renders a verified catalog snapshot as a PDF preview without
       byteLength: 100,
     }];
   });
-  assert.equal(renderedInput?.scopeKey, "parlantes");
-  assert.equal(renderedInput?.products[0]?.id, "p1");
+  assert.equal(rendered.input?.scopeKey, "parlantes");
+  assert.equal(rendered.input?.products[0]?.id, "p1");
   assert.deepEqual(preview?.documents, [{ relativeUrl: "/uploads/catalogs/catalogo-jbl.pdf", filename: "catalogo-jbl.pdf", partNumber: 1, partCount: 1, productCount: 1 }]);
 });

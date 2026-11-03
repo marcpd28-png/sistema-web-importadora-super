@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
     };
 
     const validatedQuery = getConversationsSchema.parse(query);
-    const result = await getConversations(validatedQuery);
+    const result = await getConversations(
+      validatedQuery,
+      session.role === "ASESOR" ? { advisorId: session.userId } : undefined,
+    );
 
     return NextResponse.json(result);
   } catch (error) {

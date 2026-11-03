@@ -9,6 +9,7 @@ import {
 import { YCloudOutboundError } from "@/lib/ycloud-outbound";
 import { z } from "zod";
 import { TelegramBridgeError } from "@/lib/telegram-bridge";
+import { ConversationAssignmentError } from "@/lib/conversation-assignment";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export async function GET(
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
 
     const searchParams = request.nextUrl.searchParams;
     const query = getConversationMessagesSchema.parse({
@@ -61,16 +62,22 @@ export async function POST(
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
     
     const body = await request.json();
     
     // We pass the session user ID to associate the action with the agent
-    const message = await sendInternalMessage(id, body, session.userId);
+    const message = await sendInternalMessage(
+      id,
+      body,
+      session.userId,
+      session.role === "ASESOR" ? { expectedAssigneeId: session.userId } : undefined,
+    );
 
     return NextResponse.json(message);
   } catch (error: unknown) {
     if (error instanceof TelegramBridgeError) return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    if (error instanceof ConversationAssignmentError) return NextResponse.json({ error: error.message }, { status: error.statusCode });
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }

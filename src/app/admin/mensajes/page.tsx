@@ -1,7 +1,11 @@
 export const dynamic = "force-dynamic";
 import { MessagesWorkspace } from "@/components/admin/messages/MessagesWorkspace";
+import { requireAdmin } from "@/lib/auth";
+import { getAssignableAdvisors } from "@/lib/messages-service";
 
-export default function InboxPage() {
+export default async function InboxPage() {
+  const [session, advisors] = await Promise.all([requireAdmin(), getAssignableAdvisors()]);
+
   return (
     <div className="messages-inbox-page">
       <header className="messages-page-header">
@@ -14,7 +18,10 @@ export default function InboxPage() {
       </header>
       
       <div className="messages-inbox-workspace">
-        <MessagesWorkspace />
+        <MessagesWorkspace
+          advisorTargets={advisors}
+          viewer={{ id: session.userId, name: session.name, isMessagingOwner: true }}
+        />
       </div>
     </div>
   );

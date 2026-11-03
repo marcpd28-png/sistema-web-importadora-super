@@ -23,7 +23,7 @@ export async function GET(
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
     
     const conversation = await getConversation(id);
     
@@ -47,7 +47,7 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
     
     const body = await request.json();
     const advisorUpdate = session.role === "ASESOR" ? advisorConversationUpdateSchema.parse(body) : body;

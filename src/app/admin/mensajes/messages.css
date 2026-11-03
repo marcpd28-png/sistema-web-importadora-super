@@ -719,12 +719,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .chat-header-info {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  flex: 1 1 13rem;
 }
 
 .chat-header-name {
@@ -744,6 +747,75 @@
 .chat-header-actions {
   display: flex;
   gap: 8px;
+}
+
+.chat-header-assignment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.chat-assignment-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 15rem;
+  min-height: 28px;
+  padding: 0.3rem 0.62rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  border-radius: 999px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface-bg));
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-assignment-chip.is-unassigned {
+  border-color: var(--border-color);
+  color: var(--text-muted);
+  background: var(--bg-alt);
+}
+
+.chat-transfer-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.chat-transfer-control select {
+  min-width: 8.5rem;
+  max-width: 12rem;
+  min-height: 32px;
+  padding: 0 0.45rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  background: var(--surface-bg);
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.chat-transfer-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.messages-assignment-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .btn {

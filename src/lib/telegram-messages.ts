@@ -4,9 +4,15 @@ import { telegramCommand, TelegramBridgeError, telegramReplyWindow } from "./tel
 import { telegramMessageKey } from "./telegram-events";
 import { buildPublicUrl } from "./site-url";
 import type { SendMessageInput } from "./messages-service";
+import { ConversationAssignmentError } from "./conversation-assignment";
 
 type BridgeResult = { messageId: number; revision: number };
-export async function sendTelegramMessage(conversation: Conversation, input: SendMessageInput, agentId: string) {
+export async function sendTelegramMessage(
+  conversation: Conversation,
+  input: SendMessageInput,
+  agentId: string,
+  expectedAssigneeId?: string,
+) {
   const id = `tgout:${input.requestId}`;
   const previous = await prisma.chatMessage.findUnique({ where: { id } });
   if (previous) {
@@ -32,6 +38,15 @@ export async function sendTelegramMessage(conversation: Conversation, input: Sen
     if (duplicate) {
       if (duplicate.conversationId !== conversation.id) throw new TelegramBridgeError("La solicitud pertenece a otra conversación.", 409);
       return false;
+    }
+    if (expectedAssigneeId) {
+      const owned = await tx.conversation.updateMany({
+        where: { id: conversation.id, assignedUserId: expectedAssigneeId },
+        data: { lastReadAt: new Date() },
+      });
+      if (!owned.count) {
+        throw new ConversationAssignmentError("La conversación fue derivada a otro asesor.");
+      }
     }
     await tx.chatMessage.create({ data: { id, conversationId: conversation.id, direction: "OUTBOUND", senderType: "AGENT",
       messageType: input.type, content: input.content, mediaUrl, metadata, status: "pending" } });
