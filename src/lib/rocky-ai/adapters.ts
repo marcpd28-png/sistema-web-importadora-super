@@ -71,8 +71,17 @@ export async function claimChannel(channel: AiChannel, externalId: string) {
 }
 
 /** Called ONLY after a durable SENDING claim. An ambiguous outcome is never retried. */
-export async function deliver(channel: AiChannel, externalId: string, text: string, draftId: string, actor: string | null) {
+export async function deliver(
+  channel: AiChannel,
+  externalId: string,
+  text: string,
+  draftId: string,
+  actor: string | null,
+  mediaUrl: string | null = null,
+) {
   if (!isLocal(channel)) {
+    // Social inboxes do not share one safe media-delivery contract yet. Keep
+    // the verified product caption rather than risking an ambiguous upload.
     const inbox = await socialReplyInbox(channel as SocialChannel, externalId);
     const message = await socialRequest<SocialMessage>(`/conversations/${externalId}/messages`, { text, inboxId: inbox.inboxId }, draftId);
     if (!message?.id || message.sendError) throw new Error("DELIVERY_UNCONFIRMED");
@@ -80,20 +89,27 @@ export async function deliver(channel: AiChannel, externalId: string, text: stri
   }
   const c = await prisma.conversation.findUniqueOrThrow({ where: { id: externalId }, include: { contact: true } });
   const id = `ai:${draftId}`;
-  await prisma.chatMessage.create({ data: { id, conversationId: externalId, content: text, direction: "OUTBOUND",
-    senderType: actor ? "AGENT" : "BOT", status: "sending", metadata: { source: "rocky-ai", draftId, approvedBy: actor } } });
+  const messageType: "TEXT" | "IMAGE" = mediaUrl ? "IMAGE" : "TEXT";
+  await prisma.chatMessage.create({ data: { id, conversationId: externalId, content: text, mediaUrl, direction: "OUTBOUND",
+    senderType: actor ? "AGENT" : "BOT", messageType, status: "sending", metadata: { source: "rocky-ai", draftId, approvedBy: actor } } });
   try {
     let providerId: string;
     if (channel === "telegram") {
       if (!c.telegramConnectionId || !c.telegramChatId || !telegramReplyWindow(c.telegramLastInboundAt)) throw new Error("TELEGRAM_NOT_READY");
       const sent = await telegramCommand<{ messageId: number }>("send", {
         connectionId: c.telegramConnectionId, chatId: c.telegramChatId, requestId: id, type: "TEXT", content: text,
+        ...(mediaUrl ? { type: "IMAGE", mediaUrl } : {}),
       });
       providerId = telegramMessageKey(c.telegramConnectionId, c.telegramChatId, sent.messageId);
     } else {
       const recipient = normalizeYCloudPhone(c.contact.phoneNormalized ?? c.contact.phone ?? c.contact.externalId);
       if (!recipient || c.contact.externalId?.startsWith("SIMULATOR:")) throw new Error("INVALID_RECIPIENT");
-      providerId = (await sendYCloudOutboundMessage({ recipient, content: text, type: "text", externalId: id })).messageId;
+      providerId = (await sendYCloudOutboundMessage({
+        recipient,
+        content: text,
+        ...(mediaUrl ? { mediaUrl, type: "image" as const } : { type: "text" as const }),
+        externalId: id,
+      })).messageId;
     }
     await prisma.chatMessage.update({ where: { id }, data: { externalMessageId: providerId, status: "accepted" } });
     await prisma.conversation.update({ where: { id: externalId }, data: { lastMessageAt: new Date() } });

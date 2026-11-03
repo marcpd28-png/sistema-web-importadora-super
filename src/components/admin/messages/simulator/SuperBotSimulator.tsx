@@ -1,14 +1,15 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Bot, CircleAlert, FileDown, FlaskConical, RotateCcw, Send, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { Bot, CircleAlert, FileDown, FlaskConical, Package, RotateCcw, Send, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import styles from "./SuperBotSimulator.module.css";
 
 type CatalogPreviewDocument = { relativeUrl: string; filename: string; partNumber: number; partCount: number; productCount: number };
 type CatalogPreview = { state: "ready" | "clarify" | "empty"; title: string | null; productCount: number; fromConversationContext: boolean; documents?: CatalogPreviewDocument[] };
-type Turn = { role: "user" | "assistant"; text: string; catalog?: CatalogPreview | null };
+type ProductPresentation = { id: string; name: string; code: string; price: number; imageUrl: string | null };
+type Turn = { role: "user" | "assistant"; text: string; catalog?: CatalogPreview | null; product?: ProductPresentation | null; awaitingQuantity?: boolean };
 type Connection = "checking" | "missing" | "ready" | "verified" | "rejected";
-type SimulationReply = { text?: string; model?: string; providerUsed?: boolean; reason?: string; notice?: string; error?: string; catalog?: CatalogPreview | null };
+type SimulationReply = { text?: string; model?: string; providerUsed?: boolean; reason?: string; notice?: string; error?: string; catalog?: CatalogPreview | null; product?: ProductPresentation; awaitingQuantity?: boolean };
 
 const examples = [
   "Hola, busco una licuadora.",
@@ -61,14 +62,27 @@ export function SuperBotSimulator() {
     try {
       const response = await fetch("/api/admin/rocky-ai", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "simulate_live", history }),
+        body: JSON.stringify({
+          action: "simulate_live",
+          history: history.map(turn => ({
+            role: turn.role,
+            text: turn.text,
+            ...(turn.awaitingQuantity && turn.product ? { selectedProductId: turn.product.id } : {}),
+          })),
+        }),
       });
       const payload = await response.json() as SimulationReply;
       if (!response.ok || !payload.text) {
         if (response.status === 409 && /clave|OpenAI/i.test(payload.error || "")) setConnection("rejected");
         throw new Error(payload.error || "No se pudo obtener una respuesta de prueba.");
       }
-      setTurns(current => [...current, { role: "assistant" as const, text: payload.text!, catalog: payload.catalog }].slice(-12));
+      setTurns(current => [...current, {
+        role: "assistant" as const,
+        text: payload.text!,
+        catalog: payload.catalog,
+        product: payload.product ?? null,
+        awaitingQuantity: Boolean(payload.awaitingQuantity),
+      }].slice(-12));
       if (payload.providerUsed) setConnection("verified");
       else setConnection(current => current === "rejected" ? current : "ready");
       setModel(payload.model || model);
@@ -117,7 +131,16 @@ export function SuperBotSimulator() {
         <header className={styles.chatHeader}><div><span>SUPER BOT</span><h2>Conversación de prueba</h2></div><div className={styles.safeMark}><Sparkles size={15} />Sin envíos</div></header>
         <div className={styles.messages}>
           {!turns.length ? <div className={styles.empty}><Bot size={42} /><h3>Empieza como un cliente</h3><p>Por ejemplo: “Busco un producto” o “¿Cómo puedo pagar?”.</p></div> : turns.map((turn, index) => <article className={turn.role === "user" ? styles.userTurn : styles.botTurn} key={`${turn.role}-${index}-${turn.text.slice(0, 24)}`}>
-            <div className={styles.turnLabel}>{turn.role === "user" ? <><UserRound size={14} />Cliente de prueba</> : <><Bot size={14} />Super Bot</>}</div><p>{turn.text}</p>
+            <div className={styles.turnLabel}>{turn.role === "user" ? <><UserRound size={14} />Cliente de prueba</> : <><Bot size={14} />Super Bot</>}</div>
+            {turn.role === "assistant" && turn.product ? <section className={styles.productPresentation} aria-label={`Producto verificado: ${turn.product.name}`}>
+              {turn.product.imageUrl ? (
+                // Catalog URLs can be local or remote, so the fixed Next image loader is not appropriate here.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt={turn.product.name} src={turn.product.imageUrl} />
+              ) : <div className={styles.productImageFallback} aria-label="Imagen de producto no disponible"><Package size={24} /></div>}
+              <div><span>Producto verificado</span><strong>{turn.product.name}</strong><small>Código {turn.product.code}</small><b>S/ {turn.product.price.toFixed(2)} c/u</b></div>
+            </section> : null}
+            <p>{turn.text}</p>
             {turn.role === "assistant" && turn.catalog && <div className={styles.catalogPreview} data-state={turn.catalog.state}>
               <strong>{turn.catalog.state === "ready" ? "Catálogo verificado" : "Solicitud de catálogo"}</strong>
               {turn.catalog.title && <span>{turn.catalog.title} · {turn.catalog.productCount} productos</span>}

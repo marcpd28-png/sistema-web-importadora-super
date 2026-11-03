@@ -1,12 +1,14 @@
 import { Prisma, type RockyAiSettings } from "@prisma/client";
 import { prisma } from "../prisma";
 import { buildSellableProductWhere } from "../store-shared";
+import { getPreferredProductImageUrl } from "../product-media";
 import { productQueryTerms, searchCatalogIdentity } from "../rocky-product-query";
+import { productWhatsAppImage } from "../whatsapp-product-image";
 import { claimChannel, deliver, snapshot, isLocal } from "./adapters";
 import { prepareSuperBotCatalog, type SuperBotCatalogPlan } from "./catalog";
 import { generateDecision } from "./provider";
 import { automaticAllowed, channels, currentDraft, decisionSchema, defaultPricingPolicy, hash, needsHuman, renderDecision, settingsSchema,
-  targetKey, type AiChannel, type AiMode, type Decision, type HistoryItem, type Policies, type ProductFact } from "./policy";
+  requestedQuantity, targetKey, type AiChannel, type AiMode, type Decision, type HistoryItem, type Policies, type ProductFact, type SimulationHistoryTurn } from "./policy";
 import { socialRequest, type SocialPage, type SocialConversation } from "../social-inbox";
 import type { CatalogPdfPart, CatalogSnapshotProduct } from "../catalog-pdf";
 
@@ -96,11 +98,20 @@ export async function configureConversation(channel: AiChannel, externalId: stri
 }
 export async function productsByIds(ids: string[]): Promise<ProductFact[]> {
   const rows = await prisma.product.findMany({ where: { AND: [buildSellableProductWhere(), { id: { in: ids.slice(0, 8) } }] },
-    select: { id: true, name: true, code: true, unitPrice: true, stockUnits: true, wholesalePrice: true, wholesaleMinQty: true, boxPrice: true, unitsPerBox: true } });
+    select: {
+      id: true, name: true, code: true, unitPrice: true, stockUnits: true, wholesalePrice: true, wholesaleMinQty: true, boxPrice: true, unitsPerBox: true,
+      imageUrl: true, sourceImageUrl: true, localImageUrl: true,
+      media: { where: { type: "IMAGE" }, orderBy: { sortOrder: "asc" }, take: 4, select: { type: true, url: true } },
+    } });
   return ids.flatMap(id => { const p = rows.find(r => r.id === id); return p ? [{
     id: p.id, name: p.name, code: p.code, price: Number(p.unitPrice), stock: p.stockUnits,
     wholesalePrice: p.wholesalePrice == null ? null : Number(p.wholesalePrice), wholesaleMinQty: p.wholesaleMinQty,
     boxPrice: p.boxPrice == null ? null : Number(p.boxPrice), unitsPerBox: p.unitsPerBox,
+    imageUrl: getPreferredProductImageUrl({
+      localImageUrl: p.localImageUrl,
+      imageUrl: p.sourceImageUrl ?? p.imageUrl,
+      media: p.media,
+    }),
   }] : []; });
 }
 
@@ -110,6 +121,48 @@ async function productCandidates(content: string) {
   // call it was instructed to make.
   if (!productQueryTerms(content).length) return [];
   return productsByIds((await searchCatalogIdentity(content, 8)).ids);
+}
+
+function productDecision(product: ProductFact, quantity: number): Decision {
+  return {
+    intent: "product", productIds: [product.id], quantity, priceMode: null,
+    policyKey: "none", reason: "routine", catalog: null,
+  };
+}
+
+async function simulatorQuantityFollowUp(
+  turns: SimulationHistoryTurn[],
+  latestUserIndex: number,
+  quantity: number | null,
+) {
+  if (quantity === null || latestUserIndex < 1) return null;
+  const previous = turns[latestUserIndex - 1];
+  if (previous?.role !== "assistant" || !previous.selectedProductId) return null;
+  return (await productsByIds([previous.selectedProductId]))[0] ?? null;
+}
+
+async function liveQuantityFollowUp(
+  conversationId: string,
+  history: HistoryItem[],
+  quantity: number | null,
+) {
+  if (quantity === null) return null;
+  const latestUserIndex = history.map(turn => turn.role).lastIndexOf("user");
+  if (latestUserIndex < 1) return null;
+  const previous = history[latestUserIndex - 1];
+  if (previous?.role !== "assistant") return null;
+  const draft = await prisma.rockyAiDraft.findFirst({
+    where: { conversationId, state: "SUBMITTED", reason: "awaiting_quantity", text: previous.text },
+    orderBy: { createdAt: "desc" },
+    select: { decision: true },
+  });
+  if (!draft) return null;
+  const savedDecision = draft.decision && typeof draft.decision === "object" && !Array.isArray(draft.decision)
+    ? draft.decision
+    : {};
+  const decision = decisionSchema.safeParse({ priceMode: null, catalog: null, ...savedDecision });
+  if (!decision.success || decision.data.intent !== "product" || decision.data.productIds.length !== 1) return null;
+  return (await productsByIds([decision.data.productIds[0]]))[0] ?? null;
 }
 
 function decisionForCatalog(plan: SuperBotCatalogPlan): Decision {
@@ -208,13 +261,15 @@ async function reserveSimulationUsage(config: RockyAiSettings, actor: string, to
  * writes an inbox, draft, channel control, outbound job, or customer message.
  * A verified catalog may be rendered as an admin-only PDF preview.
  */
-export async function simulateSuperBot(turns: Array<Pick<HistoryItem, "role" | "text">>, actor: string) {
+export async function simulateSuperBot(turns: SimulationHistoryTurn[], actor: string) {
   const config = await settings();
   if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED");
-  const latest = turns.filter(turn => turn.role === "user").at(-1);
-  if (!latest) throw new Error("SIMULATION_USER_REQUIRED");
-  const history: HistoryItem[] = turns.map((turn, index) => ({ ...turn, id: `simulation-${index}`, at: new Date(Date.now() + index).toISOString() }));
+  const latestUserIndex = turns.map(turn => turn.role).lastIndexOf("user");
+  if (latestUserIndex < 0) throw new Error("SIMULATION_USER_REQUIRED");
+  const latest = turns[latestUserIndex];
+  const history: HistoryItem[] = turns.map((turn, index) => ({ role: turn.role, text: turn.text, id: `simulation-${index}`, at: new Date(Date.now() + index).toISOString() }));
   const policies = { ...emptyPolicies, ...(config.policies as object) };
+  const quantity = requestedQuantity(latest.text);
   let decision: ReturnType<typeof decisionSchema.parse>;
   let products: ProductFact[] = [];
   let providerUsed = false;
@@ -226,19 +281,34 @@ export async function simulateSuperBot(turns: Array<Pick<HistoryItem, "role" | "
     if (catalogPlan) {
       decision = decisionForCatalog(catalogPlan);
     } else {
+      const quantityOnlyReply = quantity !== null && productQueryTerms(latest.text).every(term => /^\d+$/.test(term));
+      const previousProduct = quantityOnlyReply
+        ? await simulatorQuantityFollowUp(turns, latestUserIndex, quantity)
+        : null;
       const candidates = await productCandidates(latest.text);
-      const result = await generateDecision({
-        model: config.model, maxOutputTokens: config.maxOutputTokens, history, policies,
-        search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
-        initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
-        reserve: tokens => reserveSimulationUsage(config, actor, tokens), record: recordUsage,
-      });
-      providerUsed = true;
-      decision = result.decision;
-      products = result.products;
+      const uniqueProduct = previousProduct ?? (candidates.length === 1 ? candidates[0] : null);
+      if (uniqueProduct) {
+        // A single verified match is a deterministic sales step. This removes
+        // the model from product selection and preserves the selected item for
+        // the quantity turn that follows.
+        decision = productDecision(uniqueProduct, quantity ?? 1);
+        products = [uniqueProduct];
+      } else {
+        const result = await generateDecision({
+          model: config.model, maxOutputTokens: config.maxOutputTokens, history, policies,
+          search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
+          initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
+          reserve: tokens => reserveSimulationUsage(config, actor, tokens), record: recordUsage,
+        });
+        providerUsed = true;
+        decision = result.decision;
+        products = result.products;
+      }
     }
   }
-  const rendered = renderDecision(decision, products, policies);
+  const rendered = renderDecision(decision, products, policies, {
+    promptForQuantity: quantity === null && decision.intent === "product" && decision.productIds.length === 1,
+  });
   const catalog = await catalogPreview(catalogPlan);
   await audit(actor, "live_simulation", undefined, { turns: history.length, providerUsed, intent: decision.intent, policyKey: decision.policyKey, reason: rendered.reason,
     ...(catalog ? { catalog: { state: catalog.state, title: catalog.title, productCount: catalog.productCount, fromConversationContext: catalog.fromConversationContext, pdfParts: catalog.documents?.length ?? 0 } } : {}) });
@@ -266,6 +336,7 @@ export async function generateDraft(id: string, actor: string, explicit = false)
     if (!config.enabled || !process.env.OPENAI_API_KEY) throw new Error("OPENAI_NOT_CONFIGURED_OR_DISABLED");
     const policies = { ...emptyPolicies, ...(config.policies as object) };
     const latest = state.history.filter(m => m.role === "user").at(-1)!;
+    const quantity = requestedQuantity(latest.text);
     let decision: ReturnType<typeof decisionSchema.parse>;
     let products: ProductFact[] = [];
     let catalogPlan: SuperBotCatalogPlan | null = null;
@@ -276,18 +347,30 @@ export async function generateDraft(id: string, actor: string, explicit = false)
       if (catalogPlan) {
         decision = decisionForCatalog(catalogPlan);
       } else {
+        const quantityOnlyReply = quantity !== null && productQueryTerms(latest.text).every(term => /^\d+$/.test(term));
+        const previousProduct = quantityOnlyReply
+          ? await liveQuantityFollowUp(id, state.history, quantity)
+          : null;
         const candidates = await productCandidates(latest.text);
-        const result = await generateDecision({
-          model: config.model, maxOutputTokens: config.maxOutputTokens, history: state.history, policies,
-          search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
-          initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
-          reserve: tokens => reserveUsage(config, id, tokens),
-          record: recordUsage,
-        });
-        decision = result.decision; products = result.products;
+        const uniqueProduct = previousProduct ?? (candidates.length === 1 ? candidates[0] : null);
+        if (uniqueProduct) {
+          decision = productDecision(uniqueProduct, quantity ?? 1);
+          products = [uniqueProduct];
+        } else {
+          const result = await generateDecision({
+            model: config.model, maxOutputTokens: config.maxOutputTokens, history: state.history, policies,
+            search: async query => productsByIds((await searchCatalogIdentity(query, 8)).ids),
+            initialProducts: candidates, fallbackToInitialProducts: candidates.length > 0, forceBrowse: candidates.length > 1,
+            reserve: tokens => reserveUsage(config, id, tokens),
+            record: recordUsage,
+          });
+          decision = result.decision; products = result.products;
+        }
       }
     }
-    const rendered = renderDecision(decision, products, policies);
+    const rendered = renderDecision(decision, products, policies, {
+      promptForQuantity: quantity === null && decision.intent === "product" && decision.productIds.length === 1,
+    });
     const freshState = await snapshot(c.channel as AiChannel, c.externalId);
     if (freshState.contextHash !== state.contextHash) throw new Error("CONTEXT_CHANGED");
     return prisma.$transaction(async tx => {
@@ -365,9 +448,16 @@ export async function dispatchDraft(id: string) {
     });
     const products = await productsByIds(decision.productIds);
     const policies = { ...emptyPolicies, ...(config.policies as object) };
-    const rendered = renderDecision(decision, products, policies);
+    const rendered = renderDecision(decision, products, policies, {
+      promptForQuantity: d.reason === "awaiting_quantity",
+    });
     const previous = decision.productIds.map(id => (d.evidence as unknown as ProductFact[]).find(p => p.id === id));
-    const factsUnchanged = hash(products) === hash(previous);
+    // Photo selection improves the presentation but is not a commercial fact.
+    // Older text-only drafts should remain valid after this UI enhancement.
+    const comparableFacts = (product: ProductFact | undefined) => product
+      ? { ...product, imageUrl: undefined }
+      : product;
+    const factsUnchanged = hash(products.map(comparableFacts)) === hash(previous.map(comparableFacts));
     const catalogReady = decision.intent === "catalog" && decision.catalog?.state === "ready";
     const catalogValid = decision.intent !== "catalog" || Boolean(decision.catalog) && (!catalogReady || Boolean(
       d.catalogJob && d.catalogJob.state === "WAITING_ACK" && d.catalogJob.scopeKey === decision.catalog?.scopeKey &&
@@ -394,7 +484,13 @@ export async function dispatchDraft(id: string) {
     });
     if (!claimed) return;
     try {
-      const providerMessageId = await deliver(c.channel as AiChannel, c.externalId, d.text, d.id, d.approvedBy);
+      let productImageUrl: string | null = null;
+      if (rendered.awaitingQuantity && rendered.product && isLocal(c.channel as AiChannel)) {
+        // A delivery image is generated from the latest verified catalog record;
+        // if it cannot be prepared, the same safe text still reaches the client.
+        productImageUrl = await productWhatsAppImage(rendered.product.id).catch(() => null);
+      }
+      const providerMessageId = await deliver(c.channel as AiChannel, c.externalId, d.text, d.id, d.approvedBy, productImageUrl);
       await prisma.$transaction(async tx => {
         const submitted = await tx.rockyAiDraft.updateMany({ where: { id, state: "SENDING" }, data: { state: "SUBMITTED", providerMessageId } });
         if (!submitted.count) throw new Error("DRAFT_SUBMISSION_LOST");

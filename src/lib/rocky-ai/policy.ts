@@ -23,7 +23,26 @@ export const settingsSchema = z.object({
   }),
 });
 export type Policies = z.infer<typeof settingsSchema>["policies"];
-export type ProductFact = { id: string; name: string; code: string; price: number; stock: number; wholesalePrice: number | null; wholesaleMinQty: number; boxPrice?: number | null; unitsPerBox?: number | null };
+export type ProductFact = {
+  id: string;
+  name: string;
+  code: string;
+  price: number;
+  stock: number;
+  wholesalePrice: number | null;
+  wholesaleMinQty: number;
+  boxPrice?: number | null;
+  unitsPerBox?: number | null;
+  /** A catalog-managed photo only; it is never supplied by the model. */
+  imageUrl?: string | null;
+};
+export type ProductPresentation = {
+  id: string;
+  name: string;
+  code: string;
+  price: number;
+  imageUrl: string | null;
+};
 export const catalogDecisionSchema = z.object({
   // Catalog requests are resolved by the server from an immutable storefront
   // snapshot. These fields record that server decision; they are not facts the
@@ -50,10 +69,15 @@ export const decisionSchema = z.object({
 });
 export type Decision = z.infer<typeof decisionSchema>;
 export type HistoryItem = { id: string; role: "user" | "assistant"; text: string; at: string; attachment?: boolean };
-export const simulationHistorySchema = z.array(z.object({
+const simulationHistoryTurnSchema = z.object({
   role: z.enum(["user", "assistant"]),
   text: z.string().trim().min(1).max(600),
-})).min(1).max(12);
+  // The simulator only sends this after the server verified the product in a
+  // preceding turn. It is fetched afresh before it can affect a quote.
+  selectedProductId: z.string().trim().min(1).max(191).optional(),
+}).strict();
+export const simulationHistorySchema = z.array(simulationHistoryTurnSchema).min(1).max(12);
+export type SimulationHistoryTurn = z.infer<typeof simulationHistoryTurnSchema>;
 export type Snapshot = { triggerId: string; contextHash: string; history: HistoryItem[]; owned: boolean; canSend: boolean; reason?: string };
 export function targetKey(channel: AiChannel, externalId: string) { return `${channel}:${externalId}`; }
 function canonical(value: unknown): unknown {
@@ -81,7 +105,29 @@ function productReference(product: ProductFact) {
   const code = product.code.trim();
   return code && !product.name.toLowerCase().includes(code.toLowerCase()) ? `${product.name} (${code})` : product.name;
 }
-export function renderDecision(decision: Decision, products: ProductFact[], policies: Policies) {
+export type RenderedDecision = {
+  text: string;
+  safe: boolean;
+  reason: string;
+  product?: ProductPresentation;
+  awaitingQuantity?: boolean;
+};
+
+export function requestedQuantity(value: string) {
+  const normalized = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const units = "(?:unidades?|unds?|und|piezas?|pieza|pcs?)";
+  const exact = normalized.match(new RegExp(`^(\\d{1,4})(?:\\s*${units})?[.!?]*$`));
+  const withUnit = normalized.match(new RegExp(`\\b(\\d{1,4})\\s*${units}\\b`));
+  const amount = Number(exact?.[1] ?? withUnit?.[1] ?? 0);
+  return Number.isInteger(amount) && amount >= 1 && amount <= 10000 ? amount : null;
+}
+
+export function renderDecision(
+  decision: Decision,
+  products: ProductFact[],
+  policies: Policies,
+  options: { promptForQuantity?: boolean } = {},
+): RenderedDecision {
   const selected = decision.productIds.map(id => products.find(p => p.id === id));
   if (decision.intent === "catalog" && decision.catalog) {
     if (decision.catalog.state === "ready" && decision.catalog.title) {
@@ -112,6 +158,29 @@ export function renderDecision(decision: Decision, products: ProductFact[], poli
   }
   if (decision.intent === "product" && selected.length && selected.every((product): product is ProductFact => product != null)) {
     const selectedProducts = selected;
+    if (
+      options.promptForQuantity &&
+      decision.priceMode !== "BOX" &&
+      decision.quantity === 1 &&
+      selectedProducts.length === 1 &&
+      selectedProducts[0].stock >= 1 &&
+      selectedProducts[0].price > 0
+    ) {
+      const product = selectedProducts[0];
+      return {
+        text: `${productReference(product)}: S/ ${product.price.toFixed(2)} c/u.\n¿Cuántas unidades deseas?`,
+        safe: true,
+        reason: "awaiting_quantity",
+        awaitingQuantity: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          code: product.code,
+          price: product.price,
+          imageUrl: product.imageUrl ?? null,
+        },
+      };
+    }
     if (decision.priceMode === "BOX") {
       const validBoxQuote = selectedProducts.every(p => p.boxPrice != null && Number.isFinite(p.boxPrice) && p.boxPrice > 0 && p.unitsPerBox != null && Number.isInteger(p.unitsPerBox) && p.unitsPerBox > 0 && p.stock >= decision.quantity * p.unitsPerBox);
       if (!validBoxQuote) return { text: "La presentación por cajón se confirma con un asesor antes de cotizarla.", safe: false, reason: "needs_clarification" };
