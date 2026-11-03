@@ -16,6 +16,10 @@ export const dynamic = "force-dynamic";
 
 type AdminQuoteDetailPageProps = {
   params: Promise<{ id: string }>;
+  backHref?: string;
+  canDelete?: boolean;
+  catalogPath?: string;
+  canSetSystemStatuses?: boolean;
 };
 
 function getStatusBadge(status: string) {
@@ -87,7 +91,13 @@ function getTimeline(quote: AdminQuoteDetailView): AdminQuoteStatusStepView[] {
   return [{ status: "warning", text: "Cotización guardada localmente y pendiente de ERP." }];
 }
 
-export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailPageProps) {
+export async function QuoteDetailPage({
+  params,
+  backHref = "/admin/quotes",
+  canDelete = true,
+  catalogPath,
+  canSetSystemStatuses = true,
+}: AdminQuoteDetailPageProps) {
   const { id } = await params;
   const quote = await getAdminQuoteById(id);
 
@@ -126,7 +136,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
   return (
     <section className="admin-quote-detail">
       <div className="admin-quote-detail-top" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-        <Link className="button button-secondary" href="/admin/quotes">
+        <Link className="button button-secondary" href={backHref}>
           <ArrowLeft size={16} />
           Volver
         </Link>
@@ -142,7 +152,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             Ver PDF ERP
           </a>
         ) : null}
-        <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} />
+        {canDelete ? <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} /> : null}
         {customerWhatsappHref ? (
           <a
             className="button button-primary"
@@ -282,7 +292,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
                       </td>
                       <td data-label="Acciones">
                         {item.productId ? (
-                          <Link className="icon-button" href={`/admin/products/${item.productId}`}>
+                          <Link className="icon-button" href={catalogPath ? `${catalogPath}?q=${encodeURIComponent(item.code)}` : `/admin/products/${item.productId}`}>
                             <ExternalLink size={16} />
                             <span>Producto</span>
                           </Link>
@@ -345,10 +355,15 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             customerMessage={quote.note}
             pdfLink={pdfLink}
             quoteNumber={quote.quoteNumber}
+            canSetSystemStatuses={canSetSystemStatuses}
           />
         </div>
 
       </div>
     </section>
   );
+}
+
+export default async function AdminQuoteDetailPage(props: AdminQuoteDetailPageProps) {
+  return <QuoteDetailPage {...props} />;
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getMessageCenterSession } from "@/lib/auth";
 import {
   getConversationMessages,
   getConversationMessagesSchema,
+  isAdvisorConversationAccessible,
   sendInternalMessage,
 } from "@/lib/messages-service";
 import { YCloudOutboundError } from "@/lib/ycloud-outbound";
@@ -15,9 +16,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getMessageCenterSession();
+  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+
   try {
-    await requireAdmin();
     const { id } = await params;
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
 
     const searchParams = request.nextUrl.searchParams;
     const query = getConversationMessagesSchema.parse({
@@ -52,9 +56,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getMessageCenterSession();
+  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+
   try {
-    const session = await requireAdmin();
     const { id } = await params;
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
     
     const body = await request.json();
     

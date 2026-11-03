@@ -10,7 +10,7 @@ const initialState: { error: string; success: boolean } = {
   success: false,
 };
 
-export function ForcePasswordChange() {
+export function ForcePasswordChange({ returnTo = "/admin" }: { returnTo?: "/admin" | "/asesor" }) {
   const [state, formAction] = useActionState(changeRequiredPasswordAction, initialState);
 
   if (state?.success) {
@@ -25,8 +25,8 @@ export function ForcePasswordChange() {
             Tu contraseña ha sido cambiada exitosamente. El panel de administración se desbloqueará ahora.
           </p>
           <div style={{ marginTop: "24px" }}>
-            <a href="/admin" className="button button-primary" style={{ width: "100%", display: "inline-flex", justifyContent: "center" }}>
-              Ir al panel admin
+            <a href={returnTo} className="button button-primary" style={{ width: "100%", display: "inline-flex", justifyContent: "center" }}>
+              {returnTo === "/asesor" ? "Ir al panel asesor" : "Ir al panel admin"}
             </a>
           </div>
         </div>

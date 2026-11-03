@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
+import { prisma } from "@/lib/prisma";
 
 const SESSION_COOKIE = "importadora_session";
 const SESSION_TTL = 60 * 60 * 24 * 7;
@@ -12,9 +13,21 @@ export type SessionUser = {
   userId: string;
   email: string;
   name: string;
-  role: "ADMIN" | "USERSHOP" | "PROMOTOR";
+  role: "ADMIN" | "ASESOR" | "USERSHOP" | "PROMOTOR";
   requirePasswordChange?: boolean;
 };
+
+export function canUseMessageCenter(
+  session: Pick<SessionUser, "role" | "requirePasswordChange"> | null | undefined,
+) {
+  return Boolean(session && !session.requirePasswordChange && (session.role === "ADMIN" || session.role === "ASESOR"));
+}
+
+export function canManageQuotes(
+  session: Pick<SessionUser, "role" | "requirePasswordChange"> | null | undefined,
+) {
+  return Boolean(session && !session.requirePasswordChange && (session.role === "ADMIN" || session.role === "ASESOR"));
+}
 
 function getSecret() {
   const secret = process.env.AUTH_SECRET;
@@ -111,17 +124,29 @@ export async function getSession() {
       typeof payload.userId !== "string" ||
       typeof payload.email !== "string" ||
       typeof payload.name !== "string" ||
-      (payload.role !== "ADMIN" && payload.role !== "USERSHOP" && payload.role !== "PROMOTOR")
+      (payload.role !== "ADMIN" &&
+        payload.role !== "ASESOR" &&
+        payload.role !== "USERSHOP" &&
+        payload.role !== "PROMOTOR")
     ) {
       return null;
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true, name: true, role: true, requirePasswordChange: true },
+    });
+
+    if (!user) {
+      return null;
+    }
+
     return {
-      userId: payload.userId,
-      email: payload.email,
-      name: payload.name,
-      role: payload.role,
-      requirePasswordChange: Boolean(payload.requirePasswordChange),
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      requirePasswordChange: user.requirePasswordChange,
     } satisfies SessionUser;
   } catch {
     return null;
@@ -136,7 +161,40 @@ export async function requireAdmin() {
   }
 
   if (session.role !== "ADMIN") {
-    redirect("/cuenta");
+    redirect(session.role === "ASESOR" ? "/asesor" : "/cuenta");
+  }
+
+  return session;
+}
+
+export async function getMessageCenterSession(): Promise<SessionUser | null> {
+  const session = await getSession();
+  return canUseMessageCenter(session) ? session : null;
+}
+
+export async function requireAdvisor() {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  if (session.role !== "ASESOR") {
+    redirect(session.role === "ADMIN" ? "/admin" : "/cuenta");
+  }
+
+  return session;
+}
+
+export async function requireQuoteManager() {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  if (!canManageQuotes(session)) {
+    redirect(session.role === "ASESOR" ? "/asesor" : session.role === "ADMIN" ? "/admin" : "/cuenta");
   }
 
   return session;
@@ -150,7 +208,7 @@ export async function requireShopper() {
   }
 
   if (session.role !== "USERSHOP" && session.role !== "PROMOTOR") {
-    redirect("/admin");
+    redirect(session.role === "ASESOR" ? "/asesor" : "/admin");
   }
 
   return session;
@@ -160,6 +218,6 @@ export async function redirectIfAuthenticated() {
   const session = await getSession();
 
   if (session) {
-    redirect(session.role === "ADMIN" ? "/admin" : "/cuenta");
+    redirect(session.role === "ADMIN" ? "/admin" : session.role === "ASESOR" ? "/asesor" : "/cuenta");
   }
 }

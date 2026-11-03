@@ -65,6 +65,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  ASESOR
   USERSHOP
   PROMOTOR
 }

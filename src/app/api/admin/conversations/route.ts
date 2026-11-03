@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getMessageCenterSession } from "@/lib/auth";
 import { getConversations, getConversationsSchema } from "@/lib/messages-service";
 import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  try {
-    await requireAdmin();
+  const session = await getMessageCenterSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
 
+  try {
     const searchParams = request.nextUrl.searchParams;
 
     const query = {
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
       to: searchParams.get("to") || undefined,
       status: searchParams.get("status") || undefined,
       channel: searchParams.get("channel") || undefined,
-      includeSimulated: searchParams.get("includeSimulated") || undefined,
+      includeSimulated: session.role === "ASESOR" ? undefined : searchParams.get("includeSimulated") || undefined,
       unreadOnly: searchParams.get("unreadOnly") || undefined,
       botEnabled: searchParams.get("botEnabled") || undefined,
       page: searchParams.get("page") || undefined,

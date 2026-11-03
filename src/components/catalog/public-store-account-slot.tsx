@@ -89,6 +89,11 @@ export function PublicStoreAccountSlot({ role }: { role?: AccountRole }) {
         <LayoutDashboard size={16} />
         <span>Panel admin</span>
       </Link>
+    ) : role === "ASESOR" ? (
+      <Link className="public-store-quick-link public-store-account-switch-link" href="/asesor">
+        <LayoutDashboard size={16} />
+        <span>Panel asesor</span>
+      </Link>
     ) : role === "USERSHOP" ? (
       <AccountPopover
         canLogout

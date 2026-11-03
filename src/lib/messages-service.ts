@@ -344,6 +344,15 @@ export async function getConversation(id: string) {
   });
 }
 
+export async function isAdvisorConversationAccessible(id: string) {
+  const conversation = await prisma.conversation.findUnique({
+    where: { id },
+    select: { contact: { select: { externalId: true } } },
+  });
+
+  return Boolean(conversation && !conversation.contact.externalId?.startsWith("SIMULATOR:"));
+}
+
 export async function getConversationMessages(input: GetConversationMessagesInput) {
   const parsed = getConversationMessagesSchema.parse(input);
   const {
@@ -440,6 +449,12 @@ export async function sendInternalMessage(
     throw new Error("Conversation not found");
   }
 
+  if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+    throw new YCloudOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
+      code: "SIMULATOR_CONTACT", statusCode: 400,
+    });
+  }
+
   if (conversation.channel === "WHATSAPP" || conversation.channel === "TELEGRAM") {
     const { pauseForHuman } = await import("./rocky-ai/service");
     await pauseForHuman(conversation.channel === "WHATSAPP" ? "whatsapp" : "telegram", conversationId, agentId);
@@ -513,12 +528,6 @@ export async function sendInternalMessage(
 
   console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
   try {
-    if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
-      throw new YCloudOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
-        code: "SIMULATOR_CONTACT", statusCode: 400,
-      });
-    }
-
     const sent = await sendYCloudOutboundMessage({
       replyToExternalMessageId: replyTarget?.externalMessageId ?? undefined,
       externalId: message.id,

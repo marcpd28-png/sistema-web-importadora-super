@@ -5,13 +5,14 @@ import { DynamicAvatar } from "./ConversationItem";
 
 interface Props {
   conversation: Conversation;
+  canManageBot?: boolean;
   onToggleBot: () => void;
   onTakeConversation: () => void;
   onCloseConversation: () => void;
   onBack: () => void;
 }
 
-export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCloseConversation, onBack }: Props) {
+export function ChatHeader({ conversation, canManageBot = true, onToggleBot, onTakeConversation, onCloseConversation, onBack }: Props) {
   const { contact, botEnabled } = conversation;
 
   return (
@@ -43,7 +44,7 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
       <ConversationStatus conversation={conversation} />
       
       <div className="chat-header-actions">
-        {botEnabled ? (
+        {canManageBot && (botEnabled ? (
           <button className="btn btn-outline" onClick={onToggleBot} type="button">
             <StopCircle size={14} /> Pausar Bot
           </button>
@@ -51,7 +52,7 @@ export function ChatHeader({ conversation, onToggleBot, onTakeConversation, onCl
           <button className="btn btn-outline" onClick={onToggleBot} type="button">
             <PlayCircle size={14} /> Activar Bot
           </button>
-        )}
+        ))}
         
         <button className="btn btn-primary" onClick={onTakeConversation} type="button">
           <UserPlus size={14} /> Tomar

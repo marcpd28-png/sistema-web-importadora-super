@@ -14,7 +14,7 @@ export async function loginAction(formData: FormData) {
     where: { email: normalizedEmail },
   });
 
-  if (!user || user.role !== "ADMIN" || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (!user || (user.role !== "ADMIN" && user.role !== "ASESOR") || !(await bcrypt.compare(password, user.passwordHash))) {
     redirect("/login?error=Credenciales%20inválidas");
   }
 
@@ -22,9 +22,9 @@ export async function loginAction(formData: FormData) {
     userId: user.id,
     email: user.email,
     name: user.name,
-    role: "ADMIN",
+    role: user.role,
     requirePasswordChange: user.requirePasswordChange,
   });
 
-  redirect("/admin");
+  redirect(user.role === "ASESOR" ? "/asesor" : "/admin");
 }

@@ -11132,6 +11132,11 @@ body[data-admin-theme="dark"] .category-card {
   background: rgba(37, 99, 235, 0.12);
 }
 
+.admin-users-table .admin-user-role-pill.is-advisor {
+  color: #0f766e;
+  background: rgba(20, 184, 166, 0.12);
+}
+
 .admin-users-table .admin-user-role-pill.is-shopper {
   color: #0f9d6c;
   background: rgba(15, 157, 108, 0.12);

@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 const roleLabels = {
   ADMIN: "Administrador",
+  ASESOR: "Asesor",
   USERSHOP: "Comprador",
   PROMOTOR: "Promotor",
 } as const;
@@ -97,6 +98,7 @@ export default async function AdminUserEditPage({ params, searchParams }: AdminU
               <label className="field">
                 <span>Tipo de usuario</span>
                 <select defaultValue={user.role} name="role">
+                  <option value="ASESOR">Asesor comercial</option>
                   <option value="USERSHOP">Comprador</option>
                   <option value="PROMOTOR">Promotor / Influencer</option>
                   <option value="ADMIN">Administrador</option>

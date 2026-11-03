@@ -178,7 +178,7 @@ export const adminUserSchema = z
     phone: optionalPhone,
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
     confirmPassword: z.string().min(6, "Confirma la contraseña."),
-    role: z.enum(["ADMIN", "USERSHOP", "PROMOTOR"]),
+    role: z.enum(["ADMIN", "ASESOR", "USERSHOP", "PROMOTOR"]),
   })
   .superRefine((value, ctx) => {
     if (value.password !== value.confirmPassword) {
@@ -197,7 +197,7 @@ export const adminUserUpdateSchema = z
     phone: optionalPhone,
     password: z.string().trim().optional().or(z.literal("")),
     confirmPassword: z.string().trim().optional().or(z.literal("")),
-    role: z.enum(["ADMIN", "USERSHOP", "PROMOTOR"]),
+    role: z.enum(["ADMIN", "ASESOR", "USERSHOP", "PROMOTOR"]),
   })
   .superRefine((value, ctx) => {
     const password = value.password?.trim() ?? "";

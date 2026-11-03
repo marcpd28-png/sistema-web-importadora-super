@@ -196,7 +196,15 @@ function asMessageType(value: string): MessageType {
   return allowedTypes.includes(value as MessageType) ? (value as MessageType) : "TEXT";
 }
 
-export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: ConversationFilters["channel"] }) {
+export function MessagesWorkspace({
+  initialChannel = "",
+  canManageBot = true,
+  uploadEndpoint,
+}: {
+  initialChannel?: ConversationFilters["channel"];
+  canManageBot?: boolean;
+  uploadEndpoint?: string;
+}) {
   const [clockNow, setClockNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setClockNow(Date.now()), CONVERSATION_POLL_MS);
@@ -669,13 +677,14 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
           <div className="messages-main">
             <ChatHeader
               conversation={activeConversation}
+              canManageBot={canManageBot}
               onBack={handleBackToConversations}
               onCloseConversation={handleCloseConversation}
               onTakeConversation={handleTakeConversation}
               onToggleBot={handleToggleBot}
             />
 
-            {(activeConversation.channel === "WHATSAPP" || activeConversation.channel === "TELEGRAM") && <RockyAiPanel key={`ai:${activeConversation.id}`} channel={activeConversation.channel === "WHATSAPP" ? "whatsapp" : "telegram"} externalId={activeConversation.id} visualTriggerId={[...activeMessages].reverse().find(message => message.direction === "INBOUND" && message.senderType === "CUSTOMER" && message.messageType === "IMAGE")?.id} />}
+            {canManageBot && (activeConversation.channel === "WHATSAPP" || activeConversation.channel === "TELEGRAM") && <RockyAiPanel key={`ai:${activeConversation.id}`} channel={activeConversation.channel === "WHATSAPP" ? "whatsapp" : "telegram"} externalId={activeConversation.id} visualTriggerId={[...activeMessages].reverse().find(message => message.direction === "INBOUND" && message.senderType === "CUSTOMER" && message.messageType === "IMAGE")?.id} />}
             <div className="chat-messages" onScroll={handleMessagesScroll} ref={messagesContainerRef}>
               {loadingOlderMessages ? <div className="messages-list-loader">Cargando mensajes antiguos...</div> : null}
               {!loadingOlderMessages && messageHasMore ? (
@@ -714,7 +723,7 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
                   : 'Telegram: espera un nuevo mensaje del cliente para responder; la ventana de 24 horas terminó.'}
               </p>
             ) : null}
-            <MessageInput key={activeId} disabled={activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000)} onSendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} />
+            <MessageInput key={activeId} disabled={activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000)} onSendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} uploadEndpoint={uploadEndpoint} />
           </div>
 
           <CustomerPanel conversation={activeConversation} />

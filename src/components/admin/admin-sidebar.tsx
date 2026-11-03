@@ -1,23 +1,44 @@
 "use client";
 
-import { Menu, X, House, PackageSearch, ShoppingBag, MessageCircle } from "lucide-react";
+import { Menu, X, House, PackageSearch, ShoppingBag, MessageCircle, BookOpenText, FileText, MessagesSquare, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export function AdminSidebar({ children }: { children: ReactNode }) {
+export type AdminSidebarDestination = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+const defaultDestinations: AdminSidebarDestination[] = [
+  { href: "/admin", label: "Inicio", icon: House },
+  { href: "/admin/products", label: "Productos", icon: PackageSearch },
+  { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
+  { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle },
+];
+
+const advisorDestinations: AdminSidebarDestination[] = [
+  { href: "/asesor/catalogo", label: "Catálogo", icon: BookOpenText },
+  { href: "/asesor/cotizaciones", label: "Cotizaciones", icon: FileText },
+  { href: "/asesor/mensajes", label: "Mensajes", icon: MessagesSquare },
+];
+
+export function AdminSidebar({
+  children,
+  variant = "admin",
+  mobileLabel = "Administración",
+}: {
+  children: ReactNode;
+  variant?: "admin" | "advisor";
+  mobileLabel?: string;
+}) {
   const pathname = usePathname();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const open = openPath === pathname;
-  const destinations = [
-    { href: "/admin", label: "Inicio", icon: House },
-    { href: "/admin/products", label: "Productos", icon: PackageSearch },
-    { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
-    { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle },
-  ];
-
+  const destinations = variant === "advisor" ? advisorDestinations : defaultDestinations;
   useEffect(() => {
     const media = window.matchMedia("(max-width: 920px)");
     const close = () => setOpenPath(null);
@@ -51,7 +72,7 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
       }}
     >
       <div className="admin-mobile-header">
-        <span>Administración</span>
+        <span>{mobileLabel}</span>
         <button
           ref={buttonRef}
           type="button"

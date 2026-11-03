@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getMessageCenterSession } from "@/lib/auth";
+import { isAdvisorConversationAccessible } from "@/lib/messages-service";
 import { prisma } from "@/lib/prisma";
 import { ycloudMediaKind } from "@/lib/ycloud-media";
 import { telegramBridgeHeaders, telegramBridgeUrl } from "@/lib/telegram-bridge";
@@ -7,13 +8,18 @@ import { telegramBridgeHeaders, telegramBridgeUrl } from "@/lib/telegram-bridge"
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getMessageCenterSession();
+  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+
   try {
-    await requireAdmin();
     const { id } = await params;
     const message = await prisma.chatMessage.findUnique({
       where: { id },
-      select: { mediaUrl: true, messageType: true, metadata: true, conversation: { select: { channel: true } } },
+      select: { mediaUrl: true, messageType: true, metadata: true, conversation: { select: { id: true, channel: true } } },
     });
+    if (!message || (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(message.conversation.id)))) {
+      return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
+    }
     if (message?.conversation.channel === "TELEGRAM") {
       const fileId = (message.metadata as Record<string, unknown> | null)?.telegramFileId;
       if (typeof fileId !== "string") return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
@@ -33,7 +39,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return new NextResponse(response.body, { headers: output, status: response.status });
     }
     const mediaKind = ycloudMediaKind(message?.mediaUrl ?? null);
-    if (!message || message.conversation.channel !== "WHATSAPP" || !mediaKind) {
+    if (message.conversation.channel !== "WHATSAPP" || !mediaKind) {
       return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
     }
 

@@ -16,7 +16,10 @@ type QuoteConversationPanelProps = {
   customerMessage: string | null;
   pdfLink?: string;
   quoteNumber?: string | null;
+  canSetSystemStatuses?: boolean;
 };
+
+const advisorManagedStatuses: QuoteStatus[] = ["PENDING", "IN_REVIEW", "RESPONDED", "CLOSED"];
 
 const statusMeta: Record<QuoteStatus, { label: string; style: React.CSSProperties }> = {
   PENDING: { label: "Nuevo", style: { background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" } },
@@ -38,6 +41,7 @@ export function QuoteConversationPanel({
   customerMessage,
   pdfLink,
   quoteNumber,
+  canSetSystemStatuses = true,
 }: QuoteConversationPanelProps) {
   const [status, setStatus] = useState<QuoteStatus>(initialStatus);
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes ?? "");
@@ -132,7 +136,9 @@ export function QuoteConversationPanel({
         </div>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "8px" }}>
-          {(Object.keys(statusMeta) as QuoteStatus[]).map((key) => {
+          {(Object.keys(statusMeta) as QuoteStatus[])
+            .filter((key) => canSetSystemStatuses || advisorManagedStatuses.includes(key))
+            .map((key) => {
             const meta = statusMeta[key];
             const isSelected = key === status;
             return (
@@ -155,7 +161,7 @@ export function QuoteConversationPanel({
                 {meta.label}
               </button>
             );
-          })}
+            })}
         </div>
       </div>
 
