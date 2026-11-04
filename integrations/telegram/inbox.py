@@ -460,7 +460,15 @@ class Inbox:
             with self.lock:
                 self.db.execute('INSERT INTO inbox_sends VALUES (?,?,?,NULL)', (rid,fingerprint,'sending')); self.db.commit()
             try:
-                if automated: body['_inbox_automated'] = True
+                if automated:
+                    # Current bridge deployments use the explicit sender and
+                    # protocol markers when archiving outbound messages. Keep
+                    # the older automated marker too so both bridge revisions
+                    # recognize this as a Super Bot reply rather than a human
+                    # adviser reply (which would pause the conversation).
+                    body['_inbox_automated'] = True
+                    body['_inbox_sender'] = 'BOT'
+                    body['_inbox_protocol'] = 'super-bot-v1'
                 result = self.raw_api(method,body)
                 response = {'messageId':result['message_id'],'revision':revision}
                 with self.lock:
