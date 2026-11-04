@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { channelInbox, dedupeSocialMessages, socialConnectionStatus, messengerMetaResumeMinutes, parseSocialChannel, safeSocialMessage, socialConversation, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
+import { channelInbox, dedupeSocialMessages, socialConnectionStatus, messengerMetaResumeMinutes, parseSocialChannel, safeSocialMessage, socialConversation, socialConversationDisplayName, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
 
 test("Manual Messenger replies default to a safe, bounded Meta reactivation delay", () => {
   const original = process.env.MESSENGER_META_AI_RESUME_MINUTES;
@@ -27,6 +27,18 @@ test("Social channels fail closed and cannot fall through to WhatsApp or Telegra
   assert.throws(() => channelInbox(conversation, "tiktok"));
   conversation.contactInboxes.push(conversation.contactInboxes[0]);
   assert.throws(() => channelInbox(conversation, "messenger"));
+});
+
+test("Conversation labels use the provider name fields before a generic fallback", () => {
+  const inboxes = [
+    { id: "tiktok-contact", inboxId: "tiktok", channel: "tiktok", lastIncomingMessageAt: null, sourceUsername: "perfil-tiktok", inbox: { name: "TikTok" } },
+    { id: "messenger-contact", inboxId: "messenger", channel: "messenger", lastIncomingMessageAt: null, sourceUsername: "perfil-messenger", inbox: { name: "Messenger" } },
+  ];
+
+  assert.equal(socialConversationDisplayName({ id: "conversation-1", botEnabled: true, contact: { fullName: "  Ana   Pérez " }, contactInboxes: inboxes }, "messenger"), "Ana Pérez");
+  assert.equal(socialConversationDisplayName({ id: "conversation-2", botEnabled: true, contact: { fullName: "Cliente", firstName: " Ana ", lastName: "Pérez" }, contactInboxes: inboxes }, "messenger"), "Ana Pérez");
+  assert.equal(socialConversationDisplayName({ id: "conversation-3", botEnabled: true, contact: null, contactInboxes: inboxes }, "messenger"), "@perfil-messenger");
+  assert.equal(socialConversationDisplayName({ id: "conversation-123456", botEnabled: true, contact: { id: "contact-654321" }, contactInboxes: [] }, "messenger"), "Cliente sin nombre · 123456");
 });
 
 test("Sending enforces channel and Messenger window before mutation, pauses bot first, and selects the exact inbox", async () => {

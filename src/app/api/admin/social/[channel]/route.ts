@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import { dedupeSocialMessages, parseSocialChannel, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
+import { dedupeSocialMessages, parseSocialChannel, socialConversationDisplayName, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, context: Context) {
     const page = await socialRequest<SocialPage<SocialConversation>>(`/conversations?${query}`);
     // Only expose display fields, never provider auth or contact attributes.
     return NextResponse.json({ data: page.data.filter(c => c.contactInboxes.some(i => i.channel === channel)).map(c => ({
-      id: c.id, name: c.contact?.fullName || "Cliente", botEnabled: c.botEnabled,
+      id: c.id, name: socialConversationDisplayName(c, channel), botEnabled: c.botEnabled,
       preview: c.messages?.find(m => c.contactInboxes.some(i => i.channel === channel && i.id === m.contactInboxId))?.text || "Conversación",
     })), nextCursor: page.nextCursor }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return failure(error); }

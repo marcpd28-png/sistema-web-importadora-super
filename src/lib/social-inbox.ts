@@ -7,8 +7,21 @@ export type SocialMessage = {
   attachments?: { id: string; name: string | null; url: string | null; fileType?: string; mimeType?: string }[];
 };
 export type SocialConversation = {
-  id: string; botEnabled: boolean; contact?: { fullName: string | null } | null;
-  contactInboxes: { id: string; inboxId: string; channel: string; lastIncomingMessageAt: string | null; inbox: { name: string } }[];
+  id: string; botEnabled: boolean;
+  contact?: {
+    id?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    fullName?: string | null;
+  } | null;
+  contactInboxes: {
+    id: string;
+    inboxId: string;
+    channel: string;
+    lastIncomingMessageAt: string | null;
+    sourceUsername?: string | null;
+    inbox: { name: string };
+  }[];
   messages?: SocialMessage[];
 };
 export type SocialPage<T> = { data: T[]; nextCursor: string | null };
@@ -24,6 +37,40 @@ const recentSocialReplies = new Map<string, { expiresAt: number; result: Promise
 
 function compactText(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function displayText(value: string | null | undefined) {
+  return typeof value === "string" ? compactText(value) : "";
+}
+
+function providerDisplayName(value: string | null | undefined) {
+  const name = displayText(value);
+  return name.toLocaleLowerCase("es-PE") === "cliente" ? "" : name;
+}
+
+/**
+ * ChatbotX can expose a Messenger contact through separate name fields before
+ * it has populated fullName. Keep the provider's identity visible instead of
+ * collapsing those conversations into the same generic "Cliente" label.
+ */
+export function socialConversationDisplayName(conversation: SocialConversation, channel: SocialChannel) {
+  const fullName = providerDisplayName(conversation.contact?.fullName);
+  if (fullName) return fullName;
+
+  const contactName = [
+    displayText(conversation.contact?.firstName),
+    displayText(conversation.contact?.lastName),
+  ].filter(Boolean).join(" ");
+  if (contactName) return contactName;
+
+  const sourceUsername = conversation.contactInboxes
+    .filter((inbox) => inbox.channel === channel)
+    .map((inbox) => providerDisplayName(inbox.sourceUsername))
+    .find(Boolean);
+  if (sourceUsername) return sourceUsername.startsWith("@") ? sourceUsername : `@${sourceUsername}`;
+
+  const identity = displayText(conversation.id);
+  return identity ? `Cliente sin nombre · ${identity.slice(-6)}` : "Cliente sin nombre";
 }
 
 function socialReplyKey(channel: SocialChannel, conversationId: string, text: string, mediaFileId?: string) {
