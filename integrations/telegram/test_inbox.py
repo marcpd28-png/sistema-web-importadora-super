@@ -397,6 +397,25 @@ class InboxTests(unittest.TestCase):
         self.assertEqual(state,'failed')
         self.assertIn('catálogo inválido',error)
 
+    def test_super_bot_rejects_catalog_bundle_without_a_declared_size(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'No debe enviarse.',
+            'documents':[
+                {
+                    'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo.pdf',
+                    'mimeType':'application/pdf',
+                },
+            ],
+            'products':[],
+        }
+
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(self.calls,[])
+        state,error=self.inbox.db.execute('SELECT state,error FROM inbox_super_bot_replies').fetchone()
+        self.assertEqual(state,'failed')
+        self.assertIn('catálogo inválido',error)
+
     def test_super_bot_http_reply_reads_the_response_once(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
         class Response:
