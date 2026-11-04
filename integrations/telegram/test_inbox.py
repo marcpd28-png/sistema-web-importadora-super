@@ -334,6 +334,69 @@ class InboxTests(unittest.TestCase):
         self.assertEqual(self.calls[0][0],'sendDocument')
         self.assertEqual(self.calls[0][1]['document'],'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes.pdf')
 
+    def test_super_bot_delivers_an_ordered_catalog_bundle_once_then_the_summary(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Te comparto el catálogo completo en 2 partes.',
+            # A compatibility document must not be duplicated when the
+            # server explicitly provides the authoritative bundle.
+            'document':{'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-antiguo.pdf'},
+            'documents':[
+                {
+                    'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes-parte-1.pdf',
+                    'filename':'catalogo-parlantes-parte-1.pdf',
+                    'mimeType':'application/pdf',
+                    'sizeBytes':1024,
+                },
+                {
+                    'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes-parte-2.pdf',
+                    'filename':'catalogo-parlantes-parte-2.pdf',
+                    'mimeType':'application/pdf',
+                    'sizeBytes':2048,
+                },
+            ],
+            'products':[],
+        }
+
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([call[0] for call in self.calls],['sendDocument','sendDocument','sendMessage'])
+        self.assertEqual([call[1]['document'] for call in self.calls[:2]],[
+            'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes-parte-1.pdf',
+            'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes-parte-2.pdf',
+        ])
+        self.assertEqual([call[1]['caption'] for call in self.calls[:2]],[
+            'Parte 1 de 2 del catálogo solicitado.',
+            'Parte 2 de 2 del catálogo solicitado.',
+        ])
+        self.assertEqual(self.calls[2][1]['text'],'Te comparto el catálogo completo en 2 partes.')
+        request_ids=[call[1]['_inbox_request_id'] for call in self.calls]
+        self.assertTrue(request_ids[0].endswith(':document:1'))
+        self.assertTrue(request_ids[1].endswith(':document:2'))
+        self.assertEqual(len(request_ids),len(set(request_ids)))
+        self.assertNotIn('catalogo-antiguo.pdf',' '.join(str(call) for call in self.calls))
+        self.assertFalse(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(len(self.calls),3)
+
+    def test_super_bot_rejects_an_invalid_catalog_bundle_before_sending_any_part(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'No debe enviarse.',
+            'documents':[
+                {
+                    'url':'https://example.test/uploads/catalogs/catalogo.pdf',
+                    'mimeType':'application/pdf',
+                    'sizeBytes':1024,
+                },
+            ],
+            'products':[],
+        }
+
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(self.calls,[])
+        state,error=self.inbox.db.execute('SELECT state,error FROM inbox_super_bot_replies').fetchone()
+        self.assertEqual(state,'failed')
+        self.assertIn('catálogo inválido',error)
+
     def test_super_bot_http_reply_reads_the_response_once(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
         class Response:

@@ -21,6 +21,11 @@ MAX_SUPER_BOT_REPLY_TIMEOUT_SECONDS = 120
 DEFAULT_ADVISOR_TYPING_LEASE_SECONDS = 8
 MAX_ADVISOR_TYPING_LEASE_SECONDS = 30
 MAX_SUPER_BOT_PRODUCT_IMAGES = 3
+# A bundled catalog is deliberately bounded at the bridge boundary. The
+# store's generator emits a small ordered set of Telegram-safe PDFs; accepting
+# an arbitrary list would let a malformed upstream response flood a chat.
+MAX_SUPER_BOT_CATALOG_DOCUMENTS = 16
+MAX_SUPER_BOT_CATALOG_DOCUMENT_BYTES = 18 * 1024 * 1024
 STORE_PUBLIC_HOST = 'tiendavirtualsuper.com'
 SUPER_BOT_PROTOCOL = 'super-bot-v1'
 TECHNICAL_PRODUCT_QUESTION = re.compile(
@@ -488,9 +493,83 @@ class Inbox:
         raw_text = reply.get('text','') if isinstance(reply,dict) else ''
         text = raw_text.strip() if isinstance(raw_text, str) else ''
         if not text or len(text)>4000: raise InboxError('Super Bot devolvió una respuesta inválida.',502)
-        document = reply.get('document') if isinstance(reply,dict) and isinstance(reply.get('document'),dict) else None
+        documents = self.catalog_documents(reply)
+        # Keep the older single-document surface available to callers that
+        # have not rolled out bundle support. `documents`, when present, is
+        # authoritative and the bridge will never send this compatibility
+        # value in addition to the list.
+        document = (
+            documents[0] if documents
+            else reply.get('document') if documents is None and isinstance(reply,dict) and isinstance(reply.get('document'),dict)
+            else None
+        )
         products = reply.get('products') if isinstance(reply,dict) and isinstance(reply.get('products'),list) else []
-        return {'text': text, 'document': document, 'products': products}
+        result = {'text': text, 'document': document, 'products': products}
+        if documents is not None:
+            result['documents'] = documents
+        return result
+
+    def catalog_documents(self, reply):
+        """Return a validated ordered catalog bundle, or ``None`` for legacy replies.
+
+        A plural `documents` key takes precedence over the old `document`
+        field even if it is an empty list. This makes an upstream response
+        unambiguous and prevents a compatibility field from being delivered
+        twice. The bridge cannot inspect the file itself, so it verifies the
+        declared media boundary (own HTTPS catalog path, PDF extension, and
+        the generator's 18 MiB delivery ceiling) before asking Telegram to
+        fetch it.
+        """
+        if not isinstance(reply, dict) or 'documents' not in reply:
+            return None
+
+        raw_documents = reply.get('documents')
+        if not isinstance(raw_documents, list) or len(raw_documents) > MAX_SUPER_BOT_CATALOG_DOCUMENTS:
+            raise InboxError('Super Bot devolvió un paquete de catálogos inválido.',502)
+
+        documents, urls = [], set()
+        for document in raw_documents:
+            if not isinstance(document, dict):
+                raise InboxError('Super Bot devolvió un paquete de catálogos inválido.',502)
+
+            url = document.get('url')
+            if not isinstance(url, str) or not url.strip() or len(url) > 4096:
+                raise InboxError('Super Bot devolvió un catálogo inválido.',502)
+            url = url.strip()
+            try:
+                parsed = urllib.parse.urlsplit(url)
+                port = parsed.port
+            except ValueError:
+                raise InboxError('Super Bot devolvió un catálogo inválido.',502) from None
+            if (
+                parsed.scheme != 'https'
+                or parsed.hostname != STORE_PUBLIC_HOST
+                or parsed.username
+                or port not in (None, 443)
+                or not parsed.path.startswith('/uploads/catalogs/')
+                or not parsed.path.lower().endswith('.pdf')
+                or parsed.query
+                or parsed.fragment
+                or url in urls
+            ):
+                raise InboxError('Super Bot devolvió un catálogo inválido.',502)
+
+            mime_type = document.get('mimeType')
+            if mime_type is not None and mime_type != 'application/pdf':
+                raise InboxError('Super Bot devolvió un catálogo inválido.',502)
+            size_bytes = document.get('sizeBytes')
+            if size_bytes is not None and (
+                not isinstance(size_bytes, int)
+                or isinstance(size_bytes, bool)
+                or size_bytes < 1
+                or size_bytes > MAX_SUPER_BOT_CATALOG_DOCUMENT_BYTES
+            ):
+                raise InboxError('Super Bot devolvió un catálogo inválido.',502)
+
+            urls.add(url)
+            documents.append(document)
+
+        return documents
 
     def product_image_messages(self, products):
         result, seen = [], set()
@@ -597,7 +676,16 @@ class Inbox:
                 return False
             reply = self.normalized_super_bot_reply(self.super_bot_reply(self.super_bot_request(batch)))
             text = reply.get('text')
-            document = reply.get('document')
+            catalog_documents = self.catalog_documents(reply)
+            # Preserve the legacy single `document` behavior, but when the
+            # trusted server supplied `documents`, that exact ordered list is
+            # authoritative. In particular, never append the compatibility
+            # first document to a bundle a second time.
+            if catalog_documents is None:
+                legacy_document = reply.get('document')
+                documents = [legacy_document] if isinstance(legacy_document, dict) and isinstance(legacy_document.get('url'), str) else []
+            else:
+                documents = catalog_documents
             products = reply.get('products')
             if not isinstance(text, str) or not text.strip() or len(text) > 4000:
                 raise InboxError('Super Bot devolvió una respuesta inválida.',502)
@@ -634,11 +722,31 @@ class Inbox:
             # names, codes and prices below each card. Keep substantive text
             # for technical questions and document/PDF deliveries.
             delivered_text = text
-            if delivered_images >= 2 and not isinstance(document, dict) and not self.technical_product_question(batch):
+            if delivered_images >= 2 and not documents and not self.technical_product_question(batch):
                 delivered_text = self.visual_product_closing_question()
-            payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':delivered_text,'automated':True}
-            if isinstance(document, dict) and isinstance(document.get('url'),str):
-                payload.update(type='DOCUMENT',mediaUrl=document['url'])
+
+            if len(documents) > 1:
+                # Send every part with a durable, deterministic id. Repeating
+                # this work after a process restart is idempotent because
+                # `command` returns the persisted success for the same id.
+                for index, document in enumerate(documents, start=1):
+                    delivery_started = True
+                    self.command('send', {
+                        'connectionId': cid,
+                        'chatId': chat,
+                        'requestId': f'{key}:document:{index}',
+                        'type': 'DOCUMENT',
+                        'content': f'Parte {index} de {len(documents)} del catálogo solicitado.',
+                        'mediaUrl': document['url'],
+                        'automated': True,
+                    }, adapter)
+                # The customer receives one clear completion message only
+                # after all document parts have been accepted by Telegram.
+                payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':delivered_text,'automated':True}
+            else:
+                payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':delivered_text,'automated':True}
+                if documents:
+                    payload.update(type='DOCUMENT',mediaUrl=documents[0]['url'])
             delivery_started = True
             self.command('send',payload,adapter)
             state,error = 'sent',None
