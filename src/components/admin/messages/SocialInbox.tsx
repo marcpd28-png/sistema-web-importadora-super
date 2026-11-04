@@ -17,9 +17,23 @@ async function get<T>(url: string): Promise<T> {
   return body as T;
 }
 
-export function SocialInbox({ channel, authorizationUrl, configured }: { channel: SocialChannel; authorizationUrl: string; configured: boolean }) {
+export function SocialInbox({
+  apiBase = "/api/admin/social",
+  authorizationUrl,
+  canManageBot = true,
+  canManageConnection = true,
+  channel,
+  configured,
+}: {
+  apiBase?: string;
+  authorizationUrl?: string;
+  canManageBot?: boolean;
+  canManageConnection?: boolean;
+  channel: SocialChannel;
+  configured: boolean;
+}) {
   const title = channel === "messenger" ? "Messenger de Facebook" : "TikTok";
-  const base = `/api/admin/social/${channel}`;
+  const base = `${apiBase}/${channel}`;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SocialMessage[]>([]);
@@ -158,7 +172,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
     }
   }
   async function reactivateSuperBot() {
-    if (!selected || channel !== "messenger" || selected.botEnabled || reactivatingBot) return;
+    if (!canManageBot || !selected || channel !== "messenger" || selected.botEnabled || reactivatingBot) return;
     const id = selected.id;
     setReactivatingBot(true);
     setError("");
@@ -194,9 +208,9 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
   }
   return <div className="messages-inbox-page">
     <header className="messages-page-header"><div><p className="eyebrow">Centro de Mensajes</p><h1>{title}</h1></div>
-      <div className={styles.connection}><span className="messages-live-indicator"><i aria-hidden="true" />{authorizedAccounts === null ? "Comprobando conexión…" : connectedAccounts > 0 ? `${connectedAccounts} cuenta conectada` : "Sin conexión"}</span><a className="btn btn-outline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">{authorizedAccounts ? "Administrar cuentas" : "Vincular cuenta"}</a></div>
+      <div className={styles.connection}><span className="messages-live-indicator"><i aria-hidden="true" />{authorizedAccounts === null ? "Comprobando conexión…" : connectedAccounts > 0 ? `${connectedAccounts} cuenta conectada` : "Sin conexión"}</span>{canManageConnection && authorizationUrl ? <a className="btn btn-outline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">{authorizedAccounts ? "Administrar cuentas" : "Vincular cuenta"}</a> : null}</div>
     </header>
-    {authorizedAccounts !== null && !connectedAccounts && <p className={styles.notice}>{configured ? "Vincula tu cuenta o revisa su autorización para recibir y responder mensajes." : "La conexión del servidor está pendiente de configuración."}</p>}
+    {authorizedAccounts !== null && !connectedAccounts && <p className={styles.notice}>{configured ? canManageConnection ? "Vincula tu cuenta o revisa su autorización para recibir y responder mensajes." : "Este canal aún no tiene una cuenta conectada." : "La conexión del servidor está pendiente de configuración."}</p>}
     <div className="messages-inbox-workspace"><div className={`messages-workspace ${selected ? "chat-open" : ""}`}>
       {error && <div className="messages-workspace-alert" role="alert"><span>{error}</span><button className="icon-btn" aria-label="Cerrar aviso" onClick={() => setError("")}>×</button></div>}
       <aside className="messages-sidebar" aria-label="Conversaciones">
@@ -216,7 +230,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
             <div ref={bottom} />
           </div>
           <div className="chat-count">{messages.length} mensajes cargados · {channel === "messenger" ? "Responde dentro de las 24 horas del último mensaje del cliente." : "La disponibilidad depende de tu cuenta de TikTok."}</div>
-          {channel === "messenger" && !selected.botEnabled && <div className={styles.notice} role="status"><strong>Super Bot está pausado en esta conversación.</strong> La atención humana no lo reactiva automáticamente. <button className="btn btn-outline" type="button" disabled={!configured || sending || uploading || messageLoading || uncertain || reactivatingBot} onClick={() => void reactivateSuperBot()}>{reactivatingBot ? "Reactivando…" : "Reactivar Super Bot"}</button></div>}
+          {canManageBot && channel === "messenger" && !selected.botEnabled && <div className={styles.notice} role="status"><strong>Super Bot está pausado en esta conversación.</strong> La atención humana no lo reactiva automáticamente. <button className="btn btn-outline" type="button" disabled={!configured || sending || uploading || messageLoading || uncertain || reactivatingBot} onClick={() => void reactivateSuperBot()}>{reactivatingBot ? "Reactivando…" : "Reactivar Super Bot"}</button></div>}
           {uncertain && <p className={styles.notice}>Comprueba el envío antes de repetirlo. <button className="btn btn-outline" onClick={async () => { try { await loadMessages(selected.id); setUncertain(false); setError(""); } catch (e) { setError((e as Error).message); } }}>Revisar conversación</button></p>}
           <MessageInput key={`composer:${selected.id}`} disabled={sending || uploading || messageLoading || uncertain || reactivatingBot} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
           <div className={styles.help}>{channel === "messenger" ? "Adjunta imágenes, PDF, documentos, videos o audio (hasta 5 MB). " : ""}Al responder se pausa la automatización de esta conversación.</div>

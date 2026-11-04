@@ -9,6 +9,7 @@ import {
   canTransferConversation,
   ConversationAssignmentError,
   isConversationAssignedToAdvisor,
+  isAdvisorSupportedChannel,
 } from "./conversation-assignment";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -354,11 +355,12 @@ export async function getConversation(id: string) {
 export async function isAdvisorConversationAccessible(id: string, advisorId: string) {
   const conversation = await prisma.conversation.findUnique({
     where: { id },
-    select: { assignedUserId: true, contact: { select: { externalId: true } } },
+    select: { assignedUserId: true, channel: true, contact: { select: { externalId: true } } },
   });
 
   return Boolean(
     conversation &&
+      isAdvisorSupportedChannel(conversation.channel) &&
       !conversation.contact.externalId?.startsWith("SIMULATOR:") &&
       isConversationAssignedToAdvisor(conversation.assignedUserId, advisorId),
   );
@@ -395,6 +397,9 @@ export async function claimConversation(
   { canReassign = false }: { canReassign?: boolean } = {},
 ) {
   const existing = requireCustomerConversation(await assignmentConversation(id));
+  if (!canReassign && !isAdvisorSupportedChannel(existing.channel)) {
+    throw new ConversationAssignmentError("Este canal histórico no está disponible para atención.");
+  }
   if (existing.assignedUserId === advisorId) return existing;
   if (existing.assignedUserId && !canReassign) {
     throw new ConversationAssignmentError("Otro asesor acaba de tomar esta conversación.", 409);
@@ -451,6 +456,9 @@ export async function transferConversation(
   }
 
   const existing = requireCustomerConversation(await assignmentConversation(id));
+  if (!isAdvisorSupportedChannel(existing.channel)) {
+    throw new ConversationAssignmentError("Este canal histórico no está disponible para atención.");
+  }
   if (!canTransferConversation({
     assignedUserId: existing.assignedUserId,
     actorId: actor.id,

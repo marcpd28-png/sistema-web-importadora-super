@@ -1,7 +1,7 @@
 import { request as httpRequest } from "node:http";
 import { Readable } from "node:stream";
 import { NextRequest, NextResponse } from "next/server";
-import { getMessagingOwnerSession } from "@/lib/auth";
+import { getMessageCenterSession } from "@/lib/auth";
 import {
   parseSocialChannel,
   socialConversation,
@@ -196,7 +196,10 @@ function outputHeaders(response: Response, file: SocialAttachment) {
 }
 
 async function serve(request: NextRequest, context: Context, headOnly: boolean) {
-  const session = await getMessagingOwnerSession();
+  // This is a read-only, provider-validated media proxy. Advisor social inbox
+  // responses already return this opaque URL, so permit the same message-center
+  // audience while keeping all social configuration and bot controls owner-only.
+  const session = await getMessageCenterSession();
   if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
 
   try {

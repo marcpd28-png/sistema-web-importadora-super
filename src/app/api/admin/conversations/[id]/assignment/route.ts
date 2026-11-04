@@ -5,6 +5,7 @@ import {
   transferConversation,
 } from "@/lib/messages-service";
 import { ConversationAssignmentError } from "@/lib/conversation-assignment";
+import { TelegramBridgeError } from "@/lib/telegram-bridge";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,9 @@ export async function POST(
     return NextResponse.json(conversation, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof ConversationAssignmentError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+    if (error instanceof TelegramBridgeError) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
     if (error instanceof z.ZodError) {

@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Channel, Prisma } from "@prisma/client";
 
 /**
  * A controlled error for the advisor-workspace ownership boundary.  Routes use
@@ -12,14 +12,28 @@ export class ConversationAssignmentError extends Error {
 }
 
 /**
- * Advisors may see work that is still in the shared queue, plus the chats
- * they own.  They never receive another advisor's records in the list.
+ * Historical WhatsApp rows remain in the database for audit purposes but no
+ * longer have a connected transport.  The advisor workspace must never offer
+ * those rows as work that can be claimed and answered.
+ */
+export function isAdvisorSupportedChannel(channel: Channel) {
+  return channel === "TELEGRAM";
+}
+
+/**
+ * Advisors may see Telegram work that is still in the shared queue, plus the
+ * Telegram chats they own. They never receive another advisor's records.
  */
 export function advisorConversationScope(advisorId: string): Prisma.ConversationWhereInput {
   return {
-    OR: [
-      { assignedUserId: null },
-      { assignedUserId: advisorId },
+    AND: [
+      { channel: "TELEGRAM" },
+      {
+        OR: [
+          { assignedUserId: null },
+          { assignedUserId: advisorId },
+        ],
+      },
     ],
   };
 }

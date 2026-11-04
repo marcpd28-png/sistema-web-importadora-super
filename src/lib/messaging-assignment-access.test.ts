@@ -9,13 +9,15 @@ test("la bandeja de asesores está limitada a la cola compartida y sus propios c
   const detail = read("../app/api/admin/conversations/[id]/route.ts");
   const messages = read("../app/api/admin/conversations/[id]/messages/route.ts");
   const service = read("./messages-service.ts");
+  const telegram = read("./telegram-messages.ts");
 
   assert.match(list, /advisorId:\s*session\.userId/);
   assert.match(service, /advisorConversationScope\(scope\.advisorId\)/);
+  assert.match(service, /isAdvisorSupportedChannel\(conversation\.channel\)/);
   assert.match(detail, /isAdvisorConversationAccessible\(id, session\.userId\)/);
   assert.match(messages, /isAdvisorConversationAccessible\(id, session\.userId\)/);
   assert.match(messages, /expectedAssigneeId:\s*session\.userId/);
-  assert.match(service, /assignedUserId:\s*options\.expectedAssigneeId/);
+  assert.match(telegram, /assignedUserId:\s*expectedAssigneeId/);
   assert.match(service, /isAdvisorSupportedChannel\(conversation\.channel\)/);
   assert.match(service, /isAdvisorSupportedChannel\(existing\.channel\)/);
 });
@@ -25,9 +27,10 @@ test("la toma y derivación usan una ruta protegida y el propietario actual", ()
   const service = read("./messages-service.ts");
 
   assert.match(assignment, /getMessageCenterSession/);
-  assert.match(assignment, /session\.role === "ADMIN"/);
+  assert.match(assignment, /canManageMessaging\(session\)/);
   assert.match(assignment, /claimConversation/);
   assert.match(assignment, /transferConversation/);
+  assert.match(assignment, /TelegramBridgeError/);
   assert.match(service, /canTransferConversation/);
   assert.match(service, /status:\s*\{ in: \["pending", "sending"\] \}/);
   assert.match(service, /unreadCount:\s*Math\.max\(existing\.unreadCount, 1\)/);
