@@ -4,11 +4,16 @@ import { createServer, type Server } from "node:http";
 import { randomUUID } from "node:crypto";
 import { prisma } from "./prisma";
 import { receiveTelegramEvent, telegramMessageKey } from "./telegram-events";
-import { sendInternalMessage, updateConversation } from "./messages-service";
+import {
+  claimConversation,
+  sendInternalMessage,
+  transferConversation,
+  updateConversation,
+} from "./messages-service";
 
 const url = new URL(process.env.DATABASE_URL || "http://invalid");
 if (url.searchParams.get("schema") !== "telegram_inbox_test_20261009" || !["127.0.0.1", "localhost"].includes(url.hostname)) throw new Error("Tests require disposable localhost schema telegram_inbox_test_20261009");
-let server: Server, calls = 0, mode = "ok", revision = 1, agentId: string;
+let server: Server, calls = 0, controlCalls = 0, mode = "ok", revision = 1, agentId: string;
 const inbound = (extra: Record<string, unknown> = {}) => ({ eventId: randomUUID(), kind: "message", connectionId: "test-linked", chatId: "12345", messageId: 10, sender: "CUSTOMER", type: "TEXT", content: "Hola", name: "Cliente sintético", timestamp: Math.floor(Date.now() / 1000), ...extra });
 
 before(async () => {
@@ -18,6 +23,7 @@ before(async () => {
     const data = JSON.parse(Buffer.concat(chunks).toString());
     assert.equal(request.headers.authorization, `Bearer ${process.env.TELEGRAM_BRIDGE_SECRET}`);
     if (request.url === "/inbox/send") calls++;
+    if (request.url === "/inbox/control") controlCalls++;
     response.setHeader("Content-Type", "application/json");
     if (mode === "uncertain" && request.url === "/inbox/send") { response.statusCode = 502; response.end(JSON.stringify({ error: "Entrega sin confirmar", uncertain: true })); return; }
     if (request.url === "/inbox/send") {
@@ -31,7 +37,7 @@ before(async () => {
   const user = await prisma.user.create({ data: { email: `telegram-test-${randomUUID()}@example.invalid`, name: "Test", passwordHash: "unused", role: "ADMIN" } });
   agentId = user.id;
 });
-beforeEach(async () => { await prisma.chatContact.deleteMany(); await prisma.telegramInboxEvent.deleteMany(); calls = 0; mode = "ok"; revision = 1; });
+beforeEach(async () => { await prisma.chatContact.deleteMany(); await prisma.telegramInboxEvent.deleteMany(); calls = 0; controlCalls = 0; mode = "ok"; revision = 1; });
 after(async () => { if (server) await new Promise<void>(resolve => server.close(() => resolve())); if (agentId) await prisma.user.delete({ where: { id: agentId } }); await prisma.$disconnect(); });
 
 test("concurrent Telegram retries persist one contact, conversation and message", async () => {
@@ -51,6 +57,37 @@ test("reply round trip and bridge echo create only one outgoing message", async 
   assert.equal((await sendInternalMessage(result.conversationId!, input, agentId)).id, reply.id);
   assert.equal(calls, 1); assert.equal(await prisma.chatMessage.count(), 2);
   assert.equal((await prisma.conversation.findUniqueOrThrow({ where: { id: result.conversationId } })).botEnabled, false);
+});
+test("taking or transferring a Telegram chat does not pause Super Bot before a human sends", async () => {
+  const result = await receiveTelegramEvent(inbound());
+  const conversationId = result.conversationId!;
+  const target = await prisma.user.create({
+    data: {
+      email: `telegram-transfer-${randomUUID()}@example.invalid`,
+      name: "Destino",
+      passwordHash: "unused",
+      role: "ASESOR",
+    },
+  });
+
+  try {
+    const claimed = await claimConversation(conversationId, agentId);
+    assert.equal(claimed.botEnabled, true);
+    assert.equal(claimed.status, "AUTOMATICO");
+    assert.equal(claimed.assignedUserId, agentId);
+    assert.equal(controlCalls, 0);
+
+    const transferred = await transferConversation(conversationId, target.id, {
+      id: agentId,
+      isMessagingOwner: true,
+    });
+    assert.equal(transferred.botEnabled, true);
+    assert.equal(transferred.status, "AUTOMATICO");
+    assert.equal(transferred.assignedUserId, target.id);
+    assert.equal(controlCalls, 0);
+  } finally {
+    await prisma.user.delete({ where: { id: target.id } });
+  }
 });
 test("ambiguous sends remain uncertain and replay does not send twice", async () => {
   const result = await receiveTelegramEvent(inbound()); mode = "uncertain";

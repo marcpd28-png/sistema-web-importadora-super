@@ -380,14 +380,11 @@ function requireCustomerConversation<T extends { contact: { externalId: string |
   return conversation;
 }
 
-async function pauseTelegramForHumanControl(conversation: Awaited<ReturnType<typeof assignmentConversation>>) {
-  if (conversation?.channel !== "TELEGRAM") return undefined;
-  return (await controlTelegram(conversation, false)).revision;
-}
-
 /**
- * Atomically takes an unassigned chat for an advisor. A messaging owner can
- * deliberately take over a chat; advisors can never overwrite one another.
+ * Atomically assigns an unassigned chat to an advisor. Assignment grants
+ * workspace access; it is not a customer-facing intervention, so it must not
+ * silence Super Bot. Telegram is paused only when an adviser actually sends
+ * a message (or explicitly presses the pause control).
  */
 export async function claimConversation(
   id: string,
@@ -400,19 +397,12 @@ export async function claimConversation(
     throw new ConversationAssignmentError("Otro asesor acaba de tomar esta conversación.", 409);
   }
 
-  // Pause the Telegram bridge before the database says a person owns the
-  // thread. More than one contender can issue this idempotent pause, but only
-  // one conditional UPDATE becomes the owner.
-  const telegramRevision = await pauseTelegramForHumanControl(existing);
   const claimed = await prisma.conversation.updateMany({
     where: { id, assignedUserId: existing.assignedUserId },
     data: {
       assignedUserId: advisorId,
-      botEnabled: false,
-      status: "ATENDIENDO",
       unreadCount: 0,
       lastReadAt: new Date(),
-      ...(telegramRevision === undefined ? {} : { telegramRevision }),
     },
   });
 
@@ -460,7 +450,6 @@ export async function transferConversation(
   }
   if (existing.assignedUserId === targetAdvisorId) return existing;
 
-  const telegramRevision = await pauseTelegramForHumanControl(existing);
   const transferred = await prisma.conversation.updateMany({
     where: {
       id,
@@ -475,12 +464,9 @@ export async function transferConversation(
     },
     data: {
       assignedUserId: targetAdvisorId,
-      botEnabled: false,
-      status: "ATENDIENDO",
       // The recipient sees the handoff as work awaiting review.
       unreadCount: Math.max(existing.unreadCount, 1),
       lastReadAt: null,
-      ...(telegramRevision === undefined ? {} : { telegramRevision }),
     },
   });
 
