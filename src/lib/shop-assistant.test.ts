@@ -323,6 +323,80 @@ test("devuelve productos similares cuando el usuario lo pide", async () => {
   assert.equal(reply.products?.[0].code, "GAS-200");
 });
 
+test("continúa una búsqueda de JBL con nuevas tarjetas y no mezcla captions anteriores", async () => {
+  const speakers = ["JBL-1", "JBL-2", "JBL-3", "JBL-4", "JBL-5"].map((code, index) => ({
+    ...products[0],
+    id: `speaker-${index + 1}`,
+    slug: `parlante-jbl-${index + 1}`,
+    code,
+    name: `Parlante JBL modelo ${index + 1}`,
+    brand: "JBL",
+    category: "Parlantes",
+    categoryId: null,
+    unitPrice: 100 + index,
+  }));
+  const queries: string[] = [];
+  const assistant = createShopAssistantService(createMockRepository({
+    async getBaseData() {
+      return {
+        settings,
+        categories: [...categories, { id: "cat-speakers", name: "Parlantes", slug: "parlantes" }],
+      };
+    },
+    async searchVisibleProducts(query) {
+      queries.push(query);
+      return speakers.filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({
+    message: "Tiene otras opciones?",
+    recentMessages: [
+      { role: "user", text: "Hola, tienes parlantes JBL?" },
+      { role: "assistant", text: "(JBL-1) Parlante JBL modelo 1 · JBL-1" },
+      { role: "assistant", text: "(JBL-2) Parlante JBL modelo 2 · JBL-2" },
+      { role: "assistant", text: "(JBL-3) Parlante JBL modelo 3 · JBL-3" },
+      { role: "assistant", text: "Sí, tenemos Grip, Clip y Party Box. ¿Cuál te interesa?" },
+    ],
+    shownProductCodes: ["JBL-1", "JBL-2", "JBL-3"],
+  });
+
+  assert.deepEqual(queries, ["parlantes jbl"]);
+  assert.deepEqual(reply.products?.map((product) => product.code), ["JBL-4", "JBL-5"]);
+  assert.ok(reply.text.trim());
+});
+
+test("usa los captions anteriores como respaldo mientras el bridge migra a shownProductCodes", async () => {
+  const speakers = ["JBL-1", "JBL-2", "JBL-3", "JBL-4"].map((code, index) => ({
+    ...products[0],
+    id: `caption-speaker-${index + 1}`,
+    slug: `caption-parlante-jbl-${index + 1}`,
+    code,
+    name: `Parlante JBL modelo ${index + 1}`,
+    brand: "JBL",
+    category: "Parlantes",
+    categoryId: null,
+    unitPrice: 100 + index,
+  }));
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return speakers.filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({
+    message: "muéstrame más",
+    recentMessages: [
+      { role: "user", text: "Busco parlantes JBL" },
+      { role: "assistant", text: "(JBL-1) Parlante JBL modelo 1 · JBL-1" },
+      { role: "assistant", text: "(JBL-2) Parlante JBL modelo 2 · JBL-2" },
+      { role: "assistant", text: "(JBL-3) Parlante JBL modelo 3 · JBL-3" },
+    ],
+  });
+
+  assert.deepEqual(reply.products?.map((product) => product.code), ["JBL-4"]);
+});
+
 test("usa memoria para calcular cantidad y precio mayorista", async () => {
   const reply = await answerShopAssistant({
     message: "quiero 12 unidades",

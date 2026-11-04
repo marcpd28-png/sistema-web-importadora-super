@@ -101,6 +101,33 @@ test("a trusted first-contact marker reaches the commercial responder", async ()
   assert.deepEqual(captured.recentMessages, [{ role: "user", text: "hola" }]);
 });
 
+test("a trusted adapter can pass the visual cards already delivered", async () => {
+  const captured: Record<string, unknown> = {};
+  const post = handler({ capturedInput: captured });
+
+  const response = await post(request({
+    message: "tienes otras opciones",
+    eventId: "telegram-next-page",
+    channel: "telegram",
+    conversationId: "telegram:business:customer",
+    shownProductCodes: ["JBL-1", "JBL-2", "JBL-3"],
+  }));
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(captured.shownProductCodes, ["JBL-1", "JBL-2", "JBL-3"]);
+});
+
+test("the internal responder rejects an oversized visual page marker", async () => {
+  const post = handler();
+  const response = await post(request({
+    message: "tienes otras opciones",
+    shownProductCodes: ["JBL-1", "JBL-2", "JBL-3", "JBL-4"],
+  }));
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: "Invalid request payload" });
+});
+
 test("a paused or unavailable switch never invokes the commercial responder", async () => {
   let calls = 0;
   const paused = handler({ automation: "paused", answer: async () => { calls++; return reply; } });

@@ -20,6 +20,8 @@ export type SuperBotInput = {
   productContextCode?: string | null;
   contextCategorySlug?: string | null;
   recentMessages?: Array<{ role: "assistant" | "user"; text: string }>;
+  /** Product cards the trusted channel already displayed to this customer. */
+  shownProductCodes?: string[];
   /** Set only by a trusted channel adapter or conversation store. */
   isFirstContact?: boolean;
   hasAttachments?: boolean;
