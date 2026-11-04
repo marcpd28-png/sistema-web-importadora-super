@@ -15,11 +15,17 @@ interface Props {
   replyTo?: MessageReply | null;
   onCancelReply?: () => void;
   onSendMessage: (content: string, mediaUrl?: string, type?: string) => Promise<void> | void;
+  /** A short-lived hold while an adviser is actively composing. It never
+   * changes the conversation's permanent bot ownership. */
+  onDraftActivity?: (active: boolean) => void;
 }
 
-export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", uploadEndpoint = "/api/admin/uploads", onUploadFile }: Props) {
+export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", uploadEndpoint = "/api/admin/uploads", onUploadFile, onDraftActivity }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const draftActivityRef = useRef(onDraftActivity);
   useEffect(() => { if (replyTo) textareaRef.current?.focus(); }, [replyTo]);
+  useEffect(() => { draftActivityRef.current = onDraftActivity; }, [onDraftActivity]);
+  useEffect(() => () => { draftActivityRef.current?.(false); }, []);
   const [message, setMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -66,6 +72,9 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled =
 
   const handleSend = async () => {
     if (disabled || sendingRef.current || isRecording) return;
+    // A real send (text or attachment) takes over durably in the message
+    // transport. Release the short typing lease before beginning either path.
+    onDraftActivity?.(false);
     if (attachment) {
       void uploadAndSend(attachment);
       return;
@@ -74,7 +83,10 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled =
       sendingRef.current = true;
       setIsUploading(true);
       setUploadError(null);
-      try { await onSendMessage(message.trim()); setMessage(""); }
+      try {
+        await onSendMessage(message.trim());
+        setMessage("");
+      }
       catch (error) { setUploadError(error instanceof Error ? error.message : "No se pudo enviar el mensaje."); }
       finally { sendingRef.current = false; setIsUploading(false); }
     }
@@ -191,7 +203,13 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled =
           placeholder={isUploading ? "Subiendo archivo..." : "Escribe un mensaje..."}
           value={message}
           maxLength={maxLength}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            const nextMessage = e.target.value;
+            setMessage(nextMessage);
+            onDraftActivity?.(Boolean(nextMessage.trim()));
+          }}
+          onFocus={() => onDraftActivity?.(Boolean(message.trim()))}
+          onBlur={() => onDraftActivity?.(false)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           disabled={disabled || isUploading || isRecording}

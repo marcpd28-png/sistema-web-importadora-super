@@ -15,6 +15,7 @@ const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
 const CONVERSATION_POLL_MS = 10000;
 const MESSAGE_POLL_MS = 5000;
+const TYPING_LEASE_INPUT_THROTTLE_MS = 3000;
 
 const DEFAULT_FILTERS: ConversationFilters = {
   channel: "",
@@ -241,6 +242,11 @@ export function MessagesWorkspace({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeMessagesRef = useRef<ChatMessage[]>([]);
   const conversationsRef = useRef<Conversation[]>([]);
+  const typingLeaseRef = useRef<{
+    active: boolean;
+    conversationId: string | null;
+    lastRenewedAt: number;
+  }>({ active: false, conversationId: null, lastRenewedAt: 0 });
 
   const activeConversation = conversations.find((conversation) => conversation.id === activeId);
   const debouncedConversationKey = useMemo(() => JSON.stringify(debouncedFilters), [debouncedFilters]);
@@ -248,6 +254,65 @@ export function MessagesWorkspace({
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
   }, []);
+
+  const postTypingLease = useCallback((conversationId: string, typing: boolean, keepalive = false) => {
+    void fetch(`/api/admin/conversations/${conversationId}/typing`, {
+      body: JSON.stringify({ typing }),
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      keepalive,
+      method: "POST",
+    })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => null) as { ignored?: boolean } | null;
+        if (typing && payload?.ignored && typingLeaseRef.current.conversationId === conversationId) {
+          typingLeaseRef.current = { active: false, conversationId: null, lastRenewedAt: 0 };
+        }
+      })
+      .catch(() => {
+        // This is only an optional, short-lived hold. A later keystroke can
+        // retry; never interrupt an adviser composing.
+      });
+  }, []);
+
+  const updateTypingLease = useCallback((conversationId: string, typing: boolean) => {
+    const current = typingLeaseRef.current;
+
+    if (!typing) {
+      if (!current.active || current.conversationId !== conversationId) return;
+      typingLeaseRef.current = { active: false, conversationId: null, lastRenewedAt: 0 };
+      postTypingLease(conversationId, false, true);
+      return;
+    }
+
+    const now = Date.now();
+    if (
+      current.active &&
+      current.conversationId === conversationId &&
+      now - current.lastRenewedAt < TYPING_LEASE_INPUT_THROTTLE_MS
+    ) {
+      return;
+    }
+
+    typingLeaseRef.current = { active: true, conversationId, lastRenewedAt: now };
+    postTypingLease(conversationId, true);
+  }, [postTypingLease]);
+
+  const handleDraftActivity = useCallback((typing: boolean) => {
+    const conversation = activeConversation;
+    if (!conversation || conversation.channel !== "TELEGRAM") return;
+
+    if (typing && (!conversation.botEnabled || conversation.status !== "AUTOMATICO")) return;
+    updateTypingLease(conversation.id, typing);
+  }, [activeConversation, updateTypingLease]);
+
+  // Selection changes and workspace unmounts must release the old chat's
+  // lease even if the textarea never receives a blur event.
+  useEffect(() => () => {
+    if (activeId) {
+      updateTypingLease(activeId, false);
+    }
+  }, [activeId, updateTypingLease]);
 
   useEffect(() => {
     activeMessagesRef.current = activeMessages;
@@ -785,7 +850,15 @@ export function MessagesWorkspace({
                   : 'Telegram: espera un nuevo mensaje del cliente para responder; la ventana de 24 horas terminó.'}
               </p>
             ) : null}
-            <MessageInput key={activeId} disabled={assignmentBusy || (activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000))} onSendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} uploadEndpoint={uploadEndpoint} />
+            <MessageInput
+              key={activeId}
+              disabled={assignmentBusy || (activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000))}
+              onDraftActivity={handleDraftActivity}
+              onSendMessage={handleSendMessage}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+              uploadEndpoint={uploadEndpoint}
+            />
           </div>
 
           <CustomerPanel conversation={activeConversation} />
