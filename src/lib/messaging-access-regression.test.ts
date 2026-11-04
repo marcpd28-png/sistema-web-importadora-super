@@ -124,3 +124,13 @@ test("la interfaz no expone el centro de mensajes a otros administradores", () =
   assert.match(adminNav, /requiresMessagingAccess/);
   assert.match(mobileDock, /requiresMessagingAccess/);
 });
+
+test("el layout asesor mantiene serializables las props del componente cliente", () => {
+  const advisorLayout = readFileSync(new URL("../app/asesor/layout.tsx", import.meta.url), "utf8");
+  const mobileDock = readFileSync(new URL("../components/admin/admin-sidebar.tsx", import.meta.url), "utf8");
+
+  assert.match(advisorLayout, /<AdminSidebar mobileLabel="Asesor" variant="advisor">/);
+  assert.doesNotMatch(advisorLayout, /destinations=/);
+  assert.match(mobileDock, /const advisorDestinations/);
+  assert.match(mobileDock, /variant === "advisor" \? advisorDestinations : defaultDestinations/);
+});
