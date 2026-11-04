@@ -55,6 +55,20 @@ class InboxTests(unittest.TestCase):
         state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
         self.assertEqual(state,'sent')
 
+    def test_own_super_bot_echo_from_the_owner_does_not_pause_the_chat(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda content: ('Respuesta de Super Bot',None)
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+
+        # Telegram Business can echo an outbound automatic reply with the
+        # store owner's id and no sender_business_bot marker.
+        echo=dict(self.message,message_id=33,text='Respuesta de Super Bot',**{'from':{'id':1}})
+        self.assertFalse(self.inbox.observe({'update_id':12,'business_message':echo},self.adapter))
+        self.assertFalse(self.inbox.paused('linked',2))
+        event=json.loads(self.inbox.db.execute('SELECT payload FROM inbox_events ORDER BY id DESC LIMIT 1').fetchone()[0])
+        self.assertEqual(event['sender'],'BOT')
+        self.assertEqual(event['protocol'],'super-bot-v1')
+
     def test_super_bot_waits_for_silence_and_batches_consecutive_customer_messages(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key',super_bot_silence_seconds=3)
         self.now += 1
@@ -232,7 +246,10 @@ class InboxTests(unittest.TestCase):
             'content':'Respuesta de Super Bot','sender':'BOT','protocol':'super-bot-v1',
         }
         result=self.inbox.command('send',request,self.adapter)
-        self.assertEqual(result,{'messageId':33,'revision':1,'sender':'BOT','protocol':'super-bot-v1'})
+        self.assertEqual(result,{
+            'messageId':33,'revision':1,'connectionId':'linked','chatId':'2',
+            'sender':'BOT','protocol':'super-bot-v1',
+        })
         self.assertEqual(self.inbox.command('send',request,self.adapter),result)
         self.assertEqual(len(self.calls),1)
         self.assertEqual(self.calls[0][1]['_inbox_sender'],'BOT')

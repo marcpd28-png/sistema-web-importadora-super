@@ -36,7 +36,19 @@
 
      def _process_business(self, u):
          if 'business_connection' in u:
-@@ -264,6 +274,9 @@
+@@ -258,6 +268,13 @@
+         c = self.get_connection(cid)
+         if not c or not c[1] or not c[2]: return
+         owner, chat = c[0], m['chat']['id']
++        # Telegram Business can echo a Super Bot reply with the owner's id
++        # instead of sender_business_bot. Inbox recognizes only exact,
++        # persisted versioned sends, so this cannot mask a real adviser turn.
++        if self.inbox and self.inbox.is_our_super_bot_message(cid,chat,m.get('message_id')):
++            return
+         sender = (callback.get('from') if callback else m.get('from')) or {}
+         if m.get('sender_business_bot') and not callback: return
+         if sender.get('is_bot'): return
+@@ -264,6 +281,9 @@
                  self.shopping.human_support(cid,chat)
              return
          if sender.get('id') != chat: return

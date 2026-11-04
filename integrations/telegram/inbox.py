@@ -132,6 +132,40 @@ class Inbox:
                 return True
         return False
 
+    def is_our_super_bot_message(self, cid, chat, message_id):
+        """Recognize an echo of a message that this bridge sent as Super Bot.
+
+        Telegram Business can deliver an outbound automatic message back to
+        the bridge with the store owner's user id rather than an
+        ``is_bot``/``sender_business_bot`` marker. Treating that echo as an
+        AGENT message would pause the conversation and silence the next
+        automatic reply. The exact message id, connection and chat must all
+        match a persisted versioned Super Bot send.
+        """
+        if not isinstance(message_id, int) or isinstance(message_id, bool) or message_id < 1:
+            return False
+
+        with self.lock:
+            rows = self.db.execute(
+                "SELECT response FROM inbox_sends WHERE state='sent' AND response IS NOT NULL "
+                "ORDER BY rowid DESC LIMIT 256",
+            ).fetchall()
+
+        for (raw_response,) in rows:
+            try:
+                response = json.loads(raw_response)
+            except (TypeError, ValueError):
+                continue
+            if (
+                response.get('messageId') == message_id
+                and response.get('connectionId') == cid
+                and str(response.get('chatId')) == str(chat)
+                and response.get('sender') == 'BOT'
+                and response.get('protocol') == SUPER_BOT_PROTOCOL
+            ):
+                return True
+        return False
+
     def observe(self, update, adapter):
         """Archive incoming updates and claim customer turns before any legacy bot can handle them."""
         deletion = update.get('deleted_business_messages')
@@ -145,11 +179,18 @@ class Inbox:
             self.enqueue(dict(kind='delete', connectionId=cid, chatId=str(chat), timestamp=int(self.now()), messageIds=deletion['message_ids']), 'update:'+str(update['update_id']))
             return False
         sender = m.get('from', {})
-        role = 'BOT' if m.get('sender_business_bot') or sender.get('is_bot') else 'AGENT' if sender.get('id') == connection[0] else 'CUSTOMER'
+        own_super_bot_echo = self.is_our_super_bot_message(cid, chat, m.get('message_id'))
+        role = 'BOT' if own_super_bot_echo or m.get('sender_business_bot') or sender.get('is_bot') else 'AGENT' if sender.get('id') == connection[0] else 'CUSTOMER'
         kind = 'edit' if 'edited_business_message' in update else 'message'
         is_first_contact = role == 'CUSTOMER' and kind == 'message' and not self.has_customer_history(cid, chat)
         event_id = 'update:'+str(update['update_id'])
-        inserted = self.message(m, role, kind, event_key=event_id)
+        inserted = self.message(
+            m,
+            role,
+            kind,
+            event_key=event_id,
+            protocol=SUPER_BOT_PROTOCOL if own_super_bot_echo else None,
+        )
         if role == 'CUSTOMER':
             if kind == 'message' and inserted:
                 with self.lock:
@@ -580,7 +621,14 @@ class Inbox:
                     body['_inbox_sender'] = 'BOT'
                     body['_inbox_protocol'] = SUPER_BOT_PROTOCOL
                 result = self.raw_api(method,body)
-                response = {'messageId':result['message_id'],'revision':revision}
+                response = {
+                    'messageId': result['message_id'],
+                    'revision': revision,
+                    # A message id alone is not enough to classify a later
+                    # Telegram Business echo as our own automatic reply.
+                    'connectionId': cid,
+                    'chatId': str(chat),
+                }
                 if super_bot:
                     response.update(sender='BOT',protocol=SUPER_BOT_PROTOCOL)
                 with self.lock:
