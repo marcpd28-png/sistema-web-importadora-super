@@ -368,7 +368,13 @@ export async function searchCatalogIdentity(query: string, limit = 80) {
   const resolved = resolveCatalogQuery(query, rows);
   const matching = rows.filter(row => matchesProductQuery(row, resolved));
   const available = (row: CatalogIdentity) => row.isVisible && row.stockUnits > 0 && Number(row.unitPrice) > 0;
-  const take = Math.max(1, Math.min(200, limit));
+  // Normal product answers stay bounded. A generated catalogue, however,
+  // must either cover the whole verified result set or explicitly fail; it
+  // must never inherit this conversational-result limit and silently omit
+  // matching products.
+  const take = limit === Number.POSITIVE_INFINITY
+    ? matching.length
+    : Math.max(1, Math.min(200, limit));
   return {
     query: resolved,
     ids: matching.filter(available).slice(0, take).map(row => row.id),
@@ -378,4 +384,14 @@ export async function searchCatalogIdentity(query: string, limit = 80) {
 
 export async function findCatalogProductIds(query: string, limit = 80) {
   return (await searchCatalogIdentity(query, limit)).ids;
+}
+
+/**
+ * The PDF generator is intentionally different from a chat search: a
+ * catalogue request promises a complete saleable collection. Callers must
+ * still validate every returned product before delivery, but this removes the
+ * 200-result conversational search cap from that strict workflow.
+ */
+export async function findAllCatalogProductIds(query: string) {
+  return (await searchCatalogIdentity(query, Number.POSITIVE_INFINITY)).ids;
 }

@@ -120,7 +120,7 @@ function buildPrompt(input: SuperBotLiveReplyInput) {
     verifiedStoreFacts: {
       reply: reply.text,
       products: (reply.products ?? []).slice(0, MAX_SELECTED_PRODUCTS).map(productFacts),
-      hasCatalogDocument: Boolean(reply.document),
+      hasCatalogDocument: Boolean(reply.document || reply.documents?.length),
       searchClarification: (reply.searchClarification ?? []).slice(0, 3),
     },
   });
@@ -206,7 +206,12 @@ export async function composeLiveSuperBotReply(
   const apiKey = dependencies.apiKey ?? process.env.OPENAI_API_KEY?.trim();
   if (!enabled || !apiKey) return input.verifiedReply;
 
-  const hasVerifiedContent = Boolean(input.verifiedReply.text.trim() || input.verifiedReply.products?.length || input.verifiedReply.document);
+  const hasVerifiedContent = Boolean(
+    input.verifiedReply.text.trim()
+    || input.verifiedReply.products?.length
+    || input.verifiedReply.document
+    || input.verifiedReply.documents?.length,
+  );
   if (!hasVerifiedContent) return input.verifiedReply;
 
   const model = dependencies.model?.trim() || process.env.SUPER_BOT_LIVE_MODEL?.trim() || DEFAULT_SUPER_BOT_LIVE_MODEL;

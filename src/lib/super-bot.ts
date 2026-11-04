@@ -1,10 +1,13 @@
 import { answerShopAssistant, normalizeAssistantText } from "./shop-assistant";
 import {
+  CatalogPdfImageCoverageError,
+  CatalogPdfProductCoverageError,
   CatalogPdfSizeLimitError,
-  generateCatalogPdf,
+  generateCatalogPdfBundle,
   parseCatalogRequest,
   type CatalogRequest,
   type GeneratedCatalogPdf,
+  type GeneratedCatalogPdfBundle,
 } from "./catalog-pdf";
 import { isCatalogRequest } from "./catalog-intent";
 import type { ShopAssistantReply } from "./shop-assistant-types";
@@ -40,6 +43,9 @@ export function isCatalogLinkRequest(message: string) {
 type SuperBotDependencies = {
   answerShopAssistant?: (input: SuperBotInput) => Promise<ShopAssistantReply>;
   composeLiveReply?: (input: SuperBotLiveReplyInput) => Promise<ShopAssistantReply>;
+  /** Preferred complete-collection contract. */
+  generateCatalogPdfBundle?: (request: CatalogRequest) => Promise<GeneratedCatalogPdfBundle>;
+  /** Compatibility injection for callers/tests still producing one file. */
   generateCatalogPdf?: (request: CatalogRequest) => Promise<GeneratedCatalogPdf>;
   getMessengerUrl?: () => Promise<string>;
 };
@@ -56,19 +62,29 @@ function catalogLinkReply(): ShopAssistantReply {
 
 function catalogPdfReply(
   request: CatalogRequest,
-  catalog: GeneratedCatalogPdf,
+  catalog: GeneratedCatalogPdfBundle,
 ): ShopAssistantReply {
+  const documents = catalog.documents.map((document) => ({
+    deliveryKey: `catalog:${document.filename}`,
+    filename: document.filename,
+    mimeType: "application/pdf" as const,
+    sizeBytes: document.sizeBytes,
+    url: document.absoluteUrl,
+  }));
+  const firstDocument = documents[0];
+  if (!firstDocument) throw new Error("El catálogo no contiene documentos para entregar.");
+  const text = documents.length === 1
+    ? `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos): ${firstDocument.url}`
+    : `Preparé ${request.title.toLowerCase()} completo (${catalog.productCount} productos) en ${documents.length} PDFs. Te los envío en orden.`;
+
   return {
-    text: `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos): ${catalog.absoluteUrl}`,
-    document: {
-      deliveryKey: `catalog:${catalog.filename}`,
-      filename: catalog.filename,
-      mimeType: "application/pdf",
-      sizeBytes: catalog.sizeBytes,
-      url: catalog.absoluteUrl,
-    },
+    text,
+    // Keep the first document for legacy channels, but `documents` is the
+    // complete contract used by Telegram and every modern adapter.
+    document: firstDocument,
+    documents,
     quickActions: [
-      { label: "Abrir PDF", href: catalog.absoluteUrl, accent: true },
+      { label: documents.length === 1 ? "Abrir PDF" : "Abrir primera parte", href: firstDocument.url, accent: true },
       { label: "Ver tienda virtual", href: VIRTUAL_STORE_URL },
     ],
     meta: { intent: "catalog-pdf", usedOllama: false },
@@ -76,9 +92,11 @@ function catalogPdfReply(
 }
 
 function catalogPdfFallback(error: unknown): ShopAssistantReply {
-  const text = error instanceof CatalogPdfSizeLimitError
-    ? `El catálogo solicitado supera el tamaño permitido para enviarlo en un solo PDF. Puedes revisarlo completo en la tienda virtual: ${VIRTUAL_STORE_URL}`
-    : `No pude preparar el catálogo solicitado como PDF. Puedes revisarlo completo en la tienda virtual: ${VIRTUAL_STORE_URL}`;
+  const text = error instanceof CatalogPdfImageCoverageError || error instanceof CatalogPdfProductCoverageError
+    ? `No pude preparar un PDF completo porque falta una foto verificable o cambió un producto del catálogo. Puedes revisarlo completo en la tienda virtual: ${VIRTUAL_STORE_URL}`
+    : error instanceof CatalogPdfSizeLimitError
+      ? `No pude preparar una de las partes del catálogo dentro del tamaño permitido. Puedes revisarlo completo en la tienda virtual: ${VIRTUAL_STORE_URL}`
+      : `No pude preparar el catálogo solicitado como PDF. Puedes revisarlo completo en la tienda virtual: ${VIRTUAL_STORE_URL}`;
 
   return {
     text,
@@ -174,7 +192,13 @@ function isAttachmentOnlyMessage(message: string) {
 export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
   const getShopAssistantReply = dependencies.answerShopAssistant ?? answerShopAssistant;
   const composeLiveReply = dependencies.composeLiveReply ?? composeLiveSuperBotReply;
-  const createCatalogPdf = dependencies.generateCatalogPdf ?? generateCatalogPdf;
+  const createCatalogPdfBundle = dependencies.generateCatalogPdfBundle
+    ?? (dependencies.generateCatalogPdf
+      ? async (request: CatalogRequest) => {
+        const document = await dependencies.generateCatalogPdf!(request);
+        return { documents: [document], productCount: document.productCount };
+      }
+      : generateCatalogPdfBundle);
   const getMessengerUrl = dependencies.getMessengerUrl ?? getConfiguredMessengerUrl;
 
   const finalizeReply = async (input: SuperBotInput, verifiedReply: ShopAssistantReply) => {
@@ -198,12 +222,12 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     }
 
     // A specific request always has priority over a generic catalogue link.
-    // This returns exactly one canonical document; the generator coalesces
-    // identical concurrent requests and keeps the resulting URL stable.
+    // It returns a manifest-checked complete bundle; the bridge delivers each
+    // part idempotently and never selects just the first document.
     const catalogRequest = parseCatalogRequest(input.message);
     if (catalogRequest) {
       try {
-        return finalizeReply(input, catalogPdfReply(catalogRequest, await createCatalogPdf(catalogRequest)));
+        return finalizeReply(input, catalogPdfReply(catalogRequest, await createCatalogPdfBundle(catalogRequest)));
       } catch (error) {
         return finalizeReply(input, catalogPdfFallback(error));
       }

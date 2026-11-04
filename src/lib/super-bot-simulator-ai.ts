@@ -46,6 +46,8 @@ export type SuperBotSimulatorInput = {
 };
 
 export type SuperBotSimulatorResult = {
+  /** Complete ordered collection; the singular field remains a compatibility alias. */
+  documents?: ShopAssistantDocument[];
   document?: ShopAssistantDocument;
   text: string;
   provider: "openai" | "verified";
@@ -110,6 +112,12 @@ function getFallbackText(reply: ShopAssistantReply) {
   return reply.text.trim() || FALLBACK_REPLY;
 }
 
+function primaryDocument(reply: ShopAssistantReply) {
+  // A plural bundle is authoritative. The legacy field is only a display
+  // fallback for simulator/admin surfaces that still render one attachment.
+  return reply.documents?.[0] ?? reply.document;
+}
+
 function buildVerifiedFacts(reply: ShopAssistantReply): VerifiedFacts {
   return {
     reply: getFallbackText(reply),
@@ -149,7 +157,8 @@ function fallback(
   fallbackReason: SuperBotSimulatorResult["fallbackReason"],
 ): SuperBotSimulatorResult {
   return {
-    document: reply.document,
+    documents: reply.documents,
+    document: primaryDocument(reply),
     text: getFallbackText(reply),
     provider: "verified",
     model,
@@ -186,7 +195,12 @@ export async function generateSuperBotSimulatorReply(
 
   const enabled = dependencies.enabled ?? isSuperBotSimulatorAIEnabled();
   const model = dependencies.model ?? (process.env.SUPER_BOT_MODEL?.trim() || DEFAULT_SUPER_BOT_SIMULATOR_MODEL);
-  const hasVerifiedAnswer = Boolean(verifiedReply.text.trim() || verifiedReply.products?.length);
+  const hasVerifiedAnswer = Boolean(
+    verifiedReply.text.trim()
+    || verifiedReply.products?.length
+    || verifiedReply.document
+    || verifiedReply.documents?.length,
+  );
 
   if (!enabled) return fallback(verifiedReply, null, "disabled");
   if (!hasVerifiedAnswer) return fallback(verifiedReply, model, "no_verified_answer");
@@ -245,7 +259,8 @@ export async function generateSuperBotSimulatorReply(
     try {
       const draft = draftSchema.parse(JSON.parse(outputText));
       return {
-        document: verifiedReply.document,
+        documents: verifiedReply.documents,
+        document: primaryDocument(verifiedReply),
         text: draft.reply,
         provider: "openai",
         model,
