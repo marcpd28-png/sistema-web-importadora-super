@@ -103,16 +103,13 @@ export default async function OrderDetailPage(props: { params: Promise<{ id: str
                 ))}
               </tbody>
             </table>
-            {/* WhatsApp button */}
-            <a
-              href={`https://wa.me/${order.customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${order.customerName}, te contactamos por tu orden ${order.orderNumber || id.slice(-8)} de Importaciones Super. ¿Puedes enviarnos el comprobante de tu pago?`)}`}
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/admin/mensajes"
               className="button button-ghost button-chip"
               style={{ marginTop: 14, fontSize: 13, width: "100%", justifyContent: "center" }}
             >
-              💬 Contactar por WhatsApp
-            </a>
+              💬 Abrir centro de mensajes
+            </Link>
           </article>
 
           {/* Order items */}

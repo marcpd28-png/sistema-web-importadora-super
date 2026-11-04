@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getMessagingOwnerSession } from "@/lib/auth";
 import { parseSocialChannel, socialReplyInbox, SocialInboxError } from "@/lib/social-inbox";
 import { SOCIAL_FILE_LIMIT, uploadSocialFile } from "@/lib/social-media";
 
 export const runtime = "nodejs";
 export async function POST(request: NextRequest, context: { params: Promise<{ channel: string }> }) {
-  await requireAdmin();
+  const session = await getMessagingOwnerSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
+
   try {
     const origin = new URL(request.headers.get("origin") || "");
     if (!["https:", "http:"].includes(origin.protocol) || origin.host !== request.headers.get("host")?.toLowerCase()) throw new Error();

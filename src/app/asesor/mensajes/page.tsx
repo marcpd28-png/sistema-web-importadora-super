@@ -16,15 +16,13 @@ export default async function AdvisorInboxPage() {
         <div>
           <p className="eyebrow">Atención comercial</p>
           <h1>Centro de mensajes</h1>
-          <p>Consulta y responde conversaciones de clientes. Las automatizaciones y configuraciones permanecen protegidas.</p>
+          <p>Consulta y responde conversaciones de clientes. Los controles de Super Bot y la configuración permanecen protegidos.</p>
         </div>
         <span className="messages-live-indicator"><i aria-hidden="true" />Actualización activa</span>
       </header>
       <div className="messages-inbox-workspace"><MessagesWorkspace
         advisorTargets={advisors}
         canManageBot={false}
-        initialChannel="TELEGRAM"
-        showChannelFilter={false}
         uploadEndpoint="/api/asesor/mensajes/uploads"
         viewer={{ id: session.userId, name: session.name, isMessagingOwner: false }}
       /></div>

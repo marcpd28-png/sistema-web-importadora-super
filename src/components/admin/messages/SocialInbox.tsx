@@ -4,8 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { dedupeSocialMessages, type SocialChannel, type SocialMessage } from "@/lib/social-inbox";
 import { ArrowLeft, RefreshCw, MessageCircle } from "lucide-react";
 import { MessageInput } from "./MessageInput";
-import { RockyAiPanel } from "./RockyAiPanel";
-import { MessengerControl } from "./MessengerControl";
 import { DynamicAvatar } from "./ConversationItem";
 import { DocumentAttachment } from "./DocumentAttachment";
 import styles from "./SocialInbox.module.css";
@@ -19,23 +17,9 @@ async function get<T>(url: string): Promise<T> {
   return body as T;
 }
 
-export function SocialInbox({
-  apiBase = "/api/admin/social",
-  authorizationUrl,
-  canManageBot = true,
-  canManageConnection = true,
-  channel,
-  configured,
-}: {
-  apiBase?: string;
-  authorizationUrl?: string;
-  canManageBot?: boolean;
-  canManageConnection?: boolean;
-  channel: SocialChannel;
-  configured: boolean;
-}) {
-  const title = channel === "messenger" ? "Messenger de Facebook" : channel === "instagram" ? "Instagram" : "TikTok";
-  const base = `${apiBase}/${channel}`;
+export function SocialInbox({ channel, authorizationUrl, configured }: { channel: SocialChannel; authorizationUrl: string; configured: boolean }) {
+  const title = channel === "messenger" ? "Messenger de Facebook" : "TikTok";
+  const base = `/api/admin/social/${channel}`;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<SocialMessage[]>([]);
@@ -51,8 +35,7 @@ export function SocialInbox({
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [controlling, setControlling] = useState(false);
-  const [controlRevision, setControlRevision] = useState(0);
+  const [reactivatingBot, setReactivatingBot] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [messageLoading, setMessageLoading] = useState(false);
   const [authorizedAccounts, setAuthorizedAccounts] = useState<number | null>(null);
@@ -100,12 +83,15 @@ export function SocialInbox({
     return () => clearInterval(timer);
   }, [selected, loadMessages]);
   async function select(conversation: Conversation) {
-    selectedId.current = conversation.id; setSelected(conversation); setMessages([]); setMessageCursor(null); followBottom.current = true; setUncertain(false); setMessageLoading(true); setError("");
+    selectedId.current = conversation.id; setSelected(conversation); setMessages([]); setMessageCursor(null); followBottom.current = true; setUncertain(false); setReactivatingBot(false); setMessageLoading(true); setError("");
     try { await loadMessages(conversation.id, undefined, true); } catch (e) { setError((e as Error).message); }
     finally { if (selectedId.current === conversation.id) setMessageLoading(false); }
   }
   async function send(text: string, mediaFileId?: string) {
     if (!selected || (!text.trim() && !mediaFileId) || uncertain) throw new Error("Revisa la conversación antes de enviar.");
+    // MessageInput normally remains busy, but this synchronous guard also
+    // closes the tiny window before React has painted the disabled composer.
+    if (sendLock.current) return sendQueue.current;
     const id = selected.id;
     const requestId = crypto.randomUUID();
     const pendingId = `pending:${requestId}`;
@@ -148,7 +134,6 @@ export function SocialInbox({
         const confirmed = result.message ? { ...optimisticMessage, ...result.message, sendError: null } : optimisticMessage;
         replacePendingMessage(confirmed);
         setSelected(current => current?.id === id ? { ...current, botEnabled: false } : current);
-        if (channel === "messenger") setControlRevision(current => current + 1);
         // Reconcile in the background. The acknowledgement has already made
         // the reply visible, so this must never hold up the composer.
         void loadMessages(id).catch(error => setError((error as Error).message));
@@ -162,13 +147,39 @@ export function SocialInbox({
 
     const queued = sendQueue.current.catch(() => undefined).then(operation);
     sendQueue.current = queued;
-    void queued.finally(() => {
+    try {
+      await queued;
+    } finally {
       pendingSendCount.current -= 1;
       if (pendingSendCount.current === 0) {
         sendLock.current = false;
         setSending(false);
       }
-    });
+    }
+  }
+  async function reactivateSuperBot() {
+    if (!selected || channel !== "messenger" || selected.botEnabled || reactivatingBot) return;
+    const id = selected.id;
+    setReactivatingBot(true);
+    setError("");
+    try {
+      const response = await fetch(base, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId: id, requestId: crypto.randomUUID() }),
+      });
+      const result = await response.json().catch(() => ({})) as { botEnabled?: boolean; error?: string };
+      if (!response.ok || result.botEnabled !== true) {
+        throw new Error(result.error || "No se pudo reactivar Super Bot.");
+      }
+      if (selectedId.current !== id) return;
+      setSelected(current => current?.id === id ? { ...current, botEnabled: true } : current);
+      setConversations(current => current.map(conversation => conversation.id === id ? { ...conversation, botEnabled: true } : conversation));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "No se pudo reactivar Super Bot.");
+    } finally {
+      setReactivatingBot(false);
+    }
   }
   async function upload(file: File) {
     if (!selected) throw new Error("Selecciona una conversación.");
@@ -183,31 +194,31 @@ export function SocialInbox({
   }
   return <div className="messages-inbox-page">
     <header className="messages-page-header"><div><p className="eyebrow">Centro de Mensajes</p><h1>{title}</h1></div>
-      <div className={styles.connection}><span className="messages-live-indicator"><i aria-hidden="true" />{authorizedAccounts === null ? "Comprobando conexión…" : connectedAccounts > 0 ? `${connectedAccounts} cuenta conectada` : "Sin conexión"}</span>{canManageConnection && authorizationUrl ? <a className="btn btn-outline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">{authorizedAccounts ? "Administrar cuentas" : "Vincular cuenta"}</a> : null}</div>
+      <div className={styles.connection}><span className="messages-live-indicator"><i aria-hidden="true" />{authorizedAccounts === null ? "Comprobando conexión…" : connectedAccounts > 0 ? `${connectedAccounts} cuenta conectada` : "Sin conexión"}</span><a className="btn btn-outline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">{authorizedAccounts ? "Administrar cuentas" : "Vincular cuenta"}</a></div>
     </header>
-    {authorizedAccounts !== null && !connectedAccounts && <p className={styles.notice}>{configured ? canManageConnection ? "Vincula tu cuenta o revisa su autorización para recibir y responder mensajes." : "Este canal aún no tiene una cuenta conectada." : "La conexión del servidor está pendiente de configuración."}</p>}
+    {authorizedAccounts !== null && !connectedAccounts && <p className={styles.notice}>{configured ? "Vincula tu cuenta o revisa su autorización para recibir y responder mensajes." : "La conexión del servidor está pendiente de configuración."}</p>}
     <div className="messages-inbox-workspace"><div className={`messages-workspace ${selected ? "chat-open" : ""}`}>
       {error && <div className="messages-workspace-alert" role="alert"><span>{error}</span><button className="icon-btn" aria-label="Cerrar aviso" onClick={() => setError("")}>×</button></div>}
       <aside className="messages-sidebar" aria-label="Conversaciones">
         <div className="messages-sidebar-header"><div className={styles.toolbar}><strong>Conversaciones</strong><button className="icon-btn" aria-label="Actualizar conversaciones" onClick={() => void refresh()}><RefreshCw size={17} /></button></div><input className="messages-search" aria-label="Buscar conversaciones" placeholder="Buscar cliente…" value={search} onChange={e => setSearch(e.target.value)} /></div>
         <div className="messages-list">
-          {loading ? <p className="messages-list-loader">Cargando…</p> : conversations.length === 0 ? <p className="messages-list-hint">No hay conversaciones para esta búsqueda.</p> : conversations.map(c => <button key={c.id} disabled={controlling || sending || uploading} aria-pressed={selected?.id === c.id} onClick={() => void select(c)} className={`conversation-item ${selected?.id === c.id ? "active" : ""}`}><div className="conversation-avatar"><DynamicAvatar name={c.name} /></div><div className="conversation-info"><div className="conversation-header"><strong className="conversation-name">{c.name}</strong></div><div className="conversation-preview"><span className="conversation-last-msg">{c.preview}</span></div><span className="conversation-owner">{channel === "messenger" ? "Messenger" : c.botEnabled ? "Bot activo" : "Asesor"}</span></div></button>)}
+          {loading ? <p className="messages-list-loader">Cargando…</p> : conversations.length === 0 ? <p className="messages-list-hint">No hay conversaciones para esta búsqueda.</p> : conversations.map(c => <button key={c.id} disabled={sending || uploading || reactivatingBot} aria-pressed={selected?.id === c.id} onClick={() => void select(c)} className={`conversation-item ${selected?.id === c.id ? "active" : ""}`}><div className="conversation-avatar"><DynamicAvatar name={c.name} /></div><div className="conversation-info"><div className="conversation-header"><strong className="conversation-name">{c.name}</strong></div><div className="conversation-preview"><span className="conversation-last-msg">{c.preview}</span></div><span className="conversation-owner">{channel === "messenger" ? `Messenger · ${c.botEnabled ? "Super Bot" : "Asesor"}` : c.botEnabled ? "Bot activo" : "Asesor"}</span></div></button>)}
           {cursor && <button className="messages-load-older" onClick={async () => { const query = keyword; try { const page = await get<Page<Conversation>>(`${base}?keyword=${encodeURIComponent(query)}&cursor=${encodeURIComponent(cursor)}`); if (listQuery.current !== query) return; loadedMore.current = true; setConversations(old => [...new Map([...old, ...page.data].map(c => [c.id, c])).values()]); setCursor(page.nextCursor); } catch (e) { setError((e as Error).message); } }}>Ver más conversaciones</button>}
         </div>
       </aside>
       <section className="messages-main" aria-label="Mensajes">
         {!selected ? <div className="empty-state"><MessageCircle size={64} /><h2>Centro de Mensajes</h2><p>Selecciona una conversación de {title} para responder.</p></div> : <>
-          <div className="chat-header"><button className="icon-btn chat-header-back" aria-label="Volver a conversaciones" disabled={controlling || sending || uploading} onClick={() => { selectedId.current = null; setSelected(null); }}><ArrowLeft size={20} /></button><div className="chat-header-info"><div className="chat-header-avatar"><DynamicAvatar name={selected.name} /></div><div><h3 className="chat-header-name">{selected.name}</h3><div className="chat-header-meta">{title}{channel !== "messenger" && ` · ${selected.botEnabled ? "Bot activo" : "Atención por asesor"}`}</div></div></div>{canManageBot && channel === "messenger" && <div className="chat-header-actions chat-header-messenger-control"><MessengerControl key={`control:${selected.id}:${controlRevision}`} conversationId={selected.id} disabled={controlling || sending || uploading} onBusyChange={setControlling} /></div>}</div>
-          {canManageBot ? <RockyAiPanel key={`ai:${selected.id}`} channel={channel} externalId={selected.id} /> : null}
+          <div className="chat-header"><button className="icon-btn chat-header-back" aria-label="Volver a conversaciones" disabled={sending || uploading || reactivatingBot} onClick={() => { selectedId.current = null; setSelected(null); }}><ArrowLeft size={20} /></button><div className="chat-header-info"><div className="chat-header-avatar"><DynamicAvatar name={selected.name} /></div><div><h3 className="chat-header-name">{selected.name}</h3><div className="chat-header-meta">{title} · {selected.botEnabled ? "Super Bot activo" : "Atención por asesor"}</div></div></div></div>
           <div className="chat-messages" aria-live="polite" onScroll={e => { const el = e.currentTarget; followBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100; }}>
             {messageLoading && <p>Cargando mensajes…</p>}
             {messageCursor && <button className="messages-load-older" onClick={() => { followBottom.current = false; void loadMessages(selected.id, messageCursor).catch(e => setError(e.message)); }}>Ver mensajes anteriores</button>}
             {messages.map(m => <article key={m.id} className={`message-bubble ${m.messageType === "outgoing" ? "message-agent" : "message-customer"} ${m.sendError ? "message-failed" : ""}`}><div className="message-content"><p className={styles.messageText}>{m.deletedAt ? "Mensaje eliminado" : m.text}</p>{m.attachments?.map(a => <SocialAttachment key={a.id} file={a} />)}</div><span className="message-time">{new Date(m.createdAt).toLocaleString("es-PE")}</span>{m.sendError && <small className={styles.sendError}>{m.sendError}</small>}</article>)}
             <div ref={bottom} />
           </div>
-          <div className="chat-count">{messages.length} mensajes cargados · {channel !== "tiktok" ? "Responde dentro de las 24 horas del último mensaje del cliente." : "La disponibilidad depende de tu cuenta de TikTok."}</div>
+          <div className="chat-count">{messages.length} mensajes cargados · {channel === "messenger" ? "Responde dentro de las 24 horas del último mensaje del cliente." : "La disponibilidad depende de tu cuenta de TikTok."}</div>
+          {channel === "messenger" && !selected.botEnabled && <div className={styles.notice} role="status"><strong>Super Bot está pausado en esta conversación.</strong> La atención humana no lo reactiva automáticamente. <button className="btn btn-outline" type="button" disabled={!configured || sending || uploading || messageLoading || uncertain || reactivatingBot} onClick={() => void reactivateSuperBot()}>{reactivatingBot ? "Reactivando…" : "Reactivar Super Bot"}</button></div>}
           {uncertain && <p className={styles.notice}>Comprueba el envío antes de repetirlo. <button className="btn btn-outline" onClick={async () => { try { await loadMessages(selected.id); setUncertain(false); setError(""); } catch (e) { setError((e as Error).message); } }}>Revisar conversación</button></p>}
-          <MessageInput key={`composer:${selected.id}`} disabled={controlling || uploading || messageLoading || uncertain} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
+          <MessageInput key={`composer:${selected.id}`} disabled={sending || uploading || messageLoading || uncertain || reactivatingBot} onSendMessage={send} onUploadFile={upload} maxFileSizeMB={5} maxLength={1000} attachmentsEnabled={channel === "messenger"} accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" />
           <div className={styles.help}>{channel === "messenger" ? "Adjunta imágenes, PDF, documentos, videos o audio (hasta 5 MB). " : ""}Al responder se pausa la automatización de esta conversación.</div>
         </>}
       </section>
@@ -216,7 +227,7 @@ export function SocialInbox({
 }
 
 function SocialAttachment({ file }: { file: NonNullable<SocialMessage["attachments"]>[number] }) {
-  if (!file.url) return <span>Adjunto no disponible</span>;
+  if (!file.url) return <span>El proveedor no entregó un enlace descargable para este adjunto.</span>;
   const type = file.fileType?.toLowerCase() || file.mimeType?.split("/")[0];
   if (type === "image") return <a href={file.url} target="_blank" rel="noopener noreferrer" className={styles.image}>{/* Provider media uses signed remote URLs. */}
     {/* eslint-disable-next-line @next/next/no-img-element */}

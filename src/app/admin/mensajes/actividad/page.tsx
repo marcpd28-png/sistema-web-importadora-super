@@ -1,68 +1,143 @@
-import { prisma } from "@/lib/prisma";
+import { SuperBotEventStatus } from "@prisma/client";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Activity, Bot, CheckCircle2, CirclePause, Clock3, MessageCircleMore, TriangleAlert, XCircle } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { getSuperBotOperationsSummary } from "@/lib/super-bot-telemetry";
 
 export const dynamic = "force-dynamic";
 
+const eventPresentation = {
+  PROCESSING: { label: "En proceso", color: "#a16207", Icon: Clock3 },
+  RESPONDED: { label: "Respondido", color: "#15803d", Icon: CheckCircle2 },
+  PAUSED: { label: "Pausado", color: "#a16207", Icon: CirclePause },
+  FAILED: { label: "Falló", color: "#b91c1c", Icon: XCircle },
+} satisfies Record<SuperBotEventStatus, { label: string; color: string; Icon: typeof Activity }>;
+
+function metric(label: string, value: string | number, tone = "var(--text)") {
+  return (
+    <div style={{ minWidth: 132, flex: "1 1 132px", border: "1px solid var(--border-color)", borderRadius: 10, padding: "14px 16px", background: "var(--bg)" }}>
+      <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 12 }}>{label}</p>
+      <strong style={{ display: "block", marginTop: 6, color: tone, fontSize: 23 }}>{value}</strong>
+    </div>
+  );
+}
+
 export default async function ActividadPage() {
-  const logs = await prisma.automationExecution.findMany({
-    orderBy: { startedAt: 'desc' },
-    take: 50,
-    include: {
-      automation: {
-        select: { name: true, channel: true }
-      }
-    }
-  });
+  const [summary, events, storedMessages] = await Promise.all([
+    getSuperBotOperationsSummary(),
+    prisma.superBotEvent.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        channel: true,
+        conversationRef: true,
+        status: true,
+        intent: true,
+        productsCount: true,
+        latencyMs: true,
+        errorCode: true,
+        createdAt: true,
+      },
+    }),
+    prisma.chatMessage.findMany({
+      where: {
+        senderType: "BOT",
+        conversation: { channel: { in: ["WEB", "TELEGRAM"] } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        conversation: { include: { contact: { select: { name: true } } } },
+      },
+    }),
+  ]);
 
   return (
-    <div style={{ padding: "24px", maxWidth: "1000px", margin: "0 auto" }}>
-      <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ margin: "0 0 8px 0", fontSize: "24px" }}>Actividad y Logs</h1>
-        <p style={{ margin: 0, color: "var(--text-muted)" }}>Historial de disparadores y automatizaciones ejecutadas (n8n).</p>
+    <div style={{ padding: "24px", maxWidth: "1100px", margin: "0 auto" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ margin: "0 0 8px", fontSize: 24 }}>Actividad de Super Bot</h1>
+        <p style={{ margin: 0, color: "var(--text-muted)" }}>
+          Operación automática de los canales conectados. No se replica aquí el texto del cliente: ChatbotX sigue siendo la fuente de la conversación.
+        </p>
       </div>
 
-      <div style={{ background: "var(--surface-bg)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "16px" }}>
-        {logs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)" }}>
-            No se han registrado ejecuciones recientes.
-          </div>
+      <section aria-label="Métricas de las últimas 24 horas" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
+        {metric("Eventos en 24 h", summary.total)}
+        {metric("Respondidos", summary.responded, "#15803d")}
+        {metric("Pausados", summary.paused, "#a16207")}
+        {metric("Fallidos", summary.failed, summary.failed ? "#b91c1c" : "var(--text)")}
+        {metric("Latencia media", summary.averageLatencyMs === null ? "—" : `${summary.averageLatencyMs} ms`)}
+      </section>
+
+      <section style={{ background: "var(--surface-bg)", border: "1px solid var(--border-color)", borderRadius: 10, padding: 16, marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <Activity size={19} color="var(--primary)" />
+          <h2 style={{ margin: 0, fontSize: 17 }}>Trazabilidad de respuestas automáticas</h2>
+        </div>
+        {events.length === 0 ? (
+          <p style={{ textAlign: "center", padding: "34px 0", color: "var(--text-muted)", margin: 0 }}>
+            Aún no hay eventos automáticos. Cuando ChatbotX consulte Super Bot, aparecerán aquí.
+          </p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {logs.map((log) => (
-              <div key={log.id} style={{ display: "flex", gap: "16px", padding: "16px", border: "1px solid var(--border-color)", borderRadius: "8px", background: "var(--bg)" }}>
-                <div style={{ marginTop: "2px" }}>
-                  {log.status === "SUCCESS" && <CheckCircle2 color="#22c55e" size={20} />}
-                  {log.status === "FAILED" && <XCircle color="#ef4444" size={20} />}
-                  {log.status === "RUNNING" && <Clock color="#eab308" size={20} />}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                    <h3 style={{ margin: 0, fontWeight: 500, color: "var(--text)" }}>{log.automation.name}</h3>
-                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                      {format(log.startedAt, "dd MMM, h:mm:ss aaaa", { locale: es })}
-                    </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {events.map((event) => {
+              const presentation = eventPresentation[event.status];
+              const StatusIcon = presentation.Icon;
+              return (
+                <article key={event.id} style={{ display: "flex", gap: 12, padding: 14, border: "1px solid var(--border-color)", borderRadius: 8, background: "var(--bg)" }}>
+                  <StatusIcon color={presentation.color} size={20} style={{ flex: "0 0 auto", marginTop: 2 }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+                      <strong style={{ color: presentation.color }}>{presentation.label}</strong>
+                      <time style={{ color: "var(--text-muted)", fontSize: 12 }} dateTime={event.createdAt.toISOString()}>
+                        {format(event.createdAt, "dd MMM, HH:mm:ss", { locale: es })}
+                      </time>
+                    </div>
+                    <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 13 }}>
+                      Canal: {event.channel} · {event.intent ? `Intención: ${event.intent}` : "Sin intención catalogada"} · {event.productsCount} producto{event.productsCount === 1 ? "" : "s"}
+                      {event.latencyMs !== null ? ` · ${event.latencyMs} ms` : ""}
+                    </p>
+                    {event.conversationRef && <p style={{ margin: "5px 0 0", color: "var(--text-muted)", fontSize: 12 }}>Referencia de conversación: {event.conversationRef.slice(0, 12)}</p>}
+                    {event.errorCode && (
+                      <p style={{ display: "flex", gap: 6, alignItems: "center", color: "#b91c1c", margin: "7px 0 0", fontSize: 12 }}>
+                        <TriangleAlert size={14} /> {event.errorCode}
+                      </p>
+                    )}
                   </div>
-                  <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "var(--text-muted)" }}>Canal: {log.automation.channel}</p>
-                  
-                  {log.error && (
-                    <div style={{ background: "rgba(239, 68, 68, 0.1)", color: "#b91c1c", padding: "8px 12px", borderRadius: "4px", border: "1px solid rgba(239, 68, 68, 0.2)", fontSize: "12px", fontFamily: "monospace", overflowX: "auto" }}>
-                      {log.error}
-                    </div>
-                  )}
-                  
-                  {log.status === "SUCCESS" && log.providerExecutionId && (
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "8px" }}>
-                      n8n Execution ID: {log.providerExecutionId}
-                    </div>
-                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section style={{ background: "var(--surface-bg)", border: "1px solid var(--border-color)", borderRadius: 10, padding: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <Bot size={19} color="var(--primary)" />
+          <h2 style={{ margin: 0, fontSize: 17 }}>Respuestas locales recientes</h2>
+        </div>
+        {storedMessages.length === 0 ? (
+          <p style={{ textAlign: "center", padding: "28px 0", color: "var(--text-muted)", margin: 0 }}>Aún no hay respuestas locales guardadas.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {storedMessages.map((message) => (
+              <article key={message.id} style={{ display: "flex", gap: 12, padding: 14, border: "1px solid var(--border-color)", borderRadius: 8, background: "var(--bg)" }}>
+                <MessageCircleMore color="var(--primary)" size={20} style={{ flex: "0 0 auto", marginTop: 2 }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <strong>{message.conversation.contact.name}</strong>
+                    <time style={{ color: "var(--text-muted)", fontSize: 12 }} dateTime={message.createdAt.toISOString()}>{format(message.createdAt, "dd MMM, HH:mm:ss", { locale: es })}</time>
+                  </div>
+                  <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: 12 }}>Canal: {message.conversation.channel}</p>
+                  <p style={{ margin: "7px 0 0", whiteSpace: "pre-wrap" }}>{message.content || "Respuesta con archivo adjunto"}</p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

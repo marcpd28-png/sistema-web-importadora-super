@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { rockyInformationReply } from "@/lib/rocky-engine";
-import { buildPublicWhatsappHref } from "@/lib/utils";
+import { answerSuperBot } from "@/lib/super-bot";
+import { getConfiguredMessengerUrl } from "@/lib/messenger-url";
 import { finalizeStoreReply } from "@/lib/store-reply-policy";
 
 const schema = z.object({
@@ -12,11 +12,11 @@ const schema = z.object({
 export async function POST(request: Request) {
   const input = schema.safeParse(await request.json().catch(() => null));
   if (!input.success) return Response.json({ error: "Consulta no válida." }, { status: 400 });
-  const advisorUrl = buildPublicWhatsappHref();
+  const messengerUrl = await getConfiguredMessengerUrl().catch(() => undefined);
   try {
-    const text = rockyInformationReply(input.data.message, !input.data.recentMessages?.some(message => message.role === "assistant"));
-    return Response.json(finalizeStoreReply({ text, quickActions: [{ label: "Hablar con un asesor", href: advisorUrl }], meta: { intent: "general_information", usedOllama: false } }, advisorUrl), { headers: { "Cache-Control": "no-store" } });
+    const reply = await answerSuperBot(input.data);
+    return Response.json(finalizeStoreReply(reply, messengerUrl), { headers: { "Cache-Control": "no-store" } });
   } catch {
-    return Response.json(finalizeStoreReply({ text: "" }, advisorUrl), { headers: { "Cache-Control": "no-store" } });
+    return Response.json(finalizeStoreReply({ text: "" }, messengerUrl), { headers: { "Cache-Control": "no-store" } });
   }
 }

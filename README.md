@@ -5,7 +5,7 @@ Catálogo virtual mayorista con:
 - catálogo público rápido para miles de productos
 - carrito liviano en la misma interfaz
 - reglas de precio por unidad, mayorista y cajón
-- orden de compra enviada por WhatsApp
+- orden de compra generada desde el carrito y atendida por los canales habilitados
 - login administrativo
 - CRUD de productos y configuración global
 

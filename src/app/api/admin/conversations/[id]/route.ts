@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMessageCenterSession } from "@/lib/auth";
-import { getConversation, isAdvisorConversationAccessible, updateConversation } from "@/lib/messages-service";
+import {
+  getConversation,
+  isAdvisorConversationAccessible,
+  updateConversation,
+} from "@/lib/messages-service";
 import { z } from "zod";
 import { TelegramBridgeError } from "@/lib/telegram-bridge";
 
@@ -19,11 +23,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMessageCenterSession();
-  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) {
+      return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    }
     
     const conversation = await getConversation(id);
     
@@ -43,15 +52,25 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMessageCenterSession();
-  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) {
+      return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    }
     
     const body = await request.json();
     const advisorUpdate = session.role === "ASESOR" ? advisorConversationUpdateSchema.parse(body) : body;
-    const conversation = await updateConversation(id, session.role === "ASESOR" && advisorUpdate.status === "ATENDIENDO" ? { ...advisorUpdate, assignedUserId: session.userId, botEnabled: false } : advisorUpdate);
+    const conversation = await updateConversation(
+      id,
+      session.role === "ASESOR" && advisorUpdate.status === "ATENDIENDO"
+        ? { ...advisorUpdate, assignedUserId: session.userId, botEnabled: false }
+        : advisorUpdate,
+    );
 
     return NextResponse.json(conversation);
   } catch (error) {

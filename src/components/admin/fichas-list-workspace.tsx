@@ -41,7 +41,7 @@ type ProductWithFichaStats = {
     last7Days: number;
     videoPlays: number;
     cartAdds: number;
-    whatsappClicks: number;
+    messengerClicks: number;
   };
 };
 
@@ -352,7 +352,7 @@ export function FichasListWorkspace({
               <th>QR Code</th>
               <th style={{ textAlign: "center" }}>Características</th>
               <th style={{ textAlign: "center" }}>Escaneos (7d)</th>
-              <th style={{ textAlign: "center" }}>Clicks WA</th>
+              <th style={{ textAlign: "center" }}>Clics en Messenger</th>
               <th style={{ width: "140px", textAlign: "right" }}>Acciones</th>
             </tr>
           </thead>
@@ -424,7 +424,7 @@ export function FichasListWorkspace({
                       {p.stats.scans} <span style={{ fontSize: "11px", fontWeight: "normal", color: "#64748b" }}>({p.stats.last7Days})</span>
                     </td>
                     <td style={{ textAlign: "center", fontWeight: "600" }}>
-                      {p.stats.whatsappClicks}
+                      {p.stats.messengerClicks}
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>

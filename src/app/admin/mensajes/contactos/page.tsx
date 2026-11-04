@@ -56,7 +56,7 @@ export default async function ContactosPage() {
                   </td>
                   <td style={{ padding: "16px" }}>
                     <span style={{ padding: "4px 8px", background: "rgba(34, 197, 94, 0.1)", color: "#15803d", borderRadius: "999px", fontSize: "12px", fontWeight: 500 }}>
-                      {c.channel || "WhatsApp"}
+                      {c.channel || "Web"}
                     </span>
                   </td>
                   <td style={{ padding: "16px", color: "var(--text-muted)", fontSize: "14px" }}>

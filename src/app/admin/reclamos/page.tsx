@@ -200,7 +200,7 @@ export default async function AdminComplaintsPage({ searchParams }: AdminComplai
                   </td>
                   <td data-label="Contacto">
                     <p className="muted">{complaint.customerEmail ?? "Sin correo"}</p>
-                    <p className="muted">{complaint.customerPhone ?? "Sin WhatsApp"}</p>
+                    <p className="muted">{complaint.customerPhone ?? "Sin teléfono"}</p>
                     {complaint.responseChannel ? (
                       <p className="muted">Respuesta: {complaint.responseChannel}</p>
                     ) : null}

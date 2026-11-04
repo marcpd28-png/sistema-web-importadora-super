@@ -34,14 +34,14 @@ export function formatCompactNumber(value: number) {
   }).format(value);
 }
 
-export function cleanWhatsappNumber(value: string) {
+export function cleanPhoneNumber(value: string) {
   return value.replace(/[^\d]/g, "");
 }
 
-export const PUBLIC_WHATSAPP_NUMBER = "51955252609";
+export const PUBLIC_MESSENGER_URL = "https://m.me/importacionessuperoficial";
 
-export function normalizeWhatsappPhone(phone: string | null | undefined) {
-  const digits = phone ? cleanWhatsappNumber(phone) : "";
+export function normalizePhoneNumber(phone: string | null | undefined) {
+  const digits = phone ? cleanPhoneNumber(phone) : "";
 
   if (!digits) {
     return null;
@@ -56,32 +56,6 @@ export function normalizeWhatsappPhone(phone: string | null | undefined) {
   }
 
   return digits;
-}
-
-export function buildWhatsappHrefFromPhone(phone: string | null | undefined, text?: string) {
-  const normalizedPhone = normalizeWhatsappPhone(phone);
-
-  if (!normalizedPhone) {
-    return null;
-  }
-
-  const base = `https://wa.me/${normalizedPhone}`;
-
-  if (!text) {
-    return base;
-  }
-
-  return `${base}?text=${encodeURIComponent(text)}`;
-}
-
-export function buildPublicWhatsappHref(text?: string) {
-  const base = `https://wa.me/${PUBLIC_WHATSAPP_NUMBER}`;
-
-  if (!text) {
-    return base;
-  }
-
-  return `${base}?text=${encodeURIComponent(text)}`;
 }
 
 export function isTruthy(value: FormDataEntryValue | null) {

@@ -53,8 +53,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               <input autoComplete="organization" defaultValue={settings.businessName} name="businessName" required />
             </label>
             <label className="field">
-              <span>WhatsApp</span>
-              <input autoComplete="tel" defaultValue={settings.whatsappNumber} inputMode="tel" name="whatsappNumber" required type="tel" />
+              <span>Messenger</span>
+              <input autoComplete="url" defaultValue={settings.messengerUrl} inputMode="url" name="messengerUrl" required type="url" />
             </label>
           </div>
         </section>

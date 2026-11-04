@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { ArrowLeft, ExternalLink, FileText, MessageCircle, UserRound } from "lucide-react";
 import { getAdminQuoteById } from "@/lib/store";
 import type { AdminQuoteDetailView, AdminQuoteStatusStepView } from "@/lib/store";
-import { buildWhatsappHrefFromPhone, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { QuoteConversationPanel } from "@/components/admin/quote-conversation-panel";
@@ -126,12 +126,7 @@ export async function QuoteDetailPage({
   const baseUrl = `${protocol}://${host}`;
   const pdfLink = quote.pdfUrl ? `${baseUrl}${quote.pdfUrl}` : "";
 
-  const customerWhatsappHref = buildWhatsappHrefFromPhone(
-    quote.customerPhone,
-    quote.quoteNumber
-      ? `Hola ${quote.customerName}, te contacto por tu cotización ${quote.quoteNumber}.${pdfLink ? ` Puedes ver el PDF oficial aquí: ${pdfLink}` : ""}`
-      : `Hola ${quote.customerName}, te contacto por tu cotización.${pdfLink ? ` Puedes ver el PDF oficial aquí: ${pdfLink}` : ""}`,
-  );
+  const customerContactHref = quote.contactHref;
 
   return (
     <section className="admin-quote-detail">
@@ -153,15 +148,15 @@ export async function QuoteDetailPage({
           </a>
         ) : null}
         {canDelete ? <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} /> : null}
-        {customerWhatsappHref ? (
+        {customerContactHref ? (
           <a
             className="button button-primary"
-            href={customerWhatsappHref}
+            href={customerContactHref}
             rel="noreferrer"
             target="_blank"
           >
             <MessageCircle size={16} />
-            Contactar cliente
+            Abrir Messenger
           </a>
         ) : null}
       </div>

@@ -1,5 +1,5 @@
-import { catalogImageAliases, imageCodeKey } from "./rocky/image-codes";
-import { imageNameWords } from "./rocky/image-names";
+import { catalogImageAliases, imageCodeKey } from "./catalog-image-codes";
+import { imageNameWords } from "./catalog-image-names";
 
 export type AuditStatus = "CODE_MATCH" | "CODE_DIFFERENT" | "NAME_MATCH" | "UNVERIFIABLE" | "NO_IMAGE" | "ERROR";
 export type NameStatus = "MATCH" | "PARTIAL" | "INSUFFICIENT";

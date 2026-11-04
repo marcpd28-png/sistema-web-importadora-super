@@ -1,11 +1,11 @@
 import { MessagesWorkspace } from "@/components/admin/messages/MessagesWorkspace";
 import { telegramCommand } from "@/lib/telegram-bridge";
-import { requireAdmin } from "@/lib/auth";
+import { requireMessagingOwner } from "@/lib/auth";
 import { getAssignableAdvisors } from "@/lib/messages-service";
 
 export const dynamic = "force-dynamic";
 export default async function TelegramPage() {
-  const [session, advisors] = await Promise.all([requireAdmin(), getAssignableAdvisors()]);
+  const [session, advisors] = await Promise.all([requireMessagingOwner(), getAssignableAdvisors()]);
   let connected = false;
   try { connected = (await telegramCommand<{ connected: boolean }>("status")).connected; } catch { /* Show actual availability without exposing configuration. */ }
   return <div className="messages-inbox-page">

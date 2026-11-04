@@ -1,5 +1,4 @@
 "use client";
-import { RockyAiPanel } from "./RockyAiPanel";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, TriangleAlert, X } from "lucide-react";
@@ -10,6 +9,7 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import type { ChatMessage, Conversation, MessageType } from "@/types/messages";
 import { createMessageReply, readMessageReply, type MessageReply } from "@/lib/message-reply";
+import { mergeChatMessages } from "@/lib/message-client-dedupe";
 
 const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
@@ -177,21 +177,7 @@ function mergeConversations(base: Conversation[], incoming: Conversation[]) {
 }
 
 function mergeMessages(base: ChatMessage[], incoming: ChatMessage[]) {
-  const byId = new Map<string, ChatMessage>();
-
-  for (const message of base) {
-    byId.set(message.id, message);
-  }
-
-  for (const message of incoming) {
-    byId.set(message.id, message);
-  }
-
-  return [...byId.values()].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() ||
-      a.id.localeCompare(b.id),
-  );
+  return mergeChatMessages(base, incoming);
 }
 
 function isNearBottom(element: HTMLDivElement | null) {
@@ -210,14 +196,12 @@ function asMessageType(value: string): MessageType {
 export function MessagesWorkspace({
   initialChannel = "",
   canManageBot = true,
-  showChannelFilter = true,
   uploadEndpoint,
   viewer,
   advisorTargets,
 }: {
   initialChannel?: ConversationFilters["channel"];
   canManageBot?: boolean;
-  showChannelFilter?: boolean;
   uploadEndpoint?: string;
   viewer: AssignmentViewer;
   advisorTargets: AdvisorTarget[];
@@ -366,8 +350,8 @@ export function MessagesWorkspace({
       const latestMessage = activeMessagesRef.current.at(-1);
 
       try {
-        // Existing messages change state when a queued reply is cancelled or
-        // confirmed by YCloud. An after-only cursor cannot see these updates.
+        // Existing messages change state when a delivery is confirmed or
+        // rejected by a connected transport. An after-only cursor cannot see these updates.
         const [data, recent] = await Promise.all([
           fetchMessagesPage(activeId, filtersSnapshot, latestMessage ? {
             afterId: latestMessage.id,
@@ -619,7 +603,7 @@ export function MessagesWorkspace({
   };
 
   const handleToggleBot = async () => {
-    if (!activeId || assignmentBusy) {
+    if (!activeId) {
       return;
     }
 
@@ -690,7 +674,7 @@ export function MessagesWorkspace({
   };
 
   const handleCloseConversation = async () => {
-    if (!activeId || assignmentBusy) {
+    if (!activeId) {
       return;
     }
 
@@ -744,7 +728,6 @@ export function MessagesWorkspace({
         onLoadMore={handleLoadMoreConversations}
         onRefresh={() => setRefreshNonce((current) => current + 1)}
         onSelect={handleSelectConversation}
-        showChannelFilter={showChannelFilter}
         total={conversationTotal}
       />
 
@@ -764,7 +747,6 @@ export function MessagesWorkspace({
               viewer={viewer}
             />
 
-            {canManageBot && (activeConversation.channel === "WHATSAPP" || activeConversation.channel === "TELEGRAM") && <RockyAiPanel key={`ai:${activeConversation.id}`} channel={activeConversation.channel === "WHATSAPP" ? "whatsapp" : "telegram"} externalId={activeConversation.id} visualTriggerId={[...activeMessages].reverse().find(message => message.direction === "INBOUND" && message.senderType === "CUSTOMER" && message.messageType === "IMAGE")?.id} />}
             <div className="chat-messages" onScroll={handleMessagesScroll} ref={messagesContainerRef}>
               {loadingOlderMessages ? <div className="messages-list-loader">Cargando mensajes antiguos...</div> : null}
               {!loadingOlderMessages && messageHasMore ? (

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { auditCsv, classifyPhoto, type PhotoScan, type AuditReport } from "./catalog-image-audit";
-import { matchCatalogImageName } from "./rocky/image-names";
+import { matchCatalogImageName } from "./catalog-image-names";
 
 const product = { code: "05703", name: "(N1123) MICROFONO PARA CASCO HELMET COD. Q28", isVisible: true, stockUnits: 10 };
 const scan: PhotoScan = { id: "photo", productId: "id", code: product.code, name: product.name, imageUrl: "/uploads/one.jpg", roles: ["PORTADA"], scannedAt: "2026-09-21", status: "SCANNED", reads: [], text: [] };

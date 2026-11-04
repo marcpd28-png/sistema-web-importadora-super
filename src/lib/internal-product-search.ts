@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { searchCatalogIdentity, matchesProductQuery } from "./rocky-product-query";
+import { searchCatalogIdentity, matchesProductQuery } from "./catalog-query";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
 import {
   buildProductSearchWhere,
@@ -315,10 +315,10 @@ export async function handleInternalProductSearchRequest(
   options: InternalProductSearchHandlerOptions = {},
 ) {
   try {
-    const internalApiKey = options.internalApiKey ?? process.env.N8N_INTERNAL_API_KEY;
+    const internalApiKey = options.internalApiKey ?? process.env.SUPER_BOT_INTERNAL_API_KEY;
 
     if (!internalApiKey) {
-      console.error("N8N_INTERNAL_API_KEY is not configured.");
+      console.error("SUPER_BOT_INTERNAL_API_KEY is not configured.");
       return NextResponse.json(
         { error: "Internal server configuration error" },
         { status: 500, headers: NO_STORE_HEADERS },

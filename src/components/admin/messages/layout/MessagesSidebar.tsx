@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Zap, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore, Send } from "lucide-react";
+import { Inbox, FileCode2, Users, Activity, Settings, Bug, MessageCircleMore, Send } from "lucide-react";
 
 export function MessagesSidebar() {
   const pathname = usePathname();
@@ -13,7 +13,6 @@ export function MessagesSidebar() {
     { name: "Messenger", href: "/admin/mensajes/messenger", icon: MessageCircleMore, exact: true },
     { name: "Instagram", href: "/admin/mensajes/instagram", icon: MessageCircleMore, exact: true },
     { name: "TikTok", href: "/admin/mensajes/tiktok", icon: MessageCircleMore, exact: true },
-    { name: "Automatizaciones", href: "/admin/mensajes/automatizaciones", icon: Zap, exact: false },
     { name: "Plantillas", href: "/admin/mensajes/plantillas", icon: FileCode2, exact: false },
     { name: "Contactos", href: "/admin/mensajes/contactos", icon: Users, exact: false },
     { name: "Actividad", href: "/admin/mensajes/actividad", icon: Activity, exact: false },

@@ -9,10 +9,8 @@ import { STORE_CART_OPEN_EVENT } from "@/components/catalog/cart-events";
 import { useCartStore } from "@/components/catalog/cart-store";
 import type { StoreSettingsView } from "@/lib/store";
 
-const MESSENGER_CHAT_URL = "https://m.me/importacionessuperoficial";
-
 type StoreSideActionsProps = {
-  settings: Pick<StoreSettingsView, "businessName" | "supportHours" | "whatsappNumber">;
+  settings: Pick<StoreSettingsView, "businessName" | "supportHours" | "messengerUrl">;
   showHomeShortcut?: boolean;
   showNormalViewShortcut?: boolean;
 };
@@ -22,7 +20,6 @@ export function StoreSideActions({
   showHomeShortcut = false,
   showNormalViewShortcut = false,
 }: StoreSideActionsProps) {
-  void settings;
   void showNormalViewShortcut;
 
   const itemCount = useCartStore((state) =>
@@ -58,7 +55,7 @@ export function StoreSideActions({
 
       <a
         className="store-side-action store-side-action-messenger"
-        href={MESSENGER_CHAT_URL}
+        href={settings.messengerUrl}
         rel="noreferrer"
         target="_blank"
         aria-label="Abrir Messenger de Importaciones Super"

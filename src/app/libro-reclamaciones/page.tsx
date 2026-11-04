@@ -1105,7 +1105,7 @@ export default function LibroReclamacionesPage() {
                             <label>Medio de compra</label>
                             <select name="purchaseChannel" value={formData.purchaseChannel} onChange={handleInputChange}>
                               <option value="Página web">Página web de la tienda</option>
-                              <option value="WhatsApp">WhatsApp</option>
+                              <option value="Messenger">Messenger</option>
                               <option value="Tienda física">Tienda física / Local</option>
                               <option value="Otro">Otro medio</option>
                             </select>
@@ -1546,7 +1546,7 @@ export default function LibroReclamacionesPage() {
                 <div className="legal-modal-body">
                   <p><strong>Base Legal:</strong> Artículo 20.4 del Texto Único Ordenado de la Ley N° 27444 y Directivas del INDECOPI.</p>
                   <hr />
-                  <p>Al marcar esta casilla, autoriza voluntariamente a ORIGINAL J J S.A.C. a remitir la respuesta formal a su reclamo o queja directamente a la dirección de correo electrónico o número de teléfono (WhatsApp) indicados en esta hoja.</p>
+                  <p>Al marcar esta casilla, autoriza voluntariamente a ORIGINAL J J S.A.C. a remitir la respuesta formal a su reclamo o queja directamente a la dirección de correo electrónico o número de teléfono indicados en esta hoja.</p>
                   <ul>
                     <li><strong>Validez y Plazos:</strong> La notificación digital se considera válida y surte plenos efectos legales el mismo día en que el proveedor envía el correo.</li>
                     <li><strong>Seguridad:</strong> Garantiza que la respuesta sea entregada en el menor tiempo posible y que quede constancia digital de su envío y recepción conforme.</li>

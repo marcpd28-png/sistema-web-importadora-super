@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, X, House, PackageSearch, ShoppingBag, MessageCircle, BookOpenText, FileText, MessagesSquare, type LucideIcon } from "lucide-react";
+import { Menu, X, House, PackageSearch, ShoppingBag, MessageCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -9,28 +9,25 @@ export type AdminSidebarDestination = {
   href: string;
   label: string;
   icon: LucideIcon;
+  requiresMessagingAccess?: boolean;
 };
 
 const defaultDestinations: AdminSidebarDestination[] = [
   { href: "/admin", label: "Inicio", icon: House },
   { href: "/admin/products", label: "Productos", icon: PackageSearch },
   { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
-  { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle },
-];
-
-const advisorDestinations: AdminSidebarDestination[] = [
-  { href: "/asesor/catalogo", label: "Catálogo", icon: BookOpenText },
-  { href: "/asesor/cotizaciones", label: "Cotizaciones", icon: FileText },
-  { href: "/asesor/mensajes", label: "Mensajes", icon: MessagesSquare },
+  { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle, requiresMessagingAccess: true },
 ];
 
 export function AdminSidebar({
   children,
-  variant = "admin",
+  canAccessMessaging = false,
+  destinations = defaultDestinations,
   mobileLabel = "Administración",
 }: {
   children: ReactNode;
-  variant?: "admin" | "advisor";
+  canAccessMessaging?: boolean;
+  destinations?: AdminSidebarDestination[];
   mobileLabel?: string;
 }) {
   const pathname = usePathname();
@@ -38,7 +35,7 @@ export function AdminSidebar({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const open = openPath === pathname;
-  const destinations = variant === "advisor" ? advisorDestinations : defaultDestinations;
+
   useEffect(() => {
     const media = window.matchMedia("(max-width: 920px)");
     const close = () => setOpenPath(null);
@@ -99,7 +96,7 @@ export function AdminSidebar({
       </div>
     </aside>
     <nav className="admin-mobile-dock" aria-label="Accesos frecuentes">
-      {destinations.map(({ href, label, icon: Icon }) => {
+      {destinations.filter(({ requiresMessagingAccess }) => !requiresMessagingAccess || canAccessMessaging).map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href !== "/admin" && pathname.startsWith(href + "/"));
         return <Link key={href} href={href} aria-current={active ? "page" : undefined} onClick={() => setOpenPath(null)}><Icon size={20} aria-hidden="true" /><span>{label}</span></Link>;
       })}

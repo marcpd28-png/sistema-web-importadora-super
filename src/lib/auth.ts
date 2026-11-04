@@ -17,16 +17,57 @@ export type SessionUser = {
   requirePasswordChange?: boolean;
 };
 
-export function canUseMessageCenter(
-  session: Pick<SessionUser, "role" | "requirePasswordChange"> | null | undefined,
+/**
+ * The only administrator permitted to operate customer messaging and channel
+ * integrations. Keep this capability separate from the general ADMIN role:
+ * catalogue and back-office access intentionally remain governed by
+ * requireAdmin().
+ */
+export const MESSAGING_OWNER_EMAIL = "mark@importadora.local";
+
+export function normalizeAccountEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+/**
+ * A narrow, server-side capability for customer messaging. It deliberately
+ * rejects sessions that still require a password change, even though they have
+ * an ADMIN role.
+ */
+export function canManageMessaging(
+  session: Pick<SessionUser, "email" | "role" | "requirePasswordChange"> | null | undefined,
 ) {
-  return Boolean(session && !session.requirePasswordChange && (session.role === "ADMIN" || session.role === "ASESOR"));
+  return Boolean(
+    session &&
+    session.role === "ADMIN" &&
+    !session.requirePasswordChange &&
+    normalizeAccountEmail(session.email) === MESSAGING_OWNER_EMAIL,
+  );
+}
+
+/**
+ * Advisors can work directly with customer conversations, but must not gain
+ * access to message configuration, integrations, automations, or simulations.
+ * Those controls remain reserved for canManageMessaging().
+ */
+export function canUseMessageCenter(
+  session: Pick<SessionUser, "email" | "role" | "requirePasswordChange"> | null | undefined,
+) {
+  return Boolean(
+    session &&
+      !session.requirePasswordChange &&
+      (session.role === "ASESOR" || canManageMessaging(session)),
+  );
 }
 
 export function canManageQuotes(
   session: Pick<SessionUser, "role" | "requirePasswordChange"> | null | undefined,
 ) {
-  return Boolean(session && !session.requirePasswordChange && (session.role === "ADMIN" || session.role === "ASESOR"));
+  return Boolean(
+    session &&
+      !session.requirePasswordChange &&
+      (session.role === "ADMIN" || session.role === "ASESOR"),
+  );
 }
 
 function getSecret() {
@@ -132,9 +173,18 @@ export async function getSession() {
       return null;
     }
 
+    // The token establishes identity, while the database remains the source of
+    // truth for the current role. This makes a role downgrade take effect on
+    // the next request instead of leaving a seven-day ADMIN JWT usable.
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, email: true, name: true, role: true, requirePasswordChange: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        requirePasswordChange: true,
+      },
     });
 
     if (!user) {
@@ -167,9 +217,37 @@ export async function requireAdmin() {
   return session;
 }
 
+/**
+ * Use in Route Handlers that need an API-friendly authorization check. Callers
+ * can return a controlled 403 without relying on redirect() control flow.
+ */
+export async function getMessagingOwnerSession(): Promise<SessionUser | null> {
+  const session = await getSession();
+  return canManageMessaging(session) ? session : null;
+}
+
+/**
+ * API-friendly guard for the advisor inbox. It deliberately has a narrower
+ * scope than the owner guard above, so sensitive message-center controls stay
+ * unavailable to advisors.
+ */
 export async function getMessageCenterSession(): Promise<SessionUser | null> {
   const session = await getSession();
   return canUseMessageCenter(session) ? session : null;
+}
+
+/**
+ * Use in pages and Server Actions that manage customer messaging. This keeps
+ * the general ADMIN role unchanged while denying access to this sensitive area.
+ */
+export async function requireMessagingOwner() {
+  const session = await requireAdmin();
+
+  if (!canManageMessaging(session)) {
+    redirect("/admin?error=messaging_access_denied");
+  }
+
+  return session;
 }
 
 export async function requireAdvisor() {

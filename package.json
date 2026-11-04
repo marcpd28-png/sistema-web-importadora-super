@@ -9,7 +9,7 @@
     "start": "prisma migrate deploy && node prisma/start-production.mjs",
     "start:web": "node prisma/start-web.mjs",
     "lint": "eslint .",
-    "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts",
+    "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts src/lib/super-bot.test.ts",
     "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts",
     "postinstall": "prisma generate && node scripts/prepare-pdf-viewer.mjs",
     "prebuild": "node scripts/prepare-pdf-viewer.mjs",
@@ -20,18 +20,12 @@
     "db:seed:test": "tsx scripts/seed-test-data.ts",
     "db:sync-categories": "tsx prisma/sync-categories.ts",
     "messages:backfill-phones": "tsx scripts/backfill-message-phones.ts",
-    "messages:worker": "node --env-file=.env --import tsx scripts/rocky-outbox-worker.ts",
-    "messages:inbox": "node --env-file=.env --import tsx scripts/rocky-inbox-worker.ts",
-    "catalogs:worker": "node --env-file=.env --import tsx scripts/catalog-generation-worker.ts",
     "sync:facturador-product": "tsx prisma/sync-facturador-product.ts",
     "sync:facturador-products": "tsx prisma/sync-facturador-products.ts",
-    "sync:facturador-scheduler": "tsx prisma/erp-sync-scheduler.ts",
-    "messages:ai": "node --env-file-if-exists=.env --import tsx scripts/rocky-ai-worker.ts",
-    "test:rocky-ai": "node --import tsx --test src/lib/rocky-ai/*.test.ts"
+    "sync:facturador-scheduler": "tsx prisma/erp-sync-scheduler.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
-    "@xyflow/react": "^12.11.6",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
-import { requireAdmin } from "@/lib/auth";
+import { canManageMessaging, requireAdmin } from "@/lib/auth";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { getAdminNavBadges } from "@/lib/admin";
@@ -23,6 +23,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireAdmin();
+  const canAccessMessaging = canManageMessaging(session);
 
   if (session.requirePasswordChange) {
     return (
@@ -39,7 +40,7 @@ export default async function AdminLayout({
       <a className="admin-skip-link" href="#admin-main-content">
         Ir al contenido principal
       </a>
-      <AdminSidebar>
+      <AdminSidebar canAccessMessaging={canAccessMessaging}>
           <div className="admin-sidebar-brand">
             <div className="brand-logo-container">
               <BrandLogo href="/admin" priority size="sm" />
@@ -64,7 +65,7 @@ export default async function AdminLayout({
             </div>
           </div>
 
-          <AdminNav badges={badges} />
+          <AdminNav badges={badges} canAccessMessaging={canAccessMessaging} />
       </AdminSidebar>
 
       <section className="admin-content" id="admin-main-content" tabIndex={-1}>{children}</section>

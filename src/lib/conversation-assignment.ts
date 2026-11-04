@@ -1,18 +1,8 @@
-import type { Channel, Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 /**
- * Advisors work the supported commercial inbox only. WhatsApp remains in the
- * administrator workspace so a hidden filter can never become a bypass.
- */
-export const ADVISOR_MESSAGE_CHANNEL: Channel = "TELEGRAM";
-
-export function isAdvisorSupportedChannel(channel: Channel) {
-  return channel === ADVISOR_MESSAGE_CHANNEL;
-}
-
-/**
- * A controlled error for the advisor-workspace ownership boundary. Routes use
- * its status code instead of revealing another advisor's conversation.
+ * A controlled error for the advisor-workspace ownership boundary.  Routes use
+ * its status code instead of exposing whether another advisor owns a chat.
  */
 export class ConversationAssignmentError extends Error {
   constructor(message: string, public readonly statusCode: 404 | 409 = 404) {
@@ -22,18 +12,14 @@ export class ConversationAssignmentError extends Error {
 }
 
 /**
- * An advisor sees the shared queue plus only the chats they already own.
+ * Advisors may see work that is still in the shared queue, plus the chats
+ * they own.  They never receive another advisor's records in the list.
  */
 export function advisorConversationScope(advisorId: string): Prisma.ConversationWhereInput {
   return {
-    AND: [
-      { channel: ADVISOR_MESSAGE_CHANNEL },
-      {
-        OR: [
-          { assignedUserId: null },
-          { assignedUserId: advisorId },
-        ],
-      },
+    OR: [
+      { assignedUserId: null },
+      { assignedUserId: advisorId },
     ],
   };
 }

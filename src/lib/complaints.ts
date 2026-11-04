@@ -5,34 +5,8 @@ import { calculateExpiryDate } from "./business-days";
 type ComplaintContact = {
   customerName: string;
   customerEmail: string | null;
-  customerPhone: string | null;
   sheetNumber: string;
 };
-
-/**
- * Normaliza el teléfono para enlaces de WhatsApp agregando prefijo de Perú (51) si es de 9 dígitos.
- */
-export function normalizeComplaintPhone(phone: string | null | undefined) {
-  if (!phone) {
-    return null;
-  }
-
-  const digits = phone.replace(/\D/g, "");
-
-  if (!digits) {
-    return null;
-  }
-
-  if (digits.startsWith("51")) {
-    return digits;
-  }
-
-  if (digits.length === 9) {
-    return `51${digits}`;
-  }
-
-  return digits;
-}
 
 /**
  * Genera el siguiente número de hoja correlativo anual de forma segura
@@ -72,7 +46,6 @@ export async function generateNextSheetNumber(year: number): Promise<{
 
   throw new Error("No se pudo generar un número correlativo único.");
 }
-
 /**
  * Redacta el cuerpo de respuesta en texto plano
  */
@@ -125,30 +98,4 @@ export function buildComplaintEmailHref(
   });
 
   return `mailto:${contact.customerEmail}?${params.toString()}`;
-}
-
-/**
- * Genera un enlace de WhatsApp para enviar la respuesta
- */
-export function buildComplaintWhatsappHref(
-  contact: ComplaintContact,
-  responseText: string,
-  type: string,
-  reason: string,
-) {
-  const phone = normalizeComplaintPhone(contact.customerPhone);
-
-  if (!phone) {
-    return null;
-  }
-
-  const message = buildComplaintResponseText({
-    sheetNumber: contact.sheetNumber,
-    customerName: contact.customerName,
-    type,
-    reason,
-    responseText,
-  });
-
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }

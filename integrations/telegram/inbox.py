@@ -32,13 +32,19 @@ class Inbox:
           CREATE TABLE IF NOT EXISTS inbox_events(id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE, payload TEXT, sent INTEGER DEFAULT 0);
           CREATE TABLE IF NOT EXISTS inbox_chats(connection TEXT, chat TEXT, last_inbound REAL DEFAULT 0, paused INTEGER DEFAULT 0, revision INTEGER DEFAULT 0, PRIMARY KEY(connection,chat));
           CREATE TABLE IF NOT EXISTS inbox_sends(id TEXT PRIMARY KEY, fingerprint TEXT, state TEXT, response TEXT);
+          CREATE TABLE IF NOT EXISTS inbox_super_bot_replies(id TEXT PRIMARY KEY, connection TEXT NOT NULL, chat TEXT NOT NULL, content TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'queued', error TEXT, created REAL NOT NULL, updated REAL NOT NULL);
         ''')
         self.db.execute("UPDATE inbox_sends SET state='uncertain' WHERE state='sending'")
+        self.db.execute("UPDATE inbox_super_bot_replies SET state='uncertain',error='Bridge restarted before delivery was confirmed' WHERE state='sending'")
         self.db.commit()
 
     @property
     def enabled(self):
         return len(self.secret) >= 32 and bool(self.url)
+
+    @property
+    def super_bot_enabled(self):
+        return bool(self.config.get('super_bot_url', '').strip() and self.config.get('super_bot_key', '').strip())
 
     def authorized(self, value):
         return self.enabled and hmac.compare_digest(value or '', 'Bearer '+self.secret)
@@ -73,28 +79,87 @@ class Inbox:
         self.enqueue(event, event_key)
 
     def observe(self, update, adapter):
-        """Runs under the adapter lock before automation; never sends a Telegram message."""
+        """Archive incoming updates and claim customer turns before any legacy bot can handle them."""
         deletion = update.get('deleted_business_messages')
         m = update.get('business_message') or update.get('edited_business_message')
         obj = deletion or m
-        if not obj or obj.get('chat', {}).get('type') != 'private': return
+        if not obj or obj.get('chat', {}).get('type') != 'private': return False
         cid, chat = obj.get('business_connection_id'), obj['chat']['id']
         connection = adapter.get_connection(cid) if cid else None
-        if not connection: return
+        if not connection: return False
         if deletion:
             self.enqueue(dict(kind='delete', connectionId=cid, chatId=str(chat), timestamp=int(self.now()), messageIds=deletion['message_ids']), 'update:'+str(update['update_id']))
-            return
+            return False
         sender = m.get('from', {})
         role = 'BOT' if m.get('sender_business_bot') or sender.get('is_bot') else 'AGENT' if sender.get('id') == connection[0] else 'CUSTOMER'
         kind = 'edit' if 'edited_business_message' in update else 'message'
         self.message(m, role, kind, event_key='update:'+str(update['update_id']))
-        if kind == 'message' and role == 'CUSTOMER':
-            with self.lock:
-                self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
-                self.db.execute('UPDATE inbox_chats SET last_inbound=max(last_inbound,?) WHERE connection=? AND chat=?', (m.get('date', self.now()),cid,str(chat)))
-                self.db.commit()
+        if role == 'CUSTOMER':
+            if kind == 'message':
+                with self.lock:
+                    self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
+                    self.db.execute('UPDATE inbox_chats SET last_inbound=max(last_inbound,?) WHERE connection=? AND chat=?', (m.get('date', self.now()),cid,str(chat)))
+                    self.db.commit()
+                self.enqueue_super_bot_reply(m)
+            # Fail closed: a missing Super Bot configuration must never revive
+            # the legacy business bot after this adapter takes ownership.
+            return True
         elif kind == 'message' and role == 'AGENT':
             self.set_paused(cid, chat, True)
+        return False
+
+    def enqueue_super_bot_reply(self, message):
+        cid, chat, message_id = message.get('business_connection_id'), message.get('chat', {}).get('id'), message.get('message_id')
+        if not cid or not chat or not message_id: return
+        key = 'tgbot:' + hashlib.sha256(f'{cid}:{chat}:{message_id}'.encode()).hexdigest()
+        content = (message.get('text') or message.get('caption') or '[Mensaje de Telegram]').strip()[:1200]
+        stamp = self.now()
+        with self.lock:
+            self.db.execute('''INSERT OR IGNORE INTO inbox_super_bot_replies(id,connection,chat,content,created,updated)
+                             VALUES (?,?,?,?,?,?)''', (key,cid,str(chat),content,stamp,stamp))
+            self.db.commit()
+
+    def super_bot_reply(self, content):
+        url, key = self.config.get('super_bot_url', '').strip(), self.config.get('super_bot_key', '').strip()
+        if not url or not key: raise InboxError('Super Bot no está configurado en el puente.',503)
+        request = urllib.request.Request(url, data=json.dumps({'message':content}).encode(), headers={
+            'Content-Type':'application/json', 'x-super-bot-key':key, 'User-Agent':'SuperBotTelegramAdapter/1.0'
+        })
+        try:
+            with urllib.request.urlopen(request,timeout=20) as response:
+                payload = json.loads(response.read().decode())
+        except Exception as error:
+            raise InboxError('Super Bot no pudo preparar la respuesta automática.',503) from error
+        reply = payload.get('reply') if isinstance(payload,dict) else None
+        text = reply.get('text','').strip() if isinstance(reply,dict) else ''
+        if not text or len(text)>4000: raise InboxError('Super Bot devolvió una respuesta inválida.',502)
+        document = reply.get('document') if isinstance(reply,dict) and isinstance(reply.get('document'),dict) else None
+        return text, document
+
+    def super_bot_tick(self, adapter):
+        with self.lock:
+            row = self.db.execute('''SELECT id,connection,chat,content FROM inbox_super_bot_replies
+                                   WHERE state='queued' ORDER BY created LIMIT 1''').fetchone()
+            if not row: return False
+            self.db.execute("UPDATE inbox_super_bot_replies SET state='sending',updated=? WHERE id=?", (self.now(),row[0]))
+            self.db.commit()
+        key, cid, chat, content = row
+        try:
+            if not self.super_bot_enabled: raise InboxError('Super Bot no está configurado en el puente.',503)
+            text, document = self.super_bot_reply(content)
+            payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':text,'automated':True}
+            if document and isinstance(document.get('url'),str):
+                payload.update(type='DOCUMENT',mediaUrl=document['url'])
+            self.command('send',payload,adapter)
+            state,error = 'sent',None
+        except InboxError as failure:
+            state,error = ('uncertain' if failure.uncertain else 'failed'),str(failure)
+        except Exception:
+            state,error = 'uncertain','No se pudo confirmar la entrega de Super Bot.'
+        with self.lock:
+            self.db.execute('UPDATE inbox_super_bot_replies SET state=?,error=?,updated=? WHERE id=?', (state,error,self.now(),key))
+            self.db.commit()
+        return True
 
     def paused(self, cid, chat):
         with self.lock:
@@ -136,8 +201,10 @@ class Inbox:
                 adapter.db.commit()
                 return {'revision':self.snapshot(adapter,cid,chat)}
             if action != 'send': raise InboxError('Acción inválida.')
-            rid, kind, content = data.get('requestId'), data.get('type'), data.get('content')
-            if not isinstance(rid,str) or not rid.startswith('tgout:') or len(rid)>120: raise InboxError('Identificador inválido.')
+            rid, kind, content, automated = data.get('requestId'), data.get('type'), data.get('content'), data.get('automated',False)
+            if not isinstance(automated,bool): raise InboxError('Solicitud inválida.')
+            valid_prefix = rid.startswith('tgbot:') if automated and isinstance(rid,str) else rid.startswith('tgout:') if isinstance(rid,str) else False
+            if not valid_prefix or len(rid)>120: raise InboxError('Identificador inválido.')
             fingerprint = hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest()
             with self.lock:
                 prev = self.db.execute('SELECT fingerprint,state,response FROM inbox_sends WHERE id=?', (rid,)).fetchone()
@@ -165,12 +232,18 @@ class Inbox:
             if reply is not None:
                 if not isinstance(reply,int) or reply<1: raise InboxError('Respuesta inválida.')
                 body['reply_parameters']={'message_id':reply}
-            self.set_paused(cid,chat,True)
-            adapter.shopping.pause(cid,int(chat)); adapter.db.commit()
-            revision = self.snapshot(adapter,cid,chat)
+            if automated:
+                if self.paused(cid,chat) or adapter.shopping.support_session(cid,int(chat)):
+                    raise InboxError('Un asesor está atendiendo esta conversación.',409)
+                revision = self.snapshot(adapter,cid,chat)
+            else:
+                self.set_paused(cid,chat,True)
+                adapter.shopping.pause(cid,int(chat)); adapter.db.commit()
+                revision = self.snapshot(adapter,cid,chat)
             with self.lock:
                 self.db.execute('INSERT INTO inbox_sends VALUES (?,?,?,NULL)', (rid,fingerprint,'sending')); self.db.commit()
             try:
+                if automated: body['_inbox_automated'] = True
                 result = self.raw_api(method,body)
                 response = {'messageId':result['message_id'],'revision':revision}
                 with self.lock:
@@ -190,26 +263,32 @@ class Inbox:
             connected = adapter.db.execute('SELECT count(*) FROM connections WHERE enabled=1 AND reply=1').fetchone()[0]>0
         with self.lock:
             pending = self.db.execute('SELECT count(*) FROM inbox_events WHERE sent=0').fetchone()[0]
-        return dict(connected=self.enabled and connected,pending=pending)
+            pending_super_bot = self.db.execute("SELECT count(*) FROM inbox_super_bot_replies WHERE state='queued'").fetchone()[0]
+        return dict(connected=self.enabled and connected,pending=pending,pendingSuperBot=pending_super_bot,superBotConfigured=self.super_bot_enabled)
 
     def tick(self):
         if not self.enabled: return False
         with self.lock:
             row = self.db.execute('SELECT id,payload FROM inbox_events WHERE sent=0 ORDER BY id LIMIT 1').fetchone()
         if not row: return False
-        req = urllib.request.Request(self.url, data=row[1].encode(), headers={'Authorization':'Bearer '+self.secret,'Content-Type':'application/json','User-Agent':'RockyStoreInbox/1.0'})
+        req = urllib.request.Request(self.url, data=row[1].encode(), headers={'Authorization':'Bearer '+self.secret,'Content-Type':'application/json','User-Agent':'SuperBotStoreInbox/1.0'})
         with urllib.request.urlopen(req,timeout=20) as response:
             if response.status != 200: raise RuntimeError('Inbox unavailable')
         with self.lock:
             self.db.execute('UPDATE inbox_events SET sent=1 WHERE id=?',(row[0],)); self.db.commit()
         return True
 
-    def start(self):
+    def start(self, adapter=None):
         def run():
             while True:
+                worked = False
                 try:
-                    if self.tick(): continue
+                    worked = self.tick()
                 except Exception as error: print('inbox_sync_retry '+type(error).__name__,flush=True)
+                if adapter:
+                    try: worked = self.super_bot_tick(adapter) or worked
+                    except Exception as error: print('super_bot_reply_retry '+type(error).__name__,flush=True)
+                if worked: continue
                 time.sleep(3)
         threading.Thread(target=run,daemon=True).start()
 

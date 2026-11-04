@@ -4,7 +4,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createNormalizedProductImage } from "@/lib/product-image-normalization";
-import { prepareWhatsAppUpload } from "@/lib/whatsapp-upload";
+import { prepareMessagingUpload } from "@/lib/messaging-upload";
 
 export const runtime = "nodejs";
 
@@ -188,12 +188,12 @@ export async function POST(request: Request) {
 
   if (folder === "documents") {
     try {
-      const prepared = await prepareWhatsAppUpload(buffer, mimeType);
+      const prepared = await prepareMessagingUpload(buffer, mimeType);
       const fileName = `${fileBase}${prepared.extension}`;
       await writeFile(path.join(uploadDir, fileName), prepared.buffer);
       return NextResponse.json({ fileName, folder, url: `/uploads/${folder}/${fileName}` });
     } catch (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo preparar el archivo para WhatsApp." }, { status: 422 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo preparar el archivo para mensajería." }, { status: 422 });
     }
   }
 

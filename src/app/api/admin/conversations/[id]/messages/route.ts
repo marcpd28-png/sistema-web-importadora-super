@@ -4,9 +4,9 @@ import {
   getConversationMessages,
   getConversationMessagesSchema,
   isAdvisorConversationAccessible,
+  MessageTransportError,
   sendInternalMessage,
 } from "@/lib/messages-service";
-import { YCloudOutboundError } from "@/lib/ycloud-outbound";
 import { z } from "zod";
 import { TelegramBridgeError } from "@/lib/telegram-bridge";
 import { ConversationAssignmentError } from "@/lib/conversation-assignment";
@@ -18,11 +18,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMessageCenterSession();
-  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) {
+      return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    }
 
     const searchParams = request.nextUrl.searchParams;
     const query = getConversationMessagesSchema.parse({
@@ -58,11 +63,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getMessageCenterSession();
-  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
 
   try {
     const { id } = await params;
-    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) {
+      return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    }
     
     const body = await request.json();
     
@@ -82,13 +92,10 @@ export async function POST(
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }
 
-    if (error instanceof YCloudOutboundError) {
+    if (error instanceof MessageTransportError) {
       return NextResponse.json(
         {
-          code: error.code,
           error: error.message,
-          messageId: error.messageId,
-          requestId: error.requestId,
         },
         { status: error.statusCode },
       );

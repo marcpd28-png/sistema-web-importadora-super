@@ -50,12 +50,12 @@ export const GENERIC_PRODUCT_PHOTO_URLS = [
 
 const DEFAULT_STORE_SETTINGS: StoreSettingsView = {
   businessName: "Importaciones Super",
-  heroTitle: "Catálogo mayorista con pedido directo por WhatsApp",
+  heroTitle: "Catálogo mayorista con compra y cotización directa",
   heroDescription:
     "Explora el stock disponible, arma tu pedido y envíalo en segundos sin llamadas ni pasos innecesarios.",
   heroSlides: [],
   heroAutoplaySeconds: 5,
-  whatsappNumber: "51999999999",
+  messengerUrl: "https://m.me/importacionessuperoficial",
   orderIntro: "Hola, quiero cotizar estos productos:",
   orderFooter: "Quedo atento a la confirmación de stock y total final.",
   currencySymbol: "S/",
@@ -406,7 +406,7 @@ function mapStoreSettings(
     heroSlides: parseHeroSlides(settings?.heroSlides),
     heroAutoplaySeconds:
       settings?.heroAutoplaySeconds ?? DEFAULT_STORE_SETTINGS.heroAutoplaySeconds,
-    whatsappNumber: settings?.whatsappNumber ?? DEFAULT_STORE_SETTINGS.whatsappNumber,
+    messengerUrl: settings?.messengerUrl ?? DEFAULT_STORE_SETTINGS.messengerUrl,
     orderIntro: settings?.orderIntro ?? DEFAULT_STORE_SETTINGS.orderIntro,
     orderFooter: settings?.orderFooter ?? DEFAULT_STORE_SETTINGS.orderFooter,
     currencySymbol: settings?.currencySymbol ?? DEFAULT_STORE_SETTINGS.currencySymbol,

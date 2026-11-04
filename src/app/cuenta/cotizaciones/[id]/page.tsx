@@ -172,10 +172,10 @@ export default async function ShopperQuoteDetailPage({ params }: ShopperQuoteDet
               <MessageCircleMore size={18} />
               <h2>Continuar atención</h2>
             </div>
-            {quote.whatsappHref ? (
-              <a className="button button-primary" href={quote.whatsappHref} rel="noreferrer" target="_blank">
+            {quote.contactHref ? (
+              <a className="button button-primary" href={quote.contactHref} rel="noreferrer" target="_blank">
                 <MessageCircleMore size={16} />
-                Escribir por WhatsApp
+                Continuar por Messenger
               </a>
             ) : (
               <Link className="button button-primary" href="/">

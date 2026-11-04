@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     template: "%s | Importaciones Super",
     default: "Catálogo Mayorista | Importaciones Super",
   },
-  description: "Catálogo mayorista de Importaciones Super. Compra directa y cotizaciones por WhatsApp.",
+  description: "Catálogo mayorista de Importaciones Super. Compra directa y cotizaciones con Super Bot.",
   icons: {
     icon: "/icon.png",
   },
   openGraph: {
     title: "Importaciones Super",
-    description: "Catálogo mayorista con cotizaciones por WhatsApp.",
+    description: "Catálogo mayorista con cotizaciones asistidas por Super Bot.",
     url: "/",
     siteName: "Importaciones Super",
     locale: "es_PE",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Importaciones Super",
-    description: "Catálogo mayorista con cotizaciones por WhatsApp.",
+    description: "Catálogo mayorista con cotizaciones asistidas por Super Bot.",
   },
 };
 

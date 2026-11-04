@@ -539,29 +539,49 @@ async function main() {
     },
   });
 
-  // 3 usuarios administrativos adicionales solicitados
-  const defaultAdminPassword = "Cambiar12345!";
-  const defaultAdminPasswordHash = await bcrypt.hash(defaultAdminPassword, 10);
-  const additionalAdmins = [
+  // Asesores con acceso comercial limitado: no deben volver a ser administradores al reseedear.
+  const defaultStaffPassword = "Cambiar12345!";
+  const defaultStaffPasswordHash = await bcrypt.hash(defaultStaffPassword, 10);
+  const additionalAdvisors = [
     { email: "candy@importadora.com", name: "Candy" },
     { email: "kimberlin@importadora.com", name: "Kimberlin" },
     { email: "geydy@importadora.com", name: "Geydy" },
-    { email: "adminmark@importadora.com", name: "Admin Mark" },
   ];
+
+  for (const advisor of additionalAdvisors) {
+    await prisma.user.upsert({
+      where: { email: advisor.email },
+      update: {
+        name: advisor.name,
+        passwordHash: defaultStaffPasswordHash,
+        role: "ASESOR",
+        requirePasswordChange: true,
+      },
+      create: {
+        email: advisor.email,
+        name: advisor.name,
+        passwordHash: defaultStaffPasswordHash,
+        role: "ASESOR",
+        requirePasswordChange: true,
+      },
+    });
+  }
+
+  const additionalAdmins = [{ email: "adminmark@importadora.com", name: "Admin Mark" }];
 
   for (const admin of additionalAdmins) {
     await prisma.user.upsert({
       where: { email: admin.email },
       update: {
         name: admin.name,
-        passwordHash: defaultAdminPasswordHash,
+        passwordHash: defaultStaffPasswordHash,
         role: "ADMIN",
         requirePasswordChange: true,
       },
       create: {
         email: admin.email,
         name: admin.name,
-        passwordHash: defaultAdminPasswordHash,
+        passwordHash: defaultStaffPasswordHash,
         role: "ADMIN",
         requirePasswordChange: true,
       },

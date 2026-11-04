@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { buildMessengerReferralUrl, getConfiguredMessengerUrl } from "@/lib/messenger-url";
 import { prisma } from "@/lib/prisma";
 
 const CULQI_SECRET_KEY = process.env.CULQI_SECRET_KEY || "";
@@ -34,14 +35,6 @@ async function chargeCulqi(token: string, amountCentavos: number, email: string,
     throw new Error(data.user_message || data.merchant_message || "Error al procesar el cobro con Culqi.");
   }
   return data;
-}
-
-// ─────────────────────────────────────────────
-// Messenger does not support prefilled messages. Its referral token carries the
-// order reference to the Page inbox, where a human adviser can continue it.
-// ─────────────────────────────────────────────
-function buildMessengerLink(orderNumber: string) {
-  return `https://m.me/importacionessuperoficial?ref=${encodeURIComponent(`pedido-${orderNumber}`)}`;
 }
 
 // ─────────────────────────────────────────────
@@ -184,8 +177,11 @@ export async function POST(request: Request) {
       },
     });
 
-    // ── 7. Build WhatsApp confirmation link ───────────────────────────
-    const messengerHref = buildMessengerLink(orderNumber);
+    // ── 7. Build the confirmation response ────────────────────────────
+    const messengerHref = buildMessengerReferralUrl(
+      await getConfiguredMessengerUrl(),
+      `pedido-${orderNumber}`,
+    );
 
     // ── 8. Return success response ────────────────────────────────────
     return NextResponse.json({

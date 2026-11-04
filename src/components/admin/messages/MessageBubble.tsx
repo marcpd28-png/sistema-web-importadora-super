@@ -3,13 +3,12 @@ import { Expand, X, ChevronDown, Reply } from "lucide-react";
 import { readMessageReply } from "@/lib/message-reply";
 import type { ChatMessage } from "@/types/messages";
 import { DocumentAttachment } from "./DocumentAttachment";
-import { ycloudMediaKind } from "@/lib/ycloud-media";
 
 interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void; onReply?: (message: ChatMessage) => void; }
 
 function getMediaSource(message: ChatMessage) {
   return message.mediaUrl && (() => {
-    try { return message.mediaUrl.startsWith('telegram-file:') || ycloudMediaKind(message.mediaUrl) ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
+    try { return message.mediaUrl.startsWith('telegram-file:') ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
     catch { return message.mediaUrl; }
   })();
 }
@@ -26,7 +25,7 @@ function MediaAttachment({ message, onOpen }: { message: ChatMessage; onOpen: ()
 export function MessageBubble({ message, onRetry, onReply }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const reply = readMessageReply(message.metadata);
-  const canReply = Boolean(onReply && message.status !== "deleted" && message.senderType === "CUSTOMER" && (message.externalMessageId?.startsWith("wamid.") || message.externalMessageId?.startsWith("tg:")));
+  const canReply = Boolean(onReply && message.status !== "deleted" && message.senderType === "CUSTOMER" && message.externalMessageId?.startsWith("tg:"));
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const isCustomer = message.senderType === "CUSTOMER";
   const isBot = message.senderType === "BOT";

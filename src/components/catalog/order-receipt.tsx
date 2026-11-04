@@ -25,7 +25,7 @@ export type ReceiptData = {
   createdAt: string; // ISO string
   businessName: string;
   storeAddress: string;
-  whatsappNumber: string;
+  messengerUrl: string;
 };
 
 const DELIVERY_LABELS: Record<string, string> = {
@@ -231,7 +231,7 @@ export function OrderReceipt({ data }: { data: ReceiptData }) {
       {/* Footer */}
       <div style={{ textAlign: "center", fontSize: 12, color: "#6b7280" }}>
         <p style={{ margin: "0 0 4px" }}>Gracias por tu compra 🙏</p>
-        <p style={{ margin: 0 }}>Envíanos tu voucher de pago por WhatsApp para confirmar tu pedido.</p>
+        <p style={{ margin: 0 }}>Envía tu voucher de pago por Messenger para confirmar tu pedido.</p>
       </div>
 
       {/* Copy button */}

@@ -18,4 +18,5 @@ test('source stores only coarse attribution', () => {
   assert.equal(trafficSource('https://google.com/search?q=private', '', 'https://tienda.test'), 'google');
   assert.equal(trafficSource('https://tienda.test/producto/abc', '', 'https://tienda.test'), 'direct');
   assert.equal(trafficSource('', 'tiktok', 'https://tienda.test'), 'tiktok');
+  assert.equal(trafficSource('https://m.me/importacionessuperoficial', '', 'https://tienda.test'), 'messenger');
 });

@@ -1,10 +1,16 @@
-import { searchCatalogIdentity, matchesProductQuery, productQueryTerms } from "./rocky-product-query";
-import { interpretProductQuery } from "./rocky-query-interpretation";
+import {
+  inferCatalogSearchIntentFromDatabase,
+  matchesProductQuery,
+  productQueryTerms,
+  searchCatalogIdentity,
+  type CatalogSearchInference,
+} from "./catalog-query";
+import { interpretProductQuery } from "./product-query-interpretation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
 import { buildRealProductPhotoWhere } from "@/lib/store-shared";
-import { buildPublicWhatsappHref, formatCurrency } from "@/lib/utils";
+import { formatCurrency, PUBLIC_MESSENGER_URL } from "@/lib/utils";
 import type {
   ShopAssistantProductCard,
   ShopAssistantQuickAction,
@@ -100,6 +106,7 @@ const STOPWORDS = new Set([
 const CATEGORY_FOCUS_ALIASES: Record<string, string[]> = {
   televisor: ["televisor", "televisores", "tv"],
   celular: ["celular", "celulares", "telefono", "smartphone", "iphone"],
+  tablet: ["tablet", "tablets"],
   parlante: ["parlante", "parlantes", "altavoz", "speaker"],
   teclado: ["teclado", "teclados", "keyboard"],
   mouse: ["mouse", "mause", "raton"],
@@ -108,6 +115,30 @@ const CATEGORY_FOCUS_ALIASES: Record<string, string[]> = {
   scooter: ["scooter", "scoter", "scuter", "patineta"],
   repetidor_wifi: ["repetidor", "repetidores", "extensor", "extensores", "range extender"],
 };
+
+const PRODUCT_FOCUS_LABELS: Record<string, string> = {
+  televisor: "televisores",
+  celular: "celulares",
+  tablet: "tablets",
+  parlante: "parlantes",
+  teclado: "teclados",
+  mouse: "mouses",
+  audifonos: "audífonos",
+  auriculares: "auriculares",
+  scooter: "scooters",
+  repetidor_wifi: "repetidores Wi‑Fi",
+};
+
+// These are preferences, not product specifications the catalog can verify.
+// Measurements, model numbers, brands, colors and capacities stay strict.
+const VAGUE_FOCUS_MODIFIERS = new Set([
+  "grande",
+  "grandes",
+  "gigante",
+  "gigantes",
+  "enorme",
+  "enormes",
+]);
 
 const CATEGORY_FOCUS_EXCLUSIONS: Record<string, string[]> = {
   teclado: ["audifono", "audifonos", "auricular", "auriculares", "headset"],
@@ -173,7 +204,7 @@ export type AssistantSettingsRecord = {
   businessName: string;
   currencySymbol: string;
   supportHours: string;
-  whatsappNumber: string;
+  messengerUrl: string;
 };
 
 export type ShopAssistantRepository = {
@@ -183,6 +214,7 @@ export type ShopAssistantRepository = {
   }>;
   findProductByCode: (code: string) => Promise<AssistantProductRecord | null>;
   searchVisibleProducts: (query: string) => Promise<AssistantProductRecord[]>;
+  inferProductSearch?: (query: string) => Promise<CatalogSearchInference>;
   getFeaturedProducts: () => Promise<AssistantProductRecord[]>;
   getCategoryProducts: (categoryId: string) => Promise<AssistantProductRecord[]>;
   getRelatedProducts: (product: AssistantProductRecord) => Promise<AssistantProductRecord[]>;
@@ -225,8 +257,8 @@ function getAssistantProductImage(product: AssistantProductRecord) {
   if (preferredUrl) {
     return {
       imageUrl: preferredUrl,
-      // WhatsApp/YCloud does not reliably accept the optimized local WebP
-      // copies. Prefer the original public photograph for outbound media.
+      // Channel adapters can choose the original public photograph when their
+      // provider cannot consume an optimized local WebP copy.
       outboundImageUrl: [product.sourceImageUrl, realImageMedia?.url, product.imageUrl]
         .map((url) => url?.trim() ?? "")
         .find((url) => url && !isGenericProductPhotoUrl(url) && /^https?:\/\//i.test(url)) ?? null,
@@ -353,6 +385,17 @@ type ProductFocus = {
   canonical: string;
   aliases: string[];
 };
+
+function canBroadenVagueProductFocus(query: string, focus: ProductFocus) {
+  const focusTerms = new Set(focus.aliases.flatMap((alias) => productQueryTerms(alias)));
+  const modifiers = productQueryTerms(query).filter((term) => !focusTerms.has(term));
+
+  return modifiers.length > 0 && modifiers.every((term) => VAGUE_FOCUS_MODIFIERS.has(term));
+}
+
+function getProductFocusLabel(focus: ProductFocus) {
+  return PRODUCT_FOCUS_LABELS[focus.canonical] ?? focus.aliases[0];
+}
 
 function detectProductFocus(query: string): ProductFocus | null {
   const normalized = normalizeAssistantText(query);
@@ -766,6 +809,40 @@ function buildDefaultPrompts() {
   ];
 }
 
+function buildCatalogInferenceClarification(
+  inference: Extract<CatalogSearchInference, { kind: "clarification" }>,
+): ShopAssistantReply {
+  // Do not echo arbitrary customer wording into a durable automatic reply.
+  // The catalog interpretation itself remains specific and actionable.
+  const requested = "la consulta indicada";
+  const options = inference.interpretations.join(" o ");
+  const onlyCandidate = inference.candidates.length === 1 ? inference.candidates[0] : null;
+  const text = inference.crossFamily
+    ? onlyCandidate
+      ? `Creo que ${requested} se refiere a ${onlyCandidate.name} (${onlyCandidate.code}), que corresponde a ${options}. ¿Es correcto? Responde “sí” para ver precio y stock.`
+      : `Para ${requested}, las coincidencias disponibles apuntan a ${options}. ¿Cuál buscas?`
+    : `Para ${requested}, la medida indicada puede referirse a ${options}. ¿Cuál buscas?`;
+
+  return {
+    text,
+    searchClarification: inference.candidates,
+    contextProductCode: inference.crossFamily && onlyCandidate ? onlyCandidate.code : null,
+    meta: { intent: "product_clarification", usedOllama: false },
+  };
+}
+
+function catalogInferenceLead(inference: CatalogSearchInference | null) {
+  return inference?.kind === "resolved"
+    ? `Entendí que te refieres a ${inference.interpretation}. `
+    : "";
+}
+
+function rejectsProductContext(message: string) {
+  return /^(?:no\b|nope\b|negativo\b|ningun[oa]?\b|no es\b|otro\b|otra\b)/.test(
+    normalizeAssistantText(message),
+  );
+}
+
 function shouldUseConversationContext(message: string, recentConversation: string) {
   if (!recentConversation.trim()) {
     return false;
@@ -789,7 +866,7 @@ function shouldUseConversationContext(message: string, recentConversation: strin
     extractQuantity(message) !== null ||
     isAdultIntent(message) ||
     detectGiftIntent(message).isGiftIntent ||
-    /(oferta|ofertas|categoria|categorias|rubro|stock|whatsapp|pedido|cotizacion|cotizar)/.test(text);
+    /(oferta|ofertas|categoria|categorias|rubro|stock|messenger|pedido|cotizacion|cotizar)/.test(text);
 
   return !hasDirectNewIntent;
 }
@@ -888,24 +965,15 @@ function buildGiftSearchQueries(
 function formatProductAnswer(product: AssistantProductRecord, currencySymbol: string) {
   const unitPrice = Number(product.unitPrice);
   const wholesalePrice = product.wholesalePrice !== null ? Number(product.wholesalePrice) : null;
-  const description =
-    product.description &&
-    normalizeAssistantText(product.description) !== normalizeAssistantText(product.name)
-      ? `Descripción: ${product.description}. `
-      : "";
-  const technicalSpecs =
-    product.technicalSpecs &&
-    normalizeAssistantText(product.technicalSpecs) !== normalizeAssistantText(product.name)
-      ? `Especificaciones técnicas: ${product.technicalSpecs}. `
-      : "";
   const pricingLines = [
     `Precio unitario: ${formatCurrency(unitPrice, currencySymbol)}`,
     wholesalePrice
       ? `Mayorista desde ${product.wholesaleMinQty}: ${formatCurrency(wholesalePrice, currencySymbol)}`
-      : "Mayorista: mantiene el precio unitario",
-  ];
+      : null,
+    `Stock: ${getAvailabilityLabel(product.stockUnits)}`,
+  ].filter(Boolean);
 
-  return `${product.name} (${product.code}). ${description}${technicalSpecs}${pricingLines.join(". ")}. Stock sincronizado: ${product.stockUnits} unidades (${getAvailabilityLabel(product.stockUnits)}).`;
+  return `${product.name} (${product.code}). ${pricingLines.join(". ")}.`;
 }
 
 function createRealRepository(): ShopAssistantRepository {
@@ -924,7 +992,7 @@ function createRealRepository(): ShopAssistantRepository {
           businessName: settings?.businessName ?? "Importaciones Super",
           currencySymbol: settings?.currencySymbol ?? "S/",
           supportHours: settings?.supportHours ?? "Lun a sáb 8:00 am - 7:00 pm",
-          whatsappNumber: settings?.whatsappNumber ?? "51999999999",
+          messengerUrl: settings?.messengerUrl ?? PUBLIC_MESSENGER_URL,
         },
         categories,
       };
@@ -958,6 +1026,10 @@ function createRealRepository(): ShopAssistantRepository {
         },
         select: ASSISTANT_PRODUCT_SELECT,
       });
+    },
+
+    async inferProductSearch(query) {
+      return inferCatalogSearchIntentFromDatabase(query);
     },
 
     async searchVisibleProducts(query) {
@@ -1030,7 +1102,6 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const trimmedMessage = input.message.trim();
     const normalized = normalizeAssistantText(trimmedMessage);
     const baseData = await repository.getBaseData();
-    const whatsappHref = buildPublicWhatsappHref();
     const recentConversation = (input.recentMessages ?? [])
       .map((item) => normalizeAssistantText(item.text))
       .filter(Boolean)
@@ -1042,7 +1113,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
 
     if (!trimmedMessage) {
       return {
-        text: `Puedo ayudarte a buscar productos por código, nombre, categoría, ofertas o compra por WhatsApp en ${baseData.settings.businessName}.`,
+        text: `Puedo ayudarte a buscar productos por código, nombre, categoría, ofertas o compras en ${baseData.settings.businessName}.`,
         quickActions: buildQuickActions([
           { label: "Ver ofertas", href: "/?featured=1", accent: true },
           { label: "Buscar catálogo", href: "/?focus=search" },
@@ -1070,7 +1141,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const productFocus = detectProductFocus(assistantScope);
     const giftIntent = detectGiftIntent(assistantScope);
     // Promotional-source words are context only. They must never divert a
-    // customer away from the product they are asking Rocky to find.
+    // customer away from the product they are asking Super Bot to find.
     const productSearchTerms = extractSearchTerms(
       assistantScope.replace(/\b(oferta|ofertas|promo|promocion|promociones|destacado|destacados|tiktok|tik tok|video)\b/gi, " "),
     );
@@ -1081,7 +1152,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     );
     const wantsSupport =
       !productFocus &&
-      /\b(whatsapp|contacto|horario|hora|pedido|comprar|compra|envio|entrega|delivery|pago|cotizacion|cotizar)\b/.test(
+      /\b(messenger|contacto|horario|hora|pedido|comprar|compra|envio|entrega|delivery|pago|cotizacion|cotizar)\b/.test(
         normalized,
       );
     const wantsGift = !productFocus && giftIntent.isGiftIntent;
@@ -1095,18 +1166,33 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const wantsContinuation = /(mas|más|otra|otro|otras|otros|ver mas|ver más|muestrame mas|muestrame más)/.test(
       normalized,
     );
-    const code = extractProductCode(trimmedMessage) ?? input.productContextCode ?? null;
+    const code = extractProductCode(trimmedMessage) ??
+      (rejectsProductContext(trimmedMessage) ? null : input.productContextCode) ??
+      null;
     const budget = extractBudget(trimmedMessage);
     const quantity = extractQuantity(trimmedMessage);
     const allowSensitiveProducts = isAdultIntent(assistantScope);
     const contextProduct = code ? await repository.findProductByCode(code) : null;
+    const productSearchInference =
+      !code && !budget && !quantity && searchTerms && repository.inferProductSearch
+        ? await repository.inferProductSearch(searchTerms)
+        : null;
 
-    if (matchedCategory && !wantsSupport && !code && matchesProductQuery({ name: matchedCategory.name }, searchTerms)) {
-      const products = (await repository.searchVisibleProducts(searchTerms)).filter(product => product.stockUnits > 0 && Number(product.unitPrice) > 0 && product.isVisible !== false && matchesProductQuery(product, searchTerms)).slice(0, MAX_PRODUCTS);
+    if (productSearchInference?.kind === "clarification") {
+      return buildCatalogInferenceClarification(productSearchInference);
+    }
+
+    const resolvedSearchTerms = productSearchInference?.kind === "resolved"
+      ? productSearchInference.query
+      : searchTerms;
+    const inferenceLead = catalogInferenceLead(productSearchInference);
+
+    if (matchedCategory && !wantsSupport && !code && matchesProductQuery({ name: matchedCategory.name }, resolvedSearchTerms)) {
+      const products = (await repository.searchVisibleProducts(resolvedSearchTerms)).filter(product => product.stockUnits > 0 && Number(product.unitPrice) > 0 && product.isVisible !== false && matchesProductQuery(product, resolvedSearchTerms)).slice(0, MAX_PRODUCTS);
       return {
         text: products.length
-          ? `En ${matchedCategory.name} encontré estas opciones para empezar rápido.`
-          : `La categoría ${matchedCategory.name} existe, pero ahora no tiene productos visibles.`,
+          ? `${inferenceLead}En ${matchedCategory.name} encontré estas opciones para empezar rápido.`
+          : `${inferenceLead}La categoría ${matchedCategory.name} existe, pero ahora no tiene productos visibles.`,
         contextCategorySlug: matchedCategory.slug,
         products: products.map((product) =>
           mapAssistantProduct(product, baseData.settings.currencySymbol),
@@ -1167,7 +1253,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         suggestedPrompts: [
           "Muéstrame ofertas",
           "Busca por código",
-          "¿Cómo compro por WhatsApp?",
+          "¿Cómo hago mi pedido?",
         ],
       };
     }
@@ -1175,13 +1261,13 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     if (wantsSupport) {
       return {
         text:
-          `Puedes armar el carrito, revisar si ya aplica el precio mayorista y luego pulsar “Registrar cotización ERP” o “Enviar pedido” por WhatsApp. ` +
+          `Puedes armar el carrito, revisar si ya aplica el precio mayorista y luego registrar tu cotización o enviar pedido desde la tienda. ` +
           `Horario configurado: ${baseData.settings.supportHours}. ` +
-          "Si necesitas confirmar entrega o pago, conviene cerrar el pedido por WhatsApp.",
+          "Si necesitas confirmar entrega o pago, un asesor puede continuar por Messenger.",
         quickActions: buildQuickActions([
           { label: "Ir al catálogo", href: "/?focus=search", accent: true },
           { label: "Cotizar pedido", href: "/?drawer=cart" },
-          { label: "WhatsApp", href: whatsappHref },
+          { label: "Messenger", href: baseData.settings.messengerUrl },
           { label: "Ver ofertas", href: "/?featured=1" },
         ]),
         suggestedPrompts: [
@@ -1205,7 +1291,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           quickActions: buildQuickActions([
             { label: "Buscar ideas", href: "/?focus=search", accent: true },
             { label: "Ver ofertas", href: "/?featured=1" },
-            { label: "WhatsApp", href: whatsappHref },
+            { label: "Messenger", href: baseData.settings.messengerUrl },
           ]),
           suggestedPrompts: [
             "Regalo para ella con presupuesto",
@@ -1248,7 +1334,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
             { label: "Parlantes", href: "/?q=parlante", accent: true },
             { label: "Audífonos", href: "/?q=audifonos" },
             { label: "Relojes", href: "/?q=reloj" },
-            { label: "WhatsApp", href: whatsappHref },
+            { label: "Messenger", href: baseData.settings.messengerUrl },
           ]),
           suggestedPrompts: [
             "parlantes para papá",
@@ -1266,7 +1352,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           quickActions: buildQuickActions([
             { label: "Buscar ideas", href: "/?focus=search", accent: true },
             { label: "Ver ofertas", href: "/?featured=1" },
-            { label: "WhatsApp", href: whatsappHref },
+            { label: "Messenger", href: baseData.settings.messengerUrl },
           ]),
           suggestedPrompts: [
             "Algo para regalar por cumpleaños",
@@ -1294,7 +1380,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         quickActions: buildQuickActions([
           { label: "Buscar más ideas", href: "/?focus=search", accent: true },
           { label: "Ver ofertas", href: "/?featured=1" },
-          { label: "WhatsApp", href: whatsappHref },
+          { label: "Messenger", href: baseData.settings.messengerUrl },
         ]),
         suggestedPrompts: [
           budget
@@ -1313,7 +1399,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           contextProductCode: contextProduct.code,
           quickActions: buildQuickActions([
             { label: "Buscar similares", href: `/?q=${encodeURIComponent(contextProduct.category ?? contextProduct.name)}`, accent: true },
-            { label: "WhatsApp", href: whatsappHref },
+            { label: "Messenger", href: baseData.settings.messengerUrl },
           ]),
           suggestedPrompts: ["Muéstrame algo similar", "Más barato", "¿Cómo cotizo?"],
         };
@@ -1435,11 +1521,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         return {
           text:
             `${contextProduct.name} (${contextProduct.code}) existe en el ERP, pero ahora no está visible en la tienda porque no tiene stock disponible.` +
-            " Si quieres, puedo ayudarte a buscar una alternativa visible o puedes confirmarlo por WhatsApp.",
+            " Si quieres, puedo ayudarte a buscar una alternativa visible o confirmarlo con un asesor.",
           contextProductCode: contextProduct.code,
           quickActions: buildQuickActions([
             { label: "Buscar alternativas", href: `/?q=${encodeURIComponent(contextProduct.code)}`, accent: true },
-            { label: "WhatsApp", href: whatsappHref },
+            { label: "Messenger", href: baseData.settings.messengerUrl },
             { label: "Ver ofertas", href: "/?featured=1" },
           ]),
           suggestedPrompts: [
@@ -1479,16 +1565,40 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       };
     }
 
-    if (searchTerms && !contextProduct) {
+    if (resolvedSearchTerms && !contextProduct) {
       const products = filterSensitiveProducts(
-        await repository.searchVisibleProducts(searchTerms),
+        await repository.searchVisibleProducts(resolvedSearchTerms),
         allowSensitiveProducts,
       );
       const focusedProducts =
         productFocus && products.length
           ? products.filter((product) => productMatchesFocus(product, productFocus))
           : products;
-      if (productFocus && !products.length) {
+      let productsForRanking = productFocus ? focusedProducts : products;
+      let resultQuery = resolvedSearchTerms;
+      let broadenedFocus = false;
+
+      if (
+        productFocus &&
+        !productsForRanking.length &&
+        canBroadenVagueProductFocus(resolvedSearchTerms, productFocus)
+      ) {
+        const focusQuery = productFocus.aliases[0];
+        const broadProducts = filterSensitiveProducts(
+          await repository.searchVisibleProducts(focusQuery),
+          allowSensitiveProducts,
+        )
+          .filter((product) => matchesProductQuery(product, focusQuery))
+          .filter((product) => productMatchesFocus(product, productFocus));
+
+        if (broadProducts.length) {
+          productsForRanking = broadProducts;
+          resultQuery = focusQuery;
+          broadenedFocus = true;
+        }
+      }
+
+      if (productFocus && !productsForRanking.length) {
         return {
           // A miss should not create an automated sales message. The customer
           // can continue with another query or wait for a human response.
@@ -1496,12 +1606,10 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         };
       }
 
-      const productsForRanking = productFocus ? focusedProducts : products;
-
       const sortedProducts = quantity
-        ? sortProductsForQuantity(productsForRanking, quantity, searchTerms, productFocus)
+        ? sortProductsForQuantity(productsForRanking, quantity, resultQuery, productFocus)
         : budget
-          ? sortProductsForBudget(productsForRanking, searchTerms, budget, productFocus)
+          ? sortProductsForBudget(productsForRanking, resultQuery, budget, productFocus)
           : productsForRanking.slice(0, MAX_PRODUCTS);
       const visibleProducts = sortedProducts.slice(0, MAX_PRODUCTS);
       const recommendedProducts = applySalesRecommendations(
@@ -1513,9 +1621,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       if (visibleProducts.length === 1) {
         const product = visibleProducts[0];
         return {
-          text: budget
-            ? `La opción más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)} es: ${formatProductAnswer(product, baseData.settings.currencySymbol)}`
-            : formatProductAnswer(product, baseData.settings.currencySymbol),
+          text: broadenedFocus
+            ? `${inferenceLead}Sí, tenemos ${getProductFocusLabel(productFocus!)} disponibles.`
+            : budget
+            ? `${inferenceLead}La opción más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)} es: ${formatProductAnswer(product, baseData.settings.currencySymbol)}`
+            : `${inferenceLead}${formatProductAnswer(product, baseData.settings.currencySymbol)}`,
           contextProductCode: product.code,
           contextCategorySlug: product.categoryId
             ? baseData.categories.find((category) => category.id === product.categoryId)?.slug ?? null
@@ -1527,7 +1637,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
               href: `/producto/${encodeURIComponent(product.slug)}`,
               accent: true,
             },
-            { label: "Buscar más", href: `/?q=${encodeURIComponent(searchTerms)}` },
+            { label: "Buscar más", href: `/?q=${encodeURIComponent(resultQuery)}` },
           ]),
           suggestedPrompts: [
             "¿Y el precio mayorista?",
@@ -1545,11 +1655,13 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         );
 
         return {
-          text: quantity
-            ? `La mejor opción para ${quantity} unidades es ${closestProduct.name} a ${closestPrice} c/u. ${closestProduct.wholesalePrice !== null && quantity >= closestProduct.wholesaleMinQty ? "Ya aplica precio mayorista." : "También te dejo alternativas."}`
+          text: broadenedFocus
+            ? `${inferenceLead}Sí, tenemos ${getProductFocusLabel(productFocus!)} disponibles.`
+            : quantity
+            ? `${inferenceLead}La mejor opción para ${quantity} unidades es ${closestProduct.name} a ${closestPrice} c/u. ${closestProduct.wholesalePrice !== null && quantity >= closestProduct.wholesaleMinQty ? "Ya aplica precio mayorista." : "También te dejo alternativas."}`
             : budget
-              ? `La mejor opción es ${closestProduct.name} a ${closestPrice}: es la más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)}. También puedes considerar estas alternativas.`
-              : `La mejor opción es ${closestProduct.name}. También puedes considerar estas alternativas con stock.`,
+              ? `${inferenceLead}La mejor opción es ${closestProduct.name} a ${closestPrice}: es la más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)}. También puedes considerar estas alternativas.`
+              : `${inferenceLead}La mejor opción es ${closestProduct.name}. También puedes considerar estas alternativas con stock.`,
           contextProductCode: closestProduct.code,
           contextCategorySlug: closestProduct.categoryId
             ? baseData.categories.find((category) => category.id === closestProduct.categoryId)?.slug ?? null
@@ -1560,7 +1672,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           quickActions: buildQuickActions([
             {
               label: "Ver resultados",
-              href: `/?q=${encodeURIComponent(searchTerms)}`,
+              href: `/?q=${encodeURIComponent(resultQuery)}`,
               accent: true,
             },
             { label: "Ver ofertas", href: "/?featured=1" },

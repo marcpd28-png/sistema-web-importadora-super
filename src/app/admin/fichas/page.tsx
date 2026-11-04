@@ -94,7 +94,7 @@ export default async function FichasPage({ searchParams }: FichasPageProps) {
         QR_OPEN: 0,
         VIDEO_PLAY: 0,
         ADD_TO_CART_FROM_QR: 0,
-        WHATSAPP_FROM_QR: 0,
+        MESSENGER_FROM_QR: 0,
       });
     }
     const productCounts = countsMap.get(item.productId)!;
@@ -110,7 +110,7 @@ export default async function FichasPage({ searchParams }: FichasPageProps) {
       QR_OPEN: 0,
       VIDEO_PLAY: 0,
       ADD_TO_CART_FROM_QR: 0,
-      WHATSAPP_FROM_QR: 0,
+      MESSENGER_FROM_QR: 0,
     };
     return {
       ...p,
@@ -119,7 +119,7 @@ export default async function FichasPage({ searchParams }: FichasPageProps) {
         last7Days: last7DaysMap.get(p.id) || 0,
         videoPlays: pCounts.VIDEO_PLAY || 0,
         cartAdds: pCounts.ADD_TO_CART_FROM_QR || 0,
-        whatsappClicks: pCounts.WHATSAPP_FROM_QR || 0,
+        messengerClicks: pCounts.MESSENGER_FROM_QR || 0,
       },
     };
   });

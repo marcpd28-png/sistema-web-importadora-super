@@ -27,6 +27,7 @@ export function AdvisorNav() {
           </Link>
         );
       })}
+      <p className={styles.hint}>Acceso comercial limitado a consulta de catálogo, atención de cotizaciones y conversaciones con clientes.</p>
     </nav>
   );
 }

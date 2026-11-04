@@ -34,7 +34,7 @@ const getVerifiedReply = async () => verifiedReply;
 function completedResponse(reply = "Respuesta de prueba") {
   return {
     status: "completed",
-    output_text: JSON.stringify({ reply }),
+    output_text: JSON.stringify({ language: "es-PE", reply }),
   };
 }
 
@@ -83,7 +83,7 @@ test("uses gpt-6.1-sol through Responses with a verified catalog context", async
   let requestUrl = "";
   let requestInit: RequestInit | undefined;
   const result = await generateSuperBotSimulatorReply(
-    { message: "Busco un parlante JBL", recentMessages: [{ role: "user", text: "Hola" }] },
+    { message: "Could you reserve one?", recentMessages: [{ role: "user", text: "Hello" }] },
     {
       enabled: true,
       apiKey: "test-key",
@@ -109,7 +109,16 @@ test("uses gpt-6.1-sol through Responses with a verified catalog context", async
   assert.deepEqual(body.reasoning, { effort: "low" });
   assert.equal("temperature" in body, false);
   assert.equal("top_p" in body, false);
-  assert.equal((body.text as { format: { type: string } }).format.type, "json_schema");
+  const responseFormat = (body.text as { format: { type: string; schema: { properties: Record<string, unknown> } } }).format;
+  assert.equal(responseFormat.type, "json_schema");
+  assert.deepEqual(responseFormat.schema.properties.language, { type: "string", enum: ["es-PE"] });
+  assert.deepEqual(responseFormat.schema.properties.reply, { type: "string", minLength: 1, maxLength: 480 });
+  assert.match(String(body.instructions), /REGLA ABSOLUTA DE IDIOMA/);
+  assert.match(String(body.instructions), /siempre íntegramente en español peruano/);
+  assert.match(String(body.instructions), /aunque el cliente, el historial o cualquier texto de entrada esté en otro idioma/);
+  assert.match(String(body.instructions), /una o dos frases cortas/);
+  assert.match(String(body.instructions), /adjetivo impreciso/);
+  assert.match(String(body.instructions), /Usa emojis con moderación/);
   assert.doesNotMatch(String(body.input), /stockUnits/);
   assert.match(String(body.input), /JBL-GO4/);
 });
@@ -123,13 +132,32 @@ test("accepts typed output messages from Responses", async () => {
       getVerifiedReply,
       fetchImpl: (async () => Response.json({
         status: "completed",
-        output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ reply: "Respuesta tipada" }) }] }],
+        output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ language: "es-PE", reply: "Respuesta tipada" }) }] }],
       })) as typeof fetch,
     },
   );
 
   assert.equal(result.provider, "openai");
   assert.equal(result.text, "Respuesta tipada");
+});
+
+test("falls back to the verified Spanish reply when the draft declares another language", async () => {
+  const result = await generateSuperBotSimulatorReply(
+    { message: "Can you reserve one?" },
+    {
+      enabled: true,
+      apiKey: "test-key",
+      getVerifiedReply,
+      fetchImpl: (async () => Response.json({
+        status: "completed",
+        output_text: JSON.stringify({ language: "en-US", reply: "Sure, I can help with that." }),
+      })) as typeof fetch,
+    },
+  );
+
+  assert.equal(result.provider, "verified");
+  assert.equal(result.fallbackReason, "invalid_response");
+  assert.equal(result.text, verifiedReply.text);
 });
 
 test("uses the verified reply when the provider fails without exposing provider details", async () => {
@@ -168,4 +196,26 @@ test("does not ask the model to answer when the catalog has no verified answer",
   assert.equal(result.provider, "verified");
   assert.equal(result.fallbackReason, "no_verified_answer");
   assert.match(result.text, /asesor/);
+});
+
+test("preserves a verified catalog PDF in the simulator response", async () => {
+  const result = await generateSuperBotSimulatorReply(
+    { message: "Catálogo de parlantes" },
+    {
+      enabled: false,
+      getVerifiedReply: async () => ({
+        text: "Aquí tienes el catálogo solicitado.",
+        document: {
+          deliveryKey: "catalog:parlantes.pdf",
+          filename: "parlantes.pdf",
+          mimeType: "application/pdf",
+          sizeBytes: 1024,
+          url: "https://tiendavirtualsuper.com/uploads/catalogs/parlantes.pdf",
+        },
+      }),
+    },
+  );
+
+  assert.equal(result.document?.filename, "parlantes.pdf");
+  assert.equal(result.document?.mimeType, "application/pdf");
 });

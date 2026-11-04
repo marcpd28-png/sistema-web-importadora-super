@@ -2,20 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { getMessageCenterSession } from "@/lib/auth";
 import { isAdvisorConversationAccessible } from "@/lib/messages-service";
 import { prisma } from "@/lib/prisma";
-import { ycloudMediaKind } from "@/lib/ycloud-media";
 import { telegramBridgeHeaders, telegramBridgeUrl } from "@/lib/telegram-bridge";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getMessageCenterSession();
-  if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
 
   try {
     const { id } = await params;
     const message = await prisma.chatMessage.findUnique({
       where: { id },
-      select: { mediaUrl: true, messageType: true, metadata: true, conversation: { select: { id: true, channel: true } } },
+      select: {
+        mediaUrl: true,
+        messageType: true,
+        metadata: true,
+        conversation: { select: { id: true, channel: true } },
+      },
     });
     if (!message || (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(message.conversation.id, session.userId)))) {
       return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
@@ -38,36 +44,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       for (const key of ["content-length", "content-range", "accept-ranges"]) { const value = response.headers.get(key); if (value) output.set(key, value); }
       return new NextResponse(response.body, { headers: output, status: response.status });
     }
-    const mediaKind = ycloudMediaKind(message?.mediaUrl ?? null);
-    if (message.conversation.channel !== "WHATSAPP" || !mediaKind) {
-      return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
-    }
-
-    const apiKey = process.env.YCLOUD_API_KEY?.trim();
-    if (mediaKind === "api" && !apiKey) return NextResponse.json({ error: "YCloud no está configurado" }, { status: 503 });
-    const headers = new Headers({ "Accept-Encoding": "identity" });
-    // Signed CDN links authenticate through their query; never forward the API key.
-    if (mediaKind === "api") headers.set("X-API-Key", apiKey!);
-    const range = request.headers.get("range");
-    if (range && /^bytes=\d*-\d*$/.test(range)) headers.set("Range", range);
-    const response = await fetch(message.mediaUrl!, { headers, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30_000) });
-    if (response.status !== 200 && response.status !== 206) {
-      await response.body?.cancel();
-      return NextResponse.json({ error: "YCloud no pudo entregar el archivo" }, { status: 502 });
-    }
-    const output = new Headers({
-      "Content-Type": response.headers.get("content-type") ?? "application/octet-stream",
-      "Cache-Control": "private, no-store",
-      "X-Content-Type-Options": "nosniff",
-      "Content-Disposition": message.messageType === "DOCUMENT" ? "attachment" : "inline",
-    });
-    for (const name of ["content-length", "content-range", "accept-ranges"]) {
-      const value = response.headers.get(name);
-      if (value) output.set(name, value);
-    }
-    return new NextResponse(response.body, { status: response.status, headers: output });
+    return NextResponse.json({ error: "Archivo no disponible" }, { status: 404 });
   } catch (error) {
-    console.error("Error serving YCloud media:", error instanceof Error ? error.name : "Unknown error");
+    console.error("Error serving chat media:", error instanceof Error ? error.name : "Unknown error");
     return NextResponse.json({ error: "No se pudo cargar el archivo" }, { status: 502 });
   }
 }

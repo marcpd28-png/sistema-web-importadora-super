@@ -14,7 +14,11 @@ export async function loginAction(formData: FormData) {
     where: { email: normalizedEmail },
   });
 
-  if (!user || (user.role !== "ADMIN" && user.role !== "ASESOR") || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (
+    !user ||
+    (user.role !== "ADMIN" && user.role !== "ASESOR") ||
+    !(await bcrypt.compare(password, user.passwordHash))
+  ) {
     redirect("/login?error=Credenciales%20inválidas");
   }
 

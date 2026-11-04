@@ -11,6 +11,7 @@ import {
   QuoteLineValidationError,
 } from "@/lib/quote-pricing";
 import { getStoreSettings } from "@/lib/store";
+import { buildMessengerReferralUrl } from "@/lib/messenger-url";
 
 type QuoteRequestItem = {
   code: string;
@@ -219,7 +220,10 @@ export async function POST(request: Request) {
     });
 
     const { quoteNumber, externalId: quoteExternalId } = confirmQuotationResponse(result.response);
-    const messengerHref = buildMessengerHref(localQuote.id, quoteNumber);
+    const messengerHref = buildMessengerReferralUrl(
+      settings.messengerUrl,
+      `cotizacion-${quoteNumber || localQuote.id}`,
+    );
     const warnings = result.warnings.filter(Boolean);
     const messageBase = quoteNumber
       ? `Cotización ${quoteNumber} registrada en el ERP.`
@@ -257,7 +261,7 @@ export async function POST(request: Request) {
         quoteNumber,
         status: "ERP_REGISTERED",
         statusSteps: toJson(statusSteps),
-        whatsappHref: messengerHref,
+        contactHref: messengerHref,
 
       },
     });
@@ -308,16 +312,12 @@ function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value ?? null)) as Prisma.InputJsonValue;
 }
 
-function buildMessengerHref(localQuoteId: string, quoteNumber: string | null) {
-  const reference = quoteNumber || localQuoteId;
-  return `https://m.me/importacionessuperoficial?ref=${encodeURIComponent(`cotizacion-${reference}`)}`;
-}
 import { buildSellableProductWhere } from "@/lib/store-shared";
 
-function existingQuoteResponse(quote: { id: string; status: string; quoteNumber: string | null; erpExternalId: string | null; whatsappHref: string | null; statusSteps: unknown }) {
+function existingQuoteResponse(quote: { id: string; status: string; quoteNumber: string | null; erpExternalId: string | null; contactHref: string | null; statusSteps: unknown }) {
   if (quote.status === "ERP_REGISTERED" && quote.quoteNumber && quote.erpExternalId) {
     return NextResponse.json({ localQuoteId: quote.id, quoteNumber: quote.quoteNumber,
-      message: `Cotización ${quote.quoteNumber} registrada en el ERP.`, messengerHref: quote.whatsappHref, statusSteps: quote.statusSteps });
+      message: `Cotización ${quote.quoteNumber} registrada en el ERP.`, messengerHref: quote.contactHref, statusSteps: quote.statusSteps });
   }
   return NextResponse.json({ localQuoteId: quote.id,
     message: "Esta solicitud ya fue recibida. Su registro no está confirmado; consulta con un asesor antes de repetirla." }, { status: 409 });

@@ -51,7 +51,7 @@ export function StoreAnalytics({ projectId }: { projectId: string }) {
     trackStoreEvent("page_view");
     function onClick(event: MouseEvent) {
       const anchor = event.target instanceof Element ? event.target.closest("a") : null;
-      if (anchor && ["wa.me", "api.whatsapp.com", "web.whatsapp.com"].includes(new URL(anchor.href, location.href).hostname)) trackStoreEvent("whatsapp_click");
+      if (anchor && ["m.me", "www.messenger.com", "messenger.com"].includes(new URL(anchor.href, location.href).hostname)) trackStoreEvent("messenger_click");
     }
     document.addEventListener("click", onClick);
     return () => {

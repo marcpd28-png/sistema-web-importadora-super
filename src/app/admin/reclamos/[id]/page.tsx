@@ -177,7 +177,7 @@ export default async function AdminComplaintDetailPage({
               <dd>{complaint.customerEmail ?? "No registrado"}</dd>
             </div>
             <div>
-              <dt>WhatsApp</dt>
+              <dt>Teléfono</dt>
               <dd>{complaint.customerPhone ?? "No registrado"}</dd>
             </div>
             <div>

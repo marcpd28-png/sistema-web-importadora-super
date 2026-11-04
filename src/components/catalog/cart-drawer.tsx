@@ -228,6 +228,7 @@ function QuoteForm({
   quoteState,
   quoteStatusSteps,
   quoteMessengerHref,
+  messengerUrl,
 }: {
   draft: QuoteDraft;
   isReady: boolean;
@@ -240,6 +241,7 @@ function QuoteForm({
   quoteState: QuoteState;
   quoteStatusSteps: QuoteStatusStep[];
   quoteMessengerHref: string | null;
+  messengerUrl: string;
 }) {
   const [paymentStep, setPaymentStep] = useState<"form" | "select_method" | "manual_interbank" | "manual_plin">("form");
 
@@ -380,7 +382,7 @@ function QuoteForm({
               </span>
             </div>
           </div>
-          <a className="button cart-quote-messenger" href={quoteMessengerHref ?? "https://m.me/importacionessuperoficial"} rel="noreferrer" target="_blank" style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: "16px", backgroundColor: "#0084ff", color: "#fff", border: "none", boxShadow: "0 4px 14px rgba(0, 132, 255, 0.35)" }}>
+          <a className="button cart-quote-messenger" href={quoteMessengerHref ?? messengerUrl} rel="noreferrer" target="_blank" style={{ width: "100%", justifyContent: "center", padding: "16px", fontSize: "16px", backgroundColor: "#0084ff", color: "#fff", border: "none", boxShadow: "0 4px 14px rgba(0, 132, 255, 0.35)" }}>
             <MessageCircle aria-hidden="true" size={24} />
             Enviar pedido por Messenger
           </a>
@@ -922,6 +924,7 @@ export function CartDrawer({
               quoteState={quoteState}
               quoteStatusSteps={quoteStatusSteps}
               quoteMessengerHref={quoteMessengerHref}
+              messengerUrl={settings.messengerUrl}
             />
             <CulqiCheckout
               publicKey="pk_test_a0437cd3339ed240"

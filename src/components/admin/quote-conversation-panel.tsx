@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { QuoteStatus } from "@prisma/client";
-import { User, Save, Send } from "lucide-react";
-import { buildWhatsappHrefFromPhone } from "@/lib/utils";
+import { Copy, User, Save } from "lucide-react";
 
 type QuoteConversationPanelProps = {
   quoteId: string;
@@ -43,13 +42,14 @@ export function QuoteConversationPanel({
   quoteNumber,
   canSetSystemStatuses = true,
 }: QuoteConversationPanelProps) {
+  void customerPhone;
   const [status, setStatus] = useState<QuoteStatus>(initialStatus);
   const [adminNotes, setAdminNotes] = useState(initialAdminNotes ?? "");
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // WhatsApp reply generation
+  // The response can be copied into the channel where the customer is active.
   const [replyText, setReplyText] = useState(
     `Hola ${customerName}, te contacto sobre tu cotización ${quoteNumber || ""}. En respuesta a tu solicitud.${pdfLink ? `\n\nPuedes ver tu cotización en PDF aquí: ${pdfLink}` : ""}`
   );
@@ -99,8 +99,6 @@ export function QuoteConversationPanel({
   }
 
   const currentMeta = statusMeta[status];
-  const whatsappHref = buildWhatsappHrefFromPhone(customerPhone, replyText.trim());
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Auto-Assignment Notification Panel at the Top */}
@@ -139,28 +137,28 @@ export function QuoteConversationPanel({
           {(Object.keys(statusMeta) as QuoteStatus[])
             .filter((key) => canSetSystemStatuses || advisorManagedStatuses.includes(key))
             .map((key) => {
-            const meta = statusMeta[key];
-            const isSelected = key === status;
-            return (
-              <button
-                key={key}
-                disabled={isSavingStatus}
-                onClick={() => handleStatusChange(key)}
-                style={{
-                  ...meta.style,
-                  cursor: "pointer",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  transition: "all 0.15s ease",
-                  opacity: isSavingStatus ? 0.6 : 1,
-                  boxShadow: isSelected ? "0 0 0 2px #0f172a" : "none",
-                }}
-              >
-                {meta.label}
-              </button>
-            );
+              const meta = statusMeta[key];
+              const isSelected = key === status;
+              return (
+                <button
+                  key={key}
+                  disabled={isSavingStatus}
+                  onClick={() => handleStatusChange(key)}
+                  style={{
+                    ...meta.style,
+                    cursor: "pointer",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    transition: "all 0.15s ease",
+                    opacity: isSavingStatus ? 0.6 : 1,
+                    boxShadow: isSelected ? "0 0 0 2px #0f172a" : "none",
+                  }}
+                >
+                  {meta.label}
+                </button>
+              );
             })}
         </div>
       </div>
@@ -216,30 +214,24 @@ export function QuoteConversationPanel({
         </div>
       </div>
 
-      {/* WhatsApp Reply Tools */}
-      <div className="panel" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", background: "white", borderTop: "3px solid #25D366" }}>
+      <div className="panel" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "12px", background: "white", borderTop: "3px solid #2563eb" }}>
         <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#0f172a", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
-          <Send size={16} style={{ color: "#25D366" }} /> Respuesta por WhatsApp
+          <Copy size={16} style={{ color: "#2563eb" }} /> Preparar respuesta
         </h3>
         <textarea
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
-          placeholder="Escribe tu respuesta para enviarla por WhatsApp..."
+          placeholder="Redacta la respuesta para el cliente..."
           style={{ width: "100%", minHeight: "100px", padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", resize: "vertical", fontFamily: "inherit" }}
         />
-        {whatsappHref ? (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noreferrer"
+        <button
+            type="button"
+            onClick={() => void navigator.clipboard.writeText(replyText.trim())}
             className="button"
-            style={{ alignSelf: "flex-end", background: "#25D366", color: "white", padding: "6px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: "6px" }}
+            style={{ alignSelf: "flex-end", background: "#2563eb", color: "white", padding: "6px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}
           >
-            <Send size={14} /> Enviar al cliente
-          </a>
-        ) : (
-          <span style={{ fontSize: "12px", color: "#ef4444", alignSelf: "flex-end" }}>No hay teléfono válido para WhatsApp.</span>
-        )}
+            <Copy size={14} /> Copiar respuesta
+          </button>
       </div>
 
     </div>

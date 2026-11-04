@@ -17,7 +17,7 @@ interface Props {
   onSendMessage: (content: string, mediaUrl?: string, type?: string) => Promise<void> | void;
 }
 
-export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", onUploadFile, uploadEndpoint = "/api/admin/uploads" }: Props) {
+export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", uploadEndpoint = "/api/admin/uploads", onUploadFile }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (replyTo) textareaRef.current?.focus(); }, [replyTo]);
   const [message, setMessage] = useState("");

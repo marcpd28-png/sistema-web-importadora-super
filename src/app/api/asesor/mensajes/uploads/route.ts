@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getMessageCenterSession } from "@/lib/auth";
-import { prepareWhatsAppUpload } from "@/lib/whatsapp-upload";
+import { prepareMessagingUpload } from "@/lib/messaging-upload";
 
 export const runtime = "nodejs";
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   if (!allowedMimeTypes.has(mimeType)) return NextResponse.json({ error: "Formato no permitido. Usa una imagen, video, audio o PDF válido." }, { status: 400 });
 
   try {
-    const prepared = await prepareWhatsAppUpload(Buffer.from(await file.arrayBuffer()), mimeType);
+    const prepared = await prepareMessagingUpload(Buffer.from(await file.arrayBuffer()), mimeType);
     const fileBase = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeBaseName(file.name) || "archivo"}`;
     const folder = path.join(/* turbopackIgnore: true */ process.cwd(), "public", "uploads", "documents");
     const fileName = `${fileBase}${prepared.extension}`;

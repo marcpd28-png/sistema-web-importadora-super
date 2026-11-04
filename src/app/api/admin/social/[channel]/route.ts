@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
-import { dedupeSocialMessages, parseSocialChannel, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
+import { getMessagingOwnerSession } from "@/lib/auth";
+import { dedupeSocialMessages, enableSocialBot, parseSocialChannel, socialConversationDisplayName, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
 import { z } from "zod";
-
-import { pauseForHuman } from "@/lib/rocky-ai/service";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ channel: string }> };
@@ -11,8 +9,21 @@ function failure(error: unknown) {
   return NextResponse.json({ error: error instanceof SocialInboxError ? error.message : "No se pudo cargar la mensajería." },
     { status: error instanceof SocialInboxError ? error.status : 500 });
 }
+function sameOrigin(request: NextRequest) {
+  try {
+    const origin = new URL(request.headers.get("origin") || "");
+    return ["https:", "http:"].includes(origin.protocol) && origin.host === request.headers.get("host")?.toLowerCase();
+  } catch {
+    // Missing or malformed browser origin fails closed.
+    return false;
+  }
+}
 export async function GET(request: NextRequest, context: Context) {
-  await requireAdmin();
+  const session = await getMessagingOwnerSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
+
   try {
     const channel = parseSocialChannel((await context.params).channel);
     if (request.nextUrl.searchParams.get("status") === "1") {
@@ -26,7 +37,7 @@ export async function GET(request: NextRequest, context: Context) {
       const { conversation, inbox } = await socialConversation(id, channel);
       const page = await socialRequest<SocialPage<SocialMessage>>(`/conversations/${id}/messages?${query}`);
       const channelMessages = page.data.filter(m => m.contactInboxId === inbox.id);
-      return NextResponse.json({ ...page, data: dedupeSocialMessages(channelMessages).map(safeSocialMessage), botEnabled: conversation.botEnabled }, { headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json({ ...page, data: dedupeSocialMessages(channelMessages).map(message => safeSocialMessage(message, { channel, conversationId: id })), botEnabled: conversation.botEnabled }, { headers: { "Cache-Control": "no-store" } });
     }
     query.set("channel", channel);
     query.set("botCategory", "all");
@@ -35,27 +46,42 @@ export async function GET(request: NextRequest, context: Context) {
     const page = await socialRequest<SocialPage<SocialConversation>>(`/conversations?${query}`);
     // Only expose display fields, never provider auth or contact attributes.
     return NextResponse.json({ data: page.data.filter(c => c.contactInboxes.some(i => i.channel === channel)).map(c => ({
-      id: c.id, name: c.contact?.fullName || "Cliente", botEnabled: c.botEnabled,
+      id: c.id, name: socialConversationDisplayName(c, channel), botEnabled: c.botEnabled,
       preview: c.messages?.find(m => c.contactInboxes.some(i => i.channel === channel && i.id === m.contactInboxId))?.text || "Conversación",
     })), nextCursor: page.nextCursor }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return failure(error); }
 }
 const sendSchema = z.object({ conversationId: z.string().regex(/^\d+$/), text: z.string().trim().max(1000).default(""), requestId: z.string().uuid(), mediaFileId: z.string().regex(/^\d+$/).optional() }).refine(value => value.text || value.mediaFileId);
+const enableBotSchema = z.object({ conversationId: z.string().regex(/^\d+$/), requestId: z.string().uuid() }).strict();
 export async function POST(request: NextRequest, context: Context) {
-  const session = await requireAdmin();
-  let sameOrigin = false;
-  try {
-    const origin = new URL(request.headers.get("origin") || "");
-    sameOrigin = ["https:", "http:"].includes(origin.protocol) && origin.host === request.headers.get("host")?.toLowerCase();
-  } catch { /* Missing or malformed browser origin fails closed. */ }
-  if (!sameOrigin) return NextResponse.json({ error: "Origen no autorizado." }, { status: 403 });
+  const session = await getMessagingOwnerSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
+
+  if (!sameOrigin(request)) return NextResponse.json({ error: "Origen no autorizado." }, { status: 403 });
   try {
     const channel = parseSocialChannel((await context.params).channel);
     const parsed = sendSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "Escribe hasta 1000 caracteres o adjunta un archivo." }, { status: 400 });
     const { conversationId, text, requestId, mediaFileId } = parsed.data;
-    await pauseForHuman(channel, conversationId, session.userId);
     const message = await sendSocialReply(channel, conversationId, text, requestId, mediaFileId);
     return NextResponse.json({ message });
+  } catch (error) { return failure(error); }
+}
+
+export async function PATCH(request: NextRequest, context: Context) {
+  const session = await getMessagingOwnerSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
+
+  if (!sameOrigin(request)) return NextResponse.json({ error: "Origen no autorizado." }, { status: 403 });
+  try {
+    const channel = parseSocialChannel((await context.params).channel);
+    const parsed = enableBotSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: "Solicitud de reactivación no válida." }, { status: 400 });
+    await enableSocialBot(channel, parsed.data.conversationId, parsed.data.requestId);
+    return NextResponse.json({ botEnabled: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { return failure(error); }
 }

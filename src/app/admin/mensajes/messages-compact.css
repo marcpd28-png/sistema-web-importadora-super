@@ -28,8 +28,6 @@
 .chat-header, .chat-input-container, .chat-count, .messages-sidebar-header { flex-shrink: 0; }
 .chat-header-avatar { width: 40px; height: 40px; flex-shrink: 0; }
 .messages-advanced-filters:not([hidden]) { display: grid; gap: 8px; }
-.messages-filter-toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.messages-filter-toolbar .messages-filters { gap: 4px; padding-bottom: 0; }
 .messages-extra-filters { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .messages-date-field { flex: 1; }
 .messages-app-navigation, .messages-page-header { flex-shrink: 0; }
@@ -57,6 +55,13 @@
   .messages-live-indicator { min-height: 26px; padding: 3px 8px; font-size: 11px; border: 0; }
   .messages-sidebar { width: 290px; }
   .messages-sidebar-header { padding: 10px; gap: 8px; }
+  .messages-sidebar-live { font-size: 10px; }
+  .messages-filter-dock { gap: 6px; padding: 6px; border-radius: 10px; }
+  .messages-filter-dock-title { font-size: 9px; }
+  .messages-extra-filters { min-height: 26px; padding: 3px 6px; font-size: 10px; }
+  .messages-view-tabs { gap: 3px; padding: 2px; border-radius: 8px; }
+  .messages-view-tab { min-height: 28px; padding: 3px 4px; border-radius: 6px; font-size: 10px; }
+  .messages-advanced-filters { padding: 8px; border-radius: 10px; }
   .messages-app-shell :where(.btn, .icon-btn, .messages-filter-btn, .messages-load-older) { min-height: 32px; }
   .messages-app-shell .icon-btn { min-width: 32px; border-radius: 8px; }
   .messages-search, .messages-date-field input { min-height: 34px; padding-top: 5px; padding-bottom: 5px; border-radius: 8px; font-size: 12px; }
@@ -128,7 +133,6 @@
   .messages-page-header p:not(.eyebrow) { display: none; }
   .messages-page-header { padding: 8px 12px; }
   .messages-page-header h1 { font-size: 16px; }
-  .messages-filter-toolbar { justify-content: space-between; }
   .messages-sidebar-header { gap: 8px; }
   .messages-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .messages-date-row { flex-direction: row; }

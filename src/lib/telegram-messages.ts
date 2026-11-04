@@ -30,7 +30,7 @@ export async function sendTelegramMessage(
   if (input.replyToMessageId && typeof replyId !== "number") throw new TelegramBridgeError("El mensaje elegido no está disponible para responder.", 400);
   const metadata: Prisma.InputJsonObject = { provider: "telegram", requestId: input.requestId,
     ...(reply ? { replyTo: { id: reply.id, content: reply.content, senderType: reply.senderType } } : {}) };
-  // Only show Rocky as paused after the bridge has actually applied the pause.
+  // Only show Super Bot as paused after the bridge has actually applied the pause.
   const paused = await controlTelegram(conversation, false);
   const created = await prisma.$transaction(async tx => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${id}, 0))`;
@@ -55,7 +55,7 @@ export async function sendTelegramMessage(
   });
   if (!created) return prisma.chatMessage.findUniqueOrThrow({ where: { id } });
   try {
-    // Bridge serializes pause + send with Rocky's processing lock and durably deduplicates this ID.
+    // Bridge serializes the Super Bot pause with the send and durably deduplicates this ID.
     const result = await telegramCommand<BridgeResult>("send", {
       connectionId: conversation.telegramConnectionId, chatId: conversation.telegramChatId,
       requestId: id, type: input.type, content: input.content, mediaUrl, replyToMessageId: replyId,

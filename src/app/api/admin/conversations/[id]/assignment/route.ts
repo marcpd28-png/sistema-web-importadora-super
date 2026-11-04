@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMessageCenterSession } from "@/lib/auth";
+import { canManageMessaging, getMessageCenterSession } from "@/lib/auth";
 import {
   claimConversation,
   transferConversation,
@@ -23,7 +23,7 @@ export async function POST(
 
   try {
     const origin = new URL(request.headers.get("origin") || "");
-    if (!["http:", "https:"].includes(origin.protocol) || origin.host !== request.headers.get("host")?.toLowerCase()) throw new Error();
+    if (!['http:', 'https:'].includes(origin.protocol) || origin.host !== request.headers.get("host")?.toLowerCase()) throw new Error();
   } catch {
     return NextResponse.json({ error: "Origen no autorizado." }, { status: 403 });
   }
@@ -31,12 +31,12 @@ export async function POST(
   try {
     const { id } = await params;
     const input = assignmentSchema.parse(await request.json());
-    const isSupervisor = session.role === "ADMIN";
+    const isMessagingOwner = canManageMessaging(session);
     const conversation = input.action === "claim"
-      ? await claimConversation(id, session.userId, { canReassign: isSupervisor })
+      ? await claimConversation(id, session.userId, { canReassign: isMessagingOwner })
       : await transferConversation(id, input.advisorId, {
         id: session.userId,
-        isMessagingOwner: isSupervisor,
+        isMessagingOwner,
       });
     return NextResponse.json(conversation, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
