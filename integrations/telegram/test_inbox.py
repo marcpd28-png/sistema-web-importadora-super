@@ -138,6 +138,9 @@ class InboxTests(unittest.TestCase):
             'https://tiendavirtualsuper.com/uploads/products/dos.jpg',
             'https://tiendavirtualsuper.com/uploads/products/tres.png',
         ])
+        self.assertTrue(all('caption' not in call[1] for call in self.calls[:3]))
+        self.assertEqual(self.calls[3][1]['text'],'¿Cuál de estas opciones te interesa?')
+        self.assertEqual(self.inbox.shown_product_codes('linked',2),['UNO-1','DOS-2','TRES-3'])
         ids=[call[1]['_inbox_request_id'] for call in self.calls]
         self.assertEqual(len(ids),len(set(ids)))
         self.assertTrue(all(call[1]['_inbox_automated'] for call in self.calls))
@@ -155,7 +158,7 @@ class InboxTests(unittest.TestCase):
         ])
         self.assertEqual(images,[{
             'url':'https://tiendavirtualsuper.com/api/telegram/product-image/O864',
-            'caption':'Válido · O864',
+            'code':'O864',
         }])
 
     def test_rejected_product_photo_does_not_block_the_text_reply(self):
@@ -178,8 +181,59 @@ class InboxTests(unittest.TestCase):
         self.assertTrue(self.inbox.super_bot_tick(self.adapter))
         self.assertEqual([method for method,_ in attempts],['sendPhoto','sendMessage'])
         self.assertEqual([call[0] for call in self.calls],['sendMessage'])
+        self.assertEqual(self.calls[0][1]['text'],'Te comparto la información solicitada.')
+        self.assertEqual(self.inbox.shown_product_codes('linked',2),[])
         state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
         self.assertEqual(state,'sent')
+
+    def test_one_product_photo_keeps_the_verified_text(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'El modelo tiene 20 horas de batería.', 'document':None,
+            'products':[{'name':'Producto','code':'P-1','imageUrl':'/uploads/products/compatible.jpg'}],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([call[0] for call in self.calls],['sendPhoto','sendMessage'])
+        self.assertNotIn('caption',self.calls[0][1])
+        self.assertEqual(self.calls[1][1]['text'],'El modelo tiene 20 horas de batería.')
+
+    def test_visual_products_with_a_document_keep_the_verified_text(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Aquí tienes el catálogo solicitado.',
+            'document':{'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes.pdf'},
+            'products':[
+                {'name':'Producto uno','code':'P-1','imageUrl':'/uploads/products/uno.jpg'},
+                {'name':'Producto dos','code':'P-2','imageUrl':'/uploads/products/dos.jpg'},
+            ],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([call[0] for call in self.calls],['sendPhoto','sendPhoto','sendDocument'])
+        self.assertTrue(all('caption' not in call[1] for call in self.calls[:2]))
+        self.assertEqual(self.calls[2][1]['caption'],'Aquí tienes el catálogo solicitado.')
+
+    def test_technical_question_keeps_verified_text_below_multiple_product_photos(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.db.execute("UPDATE inbox_super_bot_replies SET content='¿Qué Bluetooth tiene?'")
+        self.inbox.db.commit()
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Ambos modelos tienen Bluetooth 5.3.', 'document':None,
+            'products':[
+                {'name':'Producto uno','code':'P-1','imageUrl':'/uploads/products/uno.jpg'},
+                {'name':'Producto dos','code':'P-2','imageUrl':'/uploads/products/dos.jpg'},
+            ],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([call[0] for call in self.calls],['sendPhoto','sendPhoto','sendMessage'])
+        self.assertEqual(self.calls[-1][1]['text'],'Ambos modelos tienen Bluetooth 5.3.')
+
+    def test_next_super_bot_request_includes_only_successfully_shown_product_codes(self):
+        self.inbox.set_shown_product_codes('linked',2,['OLD-1'])
+        batch=self.inbox.next_super_bot_batch()
+        self.assertIsNotNone(batch)
+        self.assertEqual(self.inbox.super_bot_request(batch)['shownProductCodes'],['OLD-1'])
+        self.inbox.set_shown_product_codes('linked',2,['P-1','P-2','P-1','P-3','P-4'])
+        self.assertEqual(self.inbox.shown_product_codes('linked',2),['P-1','P-2','P-3'])
 
     def test_human_pause_blocks_a_batched_reply_before_model_or_media(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')

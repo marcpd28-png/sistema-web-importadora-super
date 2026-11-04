@@ -21,6 +21,13 @@ MAX_ADVISOR_TYPING_LEASE_SECONDS = 30
 MAX_SUPER_BOT_PRODUCT_IMAGES = 3
 STORE_PUBLIC_HOST = 'tiendavirtualsuper.com'
 SUPER_BOT_PROTOCOL = 'super-bot-v1'
+TECHNICAL_PRODUCT_QUESTION = re.compile(
+    r'\b(?:especificaci[oó]n(?:es)?|caracter[ií]stica(?:s)?|t[eé]cnic[ao](?:s)?|'
+    r'compatib(?:le|ilidad)|bluetooth|watts?|volt(?:aje|ios)?|amper(?:aje|ios)?|'
+    r'mah|capacidad|bater[ií]a|autonom[ií]a|duraci[oó]n|medida(?:s)?|dimensi[oó]n(?:es)?|'
+    r'peso|pulgada(?:s)?|resoluci[oó]n|hz|ram|memoria|puerto(?:s)?)\b',
+    re.IGNORECASE,
+)
 # Telegram may reject the optimized WebP files used by the storefront when
 # they are passed to sendPhoto as a URL. Restrict automatic photos to broadly
 # compatible source formats; a rejected photo is still handled defensively.
@@ -46,14 +53,18 @@ class Inbox:
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.executescript('''
           CREATE TABLE IF NOT EXISTS inbox_events(id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE, payload TEXT, sent INTEGER DEFAULT 0);
-          CREATE TABLE IF NOT EXISTS inbox_chats(connection TEXT, chat TEXT, last_inbound REAL DEFAULT 0, paused INTEGER DEFAULT 0, revision INTEGER DEFAULT 0, typing_until REAL DEFAULT 0, PRIMARY KEY(connection,chat));
+          CREATE TABLE IF NOT EXISTS inbox_chats(connection TEXT, chat TEXT, last_inbound REAL DEFAULT 0, paused INTEGER DEFAULT 0, revision INTEGER DEFAULT 0, typing_until REAL DEFAULT 0, shown_product_codes TEXT DEFAULT '[]', PRIMARY KEY(connection,chat));
           CREATE TABLE IF NOT EXISTS inbox_sends(id TEXT PRIMARY KEY, fingerprint TEXT, state TEXT, response TEXT);
           CREATE TABLE IF NOT EXISTS inbox_super_bot_replies(id TEXT PRIMARY KEY, connection TEXT NOT NULL, chat TEXT NOT NULL, content TEXT NOT NULL, source_event_id TEXT, first_contact INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL DEFAULT 'queued', error TEXT, created REAL NOT NULL, updated REAL NOT NULL);
         ''')
         # The bridge is deployed independently from the store. Keep existing
         # SQLite inboxes compatible when this batching metadata is introduced.
         # `super_bot` remains part of the explicit v1 ownership protocol.
-        for column in ('super_bot INTEGER DEFAULT 0', 'typing_until REAL DEFAULT 0'):
+        for column in (
+            'super_bot INTEGER DEFAULT 0',
+            'typing_until REAL DEFAULT 0',
+            "shown_product_codes TEXT DEFAULT '[]'",
+        ):
             try:
                 self.db.execute('ALTER TABLE inbox_chats ADD COLUMN ' + column)
             except sqlite3.OperationalError as error:
@@ -372,6 +383,53 @@ class Inbox:
             )
             self.db.commit()
 
+    def shown_product_codes(self, cid, chat):
+        """Return the current visual batch's verified product codes only."""
+        with self.lock:
+            row = self.db.execute(
+                'SELECT shown_product_codes FROM inbox_chats WHERE connection=? AND chat=?',
+                (cid, str(chat)),
+            ).fetchone()
+        try:
+            values = json.loads(row[0]) if row and isinstance(row[0], str) else []
+        except (TypeError, ValueError, json.JSONDecodeError):
+            values = []
+        if not isinstance(values, list):
+            return []
+        result, seen = [], set()
+        for value in values:
+            if not isinstance(value, str):
+                continue
+            code = value.strip()
+            if not code or len(code) > 64 or code in seen:
+                continue
+            seen.add(code)
+            result.append(code)
+            if len(result) >= MAX_SUPER_BOT_PRODUCT_IMAGES:
+                break
+        return result
+
+    def set_shown_product_codes(self, cid, chat, codes):
+        """Replace the visual batch after Telegram confirms a photo send."""
+        clean, seen = [], set()
+        for value in codes:
+            if not isinstance(value, str):
+                continue
+            code = value.strip()
+            if not code or len(code) > 64 or code in seen:
+                continue
+            seen.add(code)
+            clean.append(code)
+            if len(clean) >= MAX_SUPER_BOT_PRODUCT_IMAGES:
+                break
+        with self.lock:
+            self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid, str(chat)))
+            self.db.execute(
+                'UPDATE inbox_chats SET shown_product_codes=? WHERE connection=? AND chat=?',
+                (json.dumps(clean, ensure_ascii=False), cid, str(chat)),
+            )
+            self.db.commit()
+
     def super_bot_request(self, batch):
         key, cid, chat = batch[0][0], batch[0][1], batch[0][2]
         content = '\n'.join(row[3].strip() for row in batch if isinstance(row[3], str) and row[3].strip()).strip()[:1200]
@@ -388,6 +446,9 @@ class Inbox:
             'eventId': key,
             'conversationId': self.super_bot_conversation_id(cid, chat),
             'recentMessages': self.recent_super_bot_messages(cid, chat, excluded),
+            # A continuation can request a second visual page without
+            # repeating the cards Telegram already delivered.
+            'shownProductCodes': self.shown_product_codes(cid, chat),
             'isFirstContact': bool(batch[0][5]),
         }
 
@@ -456,14 +517,34 @@ class Inbox:
                     break
             if not url or url in seen:
                 continue
-            name = product.get('name')[:800] if isinstance(product.get('name'), str) else ''
-            code = product.get('code')[:160] if isinstance(product.get('code'), str) else ''
-            caption = ' · '.join(part.strip() for part in (name, code) if part and part.strip())[:1000] or 'Producto disponible'
             seen.add(url)
-            result.append({'url': url, 'caption': caption})
+            # Telegram product photos are the visual answer. Do not repeat the
+            # title/code as a caption under every image: it makes a short,
+            # visual reply feel like a catalog dump.
+            code = product.get('code') if isinstance(product.get('code'), str) else ''
+            code = code.strip()
+            result.append({
+                'url': url,
+                'code': code if TELEGRAM_PRODUCT_IMAGE_CODE.fullmatch(code) else '',
+            })
             if len(result) >= MAX_SUPER_BOT_PRODUCT_IMAGES:
                 break
         return result
+
+    def technical_product_question(self, batch):
+        """Whether the customer explicitly requested factual technical detail.
+
+        Product photos remain useful for these turns, but the verified text
+        answer must be kept rather than replaced by a generic closing question.
+        """
+        content = '\n'.join(
+            row[3] for row in batch if isinstance(row[3], str)
+        )
+        return bool(TECHNICAL_PRODUCT_QUESTION.search(content))
+
+    @staticmethod
+    def visual_product_closing_question():
+        return '¿Cuál de estas opciones te interesa?'
 
     def normalized_super_bot_reply(self, value):
         # Kept for bridge-local compatibility with deployments/tests that
@@ -505,20 +586,36 @@ class Inbox:
             if self.advisor_typing_active(cid, chat):
                 self.requeue_super_bot_batch(batch)
                 return False
+            delivered_images, delivered_product_codes = 0, []
             for index, image in enumerate(self.product_image_messages(products), start=1):
                 try:
                     delivery_started = True
                     self.command('send', {
                         'connectionId': cid, 'chatId': chat, 'requestId': f'{key}:image:{index}',
-                        'type': 'IMAGE', 'content': image['caption'], 'mediaUrl': image['url'], 'automated': True,
+                        'type': 'IMAGE', 'content': '', 'mediaUrl': image['url'], 'automated': True,
                     }, adapter)
+                    delivered_images += 1
+                    # Replace the previous page as soon as the first current
+                    # photo is confirmed, then retain only photos the customer
+                    # actually received if a later delivery fails.
+                    code = image.get('code')
+                    if isinstance(code, str) and code and code not in delivered_product_codes:
+                        delivered_product_codes.append(code)
+                    self.set_shown_product_codes(cid, chat, delivered_product_codes)
                 except InboxError as error:
                     # A bad or unsupported photo must not withhold the factual
                     # text answer. Ambiguous transport failures and human
                     # handoffs remain fail-closed to prevent duplicate sends.
                     if error.uncertain or self.paused(cid, chat) or adapter.shopping.support_session(cid, int(chat)):
                         raise
-            payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':text,'automated':True}
+            # For visual product recommendations, a clean sequence of photos
+            # plus one short question is easier to consume than repeating the
+            # names, codes and prices below each card. Keep substantive text
+            # for technical questions and document/PDF deliveries.
+            delivered_text = text
+            if delivered_images >= 2 and not isinstance(document, dict) and not self.technical_product_question(batch):
+                delivered_text = self.visual_product_closing_question()
+            payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':delivered_text,'automated':True}
             if isinstance(document, dict) and isinstance(document.get('url'),str):
                 payload.update(type='DOCUMENT',mediaUrl=document['url'])
             delivery_started = True
@@ -574,10 +671,10 @@ class Inbox:
         with self.lock:
             self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
             if advance_revision:
-                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0,revision=revision+1 WHERE connection=? AND chat=?',
+                self.db.execute("UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0,shown_product_codes='[]',revision=revision+1 WHERE connection=? AND chat=?",
                                 (bool(value),cid,str(chat)))
             else:
-                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0 WHERE connection=? AND chat=?',
+                self.db.execute("UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0,shown_product_codes='[]' WHERE connection=? AND chat=?",
                                 (bool(value),cid,str(chat)))
             self.db.commit()
 
@@ -591,7 +688,7 @@ class Inbox:
             revision = row[0] + 1
             # `paused` keeps legacy automation quiet, while `super_bot`
             # permits only the versioned BOT sender below.
-            self.db.execute('UPDATE inbox_chats SET paused=1,super_bot=1,typing_until=0,revision=? WHERE connection=? AND chat=?',
+            self.db.execute("UPDATE inbox_chats SET paused=1,super_bot=1,typing_until=0,shown_product_codes='[]',revision=? WHERE connection=? AND chat=?",
                             (revision,cid,str(chat)))
             self.db.commit()
         adapter.shopping.leave_support(cid,int(chat))
@@ -679,7 +776,15 @@ class Inbox:
                 state = self.db.execute('SELECT last_inbound FROM inbox_chats WHERE connection=? AND chat=?',(cid,chat)).fetchone()
             if not state or self.now()-state[0]>=86400: raise InboxError('La ventana de 24 horas de Telegram terminó. Espera un nuevo mensaje del cliente.',409)
             methods = {'TEXT':('sendMessage','text'), 'IMAGE':('sendPhoto','photo'), 'VIDEO':('sendVideo','video'), 'AUDIO':('sendAudio','audio'), 'DOCUMENT':('sendDocument','document')}
-            if kind not in methods or not isinstance(content,str) or not 0<len(content)<= (4000 if kind=='TEXT' else 1000): raise InboxError('Mensaje inválido.')
+            # A product photo can be intentionally captionless. Other media
+            # and text messages retain the non-empty-content requirement.
+            if (
+                kind not in methods
+                or not isinstance(content, str)
+                or len(content) > (4000 if kind == 'TEXT' else 1000)
+                or (not content and kind != 'IMAGE')
+            ):
+                raise InboxError('Mensaje inválido.')
             method,field = methods[kind]
             body = {'business_connection_id':cid,'chat_id':int(chat),'_inbox_request_id':rid}
             if kind=='TEXT': body[field]=content
@@ -711,7 +816,9 @@ class Inbox:
                     extension = Path(parsed.path).suffix.lower()
                     if extension == '.ogg': method,field = 'sendVoice','voice'
                     elif extension not in ('.mp3','.m4a'): method,field = 'sendDocument','document'
-                body.update({field:url,'caption':content})
+                body[field] = url
+                if content:
+                    body['caption'] = content
             reply = data.get('replyToMessageId')
             if reply is not None:
                 if not isinstance(reply,int) or reply<1: raise InboxError('Respuesta inválida.')
