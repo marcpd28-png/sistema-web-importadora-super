@@ -16,6 +16,8 @@ from pathlib import Path
 
 
 DEFAULT_SUPER_BOT_SILENCE_SECONDS = 3
+DEFAULT_SUPER_BOT_REPLY_TIMEOUT_SECONDS = 90
+MAX_SUPER_BOT_REPLY_TIMEOUT_SECONDS = 120
 DEFAULT_ADVISOR_TYPING_LEASE_SECONDS = 8
 MAX_ADVISOR_TYPING_LEASE_SECONDS = 30
 MAX_SUPER_BOT_PRODUCT_IMAGES = 3
@@ -97,6 +99,25 @@ class Inbox:
             return min(30, max(0, float(value)))
         except (TypeError, ValueError):
             return DEFAULT_SUPER_BOT_SILENCE_SECONDS
+
+    def super_bot_reply_timeout_seconds(self):
+        """A bounded wait for verified replies, including generated PDF catalogs.
+
+        A category PDF can need materially longer than a conversational catalog
+        lookup because the server renders product pages and optimizes images.
+        Keep the wait configurable but bounded so a malformed configuration
+        cannot pin the bridge worker indefinitely.
+        """
+        value = self.config.get('super_bot_reply_timeout_seconds', DEFAULT_SUPER_BOT_REPLY_TIMEOUT_SECONDS)
+        if isinstance(value, bool):
+            return DEFAULT_SUPER_BOT_REPLY_TIMEOUT_SECONDS
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return DEFAULT_SUPER_BOT_REPLY_TIMEOUT_SECONDS
+        if not math.isfinite(value):
+            return DEFAULT_SUPER_BOT_REPLY_TIMEOUT_SECONDS
+        return min(MAX_SUPER_BOT_REPLY_TIMEOUT_SECONDS, max(5, value))
 
     def advisor_typing_lease_seconds(self, value=None):
         """Return a deliberately short expiry for an adviser typing heartbeat."""
@@ -459,7 +480,7 @@ class Inbox:
             'Content-Type':'application/json', 'x-super-bot-key':key, 'User-Agent':'SuperBotTelegramAdapter/1.0'
         })
         try:
-            with urllib.request.urlopen(request,timeout=20) as response:
+            with urllib.request.urlopen(request,timeout=self.super_bot_reply_timeout_seconds()) as response:
                 payload = json.loads(response.read().decode())
         except Exception as error:
             raise InboxError('Super Bot no pudo preparar la respuesta automática.',503) from error
