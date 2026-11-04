@@ -279,6 +279,28 @@ test("resuelve precio por código aunque el código venga con espacios", async (
   assert.ok(reply.products?.[0].code === "AGA-100");
 });
 
+test("emite una derivada propia de Telegram solo para una foto local verificada", async () => {
+  const o864: AssistantProductRecord = {
+    ...products[0],
+    id: "o864-telegram-image",
+    slug: "o864-power-bank",
+    code: "O864",
+    name: "Power bank 20 W",
+    localImageUrl: "/uploads/products/erp-o864-a9bcf84ff152.webp",
+    sourceImageUrl: "https://original.negocioserp.com/storage/uploads/items/o864.jpg",
+  };
+  const assistant = createShopAssistantService(createMockRepository({
+    async findProductByCode(code) {
+      return code.toUpperCase() === "O864" ? o864 : null;
+    },
+  }));
+
+  const reply = await assistant({ message: "precio del codigo o864" });
+
+  assert.equal(reply.products?.[0]?.telegramImageUrl, "/api/telegram/product-image/O864");
+  assert.equal(reply.products?.[0]?.imageUrl, o864.localImageUrl);
+});
+
 test("usa el contexto para responder seguimiento de precio sin mostrar cajón", async () => {
   const reply = await answerShopAssistant({
     message: "y por mayor cuanto cuesta",

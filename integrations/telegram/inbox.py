@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import mimetypes
+import re
 import sqlite3
 import threading
 import time
@@ -21,6 +22,8 @@ SUPER_BOT_PROTOCOL = 'super-bot-v1'
 # they are passed to sendPhoto as a URL. Restrict automatic photos to broadly
 # compatible source formats; a rejected photo is still handled defensively.
 STORE_UPLOAD_IMAGE_EXTENSIONS = {'.jpeg', '.jpg', '.png'}
+TELEGRAM_PRODUCT_IMAGE_PATH_PREFIX = '/api/telegram/product-image/'
+TELEGRAM_PRODUCT_IMAGE_CODE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
 
 
 class InboxError(Exception):
@@ -295,15 +298,16 @@ class Inbox:
             if not isinstance(product, dict):
                 continue
             url = None
-            # `outboundImageUrl` is the original channel-oriented image when
-            # available. It precedes the storefront's often-WebP derivative.
-            for candidate in (product.get('outboundImageUrl'), product.get('imageUrl')):
+            # `telegramImageUrl` is a narrow own-origin JPEG route. It looks
+            # the product up again server-side, so this bridge can never turn
+            # a catalog or model value into an arbitrary URL/file proxy.
+            for candidate in (product.get('telegramImageUrl'), product.get('outboundImageUrl'), product.get('imageUrl')):
                 if not isinstance(candidate, str):
                     continue
                 value = candidate.strip()
                 if not value or len(value) > 4096:
                     continue
-                if value.startswith('/uploads/'):
+                if value.startswith('/uploads/') or value.startswith(TELEGRAM_PRODUCT_IMAGE_PATH_PREFIX):
                     value = 'https://' + STORE_PUBLIC_HOST + value
                 try:
                     parsed = urllib.parse.urlsplit(value)
@@ -311,13 +315,24 @@ class Inbox:
                     port = parsed.port
                 except ValueError:
                     continue
+                is_verified_telegram_derivative = (
+                    parsed.path.startswith(TELEGRAM_PRODUCT_IMAGE_PATH_PREFIX)
+                    and not parsed.query
+                    and not parsed.fragment
+                    and bool(TELEGRAM_PRODUCT_IMAGE_CODE.fullmatch(
+                        parsed.path[len(TELEGRAM_PRODUCT_IMAGE_PATH_PREFIX):]
+                    ))
+                )
+                is_verified_store_upload = (
+                    parsed.path.startswith('/uploads/')
+                    and extension in STORE_UPLOAD_IMAGE_EXTENSIONS
+                )
                 if (
                     parsed.scheme == 'https'
                     and parsed.hostname == STORE_PUBLIC_HOST
                     and not parsed.username
                     and port in (None, 443)
-                    and parsed.path.startswith('/uploads/')
-                    and extension in STORE_UPLOAD_IMAGE_EXTENSIONS
+                    and (is_verified_telegram_derivative or is_verified_store_upload)
                 ):
                     url = value
                     break
@@ -509,8 +524,28 @@ class Inbox:
             if kind=='TEXT': body[field]=content
             else:
                 url = data.get('mediaUrl','')
-                parsed = urllib.parse.urlsplit(url)
-                if parsed.scheme!='https' or parsed.hostname!='tiendavirtualsuper.com' or not parsed.path.startswith('/uploads/') or parsed.username or parsed.port not in (None,443): raise InboxError('El archivo debe pertenecer a la tienda.')
+                try:
+                    parsed = urllib.parse.urlsplit(url)
+                    port = parsed.port
+                except (TypeError, ValueError):
+                    raise InboxError('El archivo debe pertenecer a la tienda.') from None
+                is_verified_telegram_derivative = (
+                    kind == 'IMAGE'
+                    and parsed.path.startswith(TELEGRAM_PRODUCT_IMAGE_PATH_PREFIX)
+                    and not parsed.query
+                    and not parsed.fragment
+                    and bool(TELEGRAM_PRODUCT_IMAGE_CODE.fullmatch(
+                        parsed.path[len(TELEGRAM_PRODUCT_IMAGE_PATH_PREFIX):]
+                    ))
+                )
+                if (
+                    parsed.scheme!='https'
+                    or parsed.hostname!=STORE_PUBLIC_HOST
+                    or (not parsed.path.startswith('/uploads/') and not is_verified_telegram_derivative)
+                    or parsed.username
+                    or port not in (None,443)
+                ):
+                    raise InboxError('El archivo debe pertenecer a la tienda.')
                 if kind == 'AUDIO':
                     extension = Path(parsed.path).suffix.lower()
                     if extension == '.ogg': method,field = 'sendVoice','voice'
