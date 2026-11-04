@@ -3,11 +3,14 @@ import test from "node:test";
 
 import sharp from "sharp";
 import {
+  CatalogPdfImageCoverageError,
+  CatalogPdfSizeLimitError,
   isGeneralCatalogRequest,
   isProjectorCatalogRequest,
-  MAX_CATALOG_PRODUCTS,
+  loadCatalogImagesStrict,
   parseCatalogRequest,
   prepareCatalogImage,
+  splitCatalogItemsByRenderedSize,
 } from "@/lib/catalog-pdf";
 
 test("detecta solicitudes del catálogo general aunque usen lenguaje cortés", () => {
@@ -40,10 +43,6 @@ test("acepta plural y errores frecuentes al pedir catálogos por categoría y ma
   assert.deepEqual(parseCatalogRequest("catallgos específicos de parlantes")?.terms, ["parlantes"]);
 });
 
-test("admite una colección de categoría completa mientras respete el límite de PDF", () => {
-  assert.equal(MAX_CATALOG_PRODUCTS, 60);
-});
-
 test("quita márgenes transparentes sin convertir la foto rectangular en un cuadrado", async () => {
   const source = await sharp({ create: { width: 200, height: 400, channels: 4, background: "#2320DA" } })
     .extend({ top: 100, bottom: 100, left: 200, right: 200, background: { r: 255, g: 255, b: 255, alpha: 0 } })
@@ -59,4 +58,43 @@ test("no intercepta consultas comunes ni catálogos de otra categoría", () => {
   assert.equal(isProjectorCatalogRequest("¿Qué proyectores tienes?"), false);
   assert.equal(isProjectorCatalogRequest("Catálogo de cámaras"), false);
   assert.equal(isProjectorCatalogRequest("Hola"), false);
+});
+
+test("divide por bytes sin cambiar el orden ni perder productos", async () => {
+  const parts = await splitCatalogItemsByRenderedSize(
+    ["A", "B", "C", "D", "E"],
+    async (items) => Buffer.alloc(items.length * 10),
+    20,
+  );
+
+  assert.deepEqual(parts.map((part) => part.items), [["A", "B"], ["C"], ["D", "E"]]);
+  assert.deepEqual(parts.flatMap((part) => part.items), ["A", "B", "C", "D", "E"]);
+  assert.ok(parts.every((part) => part.pdf.byteLength <= 20));
+  await assert.rejects(
+    () => splitCatalogItemsByRenderedSize(["demasiado-grande"], async () => Buffer.alloc(21), 20),
+    CatalogPdfSizeLimitError,
+  );
+});
+
+test("nunca omite un producto cuya foto real no pueda cargarse", async () => {
+  const base = {
+    name: "Producto de prueba",
+    imageUrls: ["/uploads/products/prueba.jpg"],
+    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    unitPrice: 10,
+    wholesalePrice: null,
+    wholesaleMinQty: 1,
+  };
+  const products = [
+    { ...base, id: "1", code: "UNO" },
+    { ...base, id: "2", code: "DOS" },
+  ];
+
+  await assert.rejects(
+    () => loadCatalogImagesStrict(products, async (product) => {
+      if (product.code === "DOS") throw new Error("image unavailable");
+      return Buffer.from("real-image-bytes");
+    }),
+    (error: unknown) => error instanceof CatalogPdfImageCoverageError && error.productCodes.join(",") === "DOS",
+  );
 });

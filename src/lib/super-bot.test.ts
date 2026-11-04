@@ -13,6 +13,20 @@ const generatedCatalog = {
   sizeBytes: 1_048_576,
 };
 
+const generatedCatalogBundle = {
+  productCount: 45,
+  documents: [
+    generatedCatalog,
+    {
+      ...generatedCatalog,
+      absoluteUrl: "https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes-0123456789abcdef-parte-2-de-2.pdf",
+      filename: "catalogo-parlantes-0123456789abcdef-parte-2-de-2.pdf",
+      relativeUrl: "/uploads/catalogs/catalogo-parlantes-0123456789abcdef-parte-2-de-2.pdf",
+      productCount: 21,
+    },
+  ],
+};
+
 test("genera un único PDF para cada solicitud de catálogo específico", async () => {
   const requests = [
     "Hola catálogo de parlantes",
@@ -44,7 +58,24 @@ test("genera un único PDF para cada solicitud de catálogo específico", async 
   }
 });
 
-test("no divide un catálogo demasiado grande en varios PDF", async () => {
+test("entrega un bundle completo y ordenado cuando un catálogo necesita varias partes", async () => {
+  const answer = createSuperBotService({
+    generateCatalogPdfBundle: async (request) => {
+      assert.deepEqual(request.terms, ["parlantes"]);
+      return generatedCatalogBundle;
+    },
+  });
+
+  const reply = await answer({ message: "catálogo de parlantes" });
+
+  assert.deepEqual(reply.documents?.map((document) => document.filename), generatedCatalogBundle.documents.map((document) => document.filename));
+  assert.equal(reply.document?.filename, generatedCatalogBundle.documents[0].filename);
+  assert.match(reply.text, /45 productos/i);
+  assert.match(reply.text, /2 PDFs/i);
+  assert.equal(reply.quickActions?.[0]?.href, generatedCatalogBundle.documents[0].absoluteUrl);
+});
+
+test("no entrega un catálogo parcial cuando ni una parte cabe dentro del límite", async () => {
   let generationCount = 0;
   const answer = createSuperBotService({
     generateCatalogPdf: async () => {
@@ -57,7 +88,8 @@ test("no divide un catálogo demasiado grande en varios PDF", async () => {
 
   assert.equal(generationCount, 1);
   assert.equal(reply.document, undefined);
-  assert.match(reply.text, /un solo PDF/i);
+  assert.equal(reply.documents, undefined);
+  assert.match(reply.text, /tamaño permitido/i);
   assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\//);
 });
 

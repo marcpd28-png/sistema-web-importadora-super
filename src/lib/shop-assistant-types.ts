@@ -46,6 +46,13 @@ export type ShopAssistantProductCard = {
 
 export type ShopAssistantReply = {
   text: string;
+  /**
+   * Ordered PDF delivery contract. When present it is authoritative over the
+   * legacy singular `document`, so an adapter must deliver every entry rather
+   * than silently selecting the first one.
+   */
+  documents?: ShopAssistantDocument[];
+  /** Compatibility alias for channels that can still send only one file. */
   document?: ShopAssistantDocument;
   searchClarification?: Array<{ code: string; name: string }>;
   contextProductCode?: string | null;

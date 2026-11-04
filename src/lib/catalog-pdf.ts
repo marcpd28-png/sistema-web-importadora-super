@@ -1,6 +1,6 @@
-import { findCatalogProductIds, productQueryTerms } from "./catalog-query";
+import { findAllCatalogProductIds, productQueryTerms } from "./catalog-query";
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import PDFDocument from "pdfkit";
@@ -14,19 +14,11 @@ const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalog
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
 const BRAND_PRIMARY = "#2320DA";
-/**
- * A category/brand PDF should include the complete matching collection when
- * it fits under the document-size ceiling. Sixty A4 product pages remain a
- * bounded render, while covering the current JBL speaker catalog (45 items)
- * instead of silently truncating it at forty. `MAX_CATALOG_PDF_BYTES` stays
- * the final delivery guard.
- */
-export const MAX_CATALOG_PRODUCTS = 60;
 /** Leave headroom below Telegram's 20 MB URL-download ceiling so the same
- * single PDF can be delivered through every supported document channel. */
+ * PDF part can be delivered through every supported document channel. */
 export const MAX_CATALOG_PDF_BYTES = 18 * 1024 * 1024;
 
-type CatalogProductImage = {
+export type CatalogProductImage = {
   id: string;
   name: string;
   code: string;
@@ -46,12 +38,45 @@ export type GeneratedCatalogPdf = {
   sizeBytes: number;
 };
 
-const inFlightCatalogs = new Map<string, Promise<GeneratedCatalogPdf>>();
+/** Ordered documents for a complete requested collection. The caller must
+ * deliver every entry in order; `documents` is never a best-effort subset. */
+export type GeneratedCatalogPdfBundle = {
+  documents: GeneratedCatalogPdf[];
+  productCount: number;
+};
+
+const inFlightCatalogBundles = new Map<string, Promise<GeneratedCatalogPdfBundle>>();
 
 export class CatalogPdfSizeLimitError extends Error {
   constructor() {
     super("El catálogo excede el tamaño máximo para enviarlo como un solo PDF.");
     this.name = "CatalogPdfSizeLimitError";
+  }
+}
+
+/** Raised instead of making a partial catalogue when a matching product has
+ * no usable, real product photo. The caller can then link the web catalogue or
+ * involve an adviser without claiming that the PDF is complete. */
+export class CatalogPdfImageCoverageError extends Error {
+  readonly productCodes: string[];
+
+  constructor(products: Array<Pick<CatalogProductImage, "code">>) {
+    const productCodes = products.map((product) => product.code);
+    super(`No se pudo cargar una foto real para: ${productCodes.join(", ")}.`);
+    this.name = "CatalogPdfImageCoverageError";
+    this.productCodes = productCodes;
+  }
+}
+
+/** A stock/visibility change during generation must invalidate the request;
+ * emitting only the surviving rows would otherwise silently truncate it. */
+export class CatalogPdfProductCoverageError extends Error {
+  readonly productIds: string[];
+
+  constructor(productIds: string[]) {
+    super("Los productos del catálogo cambiaron mientras se preparaba el PDF.");
+    this.name = "CatalogPdfProductCoverageError";
+    this.productIds = productIds;
   }
 }
 
@@ -85,6 +110,35 @@ export function parseCatalogRequest(content: string): CatalogRequest | null {
   return { terms, slug: terms.join("-").slice(0, 80), title: "CATÁLOGO DE " + terms.join(" ").toUpperCase() };
 }
 
+type ProductWithCatalogImageFields = {
+  id: string;
+  name: string;
+  code: string;
+  imageUrl: string | null;
+  localImageUrl: string | null;
+  media: Array<{ url: string }>;
+  sourceImageUrl: string | null;
+  updatedAt: Date;
+  unitPrice: unknown;
+  wholesalePrice: unknown;
+  wholesaleMinQty: number;
+};
+
+function toCatalogProductImage(product: ProductWithCatalogImageFields): CatalogProductImage {
+  const imageUrls = Array.from(
+    new Set(
+      [
+        product.localImageUrl,
+        ...product.media.map((media) => media.url),
+        product.sourceImageUrl,
+        product.imageUrl,
+      ].filter((value): value is string => Boolean(value?.trim())),
+    ),
+  );
+
+  return { ...product, imageUrls };
+}
+
 async function findProjectorImages(): Promise<CatalogProductImage[]> {
   const products = await prisma.product.findMany({
     where: {
@@ -113,24 +167,15 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
     },
   });
 
-  return products.flatMap((product) => {
-    const imageUrls = Array.from(
-      new Set(
-        [
-          product.localImageUrl,
-          ...product.media.map((media) => media.url),
-          product.sourceImageUrl,
-          product.imageUrl,
-        ].filter((value): value is string => Boolean(value?.trim())),
-      ),
-    );
-
-    return imageUrls.length ? [{ ...product, imageUrls }] : [];
-  });
+  // Keep rows with no stored photo. Strict preflight below will fail the
+  // complete request rather than quietly removing them from the PDF.
+  return products.map(toCatalogProductImage);
 }
 
 async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]> {
-  const ids = await findCatalogProductIds(terms.join(" "), MAX_CATALOG_PRODUCTS);
+  // Chat result lists have a display limit. A PDF request is a completeness
+  // contract, so it deliberately loads every currently eligible match.
+  const ids = await findAllCatalogProductIds(terms.join(" "));
   if (!ids.length) return [];
   const products = await prisma.product.findMany({
     where: { id: { in: ids }, isVisible: true, stockUnits: { gt: 0 }, unitPrice: { gt: 0 } },
@@ -143,12 +188,13 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
     },
   });
 
-  return products.flatMap((product) => {
-    const imageUrls = Array.from(new Set([
-      product.localImageUrl, ...product.media.map((media) => media.url), product.sourceImageUrl, product.imageUrl,
-    ].filter((value): value is string => Boolean(value?.trim()))));
-    return imageUrls.length ? [{ ...product, imageUrls }] : [];
-  });
+  const byId = new Map(products.map((product) => [product.id, toCatalogProductImage(product)]));
+  const missingProductIds = ids.filter((id) => !byId.has(id));
+  if (missingProductIds.length) throw new CatalogPdfProductCoverageError(missingProductIds);
+
+  // Reapply the identity-search order. The manifest later checks this exact
+  // sequence, which prevents duplicated or omitted pages between parts.
+  return ids.map((id) => byId.get(id)!);
 }
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {
@@ -162,6 +208,9 @@ function getCatalogFingerprint(products: CatalogProductImage[]) {
           product.code,
           product.imageUrls,
           product.updatedAt.toISOString(),
+          product.unitPrice,
+          product.wholesalePrice,
+          product.wholesaleMinQty,
         ]),
       ),
     )
@@ -248,6 +297,70 @@ async function loadFirstAvailableImage(product: CatalogProductImage) {
   throw new Error(`No available image for product ${product.id}`);
 }
 
+export type LoadedCatalogProductImage = CatalogProductImage & { image: Buffer };
+
+/**
+ * Load a real photo for every selected product before rendering any page. A
+ * fallback source on the same product is fine, but dropping a failed product
+ * is not: callers either receive complete coverage or an explicit error.
+ */
+export async function loadCatalogImagesStrict(
+  products: CatalogProductImage[],
+  imageLoader: (product: CatalogProductImage) => Promise<Buffer> = loadFirstAvailableImage,
+): Promise<LoadedCatalogProductImage[]> {
+  const loaded: Array<LoadedCatalogProductImage | undefined> = new Array(products.length);
+  const missing: CatalogProductImage[] = [];
+
+  // Keep decoding bounded while retaining the source order exactly.
+  for (let index = 0; index < products.length; index += 4) {
+    const batch = products.slice(index, index + 4);
+    const results = await Promise.allSettled(batch.map(imageLoader));
+
+    results.forEach((result, batchIndex) => {
+      const product = batch[batchIndex];
+      if (result.status === "fulfilled") {
+        loaded[index + batchIndex] = { ...product, image: result.value };
+      } else {
+        missing.push(product);
+      }
+    });
+  }
+
+  if (missing.length) throw new CatalogPdfImageCoverageError(missing);
+  return loaded as LoadedCatalogProductImage[];
+}
+
+export type RenderedCatalogPdfPart<T> = {
+  items: T[];
+  pdf: Buffer;
+};
+
+/**
+ * Render-and-split recursively instead of guessing based on number of pages.
+ * Image compression varies significantly, so byte size is the only reliable
+ * Telegram-safe boundary. The returned parts retain the original item order.
+ */
+export async function splitCatalogItemsByRenderedSize<T>(
+  items: T[],
+  render: (items: T[]) => Promise<Buffer>,
+  maxBytes = MAX_CATALOG_PDF_BYTES,
+): Promise<Array<RenderedCatalogPdfPart<T>>> {
+  if (!Number.isFinite(maxBytes) || maxBytes < 1) throw new RangeError("maxBytes must be positive");
+  if (!items.length) return [];
+
+  const pdf = await render(items);
+  if (pdf.byteLength <= maxBytes) return [{ items, pdf }];
+  if (items.length === 1) throw new CatalogPdfSizeLimitError();
+
+  const midpoint = Math.ceil(items.length / 2);
+  // Rendering can hold several full-page image buffers in memory. Split
+  // sequentially so an unusually large category cannot fan out into dozens
+  // of simultaneous PDFKit jobs.
+  const first = await splitCatalogItemsByRenderedSize(items.slice(0, midpoint), render, maxBytes);
+  const second = await splitCatalogItemsByRenderedSize(items.slice(midpoint), render, maxBytes);
+  return [...first, ...second];
+}
+
 export function renderCatalogImagePdf(images: { image: Buffer; name: string; code: string; unitPrice?: unknown; wholesalePrice?: unknown; wholesaleMinQty?: number }[], title = "CATÁLOGO DE PRODUCTOS") {
   return new Promise<Buffer>((resolve, reject) => {
     const document = new PDFDocument({
@@ -313,114 +426,202 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
   });
 }
 
-async function createCatalogPdf(products: CatalogProductImage[], slug: string, title: string, fingerprint: string) {
-  const filename = `catalogo-${slug}-${fingerprint}.pdf`;
+type CatalogBundleManifestPart = {
+  filename: string;
+  productCount: number;
+  productIds: string[];
+  sizeBytes: number;
+};
+
+type CatalogBundleManifest = {
+  version: 1;
+  productIds: string[];
+  parts: CatalogBundleManifestPart[];
+};
+
+function hasExactOrder(actual: string[], expected: string[]) {
+  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+}
+
+function catalogBundleBaseFilename(slug: string, fingerprint: string) {
+  return `catalogo-${slug}-${fingerprint}`;
+}
+
+function catalogPartFilename(baseFilename: string, index: number, total: number) {
+  if (total === 1) return `${baseFilename}.pdf`;
+  const width = String(total).length;
+  return `${baseFilename}-parte-${String(index + 1).padStart(width, "0")}-de-${total}.pdf`;
+}
+
+function catalogDocument(filename: string, productCount: number, sizeBytes: number, generated: boolean): GeneratedCatalogPdf {
   const relativeUrl = `/uploads/catalogs/${filename}`;
-  const outputPath = path.join(CATALOG_DIRECTORY, filename);
+  return {
+    absoluteUrl: buildPublicUrl(relativeUrl),
+    filename,
+    generated,
+    productCount,
+    relativeUrl,
+    sizeBytes,
+  };
+}
 
-  await mkdir(CATALOG_DIRECTORY, { recursive: true });
+function isCatalogBundleManifest(value: unknown): value is CatalogBundleManifest {
+  if (!value || typeof value !== "object") return false;
+  const manifest = value as Partial<CatalogBundleManifest>;
+  return manifest.version === 1 && Array.isArray(manifest.productIds) && Array.isArray(manifest.parts);
+}
 
-  try {
-    await access(outputPath);
-    const [metadataText, fileStats] = await Promise.all([
-      readFile(`${outputPath}.json`, "utf8"),
-      stat(outputPath),
-    ]);
-    const metadata = JSON.parse(metadataText) as { productCount: number };
-    if (!Number.isInteger(metadata.productCount) || metadata.productCount < 1 || metadata.productCount > products.length) throw new Error("Invalid catalog manifest");
-    if (fileStats.size > MAX_CATALOG_PDF_BYTES) throw new CatalogPdfSizeLimitError();
-    return {
-      absoluteUrl: buildPublicUrl(relativeUrl),
-      filename,
-      generated: false,
-      productCount: metadata.productCount,
-      relativeUrl,
-      sizeBytes: fileStats.size,
-    } satisfies GeneratedCatalogPdf;
-  } catch (error) {
-    if (error instanceof CatalogPdfSizeLimitError) throw error;
-    // Generate the immutable catalog below.
-  }
-
-  // Bound concurrent image decoding; two conversations may generate PDFs at once.
-  const imageResults: PromiseSettledResult<Buffer>[] = [];
-  for (let index = 0; index < products.length; index += 4) {
-    imageResults.push(...await Promise.allSettled(products.slice(index, index + 4).map(loadFirstAvailableImage)));
-  }
-  const images = imageResults.flatMap((result, index) =>
-    result.status === "fulfilled" ? [{ ...products[index], image: result.value }] : [],
-  );
-
-  if (!images.length) {
-    throw new Error("No se pudo cargar ninguna imagen del catálogo.");
-  }
-
-  const unavailableCount = imageResults.length - images.length;
-  if (unavailableCount > 0) {
-    console.warn("[catalog-pdf] product_images_unavailable", { unavailableCount });
-  }
-
-  const pdf = await renderCatalogImagePdf(images, title);
-  if (pdf.byteLength > MAX_CATALOG_PDF_BYTES) {
-    throw new CatalogPdfSizeLimitError();
-  }
-  const temporaryPath = `${outputPath}.${process.pid}.tmp`;
+async function readCachedCatalogBundle(
+  products: CatalogProductImage[],
+  slug: string,
+  fingerprint: string,
+): Promise<GeneratedCatalogPdfBundle | null> {
+  const baseFilename = catalogBundleBaseFilename(slug, fingerprint);
+  const manifestPath = path.join(CATALOG_DIRECTORY, `${baseFilename}.json`);
+  const productIds = products.map((product) => product.id);
 
   try {
-    await writeFile(temporaryPath, pdf, { flag: "wx" });
+    const parsed = JSON.parse(await readFile(manifestPath, "utf8")) as unknown;
+    if (!isCatalogBundleManifest(parsed) || !hasExactOrder(parsed.productIds, productIds) || !parsed.parts.length) return null;
+
+    const cachedProductIds: string[] = [];
+    const documents: GeneratedCatalogPdf[] = [];
+    for (let index = 0; index < parsed.parts.length; index += 1) {
+      const part = parsed.parts[index];
+      const expectedFilename = catalogPartFilename(baseFilename, index, parsed.parts.length);
+      if (
+        part.filename !== expectedFilename ||
+        !Array.isArray(part.productIds) ||
+        !Number.isInteger(part.productCount) ||
+        part.productCount !== part.productIds.length ||
+        !Number.isInteger(part.sizeBytes) ||
+        part.sizeBytes < 1
+      ) return null;
+
+      const outputPath = path.resolve(CATALOG_DIRECTORY, part.filename);
+      if (path.dirname(outputPath) !== path.resolve(CATALOG_DIRECTORY)) return null;
+      const fileStats = await stat(outputPath);
+      if (!fileStats.isFile() || fileStats.size !== part.sizeBytes || fileStats.size > MAX_CATALOG_PDF_BYTES) return null;
+
+      cachedProductIds.push(...part.productIds);
+      documents.push(catalogDocument(part.filename, part.productCount, fileStats.size, false));
+    }
+
+    if (!hasExactOrder(cachedProductIds, productIds)) return null;
+    return { documents, productCount: productIds.length };
+  } catch {
+    return null;
+  }
+}
+
+async function writeAtomically(outputPath: string, contents: Buffer | string) {
+  const temporaryPath = `${outputPath}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await writeFile(temporaryPath, contents, { flag: "wx" });
+    // Part files are deterministic. A process can die after writing one part
+    // but before it publishes the manifest; the next generation replaces that
+    // orphan atomically. The manifest is the only cache entry readers trust.
     await rename(temporaryPath, outputPath);
-    await writeFile(`${outputPath}.json`, JSON.stringify({ productCount: images.length }));
   } catch (error) {
     await unlink(temporaryPath).catch(() => undefined);
     throw error;
   }
+}
 
-  return {
-    absoluteUrl: buildPublicUrl(relativeUrl),
-    filename,
-    generated: true,
-    productCount: images.length,
-    relativeUrl,
-    sizeBytes: pdf.byteLength,
-  } satisfies GeneratedCatalogPdf;
+async function createCatalogPdfBundle(
+  products: CatalogProductImage[],
+  slug: string,
+  title: string,
+  fingerprint: string,
+): Promise<GeneratedCatalogPdfBundle> {
+  await mkdir(CATALOG_DIRECTORY, { recursive: true });
+
+  const cached = await readCachedCatalogBundle(products, slug, fingerprint);
+  if (cached) return cached;
+
+  const images = await loadCatalogImagesStrict(products);
+  const renderedParts = await splitCatalogItemsByRenderedSize(
+    images,
+    (part) => renderCatalogImagePdf(part, title),
+  );
+  if (!renderedParts.length) throw new CatalogPdfProductCoverageError(products.map((product) => product.id));
+
+  const productIds = products.map((product) => product.id);
+  const renderedProductIds = renderedParts.flatMap((part) => part.items.map((product) => product.id));
+  if (!hasExactOrder(renderedProductIds, productIds)) {
+    throw new CatalogPdfProductCoverageError(productIds);
+  }
+
+  const baseFilename = catalogBundleBaseFilename(slug, fingerprint);
+  const documents: GeneratedCatalogPdf[] = [];
+  const manifestParts: CatalogBundleManifestPart[] = [];
+
+  for (let index = 0; index < renderedParts.length; index += 1) {
+    const part = renderedParts[index];
+    const filename = catalogPartFilename(baseFilename, index, renderedParts.length);
+    await writeAtomically(path.join(CATALOG_DIRECTORY, filename), part.pdf);
+    documents.push(catalogDocument(filename, part.items.length, part.pdf.byteLength, true));
+    manifestParts.push({
+      filename,
+      productCount: part.items.length,
+      productIds: part.items.map((product) => product.id),
+      sizeBytes: part.pdf.byteLength,
+    });
+  }
+
+  const manifest: CatalogBundleManifest = { version: 1, productIds, parts: manifestParts };
+  await writeAtomically(path.join(CATALOG_DIRECTORY, `${baseFilename}.json`), JSON.stringify(manifest));
+  return { documents, productCount: productIds.length };
+}
+
+async function generateCatalogPdfBundleForProducts(
+  products: CatalogProductImage[],
+  slug: string,
+  title: string,
+): Promise<GeneratedCatalogPdfBundle> {
+  const fingerprint = createHash("sha256")
+    .update(slug)
+    .update(getCatalogFingerprint(products))
+    .digest("hex")
+    .slice(0, 16);
+  const cacheKey = `${slug}-${fingerprint}`;
+  const existing = inFlightCatalogBundles.get(cacheKey);
+  if (existing) return existing;
+
+  const generation = createCatalogPdfBundle(products, slug, title, fingerprint).finally(() => {
+    inFlightCatalogBundles.delete(cacheKey);
+  });
+  inFlightCatalogBundles.set(cacheKey, generation);
+  return generation;
 }
 
 export async function generateProjectorCatalogPdf() {
   const products = await findProjectorImages();
+  if (!products.length) throw new Error("No hay proyectores publicados para el catálogo.");
 
-  if (!products.length) {
-    throw new Error("No hay proyectores publicados con imagen disponible.");
-  }
-
-  const fingerprint = getCatalogFingerprint(products);
-  const existing = inFlightCatalogs.get(fingerprint);
-  if (existing) {
-    return existing;
-  }
-
-  const generation = createCatalogPdf(products, "proyectores", "CATÁLOGO DE PROYECTORES", fingerprint).finally(() => {
-    inFlightCatalogs.delete(fingerprint);
-  });
-  inFlightCatalogs.set(fingerprint, generation);
-  return generation;
+  const bundle = await generateCatalogPdfBundleForProducts(products, "proyectores", "CATÁLOGO DE PROYECTORES");
+  if (bundle.documents.length !== 1) throw new CatalogPdfSizeLimitError();
+  return bundle.documents[0];
 }
 
-export async function generateCatalogPdf(request: CatalogRequest) {
+/** Generate every matching, saleable product as one or more ordered PDFs.
+ * Each document is independently Telegram-safe and the union is manifest-
+ * checked to contain every selected product exactly once. */
+export async function generateCatalogPdfBundle(request: CatalogRequest) {
   const products = await findCatalogImages(request.terms);
   if (!products.length) {
     throw new Error(`No encontramos productos publicados para el catálogo de ${request.terms.join(" ")}.`);
   }
+  return generateCatalogPdfBundleForProducts(products, request.slug, request.title);
+}
 
-  const fingerprint = createHash("sha256").update(request.slug).update(getCatalogFingerprint(products)).digest("hex").slice(0, 16);
-  const cacheKey = `${request.slug}-${fingerprint}`;
-  const existing = inFlightCatalogs.get(cacheKey);
-  if (existing) return existing;
-
-  const generation = createCatalogPdf(products, request.slug, request.title, fingerprint).finally(() => {
-    inFlightCatalogs.delete(cacheKey);
-  });
-  inFlightCatalogs.set(cacheKey, generation);
-  return generation;
+/** Legacy callers that can only deliver one attachment retain their existing
+ * contract. They fail explicitly rather than quietly returning the first part
+ * of a multi-document catalogue. */
+export async function generateCatalogPdf(request: CatalogRequest) {
+  const bundle = await generateCatalogPdfBundle(request);
+  if (bundle.documents.length !== 1) throw new CatalogPdfSizeLimitError();
+  return bundle.documents[0];
 }
 
 // Compatibility surface for internal catalog consumers. These helpers retain
