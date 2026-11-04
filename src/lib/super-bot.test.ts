@@ -97,3 +97,33 @@ test("deriva una imagen sin texto a un asesor en lugar de inventar un producto",
   assert.equal(reply.meta?.intent, "attachment-human-assistance");
   assert.equal(reply.quickActions?.[0]?.href, "https://m.me/atencion-configurada");
 });
+
+test("entrega el estado confiable de primer contacto y la respuesta verificada al compositor en vivo", async () => {
+  let received: { isFirstContact?: boolean; message: string; history?: number; verifiedText: string } | undefined;
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => ({ text: "Producto verificado." }),
+    composeLiveReply: async (input) => {
+      received = {
+        isFirstContact: input.isFirstContact,
+        message: input.message,
+        history: input.recentMessages?.length,
+        verifiedText: input.verifiedReply.text,
+      };
+      return { ...input.verifiedReply, text: "Respuesta breve." };
+    },
+  });
+
+  const reply = await answer({
+    message: "Busco un producto",
+    isFirstContact: true,
+    recentMessages: [{ role: "user", text: "Hola" }],
+  });
+
+  assert.deepEqual(received, {
+    isFirstContact: true,
+    message: "Busco un producto",
+    history: 1,
+    verifiedText: "Producto verificado.",
+  });
+  assert.equal(reply.text, "Respuesta breve.");
+});

@@ -13,6 +13,15 @@ import uuid
 from pathlib import Path
 
 
+DEFAULT_SUPER_BOT_SILENCE_SECONDS = 3
+MAX_SUPER_BOT_PRODUCT_IMAGES = 3
+STORE_PUBLIC_HOST = 'tiendavirtualsuper.com'
+# Telegram may reject the optimized WebP files used by the storefront when
+# they are passed to sendPhoto as a URL. Restrict automatic photos to broadly
+# compatible source formats; a rejected photo is still handled defensively.
+STORE_UPLOAD_IMAGE_EXTENSIONS = {'.jpeg', '.jpg', '.png'}
+
+
 class InboxError(Exception):
     def __init__(self, message, status=400, uncertain=False):
         super().__init__(message)
@@ -32,8 +41,16 @@ class Inbox:
           CREATE TABLE IF NOT EXISTS inbox_events(id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE, payload TEXT, sent INTEGER DEFAULT 0);
           CREATE TABLE IF NOT EXISTS inbox_chats(connection TEXT, chat TEXT, last_inbound REAL DEFAULT 0, paused INTEGER DEFAULT 0, revision INTEGER DEFAULT 0, PRIMARY KEY(connection,chat));
           CREATE TABLE IF NOT EXISTS inbox_sends(id TEXT PRIMARY KEY, fingerprint TEXT, state TEXT, response TEXT);
-          CREATE TABLE IF NOT EXISTS inbox_super_bot_replies(id TEXT PRIMARY KEY, connection TEXT NOT NULL, chat TEXT NOT NULL, content TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'queued', error TEXT, created REAL NOT NULL, updated REAL NOT NULL);
+          CREATE TABLE IF NOT EXISTS inbox_super_bot_replies(id TEXT PRIMARY KEY, connection TEXT NOT NULL, chat TEXT NOT NULL, content TEXT NOT NULL, source_event_id TEXT, first_contact INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL DEFAULT 'queued', error TEXT, created REAL NOT NULL, updated REAL NOT NULL);
         ''')
+        # The bridge is deployed independently from the store. Keep existing
+        # SQLite inboxes compatible when this batching metadata is introduced.
+        for column in ('source_event_id TEXT', 'first_contact INTEGER NOT NULL DEFAULT 0'):
+            try:
+                self.db.execute('ALTER TABLE inbox_super_bot_replies ADD COLUMN ' + column)
+            except sqlite3.OperationalError as error:
+                if 'duplicate column name' not in str(error).lower():
+                    raise
         self.db.execute("UPDATE inbox_sends SET state='uncertain' WHERE state='sending'")
         self.db.execute("UPDATE inbox_super_bot_replies SET state='uncertain',error='Bridge restarted before delivery was confirmed' WHERE state='sending'")
         self.db.commit()
@@ -49,13 +66,21 @@ class Inbox:
     def authorized(self, value):
         return self.enabled and hmac.compare_digest(value or '', 'Bearer '+self.secret)
 
+    def super_bot_silence_seconds(self):
+        value = self.config.get('super_bot_silence_seconds', self.config.get('super_bot_silence_window_seconds', DEFAULT_SUPER_BOT_SILENCE_SECONDS))
+        try:
+            return min(30, max(0, float(value)))
+        except (TypeError, ValueError):
+            return DEFAULT_SUPER_BOT_SILENCE_SECONDS
+
     def enqueue(self, event, key=None):
-        if not self.enabled: return
+        if not self.enabled: return False
         event = dict(event, eventId=key or str(uuid.uuid4()))
         with self.lock:
-            self.db.execute('INSERT OR IGNORE INTO inbox_events(key,payload) VALUES (?,?)',
-                            (event['eventId'], json.dumps(event, ensure_ascii=False)))
+            inserted = self.db.execute('INSERT OR IGNORE INTO inbox_events(key,payload) VALUES (?,?)',
+                                       (event['eventId'], json.dumps(event, ensure_ascii=False))).rowcount > 0
             self.db.commit()
+            return inserted
 
     def message(self, m, sender, kind='message', local_id=None, event_key=None):
         cid, chat = m.get('business_connection_id'), m.get('chat', {}).get('id')
@@ -76,7 +101,25 @@ class Inbox:
         if not event['content']: event['content'] = '[Mensaje de Telegram]'
         if local_id: event['localMessageId'] = local_id
         if m.get('reply_to_message'): event['replyToMessageId'] = m['reply_to_message']['message_id']
-        self.enqueue(event, event_key)
+        return self.enqueue(event, event_key)
+
+    def has_customer_history(self, cid, chat):
+        """Whether this chat already had a customer turn before the current one."""
+        with self.lock:
+            rows = self.db.execute('SELECT payload FROM inbox_events ORDER BY id DESC LIMIT 200').fetchall()
+        for (raw,) in rows:
+            try:
+                event = json.loads(raw)
+            except (TypeError, ValueError):
+                continue
+            if (
+                event.get('kind') == 'message'
+                and event.get('sender') == 'CUSTOMER'
+                and event.get('connectionId') == cid
+                and str(event.get('chatId')) == str(chat)
+            ):
+                return True
+        return False
 
     def observe(self, update, adapter):
         """Archive incoming updates and claim customer turns before any legacy bot can handle them."""
@@ -93,14 +136,16 @@ class Inbox:
         sender = m.get('from', {})
         role = 'BOT' if m.get('sender_business_bot') or sender.get('is_bot') else 'AGENT' if sender.get('id') == connection[0] else 'CUSTOMER'
         kind = 'edit' if 'edited_business_message' in update else 'message'
-        self.message(m, role, kind, event_key='update:'+str(update['update_id']))
+        is_first_contact = role == 'CUSTOMER' and kind == 'message' and not self.has_customer_history(cid, chat)
+        event_id = 'update:'+str(update['update_id'])
+        inserted = self.message(m, role, kind, event_key=event_id)
         if role == 'CUSTOMER':
-            if kind == 'message':
+            if kind == 'message' and inserted:
                 with self.lock:
                     self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
                     self.db.execute('UPDATE inbox_chats SET last_inbound=max(last_inbound,?) WHERE connection=? AND chat=?', (m.get('date', self.now()),cid,str(chat)))
                     self.db.commit()
-                self.enqueue_super_bot_reply(m)
+                self.enqueue_super_bot_reply(m, event_id, is_first_contact)
             # Fail closed: a missing Super Bot configuration must never revive
             # the legacy business bot after this adapter takes ownership.
             return True
@@ -108,21 +153,118 @@ class Inbox:
             self.set_paused(cid, chat, True)
         return False
 
-    def enqueue_super_bot_reply(self, message):
+    def enqueue_super_bot_reply(self, message, source_event_id=None, is_first_contact=False):
         cid, chat, message_id = message.get('business_connection_id'), message.get('chat', {}).get('id'), message.get('message_id')
         if not cid or not chat or not message_id: return
         key = 'tgbot:' + hashlib.sha256(f'{cid}:{chat}:{message_id}'.encode()).hexdigest()
         content = (message.get('text') or message.get('caption') or '[Mensaje de Telegram]').strip()[:1200]
         stamp = self.now()
         with self.lock:
-            self.db.execute('''INSERT OR IGNORE INTO inbox_super_bot_replies(id,connection,chat,content,created,updated)
-                             VALUES (?,?,?,?,?,?)''', (key,cid,str(chat),content,stamp,stamp))
+            self.db.execute('''INSERT OR IGNORE INTO inbox_super_bot_replies(id,connection,chat,content,source_event_id,first_contact,created,updated)
+                             VALUES (?,?,?,?,?,?,?,?)''', (key,cid,str(chat),content,source_event_id,int(bool(is_first_contact)),stamp,stamp))
             self.db.commit()
 
-    def super_bot_reply(self, content):
+    def recent_super_bot_messages(self, cid, chat, excluded_event_ids):
+        """Return the small, chronological conversation window accepted by Super Bot."""
+        with self.lock:
+            rows = self.db.execute('SELECT payload FROM inbox_events ORDER BY id DESC LIMIT 200').fetchall()
+        history = []
+        for (raw,) in rows:
+            try:
+                event = json.loads(raw)
+            except (TypeError, ValueError):
+                continue
+            if event.get('eventId') in excluded_event_ids:
+                continue
+            if event.get('kind') != 'message' or event.get('connectionId') != cid or str(event.get('chatId')) != str(chat):
+                continue
+            sender = event.get('sender')
+            if sender == 'CUSTOMER':
+                role = 'user'
+            elif sender in ('BOT', 'AGENT'):
+                role = 'assistant'
+            else:
+                continue
+            content = event.get('content')
+            if not isinstance(content, str) or not content.strip():
+                continue
+            history.append({'role': role, 'text': content.strip()[:4000]})
+            if len(history) >= 6:
+                break
+        history.reverse()
+        return history
+
+    def super_bot_conversation_id(self, cid, chat):
+        value = f'telegram:{cid}:{chat}'
+        if len(value) <= 160:
+            return value
+        return 'telegram:' + hashlib.sha256(f'{cid}:{chat}'.encode()).hexdigest()
+
+    def next_super_bot_batch(self):
+        """Claim one quiet customer turn without letting a noisy chat block others.
+
+        Every source message keeps its own durable queue row. Rows separated by
+        no more than the silence window form one customer turn; claiming all of
+        them together preserves replay safety if the process exits mid-delivery.
+        """
+        silence = self.super_bot_silence_seconds()
+        now = self.now()
+        with self.lock:
+            rows = self.db.execute('''SELECT id,connection,chat,content,source_event_id,first_contact,created,updated
+                                   FROM inbox_super_bot_replies WHERE state='queued' ORDER BY created,rowid''').fetchall()
+            by_chat = {}
+            for row in rows:
+                by_chat.setdefault((row[1], row[2]), []).append(row)
+
+            candidates = []
+            for chat_rows in by_chat.values():
+                batch = [chat_rows[0]]
+                for row in chat_rows[1:]:
+                    if float(row[6]) - float(batch[-1][7]) <= silence:
+                        batch.append(row)
+                    else:
+                        break
+                if now - float(batch[-1][7]) >= silence:
+                    candidates.append(batch)
+
+            if not candidates:
+                return None
+            batch = min(candidates, key=lambda items: (items[0][6], items[0][0]))
+            ids = [row[0] for row in batch]
+            placeholders = ','.join('?' for _ in ids)
+            claimed = self.db.execute(
+                f"UPDATE inbox_super_bot_replies SET state='sending',updated=? WHERE state='queued' AND id IN ({placeholders})",
+                [now, *ids],
+            ).rowcount
+            if claimed != len(ids):
+                self.db.rollback()
+                return None
+            self.db.commit()
+            return batch
+
+    def super_bot_request(self, batch):
+        key, cid, chat = batch[0][0], batch[0][1], batch[0][2]
+        content = '\n'.join(row[3].strip() for row in batch if isinstance(row[3], str) and row[3].strip()).strip()[:1200]
+        if not content:
+            content = '[Mensaje de Telegram]'
+        with self.lock:
+            outstanding = self.db.execute('''SELECT source_event_id FROM inbox_super_bot_replies
+                                           WHERE connection=? AND chat=? AND state IN ('queued','sending')''', (cid, chat)).fetchall()
+        excluded = {row[4] for row in batch if isinstance(row[4], str) and row[4]}
+        excluded.update(value for (value,) in outstanding if isinstance(value, str) and value)
+        return {
+            'message': content,
+            'channel': 'telegram',
+            'eventId': key,
+            'conversationId': self.super_bot_conversation_id(cid, chat),
+            'recentMessages': self.recent_super_bot_messages(cid, chat, excluded),
+            'isFirstContact': bool(batch[0][5]),
+        }
+
+    def super_bot_reply(self, request_body):
         url, key = self.config.get('super_bot_url', '').strip(), self.config.get('super_bot_key', '').strip()
         if not url or not key: raise InboxError('Super Bot no está configurado en el puente.',503)
-        request = urllib.request.Request(url, data=json.dumps({'message':content}).encode(), headers={
+        request = urllib.request.Request(url, data=json.dumps(request_body).encode(), headers={
             'Content-Type':'application/json', 'x-super-bot-key':key, 'User-Agent':'SuperBotTelegramAdapter/1.0'
         })
         try:
@@ -131,24 +273,97 @@ class Inbox:
         except Exception as error:
             raise InboxError('Super Bot no pudo preparar la respuesta automática.',503) from error
         reply = payload.get('reply') if isinstance(payload,dict) else None
-        text = reply.get('text','').strip() if isinstance(reply,dict) else ''
+        raw_text = reply.get('text','') if isinstance(reply,dict) else ''
+        text = raw_text.strip() if isinstance(raw_text, str) else ''
         if not text or len(text)>4000: raise InboxError('Super Bot devolvió una respuesta inválida.',502)
         document = reply.get('document') if isinstance(reply,dict) and isinstance(reply.get('document'),dict) else None
-        return text, document
+        products = reply.get('products') if isinstance(reply,dict) and isinstance(reply.get('products'),list) else []
+        return {'text': text, 'document': document, 'products': products}
+
+    def product_image_messages(self, products):
+        result, seen = [], set()
+        for product in products if isinstance(products, list) else []:
+            if not isinstance(product, dict):
+                continue
+            url = None
+            # `outboundImageUrl` is the original channel-oriented image when
+            # available. It precedes the storefront's often-WebP derivative.
+            for candidate in (product.get('outboundImageUrl'), product.get('imageUrl')):
+                if not isinstance(candidate, str):
+                    continue
+                value = candidate.strip()
+                if not value or len(value) > 4096:
+                    continue
+                if value.startswith('/uploads/'):
+                    value = 'https://' + STORE_PUBLIC_HOST + value
+                try:
+                    parsed = urllib.parse.urlsplit(value)
+                    extension = Path(urllib.parse.unquote(parsed.path)).suffix.lower()
+                    port = parsed.port
+                except ValueError:
+                    continue
+                if (
+                    parsed.scheme == 'https'
+                    and parsed.hostname == STORE_PUBLIC_HOST
+                    and not parsed.username
+                    and port in (None, 443)
+                    and parsed.path.startswith('/uploads/')
+                    and extension in STORE_UPLOAD_IMAGE_EXTENSIONS
+                ):
+                    url = value
+                    break
+            if not url or url in seen:
+                continue
+            name = product.get('name')[:800] if isinstance(product.get('name'), str) else ''
+            code = product.get('code')[:160] if isinstance(product.get('code'), str) else ''
+            caption = ' · '.join(part.strip() for part in (name, code) if part and part.strip())[:1000] or 'Producto disponible'
+            seen.add(url)
+            result.append({'url': url, 'caption': caption})
+            if len(result) >= MAX_SUPER_BOT_PRODUCT_IMAGES:
+                break
+        return result
+
+    def normalized_super_bot_reply(self, value):
+        # Kept for bridge-local compatibility with deployments/tests that
+        # injected the earlier (text, document) helper while rolling out.
+        if isinstance(value, tuple) and len(value) == 2:
+            return {'text': value[0], 'document': value[1], 'products': []}
+        if isinstance(value, dict):
+            return value
+        raise InboxError('Super Bot devolvió una respuesta inválida.',502)
 
     def super_bot_tick(self, adapter):
-        with self.lock:
-            row = self.db.execute('''SELECT id,connection,chat,content FROM inbox_super_bot_replies
-                                   WHERE state='queued' ORDER BY created LIMIT 1''').fetchone()
-            if not row: return False
-            self.db.execute("UPDATE inbox_super_bot_replies SET state='sending',updated=? WHERE id=?", (self.now(),row[0]))
-            self.db.commit()
-        key, cid, chat, content = row
+        batch = self.next_super_bot_batch()
+        if not batch:
+            return False
+        key, cid, chat = batch[0][0], batch[0][1], batch[0][2]
         try:
             if not self.super_bot_enabled: raise InboxError('Super Bot no está configurado en el puente.',503)
-            text, document = self.super_bot_reply(content)
+            # Do not disclose conversation context to a model after a human
+            # has taken ownership. `command` repeats this check on delivery
+            # to cover a handoff that races the model response.
+            if self.paused(cid, chat) or adapter.shopping.support_session(cid, int(chat)):
+                raise InboxError('Un asesor está atendiendo esta conversación.',409)
+            reply = self.normalized_super_bot_reply(self.super_bot_reply(self.super_bot_request(batch)))
+            text = reply.get('text')
+            document = reply.get('document')
+            products = reply.get('products')
+            if not isinstance(text, str) or not text.strip() or len(text) > 4000:
+                raise InboxError('Super Bot devolvió una respuesta inválida.',502)
+            for index, image in enumerate(self.product_image_messages(products), start=1):
+                try:
+                    self.command('send', {
+                        'connectionId': cid, 'chatId': chat, 'requestId': f'{key}:image:{index}',
+                        'type': 'IMAGE', 'content': image['caption'], 'mediaUrl': image['url'], 'automated': True,
+                    }, adapter)
+                except InboxError as error:
+                    # A bad or unsupported photo must not withhold the factual
+                    # text answer. Ambiguous transport failures and human
+                    # handoffs remain fail-closed to prevent duplicate sends.
+                    if error.uncertain or self.paused(cid, chat) or adapter.shopping.support_session(cid, int(chat)):
+                        raise
             payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':text,'automated':True}
-            if document and isinstance(document.get('url'),str):
+            if isinstance(document, dict) and isinstance(document.get('url'),str):
                 payload.update(type='DOCUMENT',mediaUrl=document['url'])
             self.command('send',payload,adapter)
             state,error = 'sent',None
@@ -157,7 +372,9 @@ class Inbox:
         except Exception:
             state,error = 'uncertain','No se pudo confirmar la entrega de Super Bot.'
         with self.lock:
-            self.db.execute('UPDATE inbox_super_bot_replies SET state=?,error=?,updated=? WHERE id=?', (state,error,self.now(),key))
+            ids = [row[0] for row in batch]
+            placeholders = ','.join('?' for _ in ids)
+            self.db.execute(f'UPDATE inbox_super_bot_replies SET state=?,error=?,updated=? WHERE id IN ({placeholders})', [state,error,self.now(),*ids])
             self.db.commit()
         return True
 
@@ -252,6 +469,7 @@ class Inbox:
             except urllib.error.HTTPError as error:
                 with self.lock:
                     self.db.execute("UPDATE inbox_sends SET state=? WHERE id=?", ('failed' if error.code<500 else 'uncertain',rid)); self.db.commit()
+                error.close()
                 raise InboxError('Telegram rechazó el envío. Revisa los permisos, el archivo o el límite de mensajes.',502,error.code>=500) from None
             except Exception:
                 with self.lock:
@@ -289,7 +507,7 @@ class Inbox:
                     try: worked = self.super_bot_tick(adapter) or worked
                     except Exception as error: print('super_bot_reply_retry '+type(error).__name__,flush=True)
                 if worked: continue
-                time.sleep(3)
+                time.sleep(min(3, max(.25, self.super_bot_silence_seconds())))
         threading.Thread(target=run,daemon=True).start()
 
     def media(self, handler, file_id):

@@ -9,6 +9,10 @@ import {
 import { isCatalogRequest } from "./catalog-intent";
 import type { ShopAssistantReply } from "./shop-assistant-types";
 import { getConfiguredMessengerUrl } from "./messenger-url";
+import {
+  composeLiveSuperBotReply,
+  type SuperBotLiveReplyInput,
+} from "./super-bot-live-ai";
 import { PUBLIC_MESSENGER_URL } from "./utils";
 
 export type SuperBotInput = {
@@ -16,6 +20,8 @@ export type SuperBotInput = {
   productContextCode?: string | null;
   contextCategorySlug?: string | null;
   recentMessages?: Array<{ role: "assistant" | "user"; text: string }>;
+  /** Set only by a trusted channel adapter or conversation store. */
+  isFirstContact?: boolean;
   hasAttachments?: boolean;
 };
 
@@ -31,6 +37,7 @@ export function isCatalogLinkRequest(message: string) {
 
 type SuperBotDependencies = {
   answerShopAssistant?: (input: SuperBotInput) => Promise<ShopAssistantReply>;
+  composeLiveReply?: (input: SuperBotLiveReplyInput) => Promise<ShopAssistantReply>;
   generateCatalogPdf?: (request: CatalogRequest) => Promise<GeneratedCatalogPdf>;
   getMessengerUrl?: () => Promise<string>;
 };
@@ -164,13 +171,28 @@ function isAttachmentOnlyMessage(message: string) {
  */
 export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
   const getShopAssistantReply = dependencies.answerShopAssistant ?? answerShopAssistant;
+  const composeLiveReply = dependencies.composeLiveReply ?? composeLiveSuperBotReply;
   const createCatalogPdf = dependencies.generateCatalogPdf ?? generateCatalogPdf;
   const getMessengerUrl = dependencies.getMessengerUrl ?? getConfiguredMessengerUrl;
+
+  const finalizeReply = async (input: SuperBotInput, verifiedReply: ShopAssistantReply) => {
+    try {
+      return await composeLiveReply({
+        message: input.message,
+        recentMessages: input.recentMessages,
+        isFirstContact: input.isFirstContact,
+        verifiedReply,
+      });
+    } catch {
+      // A model or integration failure must never replace verified catalog data.
+      return verifiedReply;
+    }
+  };
 
   return async function answerSuperBot(input: SuperBotInput): Promise<ShopAssistantReply> {
     if (input.hasAttachments && isAttachmentOnlyMessage(input.message)) {
       const messengerUrl = await getMessengerUrl().catch(() => PUBLIC_MESSENGER_URL);
-      return attachmentOnlyReply(messengerUrl);
+      return finalizeReply(input, attachmentOnlyReply(messengerUrl));
     }
 
     // A specific request always has priority over a generic catalogue link.
@@ -179,23 +201,23 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     const catalogRequest = parseCatalogRequest(input.message);
     if (catalogRequest) {
       try {
-        return catalogPdfReply(catalogRequest, await createCatalogPdf(catalogRequest));
+        return finalizeReply(input, catalogPdfReply(catalogRequest, await createCatalogPdf(catalogRequest)));
       } catch (error) {
-        return catalogPdfFallback(error);
+        return finalizeReply(input, catalogPdfFallback(error));
       }
     }
 
     if (isCatalogLinkRequest(input.message)) {
-      return catalogLinkReply();
+      return finalizeReply(input, catalogLinkReply());
     }
 
     const catalogReply = await getShopAssistantReply(input);
     if (catalogReply.text.trim() || catalogReply.products?.length || catalogReply.searchClarification?.length) {
-      return catalogReply;
+      return finalizeReply(input, catalogReply);
     }
 
     const messengerUrl = await getMessengerUrl().catch(() => PUBLIC_MESSENGER_URL);
-    return serviceReply(input.message, messengerUrl) ?? {
+    return finalizeReply(input, serviceReply(input.message, messengerUrl) ?? {
       text: "No ubico ese producto. ¿Tienes foto, código o modelo?",
       quickActions: [
         { label: "Explorar catálogo", href: "/?focus=search", accent: true },
@@ -203,7 +225,7 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
       ],
       suggestedPrompts: ["Buscar por código", "Ver ofertas", "Hablar con un asesor"],
       meta: { intent: "human-assistance", usedOllama: false },
-    };
+    });
   };
 }
 
