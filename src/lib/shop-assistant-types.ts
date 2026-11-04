@@ -24,6 +24,9 @@ export type ShopAssistantProductCard = {
   brand: string | null;
   category: string | null;
   imageUrl: string | null;
+  /** Own-origin JPEG derivative for Telegram. It is issued only for a
+   * visible catalog product with a verified local product image. */
+  telegramImageUrl?: string | null;
   /** Original public image used by external channel adapters. The storefront
    * can keep using its optimized local WebP, which some providers reject. */
   outboundImageUrl?: string | null;

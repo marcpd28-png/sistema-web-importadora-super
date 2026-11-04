@@ -108,8 +108,8 @@ class InboxTests(unittest.TestCase):
         self.inbox.super_bot_reply=lambda request: {
             'text':'Estas son las opciones disponibles.', 'document':None,
             'products':[
-                {'name':'Producto uno','code':'UNO-1','imageUrl':'/uploads/products/uno.webp','outboundImageUrl':'https://tiendavirtualsuper.com/uploads/products/uno.jpg'},
-                {'name':'Producto externo','code':'EXT-1','imageUrl':'https://example.test/no.jpg'},
+                {'name':'Producto uno','code':'UNO-1','telegramImageUrl':'/api/telegram/product-image/UNO-1','imageUrl':'/uploads/products/uno.webp','outboundImageUrl':'https://tiendavirtualsuper.com/uploads/products/uno.jpg'},
+                {'name':'Producto externo','code':'EXT-1','telegramImageUrl':'https://tiendavirtualsuper.com/api/other-image/EXT-1','imageUrl':'https://example.test/no.jpg'},
                 {'name':'Producto dos','code':'DOS-2','imageUrl':'https://tiendavirtualsuper.com/uploads/products/dos.jpg'},
                 {'name':'Producto tres','code':'TRES-3','outboundImageUrl':'https://tiendavirtualsuper.com/uploads/products/tres.png'},
                 {'name':'Producto cuatro','code':'CUATRO-4','imageUrl':'/uploads/products/cuatro.jpg'},
@@ -119,7 +119,7 @@ class InboxTests(unittest.TestCase):
         self.assertEqual([call[0] for call in self.calls],['sendPhoto','sendPhoto','sendPhoto','sendMessage'])
         photos=[call[1]['photo'] for call in self.calls[:3]]
         self.assertEqual(photos,[
-            'https://tiendavirtualsuper.com/uploads/products/uno.jpg',
+            'https://tiendavirtualsuper.com/api/telegram/product-image/UNO-1',
             'https://tiendavirtualsuper.com/uploads/products/dos.jpg',
             'https://tiendavirtualsuper.com/uploads/products/tres.png',
         ])
@@ -130,6 +130,18 @@ class InboxTests(unittest.TestCase):
         self.assertTrue(all(call[1]['_inbox_protocol'] == 'super-bot-v1' for call in self.calls))
         self.assertFalse(self.inbox.super_bot_tick(self.adapter))
         self.assertEqual(len(self.calls),4)
+
+    def test_super_bot_rejects_other_api_paths_and_derivative_query_strings(self):
+        images=self.inbox.product_image_messages([
+            {'name':'Válido','code':'O864','telegramImageUrl':'/api/telegram/product-image/O864'},
+            {'name':'Con query','code':'BAD-Q','telegramImageUrl':'/api/telegram/product-image/O864?next=/uploads/products/otro.jpg'},
+            {'name':'Otro API','code':'BAD-A','telegramImageUrl':'/api/admin/uploads/O864'},
+            {'name':'Host externo','code':'BAD-H','telegramImageUrl':'https://example.test/api/telegram/product-image/O864'},
+        ])
+        self.assertEqual(images,[{
+            'url':'https://tiendavirtualsuper.com/api/telegram/product-image/O864',
+            'caption':'Válido · O864',
+        }])
 
     def test_rejected_product_photo_does_not_block_the_text_reply(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
@@ -264,6 +276,16 @@ class InboxTests(unittest.TestCase):
     def test_external_attachment_rejected(self):
         with self.assertRaises(InboxError): self.inbox.command('send',dict(self.request,type='IMAGE',mediaUrl='https://example.com/a.jpg'),self.adapter)
         self.assertFalse(self.calls)
+    def test_only_the_exact_telegram_image_derivative_api_path_is_accepted(self):
+        valid=dict(self.request,requestId='tgbot:verified-photo',type='IMAGE',content='Power bank · O864',mediaUrl='https://tiendavirtualsuper.com/api/telegram/product-image/O864',automated=True)
+        self.inbox.command('send',valid,self.adapter)
+        self.assertEqual(self.calls[-1][0],'sendPhoto')
+        for invalid in (
+            'https://tiendavirtualsuper.com/api/admin/uploads/O864',
+            'https://tiendavirtualsuper.com/api/telegram/product-image/O864?redirect=/uploads/products/other.jpg',
+        ):
+            with self.assertRaises(InboxError):
+                self.inbox.command('send',dict(valid,requestId='tgbot:bad-photo:'+str(len(invalid)),mediaUrl=invalid),self.adapter)
     def test_ambiguous_send_never_retried(self):
         def fail(*args): self.calls.append(args); raise TimeoutError()
         self.inbox.raw_api=fail

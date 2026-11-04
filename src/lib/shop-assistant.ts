@@ -9,6 +9,7 @@ import { interpretProductQuery } from "./product-query-interpretation";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getPreferredProductImageUrl } from "@/lib/product-media";
+import { getTelegramProductImageUrl } from "@/lib/telegram-product-image";
 import { buildRealProductPhotoWhere } from "@/lib/store-shared";
 import { formatCurrency, PUBLIC_MESSENGER_URL } from "@/lib/utils";
 import type {
@@ -257,6 +258,12 @@ function getAssistantProductImage(product: AssistantProductRecord) {
   if (preferredUrl) {
     return {
       imageUrl: preferredUrl,
+      // Telegram gets an own-origin JPEG derivative. The route resolves this
+      // exact product again and reads only its local catalogue mirror.
+      telegramImageUrl: getTelegramProductImageUrl(product.code, {
+        localImageUrl: product.localImageUrl,
+        media: product.media,
+      }),
       // Channel adapters can choose the original public photograph when their
       // provider cannot consume an optimized local WebP copy.
       outboundImageUrl: [product.sourceImageUrl, realImageMedia?.url, product.imageUrl]
@@ -268,6 +275,7 @@ function getAssistantProductImage(product: AssistantProductRecord) {
 
   return {
     imageUrl: null,
+    telegramImageUrl: null,
     outboundImageUrl: null,
     imageAlt: null,
   };
@@ -290,6 +298,7 @@ function mapAssistantProduct(
     brand: product.brand,
     category: product.category,
     imageUrl: image.imageUrl,
+    telegramImageUrl: image.telegramImageUrl,
     outboundImageUrl: image.outboundImageUrl,
     imageAlt: image.imageAlt,
     unitPrice: formatCurrency(unitPrice, currencySymbol),
