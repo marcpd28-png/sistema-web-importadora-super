@@ -557,8 +557,11 @@ class Inbox:
             mime_type = document.get('mimeType')
             if mime_type is not None and mime_type != 'application/pdf':
                 raise InboxError('Super Bot devolvió un catálogo inválido.',502)
+            # A plural bundle is the strict, generated delivery contract.
+            # Requiring an exact declared size here keeps its Telegram limit
+            # fail-closed instead of trusting an incomplete upstream object.
             size_bytes = document.get('sizeBytes')
-            if size_bytes is not None and (
+            if (
                 not isinstance(size_bytes, int)
                 or isinstance(size_bytes, bool)
                 or size_bytes < 1
