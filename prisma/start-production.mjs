@@ -92,7 +92,6 @@ process.once("SIGINT", () => shutdown(0));
 process.once("SIGTERM", () => shutdown(0));
 
 startScript(webScript);
-startScript("messages:ai");
 
 if (schedulerEnabled) {
   startScript("sync:facturador-scheduler");
