@@ -9,6 +9,7 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageInput } from "./MessageInput";
 import type { ChatMessage, Conversation, MessageType } from "@/types/messages";
 import { createMessageReply, readMessageReply, type MessageReply } from "@/lib/message-reply";
+import { mergeChatMessages } from "@/lib/message-client-dedupe";
 
 const CONVERSATION_PAGE_SIZE = 30;
 const MESSAGE_PAGE_SIZE = 60;
@@ -42,6 +43,17 @@ type MessagesResponse = {
   nextBeforeId: string | null;
   nextBefore: string | null;
   total: number;
+};
+
+export type AssignmentViewer = {
+  id: string;
+  name: string;
+  isMessagingOwner: boolean;
+};
+
+export type AdvisorTarget = {
+  id: string;
+  name: string;
 };
 
 function useDebouncedValue<T>(value: T, delayMs: number) {
@@ -165,21 +177,7 @@ function mergeConversations(base: Conversation[], incoming: Conversation[]) {
 }
 
 function mergeMessages(base: ChatMessage[], incoming: ChatMessage[]) {
-  const byId = new Map<string, ChatMessage>();
-
-  for (const message of base) {
-    byId.set(message.id, message);
-  }
-
-  for (const message of incoming) {
-    byId.set(message.id, message);
-  }
-
-  return [...byId.values()].sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() ||
-      a.id.localeCompare(b.id),
-  );
+  return mergeChatMessages(base, incoming);
 }
 
 function isNearBottom(element: HTMLDivElement | null) {
@@ -195,7 +193,19 @@ function asMessageType(value: string): MessageType {
   return allowedTypes.includes(value as MessageType) ? (value as MessageType) : "TEXT";
 }
 
-export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: ConversationFilters["channel"] }) {
+export function MessagesWorkspace({
+  initialChannel = "",
+  canManageBot = true,
+  uploadEndpoint,
+  viewer,
+  advisorTargets,
+}: {
+  initialChannel?: ConversationFilters["channel"];
+  canManageBot?: boolean;
+  uploadEndpoint?: string;
+  viewer: AssignmentViewer;
+  advisorTargets: AdvisorTarget[];
+}) {
   const [clockNow, setClockNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setClockNow(Date.now()), CONVERSATION_POLL_MS);
@@ -225,6 +235,8 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [assignmentBusy, setAssignmentBusy] = useState(false);
+  const [assignmentAnnouncement, setAssignmentAnnouncement] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeMessagesRef = useRef<ChatMessage[]>([]);
@@ -338,8 +350,8 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
       const latestMessage = activeMessagesRef.current.at(-1);
 
       try {
-        // Existing messages change state when a queued reply is cancelled or
-        // confirmed by YCloud. An after-only cursor cannot see these updates.
+        // Existing messages change state when a delivery is confirmed or
+        // rejected by a connected transport. An after-only cursor cannot see these updates.
         const [data, recent] = await Promise.all([
           fetchMessagesPage(activeId, filtersSnapshot, latestMessage ? {
             afterId: latestMessage.id,
@@ -446,7 +458,45 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
     }
   }, [handleLoadOlderMessages]);
 
-  const handleSelectConversation = (id: string) => {
+  const applyConversationAssignment = useCallback((updated: Conversation) => {
+    setConversations((current) => current.map((conversation) => (
+      conversation.id === updated.id
+        ? { ...conversation, ...updated, lastMessage: conversation.lastMessage }
+        : conversation
+    )));
+  }, []);
+
+  const claimConversation = useCallback(async (id: string) => {
+    setAssignmentBusy(true);
+    try {
+      const response = await fetch(`/api/admin/conversations/${id}/assignment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "claim" }),
+      });
+      const payload = await response.json().catch(() => null) as Conversation | { error?: string } | null;
+      if (!response.ok) {
+        const reason = payload && "error" in payload ? payload.error : "No se pudo tomar la conversación.";
+        throw new Error(reason || "No se pudo tomar la conversación.");
+      }
+      const claimed = payload as Conversation;
+      applyConversationAssignment(claimed);
+      return claimed;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "Otro asesor ya tomó esta conversación.";
+      setWorkspaceError(reason);
+      setAssignmentAnnouncement(reason);
+      setRefreshNonce((value) => value + 1);
+      return null;
+    } finally {
+      setAssignmentBusy(false);
+    }
+  }, [applyConversationAssignment]);
+
+  const handleSelectConversation = async (id: string) => {
+    if (assignmentBusy) return;
+    if (!viewer.isMessagingOwner && !(await claimConversation(id))) return;
+
     setActiveId(id);
     setReplyTo(null);
     setConversations((current) =>
@@ -461,7 +511,10 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
       body: JSON.stringify({ markAsRead: true }),
       headers: { "Content-Type": "application/json" },
       method: "PATCH",
-    }).catch((error) => console.error("Failed to mark conversation as read", error));
+    }).catch((error) => {
+      console.error("Failed to mark conversation as read", error);
+      setRefreshNonce((value) => value + 1);
+    });
   };
 
   const handleBackToConversations = () => {
@@ -473,7 +526,7 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
   };
 
   const handleSendMessage = async (content: string, mediaUrl?: string, type: string = "TEXT", reply: MessageReply | null = replyTo) => {
-    if (!activeId) {
+    if (!activeId || assignmentBusy) {
       return;
     }
 
@@ -573,7 +626,7 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
         headers: { "Content-Type": "application/json" },
         method: "PATCH",
       });
-      if (!response.ok) { setWorkspaceError((await response.json()).error || 'No se pudo cambiar el estado de Rocky.'); throw new Error('Control failed'); }
+      if (!response.ok) { setWorkspaceError((await response.json()).error || 'No se pudo cambiar el estado de Super Bot.'); throw new Error('Control failed'); }
     } catch {
       setConversations((previous) =>
         previous.map((conversation) =>
@@ -584,28 +637,40 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
   };
 
   const handleTakeConversation = async () => {
-    if (!activeId) {
+    if (!activeId || assignmentBusy) {
       return;
     }
+    const claimed = await claimConversation(activeId);
+    if (claimed) setAssignmentAnnouncement(`Conversación asignada a ${viewer.name}.`);
+  };
 
-    setConversations((previous) =>
-      previous.map((conversation) =>
-        conversation.id === activeId
-          ? {
-              ...conversation,
-              botEnabled: false,
-              status: "ATENDIENDO",
-            }
-          : conversation,
-      ),
-    );
-
-    const response = await fetch(`/api/admin/conversations/${activeId}`, {
-      body: JSON.stringify({ botEnabled: false, status: "ATENDIENDO" }),
-      headers: { "Content-Type": "application/json" },
-      method: "PATCH",
-    });
-    if (!response.ok) { setWorkspaceError((await response.json()).error || 'No se pudo tomar la conversación.'); setRefreshNonce(value => value + 1); }
+  const handleTransferConversation = async (advisorId: string) => {
+    if (!activeId || assignmentBusy) return;
+    setAssignmentBusy(true);
+    try {
+      const response = await fetch(`/api/admin/conversations/${activeId}/assignment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "transfer", advisorId }),
+      });
+      const payload = await response.json().catch(() => null) as Conversation | { error?: string } | null;
+      if (!response.ok) {
+        const reason = payload && "error" in payload ? payload.error : "No se pudo derivar la conversación.";
+        throw new Error(reason || "No se pudo derivar la conversación.");
+      }
+      applyConversationAssignment(payload as Conversation);
+      const recipient = advisorTargets.find((advisor) => advisor.id === advisorId)?.name || "el asesor seleccionado";
+      const announcement = `Conversación derivada a ${recipient}.`;
+      setAssignmentAnnouncement(announcement);
+      if (!viewer.isMessagingOwner) handleBackToConversations();
+      setRefreshNonce((value) => value + 1);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "No se pudo derivar la conversación.";
+      setWorkspaceError(reason);
+      setAssignmentAnnouncement(reason);
+    } finally {
+      setAssignmentBusy(false);
+    }
   };
 
   const handleCloseConversation = async () => {
@@ -635,6 +700,9 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
 
   return (
     <div className={`messages-workspace ${activeId ? "chat-open" : ""}`}>
+      <p aria-live="polite" className="messages-assignment-announcement">
+        {assignmentAnnouncement}
+      </p>
       {workspaceError ? (
         <div className="messages-workspace-alert" role="alert">
           <TriangleAlert size={18} />
@@ -667,11 +735,16 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
         <>
           <div className="messages-main">
             <ChatHeader
+              advisorTargets={advisorTargets}
+              assignmentBusy={assignmentBusy}
+              canManageBot={canManageBot}
               conversation={activeConversation}
               onBack={handleBackToConversations}
               onCloseConversation={handleCloseConversation}
               onTakeConversation={handleTakeConversation}
+              onTransferConversation={handleTransferConversation}
               onToggleBot={handleToggleBot}
+              viewer={viewer}
             />
 
             <div className="chat-messages" onScroll={handleMessagesScroll} ref={messagesContainerRef}>
@@ -712,7 +785,7 @@ export function MessagesWorkspace({ initialChannel = "" }: { initialChannel?: Co
                   : 'Telegram: espera un nuevo mensaje del cliente para responder; la ventana de 24 horas terminó.'}
               </p>
             ) : null}
-            <MessageInput key={activeId} disabled={activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000)} onSendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} />
+            <MessageInput key={activeId} disabled={assignmentBusy || (activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000))} onSendMessage={handleSendMessage} replyTo={replyTo} onCancelReply={() => setReplyTo(null)} uploadEndpoint={uploadEndpoint} />
           </div>
 
           <CustomerPanel conversation={activeConversation} />

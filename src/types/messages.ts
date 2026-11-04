@@ -31,7 +31,7 @@ export type ConversationLastMessage = Pick<
 
 export type Conversation = PrismaConversation & {
   contact: ChatContact;
-  assignedUser?: { name: string; email?: string } | null;
+  assignedUser?: { id: string; name: string; email?: string } | null;
   lastMessage?: ConversationLastMessage | null;
   productContext?: ProductContext;
 };

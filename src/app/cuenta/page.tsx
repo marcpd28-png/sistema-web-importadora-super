@@ -21,7 +21,7 @@ import { CartDrawer } from "@/components/catalog/cart-drawer";
 import { PublicStoreHeader } from "@/components/catalog/public-store-header";
 import { StoreSideActions } from "@/components/catalog/store-side-actions";
 import { getCatalogPageData, getShopperAccount, getShopperQuoteHistory } from "@/lib/store";
-import { buildPublicWhatsappHref, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +73,7 @@ export default async function ShopperAccountPage({ searchParams }: ShopperAccoun
   const lastQuote = quoteHistory[0] ?? null;
   const quotedUnits = quoteHistory.reduce((sum, quote) => sum + quote.itemCount, 0);
   const quotedTotal = quoteHistory.reduce((sum, quote) => sum + quote.total, 0);
-  const supportHref = buildPublicWhatsappHref();
+  const supportHref = catalogData.settings.messengerUrl;
   const firstName = getFirstName(account.name);
 
   return (
@@ -385,7 +385,7 @@ export default async function ShopperAccountPage({ searchParams }: ShopperAccoun
             </div>
             <a className="button button-primary" href={supportHref} rel="noreferrer" target="_blank">
               <MessageCircleMore size={16} />
-              WhatsApp
+              Messenger
             </a>
           </section>
         </aside>

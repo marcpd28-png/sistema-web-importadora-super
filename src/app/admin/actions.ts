@@ -843,7 +843,7 @@ export async function deleteAdminUserAction(formData: FormData) {
 
 export async function changeRequiredPasswordAction(prevState: any, formData: FormData) {
   const session = await getSession();
-  if (!session || session.role !== "ADMIN") {
+  if (!session || (session.role !== "ADMIN" && session.role !== "ASESOR")) {
     return { error: "No autorizado.", success: false };
   }
 
@@ -875,11 +875,11 @@ export async function changeRequiredPasswordAction(prevState: any, formData: For
       userId: session.userId,
       email: session.email,
       name: session.name,
-      role: "ADMIN",
+      role: session.role,
       requirePasswordChange: false,
     });
 
-    revalidatePath("/admin");
+    revalidatePath(session.role === "ASESOR" ? "/asesor" : "/admin");
     return { success: true, error: "" };
   } catch (error) {
     console.error(error);

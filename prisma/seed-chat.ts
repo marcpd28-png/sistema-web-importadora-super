@@ -20,7 +20,7 @@ async function main() {
   const conversation = await prisma.conversation.create({
     data: {
       contactId: contact.id,
-      channel: Channel.WHATSAPP,
+      channel: Channel.WEB,
       status: ConversationState.AUTOMATICO,
       botEnabled: true,
       unreadCount: 1,

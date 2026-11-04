@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Send } from "lucide-react";
-import { buildWhatsappHrefFromPhone } from "@/lib/utils";
+import { Copy, FileText } from "lucide-react";
 
 type QuoteCustomerMessageProps = {
   customerName: string;
@@ -19,13 +18,9 @@ export function QuoteCustomerMessage({
   pdfLink,
   quoteNumber,
 }: QuoteCustomerMessageProps) {
+  void customerPhone;
   const [replyText, setReplyText] = useState(
     `Hola ${customerName}, te contacto sobre tu cotización ${quoteNumber || ""}. En respuesta a tu mensaje: "${customerMessage}".${pdfLink ? `\n\nPuedes ver tu cotización en PDF aquí: ${pdfLink}` : ""}`
-  );
-
-  const whatsappHref = buildWhatsappHrefFromPhone(
-    customerPhone,
-    replyText.trim()
   );
 
   return (
@@ -43,7 +38,7 @@ export function QuoteCustomerMessage({
         <textarea
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
-          placeholder="Escribe tu respuesta para enviarla por WhatsApp..."
+          placeholder="Redacta la respuesta para el cliente..."
           style={{
             width: "100%",
             minHeight: "160px",
@@ -55,12 +50,10 @@ export function QuoteCustomerMessage({
             fontFamily: "inherit",
           }}
         />
-        {whatsappHref ? (
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noreferrer"
-            className="button button-primary"
+        <button
+          type="button"
+          onClick={() => void navigator.clipboard.writeText(replyText.trim())}
+          className="button button-primary"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -70,21 +63,12 @@ export function QuoteCustomerMessage({
               padding: "0 16px",
               fontSize: "13px",
               borderRadius: "8px",
-              background: "#25D366", // WhatsApp green
-              borderColor: "#25D366",
-              color: "white",
               alignSelf: "flex-end",
-              textDecoration: "none",
             }}
           >
-            <Send size={14} />
-            Enviar respuesta
-          </a>
-        ) : (
-          <span style={{ fontSize: "12px", color: "#ef4444", alignSelf: "flex-end" }}>
-            No hay teléfono válido para WhatsApp.
-          </span>
-        )}
+            <Copy size={14} />
+            Copiar respuesta
+          </button>
       </div>
     </div>
   );

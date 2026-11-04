@@ -69,7 +69,7 @@ export default function TerminosCondiciones() {
       <section style={{ marginBottom: "32px" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "32px", marginBottom: "16px" }}>8. Atención mediante Automatización e Inteligencia Artificial</h2>
         <p>
-          Para agilizar nuestros servicios, nuestros canales digitales (como el chat web y WhatsApp) pueden estar administrados parcialmente por <strong>asistentes virtuales y automatizaciones basadas en Inteligencia Artificial</strong>. Estas herramientas tienen el objetivo de asistir comercialmente, guiar en la navegación del catálogo y proporcionar presupuestos de manera automática.
+          Para agilizar nuestros servicios, nuestros canales digitales, como el chat web y Messenger cuando esté habilitado, pueden estar administrados parcialmente por <strong>asistentes virtuales y automatizaciones basadas en Inteligencia Artificial</strong>. Estas herramientas tienen el objetivo de asistir comercialmente, guiar en la navegación del catálogo y proporcionar presupuestos de manera automática.
         </p>
         <p style={{ marginTop: "12px" }}>
           Las respuestas generadas por los asistentes virtuales están diseñadas para ser lo más precisas posibles, sin embargo, están sujetas a verificación final humana en caso de disputas. Todo cliente puede solicitar en cualquier momento dentro de nuestros horarios comerciales la intervención y <strong>Atención Humana</strong> directa por parte de nuestros asesores para resolver cualquier duda que exceda la capacidad de nuestro asistente.
@@ -80,7 +80,7 @@ export default function TerminosCondiciones() {
         <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "32px", marginBottom: "16px" }}>9. Errores, Disponibilidad y Propiedad Intelectual</h2>
         <ul style={{ paddingLeft: "24px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <li><strong>Errores y Omisiones:</strong> En el caso excepcional en que un producto figure listado con un precio incorrecto por error tipográfico o de sistema, la empresa se reserva el derecho de rechazar o cancelar dichos pedidos, procediendo con el reembolso íntegro si el pago ya se hubiera efectuado.</li>
-          <li><strong>Disponibilidad del Servicio:</strong> No garantizamos que el funcionamiento del sitio web o canales de WhatsApp sea continuo e ininterrumpido. Podemos realizar pausas por mantenimiento.</li>
+          <li><strong>Disponibilidad del Servicio:</strong> No garantizamos que el funcionamiento del sitio web o canales digitales sea continuo e ininterrumpido. Podemos realizar pausas por mantenimiento.</li>
           <li><strong>Propiedad Intelectual:</strong> Todos los textos, imágenes, logotipos y diseños de la tienda son propiedad de Importaciones Sam Sac o de sus respectivos fabricantes y proveedores. Queda prohibida su reproducción no autorizada con fines comerciales ajenos a la empresa.</li>
         </ul>
       </section>

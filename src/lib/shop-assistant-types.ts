@@ -4,6 +4,17 @@ export type ShopAssistantQuickAction = {
   accent?: boolean;
 };
 
+/** A single generated file that channel adapters may deliver as an attachment.
+ * The response text always includes the URL too, so channels without document
+ * support can still give the customer access to the same catalogue. */
+export type ShopAssistantDocument = {
+  deliveryKey: string;
+  filename: string;
+  mimeType: "application/pdf";
+  sizeBytes: number;
+  url: string;
+};
+
 export type ShopAssistantProductCard = {
   id: string;
   slug: string;
@@ -13,7 +24,7 @@ export type ShopAssistantProductCard = {
   brand: string | null;
   category: string | null;
   imageUrl: string | null;
-  /** Original public image used for channels such as WhatsApp. The storefront
+  /** Original public image used by external channel adapters. The storefront
    * can keep using its optimized local WebP, which some providers reject. */
   outboundImageUrl?: string | null;
   imageAlt: string | null;
@@ -32,6 +43,7 @@ export type ShopAssistantProductCard = {
 
 export type ShopAssistantReply = {
   text: string;
+  document?: ShopAssistantDocument;
   searchClarification?: Array<{ code: string; name: string }>;
   contextProductCode?: string | null;
   contextCategorySlug?: string | null;

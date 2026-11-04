@@ -34,13 +34,12 @@ before(async () => {
 beforeEach(async () => { await prisma.chatContact.deleteMany(); await prisma.telegramInboxEvent.deleteMany(); calls = 0; mode = "ok"; revision = 1; });
 after(async () => { if (server) await new Promise<void>(resolve => server.close(() => resolve())); if (agentId) await prisma.user.delete({ where: { id: agentId } }); await prisma.$disconnect(); });
 
-test("concurrent Telegram retries persist one contact, conversation and message without WhatsApp jobs", async () => {
+test("concurrent Telegram retries persist one contact, conversation and message", async () => {
   const event = inbound();
   const results = await Promise.all(Array.from({ length: 6 }, () => receiveTelegramEvent(event)));
   assert.equal(results.filter(r => !r.duplicate).length, 1);
   assert.equal(await prisma.chatMessage.count(), 1);
   assert.equal(await prisma.chatContact.count(), 1);
-  assert.equal(await prisma.rockyInboundTurn.count(), 0);
   assert.equal((await prisma.chatContact.findFirstOrThrow()).phone, null);
 });
 test("reply round trip and bridge echo create only one outgoing message", async () => {

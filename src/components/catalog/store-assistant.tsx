@@ -73,7 +73,7 @@ function ProductActions({ product }: { product: ShopAssistantProductCard }) {
 }
 
 export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt, initialProductCode, initialCategorySlug, onInitialPromptHandled }: StoreAssistantPanelProps) {
-  const storageKey = `rocky-chat-v2:${businessName}`;
+  const storageKey = `super-bot-chat-v1:${businessName}`;
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
@@ -175,7 +175,7 @@ export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt
   if (!open) return null;
   return <>
     <div className={styles.backdrop} onClick={onClose} aria-hidden="true" />
-    <section ref={panel} className={styles.panel} role="dialog" aria-modal="true" aria-labelledby="rocky-chat-title" onKeyDown={event => {
+    <section ref={panel} className={styles.panel} role="dialog" aria-modal="true" aria-labelledby="super-bot-chat-title" onKeyDown={event => {
       if (event.key === "Escape") { event.preventDefault(); onClose(); }
       if (event.key === "Tab") {
         const elements = panel.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], textarea');
@@ -186,7 +186,7 @@ export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt
     }}>
       <header className={styles.header}>
         <span className={styles.avatar} aria-hidden="true"><MessageCircle size={21} strokeWidth={1.7} /></span>
-        <div className={styles.identity}><h2 id="rocky-chat-title">Super Bot<span>Asistente</span></h2><p>{businessName}</p></div>
+        <div className={styles.identity}><h2 id="super-bot-chat-title">Super Bot<span>Asistente</span></h2><p>{businessName}</p></div>
         <button className={styles.iconButton} type="button" title="Nueva conversación" aria-label="Nueva conversación" onClick={reset} disabled={!ready}><RotateCcw size={17} /></button>
         <button className={styles.iconButton} type="button" title="Cerrar" aria-label="Cerrar asistente" onClick={onClose}><X size={20} /></button>
       </header>
@@ -197,7 +197,7 @@ export function StoreAssistantPanel({ businessName, open, onClose, initialPrompt
           <MessageText text={message.text} />
           {message.role === "assistant" && <>
             {message.products?.map(product => <ProductActions key={product.id} product={product} />)}
-            {message.quickActions?.filter(action => safeHref(action.href)).map(action => <a className={styles.actionLink} key={action.href} href={action.href} target={action.href.startsWith("https://wa.me/") ? "_blank" : undefined} rel="noreferrer">{action.label}<span aria-hidden="true">↗</span></a>)}
+            {message.quickActions?.filter(action => safeHref(action.href)).map(action => <a className={styles.actionLink} key={action.href} href={action.href} target={action.href.startsWith("https://") ? "_blank" : undefined} rel="noreferrer">{action.label}<span aria-hidden="true">↗</span></a>)}
           </>}
         </article>)}
         {loading && <div className={styles.loading} role="status"><span><i /><i /><i /></span>Super Bot está consultando tu mensaje</div>}

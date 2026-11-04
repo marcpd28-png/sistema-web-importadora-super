@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/auth";
+import { getMessageCenterSession } from "@/lib/auth";
 import {
   getConversationMessages,
   getConversationMessagesSchema,
+  isAdvisorConversationAccessible,
+  MessageTransportError,
   sendInternalMessage,
 } from "@/lib/messages-service";
-import { YCloudOutboundError } from "@/lib/ycloud-outbound";
 import { z } from "zod";
 import { TelegramBridgeError } from "@/lib/telegram-bridge";
+import { ConversationAssignmentError } from "@/lib/conversation-assignment";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +17,17 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getMessageCenterSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
+
   try {
-    await requireAdmin();
     const { id } = await params;
+
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) {
+      return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    }
 
     const searchParams = request.nextUrl.searchParams;
     const query = getConversationMessagesSchema.parse({
@@ -52,29 +62,40 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getMessageCenterSession();
+  if (!session) {
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+  }
+
   try {
-    const session = await requireAdmin();
     const { id } = await params;
+
+    if (session.role === "ASESOR" && !(await isAdvisorConversationAccessible(id, session.userId))) {
+      return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
+    }
     
     const body = await request.json();
     
     // We pass the session user ID to associate the action with the agent
-    const message = await sendInternalMessage(id, body, session.userId);
+    const message = await sendInternalMessage(
+      id,
+      body,
+      session.userId,
+      session.role === "ASESOR" ? { expectedAssigneeId: session.userId } : undefined,
+    );
 
     return NextResponse.json(message);
   } catch (error: unknown) {
     if (error instanceof TelegramBridgeError) return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    if (error instanceof ConversationAssignmentError) return NextResponse.json({ error: error.message }, { status: error.statusCode });
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid request payload", details: error.issues }, { status: 400 });
     }
 
-    if (error instanceof YCloudOutboundError) {
+    if (error instanceof MessageTransportError) {
       return NextResponse.json(
         {
-          code: error.code,
           error: error.message,
-          messageId: error.messageId,
-          requestId: error.requestId,
         },
         { status: error.statusCode },
       );

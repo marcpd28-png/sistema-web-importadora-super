@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { BookOpenText, Clock3, Mail, MapPin } from "lucide-react";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import type { StoreSettingsView } from "@/lib/store";
+import { PUBLIC_MESSENGER_URL } from "@/lib/utils";
 
-const MESSENGER_URL = "https://m.me/importacionessuperoficial";
-
-export function StoreFooter() {
+export function StoreFooter({ messengerUrl = PUBLIC_MESSENGER_URL }: { messengerUrl?: StoreSettingsView["messengerUrl"] }) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -225,7 +225,7 @@ export function StoreFooter() {
         {/* Derecha: Botones de Acción */}
         <div className="store-footer-actions">
           <a
-            href={MESSENGER_URL}
+            href={messengerUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="store-footer-btn store-footer-btn-messenger"

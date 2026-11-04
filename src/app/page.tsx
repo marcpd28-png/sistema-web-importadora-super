@@ -325,7 +325,7 @@ export default async function Home({ searchParams }: HomeProps) {
         filters={paginationFilters.size ? "&" + paginationFilters.toString() : ""}
       /> : <Link className="button button-secondary" href="/?view=all">Ver todos los productos</Link>}
 
-      <StoreFooter />
+      <StoreFooter messengerUrl={data.settings.messengerUrl} />
     </main>
     </>
   );

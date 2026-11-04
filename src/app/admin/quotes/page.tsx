@@ -11,6 +11,8 @@ export const dynamic = "force-dynamic";
 
 type AdminQuotesPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  basePath?: string;
+  canDelete?: boolean;
 };
 
 const statusOptions: Array<{
@@ -82,11 +84,15 @@ function getCustomerModeLabel(value: string | null) {
   return "Sin estado ERP";
 }
 
-function buildQuotesHref(input: { page: number; status: QuoteStatus | "all" }) {
-  return `/admin/quotes?status=${encodeURIComponent(input.status)}&page=${input.page}`;
+function buildQuotesHref(input: { page: number; status: QuoteStatus | "all" }, basePath: string) {
+  return `${basePath}?status=${encodeURIComponent(input.status)}&page=${input.page}`;
 }
 
-export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageProps) {
+export async function QuotesListPage({
+  searchParams,
+  basePath = "/admin/quotes",
+  canDelete = true,
+}: AdminQuotesPageProps) {
   const params = searchParams ? await searchParams : undefined;
   const status = parseStatus(params?.status);
   const page = Number(typeof params?.page === "string" ? params.page : "1");
@@ -96,7 +102,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
   });
   const pageStart = data.totalResults > 0 ? (data.page - 1) * data.pageSize + 1 : 0;
   const pageEnd = Math.min(data.page * data.pageSize, data.totalResults);
-  const session = await getSession();
+  const session = canDelete ? await getSession() : null;
 
   return (
     <section className="panel admin-quotes-panel">
@@ -138,7 +144,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
         {statusOptions.map((option) => (
           <Link
             className={cn("trend-period-chip", status === option.value && "is-active")}
-            href={buildQuotesHref({ page: 1, status: option.value })}
+            href={buildQuotesHref({ page: 1, status: option.value }, basePath)}
             key={option.value}
           >
             {option.label}
@@ -224,8 +230,8 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
                   </td>
                   <td data-label="Acciones">
                     <div className="table-actions">
-                      <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} />
-                      <Link className="icon-button" href={`/admin/quotes/${quote.id}`}>
+                      {canDelete ? <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} /> : null}
+                      <Link className="icon-button" href={`${basePath}/${quote.id}`}>
                         <Eye size={16} />
                         <span>Ver</span>
                       </Link>
@@ -248,7 +254,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
         {data.page > 1 ? (
           <Link
             className="button button-secondary"
-            href={buildQuotesHref({ page: data.page - 1, status })}
+            href={buildQuotesHref({ page: data.page - 1, status }, basePath)}
           >
             Página anterior
           </Link>
@@ -259,7 +265,7 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
         {data.page < data.totalPages ? (
           <Link
             className="button button-secondary"
-            href={buildQuotesHref({ page: data.page + 1, status })}
+            href={buildQuotesHref({ page: data.page + 1, status }, basePath)}
           >
             Siguiente página
           </Link>
@@ -267,4 +273,8 @@ export default async function AdminQuotesPage({ searchParams }: AdminQuotesPageP
       </div>
     </section>
   );
+}
+
+export default async function AdminQuotesPage(props: AdminQuotesPageProps) {
+  return <QuotesListPage {...props} />;
 }

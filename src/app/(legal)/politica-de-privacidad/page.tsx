@@ -21,7 +21,7 @@ export default function PoliticaPrivacidad() {
         <p>
           <strong>Importaciones Sam Sac</strong> es la empresa responsable del tratamiento de los datos personales 
           utilizados para prestar los servicios asociados a la plataforma y tienda online <strong>Importaciones Super</strong> (accesible a través de <a href="https://tiendavirtualsuper.com" target="_blank" rel="noreferrer" style={{ color: "#2320da", textDecoration: "underline" }}>https://tiendavirtualsuper.com</a>). 
-          Esta política aplica a los datos recabados en el sitio web, así como a la información tratada a través de nuestros canales de atención por WhatsApp Business y la aplicación integrada de Meta (&quot;importaciones super api&quot;).
+          Esta política aplica a los datos recabados en el sitio web y a la información tratada a través de nuestros canales digitales de atención, incluida la mensajería integrada de Meta cuando esté habilitada.
         </p>
       </section>
 
@@ -30,13 +30,13 @@ export default function PoliticaPrivacidad() {
         <p>Dependiendo de su interacción con nuestra tienda y canales de atención, podemos procesar la siguiente información:</p>
         <ul style={{ paddingLeft: "24px", marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <li>Nombre y apellidos cuando corresponda.</li>
-          <li>Número de teléfono (especialmente al comunicarse por WhatsApp).</li>
+          <li>Número de teléfono cuando sea necesario para coordinar una compra o atención.</li>
           <li>Correo electrónico.</li>
           <li>Documento de identidad (DNI, CE o equivalente) cuando sea necesario para una operación comercial.</li>
           <li>RUC e información necesaria para la emisión de boletas o facturas.</li>
           <li>Dirección de entrega, incluyendo distrito, provincia y departamento cuando corresponda.</li>
           <li>Información relacionada con pedidos, compras y productos consultados.</li>
-          <li>Mensajes enviados a través de WhatsApp u otros canales de atención al cliente.</li>
+          <li>Mensajes enviados a través de nuestros canales de atención al cliente.</li>
           <li>Información requerida para servicios de delivery, recojo en tienda o envíos por agencia.</li>
           <li>Información técnica necesaria para la seguridad y el funcionamiento del sitio web.</li>
           <li>Identificadores técnicos proporcionados por plataformas integradas cuando sean estrictamente necesarios para prestar el servicio de comunicación o compra.</li>
@@ -55,17 +55,17 @@ export default function PoliticaPrivacidad() {
           <li>Administrar y dar seguimiento a solicitudes de soporte técnico o comercial.</li>
           <li>Prevenir el fraude o abuso en nuestras plataformas.</li>
           <li>Mantener la seguridad de nuestros servicios y mejorar el funcionamiento general de la tienda.</li>
-          <li>Operar las integraciones tecnológicas necesarias con WhatsApp Business y plataformas de Meta.</li>
+          <li>Operar las integraciones tecnológicas necesarias con plataformas de mensajería habilitadas.</li>
         </ul>
       </section>
 
       <section style={{ marginBottom: "32px" }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "32px", marginBottom: "16px" }}>D. WHATSAPP Y META</h2>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "32px", marginBottom: "16px" }}>D. MENSAJERÍA EN PLATAFORMAS DE META</h2>
         <p>
-          Importaciones Super puede utilizar servicios proveídos por Meta Platforms, Inc., incluyendo la plataforma de <strong>WhatsApp Business</strong>, para recibir, procesar y enviar mensajes relacionados con atención al cliente, consultas de productos, gestión de compras y soporte post-venta.
+          Cuando esté habilitada, Importaciones Super puede utilizar servicios de Meta Platforms, Inc., como <strong>Messenger</strong>, para recibir y procesar mensajes relacionados con atención al cliente, consultas de productos, gestión de compras y soporte post-venta.
         </p>
         <p style={{ marginTop: "12px" }}>
-          Al utilizar WhatsApp para comunicarse con nosotros, tenga en cuenta que Meta también puede procesar determinada información técnica de acuerdo con sus propias Políticas de Privacidad y Condiciones del Servicio aplicables.
+          Al utilizar servicios de mensajería de Meta para comunicarse con nosotros, tenga en cuenta que Meta también puede procesar determinada información técnica de acuerdo con sus propias Políticas de Privacidad y Condiciones del Servicio aplicables.
         </p>
       </section>
 
@@ -93,7 +93,7 @@ export default function PoliticaPrivacidad() {
         </p>
         <ul style={{ paddingLeft: "24px", marginTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
           <li>Infraestructura de servidores y hosting en la nube.</li>
-          <li>Servicios de mensajería (incluyendo Meta y WhatsApp).</li>
+          <li>Servicios de mensajería habilitados, incluyendo Meta cuando corresponda.</li>
           <li>Plataformas de procesamiento de pagos y pasarelas transaccionales.</li>
           <li>Servicios de logística, agencias de transporte o delivery.</li>
           <li>Otras herramientas tecnológicas estrictamente necesarias para operar la tienda online.</li>
@@ -133,7 +133,7 @@ export default function PoliticaPrivacidad() {
       <section style={{ marginBottom: "32px", background: "#fef2f2", padding: "24px", borderRadius: "12px", border: "1px solid #fecaca" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#991b1b", marginTop: 0, marginBottom: "16px" }}>J. ELIMINACIÓN DE DATOS</h2>
         <p style={{ color: "#7f1d1d" }}>
-          Si deseas solicitar la eliminación de tus datos personales de nuestros sistemas (incluyendo los vinculados a la tienda web o a los canales de Meta/WhatsApp), por favor consulta nuestra página oficial dedicada a este procedimiento para conocer los pasos exactos:
+          Si deseas solicitar la eliminación de tus datos personales de nuestros sistemas, incluidos los vinculados a la tienda web o a los canales digitales habilitados, consulta nuestra página oficial dedicada a este procedimiento para conocer los pasos exactos:
         </p>
         <div style={{ marginTop: "16px" }}>
           <Link href="/eliminacion-de-datos" style={{ display: "inline-block", background: "#dc2626", color: "#ffffff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", fontWeight: 600 }}>

@@ -31,6 +31,9 @@ test("acepta plural y errores frecuentes al pedir catálogos por categoría y ma
   assert.deepEqual(parseCatalogRequest("catalogos audifonos jbl")?.terms, ["audifonos", "jbl"]);
   assert.deepEqual(parseCatalogRequest("catalgoo de audifonos")?.terms, ["audifonos"]);
   assert.deepEqual(parseCatalogRequest("cataglafo audifonos jbl")?.terms, ["audifonos", "jbl"]);
+  assert.deepEqual(parseCatalogRequest("Hola catálogo de parlantes")?.terms, ["parlantes"]);
+  assert.deepEqual(parseCatalogRequest("cata parlantes")?.terms, ["parlantes"]);
+  assert.deepEqual(parseCatalogRequest("catallgos específicos de parlantes")?.terms, ["parlantes"]);
 });
 
 test("quita márgenes transparentes sin convertir la foto rectangular en un cuadrado", async () => {

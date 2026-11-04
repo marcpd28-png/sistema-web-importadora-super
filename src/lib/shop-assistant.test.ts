@@ -8,12 +8,13 @@ import type {
 } from "@/lib/shop-assistant";
 import { createShopAssistantService, matchesAllRequiredSearchTerms } from "@/lib/shop-assistant";
 import { buildGiftReply, detectGiftIntent, getGiftKeywords } from "@/lib/shop-gift-intent";
+import { answerSuperBot, isCatalogLinkRequest } from "@/lib/super-bot";
 
 const settings: AssistantSettingsRecord = {
   businessName: "Importaciones Super",
   currencySymbol: "S/",
   supportHours: "Lun a sáb 8:00 am - 7:00 pm",
-  whatsappNumber: "51999999999",
+  messengerUrl: "https://m.me/importacionessuperoficial",
 };
 
 const categories: AssistantCategoryRecord[] = [
@@ -214,6 +215,28 @@ test("ignora una consulta de ofertas sin producto concreto", async () => {
   assert.equal(reply.products, undefined);
 });
 
+test("envía el enlace de la tienda ante solicitudes de catálogo y sus variantes", async () => {
+  const catalogRequests = [
+    "catálogo",
+    "Quiero el catálogo completo",
+    "¿Me pasas el catalog?",
+    "catalogos actualizados",
+    "cata",
+    "catalgo virtual",
+    "cataglafo de productos",
+    "cataloguito",
+  ];
+
+  for (const message of catalogRequests) {
+    assert.equal(isCatalogLinkRequest(message), true, message);
+
+    const reply = await answerSuperBot({ message });
+    assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\//);
+    assert.equal(reply.quickActions?.[0]?.href, "https://tiendavirtualsuper.com/");
+    assert.equal(reply.meta?.intent, "catalog-link");
+  }
+});
+
 test("recomienda un regalo con presupuesto y contexto de ocasión", async () => {
   const reply = await answerShopAssistant({
     message: "recomiendame algo para regalar por cumpleaños con presupuesto 25 soles",
@@ -371,12 +394,138 @@ test("prioriza teclados y evita productos irrelevantes", async () => {
   assert.ok(!reply.products?.some((product) => containsNormalized(product.name, "audifono")));
 });
 
+test("muestra tablets si el tamaño se describe de forma imprecisa", async () => {
+  const tablet: AssistantProductRecord = {
+    ...products[0],
+    id: "tablet-10",
+    slug: "tablet-android-10",
+    code: "TAB-010",
+    name: "Tablet Android 10 pulgadas",
+    description: "Tablet para uso diario.",
+    category: "Tablets",
+    categoryId: "cat-tablets",
+    unitPrice: 570,
+    wholesalePrice: null,
+    stockUnits: 6,
+  };
+  const tabletStand: AssistantProductRecord = {
+    ...tablet,
+    id: "tablet-stand",
+    slug: "soporte-tablet",
+    code: "SUP-TAB",
+    name: "Soporte de tablet",
+    category: "Accesorios para tablets",
+  };
+  const tabletAssistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return query === "tablet" ? [tablet, tabletStand] : [];
+    },
+  }));
+
+  const reply = await tabletAssistant({ message: "busco tablet gigante" });
+
+  assert.equal(reply.text, "Sí, tenemos tablets disponibles.");
+  assert.equal(reply.products?.[0]?.code, "TAB-010");
+  assert.equal(reply.products?.some((product) => product.code === "SUP-TAB"), false);
+  assert.equal(reply.quickActions?.[1]?.href, "/?q=tablet");
+
+  const strictReply = await tabletAssistant({ message: "busco tablet de 32 pulgadas" });
+  assert.equal(strictReply.text, "");
+  assert.equal(strictReply.products, undefined);
+});
+
+test("propone una corrección catalogada antes de cotizar otra familia de producto", async () => {
+  const television: AssistantProductRecord = {
+    ...products[0],
+    id: "tv-32",
+    slug: "televisor-32",
+    code: "TV-032",
+    name: "Televisor Smart 32 pulgadas",
+    category: "Televisores",
+    unitPrice: 699,
+    wholesalePrice: null,
+    stockUnits: 4,
+  };
+  const assistant = createShopAssistantService(createMockRepository({
+    async findProductByCode(code) {
+      return code === "TV-032" ? television : null;
+    },
+    async inferProductSearch(query) {
+      assert.equal(query, "tablet 32");
+      return {
+        kind: "clarification",
+        interpretations: ["televisor de 32 pulgadas"],
+        candidates: [{ code: "TV-032", name: "Televisor Smart 32 pulgadas" }],
+        crossFamily: true,
+      };
+    },
+    async searchVisibleProducts() {
+      assert.fail("La corrección entre familias debe confirmarse antes de buscar o cotizar");
+      return [];
+    },
+  }));
+
+  const reply = await assistant({ message: "busco tablet de 32" });
+
+  assert.match(reply.text, /Televisor Smart 32 pulgadas/);
+  assert.match(reply.text, /¿Es correcto\?/);
+  assert.doesNotMatch(reply.text, /busco tablet de 32/i);
+  assert.equal(reply.products, undefined);
+  assert.equal(reply.contextProductCode, "TV-032");
+  assert.equal(reply.meta?.intent, "product_clarification");
+
+  const confirmed = await assistant({ message: "sí", productContextCode: reply.contextProductCode });
+  assert.equal(confirmed.products?.[0]?.code, "TV-032");
+});
+
+test("continúa con una medida inferida solo cuando el catálogo la respalda", async () => {
+  const tablet: AssistantProductRecord = {
+    ...products[0],
+    id: "tablet-32gb",
+    slug: "tablet-32gb",
+    code: "TAB-032",
+    name: "Tablet Android 10 pulgadas",
+    category: "Tablets",
+    technicalSpecs: "Almacenamiento 32 GB",
+    unitPrice: 599,
+    wholesalePrice: null,
+    stockUnits: 3,
+  };
+  const assistant = createShopAssistantService(createMockRepository({
+    async inferProductSearch(query) {
+      assert.equal(query, "tablet 32");
+      return { kind: "resolved", query: "tablet 32 gb", interpretation: "32 GB" };
+    },
+    async searchVisibleProducts(query) {
+      return query === "tablet 32 gb" ? [tablet] : [];
+    },
+  }));
+
+  const reply = await assistant({ message: "busco tablet de 32" });
+
+  assert.equal(reply.products?.[0]?.code, "TAB-032");
+  assert.match(reply.text, /Entendí que te refieres a 32 GB/);
+});
+
+test("no ejecuta inferencia de medida para un presupuesto explícito", async () => {
+  let inferenceCalls = 0;
+  const assistant = createShopAssistantService(createMockRepository({
+    async inferProductSearch() {
+      inferenceCalls += 1;
+      return { kind: "none" };
+    },
+  }));
+
+  await assistant({ message: "busco tablet con S/ 32" });
+  assert.equal(inferenceCalls, 0);
+});
+
 test("responde soporte y flujo de compra", async () => {
-  const reply = await answerShopAssistant({ message: "como envio mi pedido por whatsapp" });
+  const reply = await answerShopAssistant({ message: "como envio mi pedido por messenger" });
 
   assert.ok(containsNormalized(reply.text, "enviar pedido"));
   assert.ok(containsNormalized(reply.text, settings.supportHours));
-  assert.ok(reply.quickActions?.some((action) => action.href.startsWith("https://wa.me/")));
+  assert.ok(reply.quickActions?.some((action) => action.href === "https://m.me/importacionessuperoficial"));
 });
 
 test("no responde cuando no entiende la consulta", async () => {

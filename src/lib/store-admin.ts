@@ -548,7 +548,7 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
       prisma.qrAnalyticsLog.groupBy({
         by: ["eventType"],
         where: {
-          eventType: { in: ["VIDEO_PLAY", "ADD_TO_CART_FROM_QR", "DOCUMENT_OPEN", "WHATSAPP_FROM_QR"] },
+          eventType: { in: ["VIDEO_PLAY", "ADD_TO_CART_FROM_QR", "DOCUMENT_OPEN", "MESSENGER_FROM_QR"] },
           timestamp: { gte: currentRange.start, lt: currentRange.end },
         },
         _count: true,
@@ -651,7 +651,7 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
     });
 
   const interactionsMap = new Map(qrInteractionsCurrent.map((i) => [i.eventType, i._count]));
-  const whatsappCount = interactionsMap.get("WHATSAPP_FROM_QR") ?? 0;
+  const messengerCount = interactionsMap.get("MESSENGER_FROM_QR") ?? 0;
   const videoPlayCount = interactionsMap.get("VIDEO_PLAY") ?? 0;
   const documentOpenCount = interactionsMap.get("DOCUMENT_OPEN") ?? 0;
   const addToCartCount = interactionsMap.get("ADD_TO_CART_FROM_QR") ?? 0;
@@ -704,7 +704,7 @@ async function getAdminDashboardDataRaw(period: DashboardPeriod = "MONTH") {
         ),
       },
       interactions: {
-        whatsapp: whatsappCount,
+        messenger: messengerCount,
         videoPlay: videoPlayCount,
         documentOpen: documentOpenCount,
         addToCart: addToCartCount,
@@ -1107,7 +1107,7 @@ export async function getShopperQuoteById(
     })),
     note: quote.note,
     statusSteps: mapQuoteStatusSteps(quote.statusSteps),
-    whatsappHref: quote.whatsappHref,
+    contactHref: quote.contactHref,
   };
 }
 
@@ -1293,7 +1293,7 @@ export async function getAdminQuoteById(id: string): Promise<AdminQuoteDetailVie
           name: quote.user.name,
         }
       : null,
-    whatsappHref: quote.whatsappHref,
+    contactHref: quote.contactHref,
     assignedToName: quote.assignedToName,
     assignedToEmail: quote.assignedToEmail,
     pdfUrl: quote.pdfUrl,

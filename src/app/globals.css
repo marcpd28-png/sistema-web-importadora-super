@@ -16,8 +16,8 @@
   --brand-tint-rgb: 236, 238, 252;
   --brand-tint-strong-rgb: 220, 223, 248;
   --brand-text-on-dark: #e1e4ff;
-  --store-whatsapp-float-size: 58px;
-  --store-whatsapp-float-icon-size: 40px;
+  --store-messenger-float-size: 58px;
+  --store-messenger-float-icon-size: 40px;
   --background: var(--brand-bg);
   --surface: rgba(255, 255, 255, 0.72);
   --surface-strong: var(--brand-surface-strong);
@@ -1515,22 +1515,22 @@
 
 @media (max-width: 1024px) {
   :root {
-    --store-whatsapp-float-size: 56px;
-    --store-whatsapp-float-icon-size: 37px;
+    --store-messenger-float-size: 56px;
+    --store-messenger-float-icon-size: 37px;
   }
 }
 
 @media (max-width: 640px) {
   :root {
-    --store-whatsapp-float-size: 52px;
-    --store-whatsapp-float-icon-size: 34px;
+    --store-messenger-float-size: 52px;
+    --store-messenger-float-icon-size: 34px;
   }
 }
 
 @media (max-width: 380px) {
   :root {
-    --store-whatsapp-float-size: 50px;
-    --store-whatsapp-float-icon-size: 33px;
+    --store-messenger-float-size: 50px;
+    --store-messenger-float-icon-size: 33px;
   }
 }
 
@@ -7122,7 +7122,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   box-shadow: 0 14px 30px rgba(15, 157, 108, 0.08);
 }
 
-.cart-quote-whatsapp {
+.cart-quote-messenger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7133,20 +7133,20 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   padding-inline: 1rem;
   color: white;
   background:
-    linear-gradient(135deg, #25d366 0%, #18b356 100%);
-  border-color: rgba(24, 179, 86, 0.28);
-  box-shadow: 0 0.95rem 1.8rem rgba(24, 179, 86, 0.18);
+    linear-gradient(135deg, #29b6ff 0%, #0084ff 100%);
+  border-color: rgba(0, 132, 255, 0.28);
+  box-shadow: 0 0.95rem 1.8rem rgba(0, 132, 255, 0.18);
 }
 
-.cart-quote-whatsapp:hover {
+.cart-quote-messenger:hover {
   color: white;
   background:
-    linear-gradient(135deg, #22c95f 0%, #149a4a 100%);
-  border-color: rgba(24, 179, 86, 0.35);
+    linear-gradient(135deg, #1aa9f5 0%, #0069d9 100%);
+  border-color: rgba(0, 105, 217, 0.35);
   transform: translateY(-1px);
 }
 
-.cart-quote-whatsapp-icon {
+.cart-quote-messenger-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -7663,7 +7663,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
     line-height: 1.28;
   }
 
-  .cart-quote-overlay-panel .cart-quote-whatsapp {
+  .cart-quote-overlay-panel .cart-quote-messenger {
     width: 100%;
     min-width: 0;
     align-self: stretch;
@@ -7678,7 +7678,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
     border-radius: 999px;
   }
 
-  .cart-quote-overlay-panel .cart-quote-whatsapp-icon {
+  .cart-quote-overlay-panel .cart-quote-messenger-icon {
     width: 1.1rem;
     height: 1.1rem;
   }
@@ -8189,7 +8189,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   letter-spacing: 0.04em;
 }
 
-.store-footer-whatsapp {
+.store-footer-messenger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -8199,7 +8199,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   min-height: 42px;
   padding: 0.62rem 0.9rem;
   border-radius: 999px;
-  background: #25d366;
+  background: #0084ff;
   color: #fff;
   font-weight: 800;
   transition:
@@ -8208,7 +8208,7 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
     filter 160ms ease;
 }
 
-.store-footer-whatsapp-icon {
+.store-footer-messenger-icon {
   display: inline-grid;
   place-items: center;
   width: 2rem;
@@ -8220,17 +8220,17 @@ body[data-admin-theme="dark"] .hero-banner-preview-switcher {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
-.store-footer-whatsapp-icon svg {
+.store-footer-messenger-icon svg {
   width: 1.15rem;
   height: 1.15rem;
   color: #ffffff;
 }
 
-.store-footer-whatsapp:hover {
+.store-footer-messenger:hover {
   color: #fff;
   filter: brightness(1.03);
   transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(37, 211, 102, 0.22);
+  box-shadow: 0 14px 30px rgba(0, 132, 255, 0.22);
 }
 
 .store-footer-complaints-row {
@@ -13435,8 +13435,8 @@ body[data-admin-theme="dark"] .admin-complaints-empty {
   }
 
   .store-side-action-messenger-icon {
-    width: var(--store-whatsapp-float-icon-size);
-    height: var(--store-whatsapp-float-icon-size);
+    width: var(--store-messenger-float-icon-size);
+    height: var(--store-messenger-float-icon-size);
   }
 
   .store-side-actions-product .store-side-action {
@@ -17478,6 +17478,7 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
 .admin-user-identity small { color: var(--muted); font-size: .72rem; }
 .admin-user-contact { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .78rem; }
 .admin-user-role-pill.is-promotor { color: #9a6700; background: rgba(234, 179, 8, .14); }
+.admin-user-role-pill.is-advisor { color: #0f766e; background: rgba(20, 184, 166, .14); }
 .admin-user-row-actions { justify-content: flex-end; }
 .admin-user-row-actions .icon-button { width: 34px; height: 34px; }
 .admin-user-empty { display: grid; min-height: 260px; place-items: center; align-content: center; gap: 8px; padding: 28px; border: 1px dashed var(--line); border-radius: 17px; color: var(--muted); text-align: center; }
@@ -17493,7 +17494,7 @@ body[data-admin-theme="dark"] .admin-shell :where(input, textarea)::placeholder 
 .admin-user-form-section-heading h2, .admin-user-form-section-heading p { margin: 0; }
 .admin-user-form-section-heading h2 { font-size: 1rem; }
 .admin-user-form-section-heading p { margin-top: 3px; color: var(--muted); font-size: .76rem; }
-.admin-user-role-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.admin-user-role-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
 .admin-user-role-options label { position: relative; cursor: pointer; }
 .admin-user-role-options input { position: absolute; opacity: 0; pointer-events: none; }
 .admin-user-role-options label > span { display: grid; min-height: 132px; align-content: start; gap: 7px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease; }

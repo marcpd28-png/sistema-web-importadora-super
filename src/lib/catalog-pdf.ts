@@ -1,6 +1,6 @@
-import { findCatalogProductIds, productQueryTerms } from "./rocky-product-query";
+import { findCatalogProductIds, productQueryTerms } from "./catalog-query";
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import PDFDocument from "pdfkit";
@@ -8,12 +8,16 @@ import sharp from "sharp";
 
 import { prisma } from "@/lib/prisma";
 import { buildPublicUrl } from "@/lib/site-url";
+import { getCatalogRequestScope } from "@/lib/catalog-intent";
 
 const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalogs");
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
 const BRAND_PRIMARY = "#2320DA";
 const MAX_CATALOG_PRODUCTS = 40;
+/** Leave headroom below Telegram's 20 MB URL-download ceiling so the same
+ * single PDF can be delivered through every supported document channel. */
+export const MAX_CATALOG_PDF_BYTES = 18 * 1024 * 1024;
 
 type CatalogProductImage = {
   id: string;
@@ -32,19 +36,20 @@ export type GeneratedCatalogPdf = {
   generated: boolean;
   productCount: number;
   relativeUrl: string;
+  sizeBytes: number;
 };
 
 const inFlightCatalogs = new Map<string, Promise<GeneratedCatalogPdf>>();
 
-export function isProjectorCatalogRequest(content: string) {
-  const normalized = content
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
+export class CatalogPdfSizeLimitError extends Error {
+  constructor() {
+    super("El catálogo excede el tamaño máximo para enviarlo como un solo PDF.");
+    this.name = "CatalogPdfSizeLimitError";
+  }
+}
 
-  return /\bcatalogo\b/.test(normalized) && /\bproyector(?:es)?\b/.test(normalized);
+export function isProjectorCatalogRequest(content: string) {
+  return parseCatalogRequest(content)?.terms.some((term) => /^proyector(?:es)?$/.test(term)) ?? false;
 }
 
 export type CatalogRequest = {
@@ -53,14 +58,13 @@ export type CatalogRequest = {
   terms: string[];
 };
 
-// Explicit catalogue vocabulary: a broad edit-distance match used to classify
-// ordinary product words as catalogues (and route them to a failed PDF).
-const CATALOG_WORDS = new Set(["catalogo", "catalogos", "catalog", "catalogue", "catalgo", "catalgoo", "cataglafo"]);
 function catalogScope(content: string): string | null {
-  const words = content.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/);
-  const index = words.findIndex(word => CATALOG_WORDS.has(word));
-  if (index < 0) return null;
-  return words.slice(index + 1).filter(word => !["escoger", "escogerm", "elegir", "todo", "todos", "completa"].includes(word)).join(" ");
+  const scope = getCatalogRequestScope(content);
+  if (scope === null) return null;
+  return scope
+    .split(/\s+/)
+    .filter((word) => !["escoger", "escogerm", "elegir", "todo", "todos", "completa"].includes(word))
+    .join(" ");
 }
 export function isGeneralCatalogRequest(content: string) {
   const scope = catalogScope(content);
@@ -311,16 +315,23 @@ async function createCatalogPdf(products: CatalogProductImage[], slug: string, t
 
   try {
     await access(outputPath);
-    const metadata = JSON.parse(await readFile(`${outputPath}.json`, "utf8")) as { productCount: number };
+    const [metadataText, fileStats] = await Promise.all([
+      readFile(`${outputPath}.json`, "utf8"),
+      stat(outputPath),
+    ]);
+    const metadata = JSON.parse(metadataText) as { productCount: number };
     if (!Number.isInteger(metadata.productCount) || metadata.productCount < 1 || metadata.productCount > products.length) throw new Error("Invalid catalog manifest");
+    if (fileStats.size > MAX_CATALOG_PDF_BYTES) throw new CatalogPdfSizeLimitError();
     return {
       absoluteUrl: buildPublicUrl(relativeUrl),
       filename,
       generated: false,
       productCount: metadata.productCount,
       relativeUrl,
+      sizeBytes: fileStats.size,
     } satisfies GeneratedCatalogPdf;
-  } catch {
+  } catch (error) {
+    if (error instanceof CatalogPdfSizeLimitError) throw error;
     // Generate the immutable catalog below.
   }
 
@@ -343,6 +354,9 @@ async function createCatalogPdf(products: CatalogProductImage[], slug: string, t
   }
 
   const pdf = await renderCatalogImagePdf(images, title);
+  if (pdf.byteLength > MAX_CATALOG_PDF_BYTES) {
+    throw new CatalogPdfSizeLimitError();
+  }
   const temporaryPath = `${outputPath}.${process.pid}.tmp`;
 
   try {
@@ -360,6 +374,7 @@ async function createCatalogPdf(products: CatalogProductImage[], slug: string, t
     generated: true,
     productCount: images.length,
     relativeUrl,
+    sizeBytes: pdf.byteLength,
   } satisfies GeneratedCatalogPdf;
 }
 
@@ -401,9 +416,8 @@ export async function generateCatalogPdf(request: CatalogRequest) {
   return generation;
 }
 
-// Compatibility surface used by the internal Rocky routes.  The live WhatsApp
-// webhook uses generateCatalogPdf directly, while these helpers retain the
-// structured result expected by the existing assistant flows.
+// Compatibility surface for internal catalog consumers. These helpers retain
+// the structured result expected by the existing assistant flows.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function generateRequestedCatalogPdf(
   content: string,

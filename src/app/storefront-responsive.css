@@ -68,8 +68,8 @@
 }
 
 .store-side-actions {
-  --store-whatsapp-float-size: 52px;
-  --store-whatsapp-float-icon-size: 30px;
+  --store-messenger-float-size: 52px;
+  --store-messenger-float-icon-size: 30px;
   gap: 8px;
 }
 
@@ -81,18 +81,18 @@
   line-height: 1.2;
 }
 
-.store-side-actions .store-side-action-whatsapp {
+.store-side-actions .store-side-action-messenger {
   display: grid;
   place-items: center;
   padding: 0;
   border-radius: 50%;
   color: #fff;
-  background: #25d366;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, #29b6ff 0%, #0084ff 48%, #0069d9 100%);
+  border: 1px solid rgba(0, 105, 217, 0.28);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
 }
 
-.store-side-actions .store-side-action-whatsapp-icon {
+.store-side-actions .store-side-action-messenger-icon {
   display: block;
   border-radius: 0;
   flex: none;
@@ -113,7 +113,7 @@
     gap: 10px;
   }
 
-  .store-side-actions .store-side-action:not(.store-side-action-whatsapp) {
+  .store-side-actions .store-side-action:not(.store-side-action-messenger) {
     width: 64px;
     min-width: 64px;
     height: 56px;
@@ -121,7 +121,7 @@
     gap: 4px;
   }
 
-  .store-side-actions .store-side-action:not(.store-side-action-whatsapp) > svg {
+  .store-side-actions .store-side-action:not(.store-side-action-messenger) > svg {
     width: 22px;
     height: 22px;
     flex-shrink: 0;
@@ -445,11 +445,11 @@ body:has(.cart-drawer.is-open, .cart-quote-overlay, .public-store-shortcut-menu[
   }
 
   .store-side-actions {
-    --store-whatsapp-float-size: 48px;
-    --store-whatsapp-float-icon-size: 28px;
+    --store-messenger-float-size: 48px;
+    --store-messenger-float-icon-size: 28px;
   }
 
-  .store-side-actions .store-side-action:not(.store-side-action-whatsapp) {
+  .store-side-actions .store-side-action:not(.store-side-action-messenger) {
     min-width: 64px;
     min-height: 44px;
     padding: 6px;

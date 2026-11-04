@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, KeyRound, ShieldCheck, ShoppingBag, Sparkles, UserPlus } from "lucide-react";
+import { ArrowLeft, Headset, KeyRound, ShieldCheck, ShoppingBag, Sparkles, UserPlus } from "lucide-react";
 import { createAdminUserAction } from "@/app/admin/actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -46,6 +46,7 @@ export default async function NewAdminUserPage({ searchParams }: NewAdminUserPag
               <div><h2>Rol y permisos</h2><p>Define qué experiencia tendrá al iniciar sesión.</p></div>
             </div>
             <div className="admin-user-role-options">
+              <label><input name="role" type="radio" value="ASESOR" /><span><Headset size={18} /><strong>Asesor</strong><small>Consulta catálogo, atiende cotizaciones y responde mensajes.</small></span></label>
               <label><input defaultChecked name="role" type="radio" value="USERSHOP" /><span><ShoppingBag size={18} /><strong>Comprador</strong><small>Consulta su cuenta, pedidos y cotizaciones.</small></span></label>
               <label><input name="role" type="radio" value="PROMOTOR" /><span><Sparkles size={18} /><strong>Promotor</strong><small>Acceso comercial como promotor o influencer.</small></span></label>
               <label><input name="role" type="radio" value="ADMIN" /><span><ShieldCheck size={18} /><strong>Administrador</strong><small>Acceso completo al panel administrativo.</small></span></label>
@@ -76,7 +77,7 @@ export default async function NewAdminUserPage({ searchParams }: NewAdminUserPag
           <ul>
             <li>El correo será el identificador de acceso.</li>
             <li>Compradores y promotores ingresan desde la tienda.</li>
-            <li>Administradores ingresan al panel de control.</li>
+            <li>Asesores y administradores ingresan al panel interno.</li>
             <li>El rol puede modificarse posteriormente.</li>
           </ul>
         </aside>

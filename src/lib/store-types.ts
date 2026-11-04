@@ -167,7 +167,7 @@ export type StoreSettingsView = {
   heroDescription: string;
   heroSlides: HeroSlideView[];
   heroAutoplaySeconds: number;
-  whatsappNumber: string;
+  messengerUrl: string;
   orderIntro: string;
   orderFooter: string;
   currencySymbol: string;
@@ -235,7 +235,7 @@ export type ShopperQuoteDetailView = Omit<ShopperQuoteView, "items"> & {
   note: string | null;
   statusSteps: AdminQuoteStatusStepView[];
   updatedAt: string;
-  whatsappHref: string | null;
+  contactHref: string | null;
 };
 
 export type AdminQuoteItemView = ShopperQuoteItemView & {
@@ -294,7 +294,7 @@ export type AdminQuoteDetailView = Omit<AdminQuoteView, "items" | "itemCount"> &
   pdfNotification: AdminQuotePdfNotificationView;
   statusSteps: AdminQuoteStatusStepView[];
   updatedAt: string;
-  whatsappHref: string | null;
+  contactHref: string | null;
   assignedToName: string | null;
   assignedToEmail: string | null;
   pdfUrl: string | null;

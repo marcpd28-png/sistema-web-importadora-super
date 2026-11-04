@@ -65,6 +65,7 @@ datasource db {
 
 enum UserRole {
   ADMIN
+  ASESOR
   USERSHOP
   PROMOTOR
 }
@@ -148,6 +149,7 @@ enum ComplaintStatus {
 }
 
 enum Channel {
+  /// Historical records imported before the channel was retired. New rows are blocked in code.
   WHATSAPP
   WEB
   TELEGRAM
@@ -187,10 +189,14 @@ enum MessageType {
   UNKNOWN
 }
 
-enum WhatsappIntegrationStatus {
-  ACTIVE
-  INACTIVE
-  ERROR
+/// Lifecycle of one request from a channel adapter to Super Bot. These are
+/// operational records only: customer message text is deliberately not stored
+/// here because the provider remains the conversation system of record.
+enum SuperBotEventStatus {
+  PROCESSING
+  RESPONDED
+  PAUSED
+  FAILED
 }
 
 model User {
@@ -207,7 +213,6 @@ model User {
   orders                Order[]               @relation("UserOrders")
   conversations         Conversation[]
   promoCodes            PromoCode[]           @relation("UserPromoCodes")
-  whatsappIntegrations  WhatsappIntegration[] @relation("WhatsappIntegrationConnectedBy")
 }
 
 model Product {
@@ -310,17 +315,15 @@ model Category {
 model StoreSettings {
   id                  Int      @id @default(1)
   businessName        String   @default("Importaciones Super")
-  heroTitle           String   @default("Catálogo mayorista con pedido directo por WhatsApp")
+  heroTitle           String   @default("Catálogo mayorista con compra y cotización directa")
   heroDescription     String   @default("Explora el stock disponible, arma tu pedido y envíalo en segundos sin llamadas ni pasos innecesarios.")
   heroSlides          Json?
   heroAutoplaySeconds Int      @default(5)
-  whatsappNumber      String   @default("51999999999")
+  messengerUrl        String   @default("https://m.me/importacionessuperoficial") @db.Text
   orderIntro          String   @default("Hola, quiero cotizar estos productos:")
   orderFooter         String   @default("Quedo atento a la confirmación de stock y total final.")
   currencySymbol      String   @default("S/")
   botMasterSwitch     Boolean  @default(true)
-  automationRevision  Int      @default(0)
-  n8nWebhookUrl       String?
   highlightMessage    String   @default("Precios por unidad y mayorista sincronizados con el ERP.")
   supportHours        String   @default("Lun a sáb 8:00 am - 7:00 pm")
   primaryColor        String   @default("#2320DA")
@@ -386,7 +389,7 @@ model Quote {
   errorMessage           String?     @db.Text
   statusSteps            Json?
   pdfNotification        Json?
-  whatsappHref           String?     @db.Text
+  contactHref            String?     @db.Text
   assignedToName         String?     @db.VarChar(180)
   assignedToEmail        String?     @db.VarChar(180)
   pdfUrl                 String?     @db.Text
@@ -456,7 +459,7 @@ model Complaint {
   productSku        String?   @db.VarChar(100)
   productSerial     String?   @db.VarChar(100)
   purchaseAmount    Decimal?  @db.Decimal(10, 2)
-  purchaseChannel   String?   @db.VarChar(64) // Web, Físico, WhatsApp, etc.
+  purchaseChannel   String?   @db.VarChar(64) // Web, tienda física, Messenger, etc.
   paymentMethod     String?   @db.VarChar(64) // Transferencia, Efectivo, Tarjeta
 
   // Detalles del Reclamo/Queja
@@ -546,6 +549,30 @@ model ShopAssistantLog {
 
   @@index([sessionId])
   @@index([createdAt])
+}
+
+/// Durable operational trace for automated channel replies. `responsePayload`
+/// is retained only to return the exact verified reply when a provider retries
+/// the same external event; it contains catalog output, not inbound content.
+model SuperBotEvent {
+  id              String              @id @default(cuid())
+  externalEventId String?             @unique @db.VarChar(160)
+  requestFingerprint String?          @db.VarChar(64)
+  channel         String              @default("unknown") @db.VarChar(32)
+  conversationRef String?             @db.VarChar(160)
+  status          SuperBotEventStatus @default(PROCESSING)
+  leaseVersion    Int                 @default(0)
+  responsePayload Json?
+  intent          String?             @db.VarChar(120)
+  productsCount   Int                 @default(0)
+  latencyMs       Int?
+  errorCode       String?             @db.VarChar(80)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([channel, createdAt(sort: Desc)])
 }
 
 model SalesTrendSnapshot {
@@ -757,7 +784,7 @@ model QrAnalyticsLog {
   id        String   @id @default(cuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  eventType String   @db.VarChar(64) // QR_OPEN, VIDEO_PLAY, ADD_TO_CART_FROM_QR, DOCUMENT_OPEN, WHATSAPP_FROM_QR
+  eventType String   @db.VarChar(64) // QR_OPEN, VIDEO_PLAY, ADD_TO_CART_FROM_QR, DOCUMENT_OPEN, MESSENGER_FROM_QR
   sessionId String?  @db.VarChar(128)
   timestamp DateTime @default(now())
 
@@ -867,10 +894,9 @@ model Conversation {
   id                   String                  @id @default(cuid())
   contactId            String
   contact              ChatContact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  channel              Channel                 @default(WHATSAPP)
+  channel              Channel                 @default(WEB)
   status               ConversationState       @default(AUTOMATICO)
   botEnabled           Boolean                 @default(true)
-  automationRevision   Int                     @default(0)
   assignedUserId       String?
   assignedUser         User?                   @relation(fields: [assignedUserId], references: [id], onDelete: SetNull)
   lastMessageAt        DateTime                @default(now())
@@ -884,9 +910,6 @@ model Conversation {
   telegramRevision     Int                     @default(0)
   messages             ChatMessage[]
   salesState           ConversationSalesState?
-  automationExecutions AutomationExecution[]
-  rockyOutboundJobs    RockyOutboundJob[]
-  rockyInboundTurn     RockyInboundTurn?
 
   @@index([contactId])
   @@index([channel])
@@ -914,74 +937,11 @@ model ChatMessage {
   metadata          Json?
   status            String?          @db.VarChar(32)
   createdAt         DateTime         @default(now())
-  rockyOutboundJob  RockyOutboundJob?
 
   @@index([conversationId])
   @@index([conversationId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([externalMessageId])
   @@index([createdAt(sort: Asc)])
-}
-
-// Reserva de corta duración que hace idempotente cada envío automático hacia
-// WhatsApp. La clave única también protege cuando dos webhooks se procesan a
-// la vez en instancias distintas de la aplicación.
-model OutboundMessageDispatch {
-  id          String   @id @default(cuid())
-  recipient   String   @db.VarChar(32)
-  fingerprint String   @db.VarChar(64)
-  reservedAt  DateTime @default(now())
-
-  @@unique([recipient, fingerprint])
-  @@index([reservedAt])
-}
-
-// Only the Rocky sender consumes this outbox. Control revisions invalidate
-// work even when an advisor pauses and immediately reactivates the bot.
-model RockyOutboundJob {
-  id                   String       @id @default(cuid())
-  sequence             Int          @unique @default(autoincrement())
-  conversationId       String
-  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  messageId            String       @unique
-  message              ChatMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  triggerMessageId     String
-  inboundVersion       Int?
-  conversationRevision Int
-  globalRevision       Int
-  recipient            String
-  fingerprint          String
-  kind                 String       @default("reply")
-  state                String       @default("queued")
-  reason               String?
-  createdAt            DateTime     @default(now())
-  expiresAt            DateTime
-  startedAt            DateTime?
-  finishedAt           DateTime?
-
-  @@index([state, sequence])
-  @@index([conversationId, fingerprint, createdAt])
-}
-
-// One durable debounce slot per conversation. New fragments supersede the
-// previous version; duplicates never extend the ten-second quiet period.
-model RockyInboundTurn {
-  conversationId       String       @id
-  conversation         Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  version              Int          @default(1)
-  triggerMessageId     String
-  messageIds           String[]     @default([])
-  conversationRevision Int
-  globalRevision       Int
-  state                String       @default("pending")
-  attempts             Int          @default(0)
-  processingToken      String?
-  reason               String?
-  dueAt                DateTime
-  expiresAt            DateTime
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-
-  @@index([state, dueAt])
 }
 
 model PromoCode {
@@ -1001,85 +961,6 @@ model PromoCode {
 
   @@index([code])
   @@index([creatorId])
-}
-
-model WhatsappIntegration {
-  id                   String                    @id @default(cuid())
-  businessId           String                    @db.VarChar(120)
-  wabaId               String                    @db.VarChar(120)
-  phoneNumberId        String                    @db.VarChar(120)
-  displayPhoneNumber   String?                   @db.VarChar(40)
-  verifiedName         String?                   @db.VarChar(180)
-  accessTokenEncrypted String                    @db.Text
-  tokenType            String                    @default("Bearer") @db.VarChar(40)
-  scopes               String[]                  @default([])
-  status               WhatsappIntegrationStatus @default(ACTIVE)
-  connectedByUserId    String?
-  connectedByUser      User?                     @relation("WhatsappIntegrationConnectedBy", fields: [connectedByUserId], references: [id], onDelete: SetNull)
-  lastVerifiedAt       DateTime?
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
-
-  @@unique([businessId, wabaId, phoneNumberId])
-  @@index([businessId])
-  @@index([wabaId])
-  @@index([phoneNumberId])
-  @@index([status])
-  @@index([connectedByUserId])
-}
-
-// ======================================================================
-// AUTOMATION & FLOW BUILDER (MANAGED SAAS)
-// ======================================================================
-
-model Automation {
-  id                        String  @id @default(cuid())
-  name                      String
-  description               String?
-  channel                   String // Ej: "WHATSAPP", "INSTAGRAM"
-  status                    String // Ej: "DRAFT", "ACTIVE", "PAUSED", "SYSTEM"
-  currentPublishedVersionId String?
-
-  versions   AutomationVersion[]
-  executions AutomationExecution[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AutomationVersion {
-  id                 String  @id @default(cuid())
-  automationId       String
-  version            Int // Revisión incrementable para control de concurrencia
-  flowDefinition     Json // Representación nativa del Canvas
-  compiledHash       String? // Hash SHA-256 para detectar Drift externo
-  providerWorkflowId String? // ID del workflow en n8n
-  status             String  @default("DRAFT") // "DRAFT", "PUBLISHED", "ARCHIVED"
-
-  automation Automation            @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  executions AutomationExecution[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AutomationExecution {
-  id                  String  @id @default(cuid())
-  correlationId       String? // Unifica todo el trazo
-  messageId           String? // Mensaje entrante que disparó esto
-  conversationId      String?
-  automationId        String
-  automationVersionId String
-  providerExecutionId String? // ID de ejecución en n8n
-  status              String // "SUCCESS", "FAILED", "RUNNING"
-  error               String?
-
-  automation   Automation        @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  version      AutomationVersion @relation(fields: [automationVersionId], references: [id], onDelete: Cascade)
-  conversation Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-
-  startedAt  DateTime  @default(now())
-  finishedAt DateTime?
 }
 
 // ==========================================

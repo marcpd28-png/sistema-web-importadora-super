@@ -259,7 +259,7 @@ export function ServiceFeedbackForm() {
       <label className="service-feedback-question service-feedback-text-field">
         <span className="service-feedback-question-title">
           <span>06</span>
-          Tu nombre o WhatsApp
+          Tu nombre o teléfono
           <small>Opcional</small>
         </span>
         <input

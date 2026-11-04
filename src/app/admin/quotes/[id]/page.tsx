@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { ArrowLeft, ExternalLink, FileText, MessageCircle, UserRound } from "lucide-react";
 import { getAdminQuoteById } from "@/lib/store";
 import type { AdminQuoteDetailView, AdminQuoteStatusStepView } from "@/lib/store";
-import { buildWhatsappHrefFromPhone, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { QuoteConversationPanel } from "@/components/admin/quote-conversation-panel";
@@ -16,6 +16,10 @@ export const dynamic = "force-dynamic";
 
 type AdminQuoteDetailPageProps = {
   params: Promise<{ id: string }>;
+  backHref?: string;
+  canDelete?: boolean;
+  catalogPath?: string;
+  canSetSystemStatuses?: boolean;
 };
 
 function getStatusBadge(status: string) {
@@ -87,7 +91,13 @@ function getTimeline(quote: AdminQuoteDetailView): AdminQuoteStatusStepView[] {
   return [{ status: "warning", text: "Cotización guardada localmente y pendiente de ERP." }];
 }
 
-export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailPageProps) {
+export async function QuoteDetailPage({
+  params,
+  backHref = "/admin/quotes",
+  canDelete = true,
+  catalogPath,
+  canSetSystemStatuses = true,
+}: AdminQuoteDetailPageProps) {
   const { id } = await params;
   const quote = await getAdminQuoteById(id);
 
@@ -116,17 +126,12 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
   const baseUrl = `${protocol}://${host}`;
   const pdfLink = quote.pdfUrl ? `${baseUrl}${quote.pdfUrl}` : "";
 
-  const customerWhatsappHref = buildWhatsappHrefFromPhone(
-    quote.customerPhone,
-    quote.quoteNumber
-      ? `Hola ${quote.customerName}, te contacto por tu cotización ${quote.quoteNumber}.${pdfLink ? ` Puedes ver el PDF oficial aquí: ${pdfLink}` : ""}`
-      : `Hola ${quote.customerName}, te contacto por tu cotización.${pdfLink ? ` Puedes ver el PDF oficial aquí: ${pdfLink}` : ""}`,
-  );
+  const customerContactHref = quote.contactHref;
 
   return (
     <section className="admin-quote-detail">
       <div className="admin-quote-detail-top" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-        <Link className="button button-secondary" href="/admin/quotes">
+        <Link className="button button-secondary" href={backHref}>
           <ArrowLeft size={16} />
           Volver
         </Link>
@@ -142,16 +147,16 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             Ver PDF ERP
           </a>
         ) : null}
-        <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} />
-        {customerWhatsappHref ? (
+        {canDelete ? <DeleteRecordButton recordId={quote.id} recordType="quote" userEmail={session?.email ?? ""} onDelete={deleteQuoteAction} /> : null}
+        {customerContactHref ? (
           <a
             className="button button-primary"
-            href={customerWhatsappHref}
+            href={customerContactHref}
             rel="noreferrer"
             target="_blank"
           >
             <MessageCircle size={16} />
-            Contactar cliente
+            Abrir Messenger
           </a>
         ) : null}
       </div>
@@ -282,7 +287,7 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
                       </td>
                       <td data-label="Acciones">
                         {item.productId ? (
-                          <Link className="icon-button" href={`/admin/products/${item.productId}`}>
+                          <Link className="icon-button" href={catalogPath ? `${catalogPath}?q=${encodeURIComponent(item.code)}` : `/admin/products/${item.productId}`}>
                             <ExternalLink size={16} />
                             <span>Producto</span>
                           </Link>
@@ -345,10 +350,15 @@ export default async function AdminQuoteDetailPage({ params }: AdminQuoteDetailP
             customerMessage={quote.note}
             pdfLink={pdfLink}
             quoteNumber={quote.quoteNumber}
+            canSetSystemStatuses={canSetSystemStatuses}
           />
         </div>
 
       </div>
     </section>
   );
+}
+
+export default async function AdminQuoteDetailPage(props: AdminQuoteDetailPageProps) {
+  return <QuoteDetailPage {...props} />;
 }

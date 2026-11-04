@@ -178,7 +178,7 @@ export const adminUserSchema = z
     phone: optionalPhone,
     password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
     confirmPassword: z.string().min(6, "Confirma la contraseña."),
-    role: z.enum(["ADMIN", "USERSHOP", "PROMOTOR"]),
+    role: z.enum(["ADMIN", "ASESOR", "USERSHOP", "PROMOTOR"]),
   })
   .superRefine((value, ctx) => {
     if (value.password !== value.confirmPassword) {
@@ -197,7 +197,7 @@ export const adminUserUpdateSchema = z
     phone: optionalPhone,
     password: z.string().trim().optional().or(z.literal("")),
     confirmPassword: z.string().trim().optional().or(z.literal("")),
-    role: z.enum(["ADMIN", "USERSHOP", "PROMOTOR"]),
+    role: z.enum(["ADMIN", "ASESOR", "USERSHOP", "PROMOTOR"]),
   })
   .superRefine((value, ctx) => {
     const password = value.password?.trim() ?? "";
@@ -263,7 +263,7 @@ export const settingsSchema = z.object({
   heroDescription: z.string().trim().min(12),
   heroAutoplaySeconds: z.coerce.number().int().min(2).max(20),
   heroSlides: heroSlidesSchema,
-  whatsappNumber: z.string().trim().min(8),
+  messengerUrl: z.url(),
   orderIntro: z.string().trim().min(6),
   orderFooter: z.string().trim().min(6),
   currencySymbol: z.string().trim().min(1).max(5),
@@ -362,7 +362,7 @@ export function parseSettingsForm(formData: FormData) {
     heroDescription: formData.get("heroDescription"),
     heroAutoplaySeconds: formData.get("heroAutoplaySeconds"),
     heroSlides,
-    whatsappNumber: formData.get("whatsappNumber"),
+    messengerUrl: formData.get("messengerUrl"),
     orderIntro: formData.get("orderIntro"),
     orderFooter: formData.get("orderFooter"),
     currencySymbol: formData.get("currencySymbol"),

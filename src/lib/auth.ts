@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
+import { prisma } from "@/lib/prisma";
 
 const SESSION_COOKIE = "importadora_session";
 const SESSION_TTL = 60 * 60 * 24 * 7;
@@ -12,9 +13,62 @@ export type SessionUser = {
   userId: string;
   email: string;
   name: string;
-  role: "ADMIN" | "USERSHOP" | "PROMOTOR";
+  role: "ADMIN" | "ASESOR" | "USERSHOP" | "PROMOTOR";
   requirePasswordChange?: boolean;
 };
+
+/**
+ * The only administrator permitted to operate customer messaging and channel
+ * integrations. Keep this capability separate from the general ADMIN role:
+ * catalogue and back-office access intentionally remain governed by
+ * requireAdmin().
+ */
+export const MESSAGING_OWNER_EMAIL = "mark@importadora.local";
+
+export function normalizeAccountEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+/**
+ * A narrow, server-side capability for customer messaging. It deliberately
+ * rejects sessions that still require a password change, even though they have
+ * an ADMIN role.
+ */
+export function canManageMessaging(
+  session: Pick<SessionUser, "email" | "role" | "requirePasswordChange"> | null | undefined,
+) {
+  return Boolean(
+    session &&
+    session.role === "ADMIN" &&
+    !session.requirePasswordChange &&
+    normalizeAccountEmail(session.email) === MESSAGING_OWNER_EMAIL,
+  );
+}
+
+/**
+ * Advisors can work directly with customer conversations, but must not gain
+ * access to message configuration, integrations, automations, or simulations.
+ * Those controls remain reserved for canManageMessaging().
+ */
+export function canUseMessageCenter(
+  session: Pick<SessionUser, "email" | "role" | "requirePasswordChange"> | null | undefined,
+) {
+  return Boolean(
+    session &&
+      !session.requirePasswordChange &&
+      (session.role === "ASESOR" || canManageMessaging(session)),
+  );
+}
+
+export function canManageQuotes(
+  session: Pick<SessionUser, "role" | "requirePasswordChange"> | null | undefined,
+) {
+  return Boolean(
+    session &&
+      !session.requirePasswordChange &&
+      (session.role === "ADMIN" || session.role === "ASESOR"),
+  );
+}
 
 function getSecret() {
   const secret = process.env.AUTH_SECRET;
@@ -111,17 +165,38 @@ export async function getSession() {
       typeof payload.userId !== "string" ||
       typeof payload.email !== "string" ||
       typeof payload.name !== "string" ||
-      (payload.role !== "ADMIN" && payload.role !== "USERSHOP" && payload.role !== "PROMOTOR")
+      (payload.role !== "ADMIN" &&
+        payload.role !== "ASESOR" &&
+        payload.role !== "USERSHOP" &&
+        payload.role !== "PROMOTOR")
     ) {
       return null;
     }
 
+    // The token establishes identity, while the database remains the source of
+    // truth for the current role. This makes a role downgrade take effect on
+    // the next request instead of leaving a seven-day ADMIN JWT usable.
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        requirePasswordChange: true,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
     return {
-      userId: payload.userId,
-      email: payload.email,
-      name: payload.name,
-      role: payload.role,
-      requirePasswordChange: Boolean(payload.requirePasswordChange),
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      requirePasswordChange: user.requirePasswordChange,
     } satisfies SessionUser;
   } catch {
     return null;
@@ -136,7 +211,68 @@ export async function requireAdmin() {
   }
 
   if (session.role !== "ADMIN") {
-    redirect("/cuenta");
+    redirect(session.role === "ASESOR" ? "/asesor" : "/cuenta");
+  }
+
+  return session;
+}
+
+/**
+ * Use in Route Handlers that need an API-friendly authorization check. Callers
+ * can return a controlled 403 without relying on redirect() control flow.
+ */
+export async function getMessagingOwnerSession(): Promise<SessionUser | null> {
+  const session = await getSession();
+  return canManageMessaging(session) ? session : null;
+}
+
+/**
+ * API-friendly guard for the advisor inbox. It deliberately has a narrower
+ * scope than the owner guard above, so sensitive message-center controls stay
+ * unavailable to advisors.
+ */
+export async function getMessageCenterSession(): Promise<SessionUser | null> {
+  const session = await getSession();
+  return canUseMessageCenter(session) ? session : null;
+}
+
+/**
+ * Use in pages and Server Actions that manage customer messaging. This keeps
+ * the general ADMIN role unchanged while denying access to this sensitive area.
+ */
+export async function requireMessagingOwner() {
+  const session = await requireAdmin();
+
+  if (!canManageMessaging(session)) {
+    redirect("/admin?error=messaging_access_denied");
+  }
+
+  return session;
+}
+
+export async function requireAdvisor() {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  if (session.role !== "ASESOR") {
+    redirect(session.role === "ADMIN" ? "/admin" : "/cuenta");
+  }
+
+  return session;
+}
+
+export async function requireQuoteManager() {
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  if (!canManageQuotes(session)) {
+    redirect(session.role === "ASESOR" ? "/asesor" : session.role === "ADMIN" ? "/admin" : "/cuenta");
   }
 
   return session;
@@ -150,7 +286,7 @@ export async function requireShopper() {
   }
 
   if (session.role !== "USERSHOP" && session.role !== "PROMOTOR") {
-    redirect("/admin");
+    redirect(session.role === "ASESOR" ? "/asesor" : "/admin");
   }
 
   return session;
@@ -160,6 +296,6 @@ export async function redirectIfAuthenticated() {
   const session = await getSession();
 
   if (session) {
-    redirect(session.role === "ADMIN" ? "/admin" : "/cuenta");
+    redirect(session.role === "ADMIN" ? "/admin" : session.role === "ASESOR" ? "/asesor" : "/cuenta");
   }
 }

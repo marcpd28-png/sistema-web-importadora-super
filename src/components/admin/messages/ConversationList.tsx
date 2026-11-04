@@ -77,20 +77,23 @@ export function ConversationList({
   return (
     <div className="messages-sidebar">
       <div className="messages-sidebar-header">
-        <div className="messages-filters" aria-label="Canal de mensajes" style={{ marginBottom: 12 }}>
-          {([['', 'Todos'], ['WHATSAPP', 'WhatsApp'], ['TELEGRAM', 'Telegram']] as const).map(([channel, label]) => (
-            <button key={channel} type="button" aria-pressed={filters.channel === channel}
-              className={`messages-filter-btn ${filters.channel === channel ? 'active' : ''}`}
-              onClick={() => onFiltersChange({ channel })}>{label}</button>
-          ))}
+        <div className="messages-sidebar-summary">
+          <span className="messages-sidebar-live">
+            <i aria-hidden="true" />
+            En vivo
+          </span>
+          <span className="messages-result-count" aria-live="polite">
+            {loading && conversations.length === 0 ? "Cargando..." : `${conversations.length} de ${total}`}
+          </span>
         </div>
+
         <div className="messages-search-row">
           <div className="messages-field messages-field-grow">
             <Search size={16} />
             <input
               className="messages-search"
               onChange={(event) => onFiltersChange({ search: event.target.value })}
-              placeholder="Cliente"
+              placeholder="Buscar cliente"
               type="search"
               value={filters.search}
             />
@@ -99,6 +102,43 @@ export function ConversationList({
             <RotateCw className={loading ? "spin" : undefined} size={18} />
           </button>
         </div>
+
+        <section className="messages-filter-dock" aria-label="Vistas de conversaciones">
+          <div className="messages-filter-dock-heading">
+            <span className="messages-filter-dock-title">
+              <SlidersHorizontal aria-hidden="true" size={14} />
+              Vistas
+            </span>
+            <button
+              aria-controls={filtersId}
+              aria-expanded={filtersOpen}
+              className={`messages-filter-btn messages-extra-filters ${extraFilterCount ? "active" : ""}`}
+              onClick={() => setFiltersOpen((open) => !open)}
+              type="button"
+            >
+              <SlidersHorizontal aria-hidden="true" size={14} />
+              Filtros{extraFilterCount ? ` (${extraFilterCount})` : ""}
+            </button>
+          </div>
+          <div className="messages-filters messages-view-tabs" role="group" aria-label="Vista de conversaciones">
+            {FILTERS.map((filter) => (
+              <button
+                aria-pressed={activeFilter === filter.id}
+                className={`messages-filter-btn messages-view-tab ${activeFilter === filter.id ? "active" : ""}`}
+                key={filter.id}
+                onClick={() =>
+                  onFiltersChange({
+                    status: filter.status,
+                    unreadOnly: Boolean(filter.unreadOnly),
+                  })
+                }
+                type="button"
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </section>
 
         <div className="messages-advanced-filters" id={filtersId} hidden={!filtersOpen}>
           <div className="messages-filter-grid">
@@ -145,34 +185,6 @@ export function ConversationList({
               />
             </label>
           </div>
-
-        </div>
-
-        <div className="messages-filter-toolbar">
-          <div className="messages-filters">
-            {FILTERS.map((filter) => (
-              <button
-                className={`messages-filter-btn ${activeFilter === filter.id ? "active" : ""}`}
-                key={filter.id}
-                onClick={() =>
-                  onFiltersChange({
-                    status: filter.status,
-                    unreadOnly: Boolean(filter.unreadOnly),
-                  })
-                }
-                type="button"
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-          <button className={`messages-filter-btn messages-extra-filters ${extraFilterCount ? "active" : ""}`} type="button" aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(open => !open)}>
-            <SlidersHorizontal size={14} /> Filtros{extraFilterCount ? ` (${extraFilterCount})` : ""}
-          </button>
-        </div>
-
-        <div className="messages-result-count">
-          {loading && conversations.length === 0 ? "Cargando..." : `${conversations.length} de ${total}`}
         </div>
       </div>
 

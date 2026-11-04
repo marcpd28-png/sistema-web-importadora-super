@@ -37,6 +37,7 @@ type AdminNavLink = {
   icon: typeof ChartNoAxesCombined;
   kind?: "link" | "action";
   badgeKey?: keyof AdminNavBadges;
+  requiresMessagingAccess?: boolean;
 };
 
 type AdminNavSection = {
@@ -78,7 +79,7 @@ const sections: AdminNavSection[] = [
     title: "Clientes y Atención",
     links: [
       { href: "/admin/users", label: "Usuarios", icon: UsersRound },
-      { href: "/admin/mensajes", label: "Centro Mensajes", icon: MessageCircle },
+      { href: "/admin/mensajes", label: "Centro Mensajes", icon: MessageCircle, requiresMessagingAccess: true },
       { href: "/admin/opiniones", label: "Opiniones", icon: MessageSquareHeart },
       { href: "/admin/reclamos", label: "Libro Reclam.", icon: ShieldAlert, badgeKey: "newComplaintsCount" },
     ],
@@ -94,9 +95,10 @@ const sections: AdminNavSection[] = [
 
 type AdminNavProps = {
   badges?: AdminNavBadges;
+  canAccessMessaging?: boolean;
 };
 
-export function AdminNav({ badges }: AdminNavProps) {
+export function AdminNav({ badges, canAccessMessaging = false }: AdminNavProps) {
   const pathname = usePathname();
   const router = useRouter();
   const mobile = useAdminMobile();
@@ -104,7 +106,13 @@ export function AdminNav({ badges }: AdminNavProps) {
   const [mobileSection, setMobileSection] = useState<string | null>(null);
   const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const query = mobile ? normalize(search.trim()) : "";
-  const activeSection = sections.find(section => section.links.some(link => link.href === pathname || (link.href !== "/admin" && link.href !== "/" && link.href && pathname.startsWith(link.href + "/"))))?.title;
+  const visibleSections = sections
+    .map((section) => ({
+      ...section,
+      links: section.links.filter((link) => !link.requiresMessagingAccess || canAccessMessaging),
+    }))
+    .filter((section) => section.links.length > 0);
+  const activeSection = visibleSections.find(section => section.links.some(link => link.href === pathname || (link.href !== "/admin" && link.href !== "/" && link.href && pathname.startsWith(link.href + "/"))))?.title;
   const [tooltip, setTooltip] = useState<{ label: string; left: number; top: number } | null>(null);
   const showTooltip = (element: HTMLElement, label: string) => {
     if (window.matchMedia("(max-width: 920px)").matches || !document.body.classList.contains("admin-sidebar-collapsed")) return;
@@ -169,7 +177,7 @@ export function AdminNav({ badges }: AdminNavProps) {
         <span className="sr-only">Buscar una sección</span>
         <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar una sección…" />
       </label>
-      {sections.map((section) => {
+      {visibleSections.map((section) => {
         const links = section.links.filter(link => !query || normalize(link.label + " " + section.title).includes(query));
         if (!links.length) return null;
         const isExpanded = mobile ? Boolean(query) || (mobileSection ?? activeSection) === section.title : expandedSections[section.title] !== false;
@@ -250,7 +258,7 @@ export function AdminNav({ badges }: AdminNavProps) {
           </section>
         );
       })}
-      {query && !sections.some(section => section.links.some(link => normalize(link.label + " " + section.title).includes(query))) ? <p className="muted">No hay secciones con ese nombre.</p> : null}
+      {query && !visibleSections.some(section => section.links.some(link => normalize(link.label + " " + section.title).includes(query))) ? <p className="muted">No hay secciones con ese nombre.</p> : null}
       {tooltip ? createPortal(<div className="admin-nav-tooltip" role="tooltip" style={{ left: tooltip.left, top: tooltip.top }}>{tooltip.label}</div>, document.body) : null}
     </nav>
   );

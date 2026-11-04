@@ -108,8 +108,8 @@ export function QrScansCard({ data }: { data: any }) {
 
       <div style={{ marginTop: "16px", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px" }}>
         <div style={{ padding: "8px", background: "#f8fafc", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
-          <span style={{ fontSize: "10px", color: "var(--muted)", fontWeight: "600" }}>WhatsApp</span>
-          <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--foreground)" }}>{data.storeAnalysis.interactions.whatsapp}</span>
+          <span style={{ fontSize: "10px", color: "var(--muted)", fontWeight: "600" }}>Messenger</span>
+          <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--foreground)" }}>{data.storeAnalysis.interactions.messenger}</span>
         </div>
         <div style={{ padding: "8px", background: "#f8fafc", borderRadius: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <span style={{ fontSize: "10px", color: "var(--muted)", fontWeight: "600" }}>Videos</span>

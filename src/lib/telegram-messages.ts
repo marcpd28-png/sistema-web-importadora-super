@@ -4,9 +4,15 @@ import { telegramCommand, TelegramBridgeError, telegramReplyWindow } from "./tel
 import { telegramMessageKey } from "./telegram-events";
 import { buildPublicUrl } from "./site-url";
 import type { SendMessageInput } from "./messages-service";
+import { ConversationAssignmentError } from "./conversation-assignment";
 
 type BridgeResult = { messageId: number; revision: number };
-export async function sendTelegramMessage(conversation: Conversation, input: SendMessageInput, agentId: string) {
+export async function sendTelegramMessage(
+  conversation: Conversation,
+  input: SendMessageInput,
+  agentId: string,
+  expectedAssigneeId?: string,
+) {
   const id = `tgout:${input.requestId}`;
   const previous = await prisma.chatMessage.findUnique({ where: { id } });
   if (previous) {
@@ -24,7 +30,7 @@ export async function sendTelegramMessage(conversation: Conversation, input: Sen
   if (input.replyToMessageId && typeof replyId !== "number") throw new TelegramBridgeError("El mensaje elegido no está disponible para responder.", 400);
   const metadata: Prisma.InputJsonObject = { provider: "telegram", requestId: input.requestId,
     ...(reply ? { replyTo: { id: reply.id, content: reply.content, senderType: reply.senderType } } : {}) };
-  // Only show Rocky as paused after the bridge has actually applied the pause.
+  // Only show Super Bot as paused after the bridge has actually applied the pause.
   const paused = await controlTelegram(conversation, false);
   const created = await prisma.$transaction(async tx => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${id}, 0))`;
@@ -33,6 +39,15 @@ export async function sendTelegramMessage(conversation: Conversation, input: Sen
       if (duplicate.conversationId !== conversation.id) throw new TelegramBridgeError("La solicitud pertenece a otra conversación.", 409);
       return false;
     }
+    if (expectedAssigneeId) {
+      const owned = await tx.conversation.updateMany({
+        where: { id: conversation.id, assignedUserId: expectedAssigneeId },
+        data: { lastReadAt: new Date() },
+      });
+      if (!owned.count) {
+        throw new ConversationAssignmentError("La conversación fue derivada a otro asesor.");
+      }
+    }
     await tx.chatMessage.create({ data: { id, conversationId: conversation.id, direction: "OUTBOUND", senderType: "AGENT",
       messageType: input.type, content: input.content, mediaUrl, metadata, status: "pending" } });
     await tx.conversation.update({ where: { id: conversation.id }, data: { telegramRevision: paused.revision, botEnabled: false, status: "ATENDIENDO", assignedUserId: agentId, unreadCount: 0, lastReadAt: new Date() } });
@@ -40,7 +55,7 @@ export async function sendTelegramMessage(conversation: Conversation, input: Sen
   });
   if (!created) return prisma.chatMessage.findUniqueOrThrow({ where: { id } });
   try {
-    // Bridge serializes pause + send with Rocky's processing lock and durably deduplicates this ID.
+    // Bridge serializes the Super Bot pause with the send and durably deduplicates this ID.
     const result = await telegramCommand<BridgeResult>("send", {
       connectionId: conversation.telegramConnectionId, chatId: conversation.telegramChatId,
       requestId: id, type: input.type, content: input.content, mediaUrl, replyToMessageId: replyId,

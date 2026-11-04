@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Mail, MessageCircle, Save, ShieldCheck, UserRound } from "lucide-react";
+import { Copy, Mail, Save, ShieldCheck, UserRound } from "lucide-react";
 import type { AdminComplaintDetailView } from "@/lib/store";
 import {
   buildComplaintEmailHref,
   buildComplaintResponseText,
-  buildComplaintWhatsappHref,
 } from "@/lib/complaints";
 import { updateComplaintAction } from "@/app/admin/actions";
 
@@ -24,8 +23,6 @@ const statusOptions = [
 const channelOptions = [
   { label: "Interno", value: "INTERNAL" },
   { label: "Correo", value: "EMAIL" },
-  { label: "WhatsApp", value: "WHATSAPP" },
-  { label: "Ambos", value: "BOTH" },
 ] as const;
 
 export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProps) {
@@ -55,25 +52,6 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
               sheetNumber: complaint.claimCode,
               customerEmail: complaint.customerEmail,
               customerName: complaint.customerName,
-              customerPhone: complaint.customerPhone,
-            },
-            responseText,
-            complaint.kind,
-            complaint.subject,
-          )
-        : null,
-    [complaint, responseText],
-  );
-
-  const whatsappHref = useMemo(
-    () =>
-      responseText.trim()
-        ? buildComplaintWhatsappHref(
-            {
-              sheetNumber: complaint.claimCode,
-              customerEmail: complaint.customerEmail,
-              customerName: complaint.customerName,
-              customerPhone: complaint.customerPhone,
             },
             responseText,
             complaint.kind,
@@ -149,11 +127,11 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
               </a>
             ) : null}
 
-            {whatsappHref ? (
-              <a className="button button-secondary" href={whatsappHref} rel="noreferrer" target="_blank">
-                <MessageCircle size={16} />
-                Responder por WhatsApp
-              </a>
+            {replyText ? (
+              <button className="button button-secondary" onClick={() => void navigator.clipboard.writeText(replyText)} type="button">
+                <Copy size={16} />
+                Copiar respuesta
+              </button>
             ) : null}
           </div>
         </form>
@@ -166,7 +144,7 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
         </div>
         <div className="complaint-response-preview">
           <p className="muted">
-            {replyText || "Escribe una respuesta para generar el correo o mensaje de WhatsApp."}
+            {replyText || "Escribe una respuesta para generar el correo o copiar el mensaje."}
           </p>
         </div>
         <dl className="admin-quote-meta-list complaint-response-meta">
@@ -175,7 +153,7 @@ export function ComplaintResponsePanel({ complaint }: ComplaintResponsePanelProp
             <dd>{complaint.customerEmail ?? "No registrado"}</dd>
           </div>
           <div>
-            <dt>WhatsApp</dt>
+            <dt>Teléfono</dt>
             <dd>{complaint.customerPhone ?? "No registrado"}</dd>
           </div>
           <div>

@@ -100,6 +100,7 @@ export function ConversationItem({ conversation, isActive, onClick }: Props) {
   const { contact, channel, unreadCount, status, botEnabled, lastMessageAt } = conversation;
   const ChannelIcon = channel === "WEB" ? Globe : channel === "TELEGRAM" ? Send : MessageSquare;
   const OwnerIcon = botEnabled ? Bot : UserRound;
+  const ownerLabel = botEnabled ? "Bot" : conversation.assignedUser?.name || "Sin asignar";
   const needsResponse = conversation.lastMessage?.direction === "INBOUND";
 
   return (
@@ -142,7 +143,7 @@ export function ConversationItem({ conversation, isActive, onClick }: Props) {
           <span className={`conversation-badge badge-${status.toLowerCase()}`}>{getStatusLabel(status)}</span>
           <span className="conversation-owner">
             <OwnerIcon size={11} />
-            {botEnabled ? "Bot" : "Asesor"}
+            {ownerLabel}
           </span>
         </div>
       </div>

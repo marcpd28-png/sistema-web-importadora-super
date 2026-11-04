@@ -28,8 +28,6 @@
 .chat-header, .chat-input-container, .chat-count, .messages-sidebar-header { flex-shrink: 0; }
 .chat-header-avatar { width: 40px; height: 40px; flex-shrink: 0; }
 .messages-advanced-filters:not([hidden]) { display: grid; gap: 8px; }
-.messages-filter-toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.messages-filter-toolbar .messages-filters { gap: 4px; padding-bottom: 0; }
 .messages-extra-filters { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .messages-date-field { flex: 1; }
 .messages-app-navigation, .messages-page-header { flex-shrink: 0; }
@@ -57,6 +55,13 @@
   .messages-live-indicator { min-height: 26px; padding: 3px 8px; font-size: 11px; border: 0; }
   .messages-sidebar { width: 290px; }
   .messages-sidebar-header { padding: 10px; gap: 8px; }
+  .messages-sidebar-live { font-size: 10px; }
+  .messages-filter-dock { gap: 6px; padding: 6px; border-radius: 10px; }
+  .messages-filter-dock-title { font-size: 9px; }
+  .messages-extra-filters { min-height: 26px; padding: 3px 6px; font-size: 10px; }
+  .messages-view-tabs { gap: 3px; padding: 2px; border-radius: 8px; }
+  .messages-view-tab { min-height: 28px; padding: 3px 4px; border-radius: 6px; font-size: 10px; }
+  .messages-advanced-filters { padding: 8px; border-radius: 10px; }
   .messages-app-shell :where(.btn, .icon-btn, .messages-filter-btn, .messages-load-older) { min-height: 32px; }
   .messages-app-shell .icon-btn { min-width: 32px; border-radius: 8px; }
   .messages-search, .messages-date-field input { min-height: 34px; padding-top: 5px; padding-bottom: 5px; border-radius: 8px; font-size: 12px; }
@@ -76,6 +81,11 @@
   .chat-header-avatar { width: 32px; height: 32px; }
   .chat-header-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .chat-header-meta { font-size: 11px; }
+  .chat-header-assignment { gap: 5px; }
+  .chat-assignment-chip { min-height: 26px; max-width: 11rem; padding: 0.25rem 0.5rem; font-size: 10px; }
+  .chat-transfer-control { gap: 4px; }
+  .chat-transfer-control select { min-width: 7rem; max-width: 9rem; min-height: 30px; font-size: 11px; }
+  .chat-transfer-button { min-height: 30px !important; padding: 5px 7px !important; font-size: 11px !important; }
   .conversation-status-bar { min-width: 0; font-size: 12px; }
   .status-indicator { display: flex; align-items: center; gap: 3px; }
   .status-indicator span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -109,7 +119,8 @@
   .chat-header-info { grid-column: 1; grid-row: 1; min-width: 0; }
   .chat-header-info > div:last-child { min-width: 0; }
   .chat-header-actions { grid-column: 2; grid-row: 1; }
-  .conversation-status-bar { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: 8px; font-size: 11px; }
+  .chat-header-assignment { grid-column: 1 / -1; grid-row: 2; }
+  .conversation-status-bar { grid-column: 1 / -1; grid-row: 3; display: flex; align-items: center; gap: 8px; font-size: 11px; }
   .status-indicator { display: flex; align-items: center; gap: 3px; min-width: 0; }
   .status-indicator span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
@@ -122,7 +133,6 @@
   .messages-page-header p:not(.eyebrow) { display: none; }
   .messages-page-header { padding: 8px 12px; }
   .messages-page-header h1 { font-size: 16px; }
-  .messages-filter-toolbar { justify-content: space-between; }
   .messages-sidebar-header { gap: 8px; }
   .messages-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .messages-date-row { flex-direction: row; }
@@ -137,9 +147,15 @@
   .chat-header-back { grid-column: 1; grid-row: 1; }
   .chat-header-info { grid-column: 2; }
   .chat-header-actions { grid-column: 3; }
-  .conversation-status-bar { grid-column: 2 / -1; }
+  .chat-header-assignment { grid-column: 2 / -1; grid-row: 2; flex-wrap: wrap; }
+  .conversation-status-bar { grid-column: 2 / -1; grid-row: 3; }
   .chat-header-name { font-size: 14px; }
   .chat-header-meta { font-size: 11px; }
+}
+
+@media (max-width: 480px) {
+  .chat-transfer-control { width: 100%; }
+  .chat-transfer-control select { flex: 1; max-width: none; }
 }
 .message-bubble { position: relative; }
 .message-reply-actions { position: absolute; top: 4px; right: 4px; z-index: 2; }

@@ -19,7 +19,7 @@ export function trackStoreEvent(name: StoreEventName, details: { productCode?: s
     const now = Date.now();
     let session = fallback;
     try { session = JSON.parse(sessionStorage.getItem(key) || "null") || session; } catch { /* Use in-memory session. */ }
-    if (session && (!/^[0-9a-f-]{36}$/i.test(session.id) || !Number.isFinite(session.touched) || !["direct", "google", "tiktok", "facebook", "instagram", "whatsapp", "other"].includes(session.source))) session = undefined;
+    if (session && (!/^[0-9a-f-]{36}$/i.test(session.id) || !Number.isFinite(session.touched) || !["direct", "google", "tiktok", "facebook", "instagram", "messenger", "other"].includes(session.source))) session = undefined;
     const fresh = !session || now - session.touched > 30 * 60 * 1000;
     if (fresh) session = { id: crypto.randomUUID(), touched: now, source: trafficSource(document.referrer, new URL(window.location.href).searchParams.get("utm_source") || "", window.location.origin) };
     session!.touched = now; fallback = session;

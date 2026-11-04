@@ -1,22 +1,40 @@
 "use client";
 
-import { Menu, X, House, PackageSearch, ShoppingBag, MessageCircle } from "lucide-react";
+import { Menu, X, House, PackageSearch, ShoppingBag, MessageCircle, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-export function AdminSidebar({ children }: { children: ReactNode }) {
+export type AdminSidebarDestination = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  requiresMessagingAccess?: boolean;
+};
+
+const defaultDestinations: AdminSidebarDestination[] = [
+  { href: "/admin", label: "Inicio", icon: House },
+  { href: "/admin/products", label: "Productos", icon: PackageSearch },
+  { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
+  { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle, requiresMessagingAccess: true },
+];
+
+export function AdminSidebar({
+  children,
+  canAccessMessaging = false,
+  destinations = defaultDestinations,
+  mobileLabel = "Administración",
+}: {
+  children: ReactNode;
+  canAccessMessaging?: boolean;
+  destinations?: AdminSidebarDestination[];
+  mobileLabel?: string;
+}) {
   const pathname = usePathname();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const open = openPath === pathname;
-  const destinations = [
-    { href: "/admin", label: "Inicio", icon: House },
-    { href: "/admin/products", label: "Productos", icon: PackageSearch },
-    { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
-    { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle },
-  ];
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 920px)");
@@ -51,7 +69,7 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
       }}
     >
       <div className="admin-mobile-header">
-        <span>Administración</span>
+        <span>{mobileLabel}</span>
         <button
           ref={buttonRef}
           type="button"
@@ -78,7 +96,7 @@ export function AdminSidebar({ children }: { children: ReactNode }) {
       </div>
     </aside>
     <nav className="admin-mobile-dock" aria-label="Accesos frecuentes">
-      {destinations.map(({ href, label, icon: Icon }) => {
+      {destinations.filter(({ requiresMessagingAccess }) => !requiresMessagingAccess || canAccessMessaging).map(({ href, label, icon: Icon }) => {
         const active = pathname === href || (href !== "/admin" && pathname.startsWith(href + "/"));
         return <Link key={href} href={href} aria-current={active ? "page" : undefined} onClick={() => setOpenPath(null)}><Icon size={20} aria-hidden="true" /><span>{label}</span></Link>;
       })}

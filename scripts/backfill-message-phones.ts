@@ -1,7 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
-const PHONE_KEYS = new Set(["from", "phone", "waId", "wa_id", "whatsappPhone", "whatsapp_phone"]);
+const PHONE_KEYS = new Set(["from", "phone", "senderPhone", "sender_phone"]);
 
 function cleanPhone(value: string | null | undefined) {
   return value?.replace(/[^\d]/g, "") ?? "";

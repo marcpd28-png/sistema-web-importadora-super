@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Prisma, UserRole } from "@prisma/client";
-import { CalendarDays, Edit3, Mail, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, UsersRound } from "lucide-react";
+import { CalendarDays, Edit3, Headset, Mail, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, UsersRound } from "lucide-react";
 import { deleteAdminUserAction } from "@/app/admin/actions";
 import { AdminUserDeleteForm } from "@/components/admin/admin-user-delete-form";
 import { prisma } from "@/lib/prisma";
@@ -8,8 +8,8 @@ import { prisma } from "@/lib/prisma";
 type AdminUsersPageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 export const dynamic = "force-dynamic";
 
-const roleLabels: Record<UserRole, string> = { ADMIN: "Administrador", USERSHOP: "Comprador", PROMOTOR: "Promotor" };
-const rolePills: Record<UserRole, string> = { ADMIN: "is-admin", USERSHOP: "is-shopper", PROMOTOR: "is-promotor" };
+const roleLabels: Record<UserRole, string> = { ADMIN: "Administrador", ASESOR: "Asesor", USERSHOP: "Comprador", PROMOTOR: "Promotor" };
+const rolePills: Record<UserRole, string> = { ADMIN: "is-admin", ASESOR: "is-advisor", USERSHOP: "is-shopper", PROMOTOR: "is-promotor" };
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", dateStyle: "medium" }).format(value);
@@ -20,7 +20,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const status = typeof params?.status === "string" ? params.status : "";
   const error = typeof params?.error === "string" ? params.error : "";
   const q = typeof params?.q === "string" ? params.q.trim() : "";
-  const role = typeof params?.role === "string" && ["ADMIN", "USERSHOP", "PROMOTOR"].includes(params.role) ? (params.role as UserRole) : "all";
+  const role = typeof params?.role === "string" && ["ADMIN", "ASESOR", "USERSHOP", "PROMOTOR"].includes(params.role) ? (params.role as UserRole) : "all";
   const where: Prisma.UserWhereInput = {
     ...(role !== "all" ? { role } : {}),
     ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }, { phone: { contains: q, mode: "insensitive" } }] } : {}),
@@ -36,16 +36,18 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     if (role !== "all") query.set("role", role);
     return `/admin/users?${query}`;
   };
-  const [users, totalUsers, adminUsers, shopperUsers, promoterUsers] = await Promise.all([
+  const [users, totalUsers, adminUsers, advisorUsers, shopperUsers, promoterUsers] = await Promise.all([
     prisma.user.findMany({ where, skip: (page - 1) * pageSize, take: pageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true } }),
     prisma.user.count(),
     prisma.user.count({ where: { role: "ADMIN" } }),
+    prisma.user.count({ where: { role: "ASESOR" } }),
     prisma.user.count({ where: { role: "USERSHOP" } }),
     prisma.user.count({ where: { role: "PROMOTOR" } }),
   ]);
   const tabs = [
     { label: "Todos", value: "all", count: totalUsers, icon: UsersRound },
     { label: "Administradores", value: "ADMIN", count: adminUsers, icon: ShieldCheck },
+    { label: "Asesores", value: "ASESOR", count: advisorUsers, icon: Headset },
     { label: "Compradores", value: "USERSHOP", count: shopperUsers, icon: ShoppingBag },
     { label: "Promotores", value: "PROMOTOR", count: promoterUsers, icon: Sparkles },
   ] as const;

@@ -12,7 +12,7 @@
          if not isinstance(uid, int): raise ValueError('update_id required')
          with self.lock:
              if self.db.execute('SELECT 1 FROM events WHERE id=?', (uid,)).fetchone(): return
-+            if self.inbox: self.inbox.observe(update, self)
++            claimed_by_super_bot = self.inbox.observe(update, self) if self.inbox else False
              self.db.execute('INSERT INTO events VALUES (?,?,?)', (uid,'processing',self.now()))
              self.db.commit()
 +
@@ -23,7 +23,7 @@
 +                    try:self.orders.admin(direct['text'])
 +                    finally:
 +                        if self.inbox:self.inbox.explicit.allowed = False
-                 else:self._process_business(update)
+                 elif not claimed_by_super_bot:self._process_business(update)
                  self.db.execute('UPDATE events SET state=? WHERE id=?', ('done',uid))
              except Exception as error:
 @@ -241,6 +248,9 @@
@@ -45,7 +45,7 @@
 +            return
          support=self.shopping.support_session(cid,chat)
          if support and support[0]=='human':
-             if callback and callback.get('data')=='rocky:resume':
+             if callback and callback.get('data','').endswith(':resume'):
 @@ -376,6 +389,7 @@
 
      def delivery_allowed(self, cid, chat, created):
@@ -54,7 +54,7 @@
              if self.shopping.support_session(cid,chat): return False
              row=self.db.execute('''SELECT connections.enabled,connections.reply,chats.human
                  FROM connections JOIN chats ON chats.connection=connections.id
-@@ -388,7 +402,13 @@
+@@ -388,7 +402,14 @@
      MINIAPP_ENABLED = bool(config.get('miniapp_enabled'))
      from outbound_archive import OutboundArchive
      archive=OutboundArchive("/data/outbound-history.sqlite")
@@ -62,18 +62,19 @@
      def raw_api(method, body):
 +        body = dict(body)
 +        inbox_request_id = body.pop('_inbox_request_id', None)
++        automated_send = body.pop('_inbox_automated', False)
 +        explicit_send = body.pop('_inbox_explicit', False)
 +        if inbox and not inbox_request_id and not explicit_send and method.startswith('send') and body.get('business_connection_id') and inbox.paused(body['business_connection_id'], body.get('chat_id')):
 +            return {}
          from retention_gate import require_retention
          require_retention(method, body)
          body = style_bot_buttons(body)
-@@ -399,10 +419,17 @@
+@@ -399,10 +420,17 @@
          if not data.get('ok'): raise RuntimeError('Telegram request failed')
          try: archive.finish(archive_key,'sent',data['result'])
          except Exception as exc: print('archive_result_failed '+type(exc).__name__,flush=True)
 +        if inbox and method.startswith('send') and body.get('business_connection_id') and isinstance(data['result'], dict):
-+            inbox.message(dict(data['result'], business_connection_id=body['business_connection_id']), 'AGENT' if inbox_request_id else 'BOT', local_id=inbox_request_id)
++            inbox.message(dict(data['result'], business_connection_id=body['business_connection_id']), 'BOT' if automated_send or not inbox_request_id else 'AGENT', local_id=inbox_request_id)
          return data['result']
 +    from inbox import Inbox, handle as handle_inbox
 +    inbox = Inbox('/data/store-inbox.sqlite', config, raw_api)
@@ -88,16 +89,16 @@
      def forward(update):
          req=urllib.request.Request(config['upstream'],data=json.dumps(update).encode(),
              headers={'Content-Type':'application/json'})
-@@ -422,6 +449,8 @@
+@@ -422,6 +450,8 @@
          from store import StoreClient
          store=StoreClient(Path('/run/config/store-key.secret').read_text().strip())
      adapter=Adapter('/data/state.sqlite',api,forward,config['owner_username'],inventory=inventory,deliveries=deliveries,store=store)
 +    adapter.inbox = inbox
-+    inbox.start()
++    inbox.start(adapter)
      if deliveries:
          deliveries.allowed=adapter.delivery_allowed
          deliveries.start()
-@@ -432,6 +461,7 @@
+@@ -432,6 +462,7 @@
              self.send_response(status); self.send_header('Content-Type','application/json')
              self.send_header('Content-Length',str(len(body))); self.end_headers(); self.wfile.write(body)
          def do_GET(self):
@@ -105,7 +106,7 @@
              from urllib.parse import urlsplit,parse_qs
              path=urlsplit(self.path).path
              if path in ('/catalog/','/catalog/app.js','/catalog/style.css','/catalog/payments.jpeg'):
-@@ -453,6 +483,7 @@
+@@ -453,6 +484,7 @@
              elif self.path == '/health': self.reply(200,adapter.status())
              else: self.reply(404,{'ok':False})
          def do_POST(self):
@@ -113,7 +114,7 @@
              if self.path in ('/catalog/cart','/catalog/cart/state','/catalog/cart/checkout'):
                  try:
                      if self.headers.get('Origin') != 'https://chatbot.tiendavirtualsuper.com':
-@@ -464,7 +495,11 @@
+@@ -464,7 +496,11 @@
                      from miniapp import telegram_user,import_cart,read_cart,checkout_cart
                      user=telegram_user(payload.get('init_data'),config['token'])
                      with adapter.lock:

@@ -1,29 +1,19 @@
 import { z } from "zod";
 import { Channel, ConversationState, MessageType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { normalizeWhatsappPhone } from "@/lib/utils";
+import { normalizePhoneNumber } from "@/lib/utils";
 import { triggerPusherEvent } from "@/lib/pusher-server";
-import {
-  sendYCloudOutboundMessage,
-  YCloudOutboundError,
-  type YCloudOutboundMessageType,
-} from "@/lib/ycloud-outbound";
-import {
-  buildAutomationConversationContext,
-  type AutomationConversationContext,
-} from "@/lib/conversation-context";
-import { scheduleRockyTurn } from "./rocky-inbox-intake";
-import { buildPublicUrl } from "@/lib/site-url";
 import { sendTelegramMessage, controlTelegram } from "./telegram-messages";
+import {
+  advisorConversationScope,
+  canTransferConversation,
+  ConversationAssignmentError,
+  isConversationAssignedToAdvisor,
+} from "./conversation-assignment";
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const LIMA_DATE_SUFFIX = "T00:00:00-05:00";
-const AUTOMATION_CONTEXT_WINDOW_MS = 30 * 60 * 1000;
-// When Rocky has not replied yet, a customer may return hours later with a
-// greeting. Keep that unanswered turn long enough to recover its request.
-const AUTOMATION_UNANSWERED_CONTEXT_WINDOW_MS = 24 * 60 * 60 * 1000;
-const AUTOMATION_CONTEXT_MESSAGE_LIMIT = 12;
-// Human control persists until an advisor explicitly activates Rocky again.
+// Human control persists until an advisor explicitly reactivates Super Bot.
 
 const optionalTrimmedString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() || undefined : value),
@@ -76,6 +66,11 @@ export const getConversationsSchema = z.object({
 
 export type GetConversationsInput = z.infer<typeof getConversationsSchema>;
 
+export type ConversationAccessScope = {
+  /** Set only for an advisor: shared queue plus their own assigned chats. */
+  advisorId?: string;
+};
+
 export const getConversationMessagesSchema = z.object({
   conversationId: z.string().min(1),
   q: optionalTrimmedString,
@@ -116,7 +111,7 @@ type MessageDateFilterInput = Pick<
 type DateRange = Prisma.DateTimeFilter<"ChatMessage">;
 
 export function normalizeMessagePhone(value: string | null | undefined) {
-  return normalizeWhatsappPhone(value);
+  return normalizePhoneNumber(value);
 }
 
 function dateOnlyStart(value: string) {
@@ -215,7 +210,10 @@ function buildPhoneSearch(phone: string) {
   return conditions;
 }
 
-export async function getConversations(input: GetConversationsInput) {
+export async function getConversations(
+  input: GetConversationsInput,
+  scope: ConversationAccessScope = {},
+) {
   const {
     search,
     q,
@@ -247,6 +245,10 @@ export async function getConversations(input: GetConversationsInput) {
         },
       },
     });
+  }
+
+  if (scope.advisorId) {
+    and.push(advisorConversationScope(scope.advisorId));
   }
 
   if (search) {
@@ -302,7 +304,7 @@ export async function getConversations(input: GetConversationsInput) {
       where,
       include: {
         contact: true,
-        assignedUser: { select: { name: true, email: true } },
+        assignedUser: { select: { id: true, name: true, email: true } },
         messages: {
           orderBy: { createdAt: "desc" },
           take: 1,
@@ -339,9 +341,158 @@ export async function getConversation(id: string) {
     where: { id },
     include: {
       contact: true,
-      assignedUser: { select: { name: true, email: true } },
+      assignedUser: { select: { id: true, name: true, email: true } },
     },
   });
+}
+
+/**
+ * Simulated conversations are a supervision tool, not customer work. Keep
+ * this check close to the message service so every advisor-facing endpoint
+ * can apply the same scope even when a conversation ID is guessed directly.
+ */
+export async function isAdvisorConversationAccessible(id: string, advisorId: string) {
+  const conversation = await prisma.conversation.findUnique({
+    where: { id },
+    select: { assignedUserId: true, contact: { select: { externalId: true } } },
+  });
+
+  return Boolean(
+    conversation &&
+      !conversation.contact.externalId?.startsWith("SIMULATOR:") &&
+      isConversationAssignedToAdvisor(conversation.assignedUserId, advisorId),
+  );
+}
+
+const assignmentInclude = {
+  contact: true,
+  assignedUser: { select: { id: true, name: true, email: true } },
+} as const;
+
+async function assignmentConversation(id: string) {
+  return prisma.conversation.findUnique({ where: { id }, include: assignmentInclude });
+}
+
+function requireCustomerConversation<T extends { contact: { externalId: string | null } }>(conversation: T | null) {
+  if (!conversation || conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+    throw new ConversationAssignmentError("Conversación no encontrada.");
+  }
+  return conversation;
+}
+
+async function pauseTelegramForHumanControl(conversation: Awaited<ReturnType<typeof assignmentConversation>>) {
+  if (conversation?.channel !== "TELEGRAM") return undefined;
+  return (await controlTelegram(conversation, false)).revision;
+}
+
+/**
+ * Atomically takes an unassigned chat for an advisor. A messaging owner can
+ * deliberately take over a chat; advisors can never overwrite one another.
+ */
+export async function claimConversation(
+  id: string,
+  advisorId: string,
+  { canReassign = false }: { canReassign?: boolean } = {},
+) {
+  const existing = requireCustomerConversation(await assignmentConversation(id));
+  if (existing.assignedUserId === advisorId) return existing;
+  if (existing.assignedUserId && !canReassign) {
+    throw new ConversationAssignmentError("Otro asesor acaba de tomar esta conversación.", 409);
+  }
+
+  // Pause the Telegram bridge before the database says a person owns the
+  // thread. More than one contender can issue this idempotent pause, but only
+  // one conditional UPDATE becomes the owner.
+  const telegramRevision = await pauseTelegramForHumanControl(existing);
+  const claimed = await prisma.conversation.updateMany({
+    where: { id, assignedUserId: existing.assignedUserId },
+    data: {
+      assignedUserId: advisorId,
+      botEnabled: false,
+      status: "ATENDIENDO",
+      unreadCount: 0,
+      lastReadAt: new Date(),
+      ...(telegramRevision === undefined ? {} : { telegramRevision }),
+    },
+  });
+
+  if (!claimed.count) {
+    const current = await assignmentConversation(id);
+    if (current?.assignedUserId === advisorId) return current;
+    throw new ConversationAssignmentError("Otro asesor acaba de tomar esta conversación.", 409);
+  }
+
+  return requireCustomerConversation(await assignmentConversation(id));
+}
+
+export async function getAssignableAdvisors() {
+  return prisma.user.findMany({
+    where: { role: "ASESOR" },
+    orderBy: [{ name: "asc" }, { email: "asc" }],
+    select: { id: true, name: true },
+  });
+}
+
+/**
+ * Transfers an owned chat without exposing it to the rest of the team. The
+ * conditional write refuses a handoff while a human message is in flight.
+ */
+export async function transferConversation(
+  id: string,
+  targetAdvisorId: string,
+  actor: { id: string; isMessagingOwner: boolean },
+) {
+  const target = await prisma.user.findUnique({
+    where: { id: targetAdvisorId },
+    select: { id: true, role: true },
+  });
+  if (target?.role !== "ASESOR") {
+    throw new ConversationAssignmentError("Selecciona un asesor válido.", 409);
+  }
+
+  const existing = requireCustomerConversation(await assignmentConversation(id));
+  if (!canTransferConversation({
+    assignedUserId: existing.assignedUserId,
+    actorId: actor.id,
+    isMessagingOwner: actor.isMessagingOwner,
+  })) {
+    throw new ConversationAssignmentError("Conversación no encontrada.");
+  }
+  if (existing.assignedUserId === targetAdvisorId) return existing;
+
+  const telegramRevision = await pauseTelegramForHumanControl(existing);
+  const transferred = await prisma.conversation.updateMany({
+    where: {
+      id,
+      assignedUserId: existing.assignedUserId,
+      messages: {
+        none: {
+          direction: "OUTBOUND",
+          senderType: "AGENT",
+          status: { in: ["pending", "sending"] },
+        },
+      },
+    },
+    data: {
+      assignedUserId: targetAdvisorId,
+      botEnabled: false,
+      status: "ATENDIENDO",
+      // The recipient sees the handoff as work awaiting review.
+      unreadCount: Math.max(existing.unreadCount, 1),
+      lastReadAt: null,
+      ...(telegramRevision === undefined ? {} : { telegramRevision }),
+    },
+  });
+
+  if (!transferred.count) {
+    const current = await assignmentConversation(id);
+    if (current?.assignedUserId !== existing.assignedUserId) {
+      throw new ConversationAssignmentError("La asignación cambió. Actualiza la bandeja.", 409);
+    }
+    throw new ConversationAssignmentError("Espera que termine el mensaje en envío antes de derivar el chat.", 409);
+  }
+
+  return requireCustomerConversation(await assignmentConversation(id));
 }
 
 export async function getConversationMessages(input: GetConversationMessagesInput) {
@@ -425,10 +576,22 @@ const sendMessageSchema = z.object({
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
+export type SendInternalMessageOptions = {
+  /** An advisor route supplies this to close a transfer/send race. */
+  expectedAssigneeId?: string;
+};
+
+export class MessageTransportError extends Error {
+  constructor(message: string, public readonly statusCode = 409) {
+    super(message);
+  }
+}
+
 export async function sendInternalMessage(
   conversationId: string,
   input: SendMessageInput,
   agentId: string,
+  options: SendInternalMessageOptions = {},
 ) {
   const parsed = sendMessageSchema.parse(input);
   const conversation = await prisma.conversation.findUnique({
@@ -436,131 +599,15 @@ export async function sendInternalMessage(
     include: { contact: true },
   });
 
-  if (!conversation) {
-    throw new Error("Conversation not found");
+  if (!conversation) throw new Error("Conversation not found");
+  if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
+    throw new MessageTransportError("No se puede enviar un mensaje real a un contacto de simulación.", 400);
+  }
+  if (conversation.channel !== "TELEGRAM") {
+    throw new MessageTransportError("Este canal ya no tiene un transporte de envío conectado.");
   }
 
-  if (conversation.channel === "TELEGRAM") return sendTelegramMessage(conversation, parsed, agentId);
-
-  const replyTarget = parsed.replyToMessageId ? await prisma.chatMessage.findFirst({
-    where: { id: parsed.replyToMessageId, conversationId, senderType: "CUSTOMER" },
-  }) : null;
-  if (parsed.replyToMessageId && !replyTarget?.externalMessageId?.startsWith("wamid.")) {
-    throw new YCloudOutboundError("El mensaje seleccionado no está disponible para responder en WhatsApp.", {
-      code: "INVALID_REPLY_TARGET", statusCode: 400,
-    });
-  }
-  const replyMetadata = replyTarget ? {
-    replyTo: { id: replyTarget.id, content: replyTarget.content || replyTarget.messageType, senderType: replyTarget.senderType },
-  } : {};
-
-  const recipient = normalizeMessagePhone(
-    conversation.contact.phone ?? conversation.contact.phoneNormalized ?? conversation.contact.externalId,
-  );
-
-  if (!recipient) {
-    throw new Error("La conversación no tiene un teléfono de WhatsApp válido.");
-  }
-
-  if (!["TEXT", "IMAGE", "VIDEO", "DOCUMENT", "AUDIO"].includes(parsed.type)) {
-    throw new Error("El tipo de mensaje no está soportado por ahora.");
-  }
-
-  if (parsed.type !== "TEXT" && !parsed.mediaUrl) {
-    throw new Error("Se requiere mediaUrl para enviar archivos multimedia.");
-  }
-
-  const outboundType = parsed.type.toLowerCase() as YCloudOutboundMessageType;
-  // Local uploads are stored as /uploads paths; YCloud needs a public URL.
-  const mediaUrl = parsed.mediaUrl?.startsWith("/")
-    ? buildPublicUrl(parsed.mediaUrl)
-    : parsed.mediaUrl;
-  // Pause Rocky before attempting delivery, not after YCloud responds. This
-  // closes the race where a customer message can arrive while an advisor's
-  // message is still being sent.
-  const message = await prisma.$transaction(async (tx) => {
-    const pendingMessage = await tx.chatMessage.create({
-      data: {
-        conversationId,
-        direction: "OUTBOUND",
-        senderType: "AGENT",
-        messageType: parsed.type,
-        content: parsed.content,
-        mediaUrl,
-        metadata: { requestId: parsed.requestId, ...replyMetadata },
-        status: "pending",
-      },
-    });
-
-    await tx.conversation.update({
-      where: { id: conversationId },
-      data: {
-        botEnabled: false,
-        status: "ATENDIENDO",
-        assignedUserId: agentId,
-        unreadCount: 0,
-        lastReadAt: pendingMessage.createdAt,
-      },
-    });
-
-    return pendingMessage;
-  });
-
-  console.info("[outbound] pending", { requestId: parsed.requestId, conversationId, messageId: message.id });
-  try {
-    if (conversation.contact.externalId?.startsWith("SIMULATOR:")) {
-      throw new YCloudOutboundError("No se puede enviar un mensaje real a un contacto de simulación.", {
-        code: "SIMULATOR_CONTACT", statusCode: 400,
-      });
-    }
-
-    const sent = await sendYCloudOutboundMessage({
-      replyToExternalMessageId: replyTarget?.externalMessageId ?? undefined,
-      externalId: message.id,
-      content: parsed.content,
-      mediaUrl: mediaUrl ?? null,
-      recipient,
-      type: outboundType,
-    });
-
-    return prisma.$transaction(async (tx) => {
-      await tx.chatMessage.updateMany({
-        where: { id: message.id, status: "pending" },
-        data: {
-          externalMessageId: sent.messageId,
-          metadata: { provider: sent.provider, requestId: parsed.requestId, ...replyMetadata },
-          status: "accepted",
-        },
-      });
-      const sentMessage = await tx.chatMessage.findUniqueOrThrow({ where: { id: message.id } });
-
-      await tx.conversation.update({
-        where: { id: conversationId },
-        data: { lastMessageAt: sentMessage.createdAt },
-      });
-
-      triggerPusherEvent(`chat-${conversationId}`, "new-message", sentMessage);
-      console.info("[outbound] sent", { requestId: parsed.requestId, conversationId, messageId: message.id });
-      return sentMessage;
-    });
-  } catch (error) {
-    const safeReason = error instanceof YCloudOutboundError ? error.message : "No se pudo iniciar el envío hacia YCloud.";
-    const unconfirmed = error instanceof YCloudOutboundError && ["YCLOUD_UNAVAILABLE", "YCLOUD_INVALID_RESPONSE"].includes(error.code);
-    await prisma.chatMessage.updateMany({
-      where: { id: message.id, status: "pending" },
-      data: { status: unconfirmed ? "uncertain" : "failed", metadata: { requestId: parsed.requestId, ...replyMetadata, error: safeReason } },
-    });
-    const failed = await prisma.chatMessage.findUniqueOrThrow({ where: { id: message.id } });
-    triggerPusherEvent(`chat-${conversationId}`, "new-message", failed);
-    if (["accepted", "sent", "delivered", "read"].includes(failed.status ?? "")) return failed;
-    console.warn("[outbound] failed", { requestId: parsed.requestId, conversationId, messageId: message.id });
-    if (error instanceof YCloudOutboundError) {
-      throw error.withContext({ requestId: parsed.requestId, messageId: message.id });
-    }
-    throw new YCloudOutboundError(safeReason, {
-      code: "OUTBOUND_DELIVERY_FAILED", statusCode: 502,
-    }).withContext({ requestId: parsed.requestId, messageId: message.id });
-  }
+  return sendTelegramMessage(conversation, parsed, agentId, options.expectedAssigneeId);
 }
 
 const updateConversationSchema = z.object({
@@ -582,7 +629,7 @@ export async function updateConversation(id: string, input: UpdateConversationIn
     telegramRevision = (await controlTelegram(existing, enabled)).revision;
   }
 
-  // Activar Rocky devuelve la conversación a la cola automática. Esto evita
+  // Activar Super Bot devuelve la conversación al control automático. Esto evita
   // conservar una asignación anterior que impediría al bot retomarla.
   const data = conversationChanges.botEnabled
     ? { ...conversationChanges, assignedUserId: null, status: "AUTOMATICO" as const }
@@ -602,8 +649,11 @@ export async function updateConversation(id: string, input: UpdateConversationIn
   });
 }
 
-export async function processIncomingMessage(input: IncomingMessageInput, options: { scheduleRocky?: boolean } = {}) {
+export async function processIncomingMessage(input: IncomingMessageInput) {
   const parsed = incomingMessageSchema.parse(input);
+  if (parsed.channel === "WHATSAPP") {
+    throw new MessageTransportError("El canal retirado no acepta mensajes nuevos.");
+  }
   const timestamp = new Date(parsed.timestamp);
   const isSimulator = parsed.externalContactId.startsWith("SIMULATOR:");
   const normalizedPhone = normalizeMessagePhone(parsed.phone ?? (isSimulator ? "" : parsed.externalContactId));
@@ -734,8 +784,6 @@ export async function processIncomingMessage(input: IncomingMessageInput, option
           unreadCount: { increment: 1 },
         },
       });
-    if (options.scheduleRocky) await scheduleRockyTurn(tx, conversation.id, message.id);
-
     return {
       ok: true,
       duplicate: false,
@@ -755,36 +803,4 @@ export async function processIncomingMessage(input: IncomingMessageInput, option
   const { message, ...result } = outcome;
   if (message) triggerPusherEvent(`chat-${message.conversationId}`, "new-message", message);
   return result;
-}
-
-/**
- * Returns the current customer turn as one intent. A turn begins after the
- * last outgoing reply, so Rocky can combine split WhatsApp bubbles without
- * mixing them with a previous request from the same conversation.
- */
-export async function getAutomationConversationContext(
-  conversationId: string,
-): Promise<AutomationConversationContext> {
-  const since = new Date(Date.now() - AUTOMATION_CONTEXT_WINDOW_MS);
-  const latestOutbound = await prisma.chatMessage.findFirst({
-    where: { conversationId, direction: "OUTBOUND", status: { notIn: ["cancelled", "failed", "uncertain"] } },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: { createdAt: true },
-  });
-  const turnStartedAt = latestOutbound?.createdAt && latestOutbound.createdAt > since
-    ? latestOutbound.createdAt
-    : new Date(Date.now() - AUTOMATION_UNANSWERED_CONTEXT_WINDOW_MS);
-  const recentMessages = await prisma.chatMessage.findMany({
-    where: {
-      conversationId,
-      direction: "INBOUND",
-      senderType: "CUSTOMER",
-      createdAt: { gte: turnStartedAt },
-    },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: AUTOMATION_CONTEXT_MESSAGE_LIMIT,
-    select: { id: true, content: true, createdAt: true },
-  });
-
-  return buildAutomationConversationContext(recentMessages.reverse());
 }

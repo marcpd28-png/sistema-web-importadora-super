@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -28,6 +29,8 @@ class InboxTests(unittest.TestCase):
         self.message={'message_id':7,'business_connection_id':'linked','chat':{'id':2,'type':'private'},'from':{'id':2,'first_name':'Cliente'},'date':self.now,'text':'Hola'}
         self.inbox.observe({'update_id':11,'business_message':self.message},self.adapter)
         self.request={'connectionId':'linked','chatId':'2','requestId':'tgout:test','type':'TEXT','content':'Respuesta'}
+    def tearDown(self):
+        self.inbox.db.close()
     def test_auth_requires_configured_secret(self):
         self.assertFalse(self.inbox.authorized(None)); self.assertFalse(self.inbox.authorized('Bearer wrong'))
         self.assertTrue(self.inbox.authorized('Bearer '+'x'*40))
@@ -35,6 +38,26 @@ class InboxTests(unittest.TestCase):
         self.inbox.observe({'update_id':11,'business_message':self.message},self.adapter)
         rows=self.inbox.db.execute('SELECT payload FROM inbox_events').fetchall()
         self.assertEqual(len(rows),1); self.assertEqual(json.loads(rows[0][0])['sender'],'CUSTOMER')
+        queued=self.inbox.db.execute("SELECT count(*) FROM inbox_super_bot_replies WHERE state='queued'").fetchone()[0]
+        self.assertEqual(queued,1)
+    def test_super_bot_reply_is_sent_without_pausing_the_conversation(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda content: ('Respuesta de Super Bot',None)
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(len(self.calls),1); self.assertEqual(self.calls[0][0],'sendMessage')
+        self.assertTrue(self.calls[0][1]['_inbox_automated']); self.assertFalse(self.inbox.paused('linked',2))
+        state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
+        self.assertEqual(state,'sent')
+    def test_missing_super_bot_configuration_never_falls_back_to_legacy(self):
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertFalse(self.calls)
+        row=self.inbox.db.execute('SELECT state,error FROM inbox_super_bot_replies').fetchone()
+        self.assertEqual(row[0],'failed'); self.assertIn('Super Bot',row[1])
+    def test_customer_edits_are_claimed_without_queuing_a_second_reply(self):
+        claimed=self.inbox.observe({'update_id':12,'edited_business_message':dict(self.message,text='Hola de nuevo')},self.adapter)
+        self.assertTrue(claimed)
+        queued=self.inbox.db.execute("SELECT count(*) FROM inbox_super_bot_replies WHERE state='queued'").fetchone()[0]
+        self.assertEqual(queued,1)
     def test_reply_pauses_and_is_idempotent(self):
         result=self.inbox.command('send',self.request,self.adapter)
         self.assertEqual(self.inbox.command('send',self.request,self.adapter),result)
@@ -79,11 +102,13 @@ class InboxTests(unittest.TestCase):
 
 class AdapterIntegration(unittest.TestCase):
     def test_incoming_pause_resume_and_advisor_sync(self):
+        source = os.environ.get('TELEGRAM_BRIDGE_SOURCE')
+        if source:
+            sys.path.insert(0, source)
         try:
             from app import Adapter as RealAdapter
         except ModuleNotFoundError:
-            sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'rocky-telegram-bridge'))
-            from app import Adapter as RealAdapter
+            self.skipTest('Set TELEGRAM_BRIDGE_SOURCE to run against the separate Telegram bridge.')
         calls=[]; now=200000
         def api(method,body):calls.append((method,body));return {'message_id':100+len(calls)}
         adapter=RealAdapter(':memory:',api,lambda update:None,now=lambda:now)
@@ -92,6 +117,10 @@ class AdapterIntegration(unittest.TestCase):
         adapter.inbox=inbox
         m={'message_id':10,'business_connection_id':'linked','chat':{'id':2,'type':'private'},'from':{'id':2},'date':now,'text':'hola'}
         adapter.process({'update_id':1,'business_message':m})
+        self.assertEqual(len(calls),0)
+        inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        inbox.super_bot_reply=lambda content: ('Hola desde Super Bot',None)
+        inbox.super_bot_tick(adapter)
         self.assertEqual(len(calls),1)
         inbox.command('send',{'connectionId':'linked','chatId':'2','requestId':'tgout:test','type':'TEXT','content':'Hola desde tienda'},adapter)
         count=len(calls)
@@ -102,7 +131,7 @@ class AdapterIntegration(unittest.TestCase):
         now+=30
         adapter.process({'update_id':3,'business_message':dict(m,message_id=12,date=now)})
         self.assertEqual(len(calls),count+1)
-        adapter.process({'update_id':4,'callback_query':{'id':'callback','from':{'id':2},'message':m,'data':'rocky:human'}})
+        adapter.process({'update_id':4,'callback_query':{'id':'callback','from':{'id':2},'message':m,'data':'superbot:human'}})
         event=json.loads(inbox.db.execute('SELECT payload FROM inbox_events ORDER BY id DESC LIMIT 1').fetchone()[0])
         self.assertFalse(event['botEnabled']); self.assertTrue(event['needsAdvisor'])
         adapter.db.close(); inbox.db.close()

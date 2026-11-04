@@ -8,7 +8,7 @@ test("catalogs have a readable category filename without the cache hash", () => 
 });
 
 test("message cards use the original filename or a friendly name for opaque PDFs", () => {
-  const url = "https://static-internal.ycloud.com/yunpian/attila/inbox/message/123/22529521a8394bd484f888a0dc87f308.pdf";
+  const url = "https://media.example.invalid/messages/123/22529521a8394bd484f888a0dc87f308.pdf";
   assert.equal(documentAttachmentName(url), "Documento.pdf");
   assert.equal(documentAttachmentName(url, { raw: { document: { filename: "Cotización de drones.pdf" } } }), "Cotización de drones.pdf");
   assert.equal(documentAttachmentName(url, { raw: { document: { caption: "Aquí tienes el PDF" } } }), "Documento.pdf");
@@ -16,6 +16,6 @@ test("message cards use the original filename or a friendly name for opaque PDFs
 });
 test("ordinary documents retain their own filename", () => {
   assert.equal(documentFilename("/uploads/documents/Lista%20de%20precios.pdf"), "Lista de precios.pdf");
-  assert.equal(documentFilename("https://api.ycloud.com/v2/media/opaque-id"), "Documento adjunto");
+  assert.equal(documentFilename("https://media.example.invalid/opaque-id"), "Documento adjunto");
   assert.equal(documentFilename("/broken%xx.pdf"), "Documento adjunto");
 });

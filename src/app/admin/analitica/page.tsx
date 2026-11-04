@@ -5,7 +5,7 @@ import styles from "./analytics.module.css";
 import { MobileDisclosure } from "@/components/admin/mobile-disclosure";
 export const dynamic = "force-dynamic";
 const number = (value: bigint | number) => Number(value).toLocaleString("es-PE");
-const labels: Record<string, string> = { direct: "Directo / sin referencia", google: "Google", tiktok: "TikTok", facebook: "Facebook", instagram: "Instagram", whatsapp: "WhatsApp", other: "Otras fuentes", mobile: "Móvil", desktop: "Pantalla grande" };
+const labels: Record<string, string> = { direct: "Directo / sin referencia", google: "Google", tiktok: "TikTok", facebook: "Facebook", instagram: "Instagram", messenger: "Messenger", other: "Otras fuentes", mobile: "Móvil", desktop: "Pantalla grande" };
 function Bars({ rows }: { rows: Array<{ label: string; total: bigint }> }) {
   const max = Math.max(1, ...rows.map(row => Number(row.total)));
   return rows.length ? <div className={styles.bars}>{rows.map(row => <div key={row.label}><div className={styles.barLabel}><span>{labels[row.label] || row.label}</span><strong>{number(row.total)}</strong></div><div className={styles.track}><div style={{ width: `${Number(row.total) / max * 100}%` }} /></div></div>)}</div> : <p className={styles.empty}>Todavía no hay visitas registradas en este período.</p>;
@@ -26,7 +26,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         ["Sesiones registradas", session!.visits, "Se renuevan tras 30 minutos de inactividad"],
         ["Cotizaciones confirmadas", report.events.quote_created || 0, "Registro comprobado en el ERP"],
         ["Carritos sin cotización", session!.abandoned, "Sesiones inactivas al menos 30 minutos"],
-        ["Clics en WhatsApp", report.events.whatsapp_click || 0, "Intención de contacto; no confirma una venta"],
+        ["Clics en Messenger", report.events.messenger_click || 0, "Intención de contacto; no confirma una venta"],
       ].map(([label, value, hint]) => <article className={styles.card} key={String(label)}><p>{String(label)}</p><strong className={styles.value}>{number(value as number | bigint)}</strong><small>{String(hint)}</small></article>)}</div>
       <div className={styles.grid}><section className={styles.card}><h2>Del catálogo a la cotización</h2><p>Sesiones con cada acción durante el período. Son conteos independientes, no una conversión secuencial.</p><Bars rows={steps}/></section>
       <section className={styles.card}><h2>Qué conviene revisar</h2><ul className={styles.insights}>
