@@ -80,4 +80,6 @@ export type ShopAssistantRequest = {
     role: "assistant" | "user";
     text: string;
   }>;
+  /** Product codes already shown by a trusted channel visual response. */
+  shownProductCodes?: string[];
 };

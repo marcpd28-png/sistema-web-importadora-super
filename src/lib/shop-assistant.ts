@@ -859,7 +859,7 @@ function shouldUseConversationContext(message: string, recentConversation: strin
 
   const text = normalizeAssistantText(message);
   const followUpSignals =
-    /\b(mas|más|otro|otra|similar|parecid|ese|esa|esos|esas|mismo|igual|tambien|también|alternativ|por mayor|mayorista|el de|la de|los de|las de|de ese|de esa|de los|de las)\b/.test(
+    /\b(mas|otro|otra|otros|otras|similar|parecid|ese|esa|esos|esas|mismo|igual|tambien|alternativ|por mayor|mayorista|el de|la de|los de|las de|de ese|de esa|de los|de las)\b/.test(
       text,
     ) || text.length <= 18;
 
@@ -878,6 +878,52 @@ function shouldUseConversationContext(message: string, recentConversation: strin
     /(oferta|ofertas|categoria|categorias|rubro|stock|messenger|pedido|cotizacion|cotizar)/.test(text);
 
   return !hasDirectNewIntent;
+}
+
+/**
+ * A follow-up such as "¿tienes otras opciones?" has no product identity of
+ * its own. Take the last meaningful customer search, never the assistant's
+ * captions or wording: those often contain several model names and would
+ * turn the next catalogue lookup into an impossible AND query.
+ */
+function latestCustomerProductQuery(messages: Array<{ role: "assistant" | "user"; text: string }> | undefined) {
+  for (const message of [...(messages ?? [])].reverse()) {
+    if (message.role !== "user") continue;
+    const query = extractSearchTerms(message.text);
+    if (query) return query;
+  }
+  return "";
+}
+
+function productCodeKey(value: string) {
+  return normalizeAssistantText(value).replace(/[^a-z0-9]/g, "");
+}
+
+function assistantHistoryMentionsProductCode(
+  messages: Array<{ role: "assistant" | "user"; text: string }> | undefined,
+  code: string,
+) {
+  const normalizedCode = normalizeAssistantText(code);
+  if (!normalizedCode) return false;
+  const escaped = normalizedCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(?:^|\\s)${escaped}(?:$|\\s)`);
+  return (messages ?? []).some((message) =>
+    message.role === "assistant" && pattern.test(normalizeAssistantText(message.text)),
+  );
+}
+
+function wasProductAlreadyShown(
+  product: AssistantProductRecord,
+  shownProductCodes: string[] | undefined,
+  recentMessages: Array<{ role: "assistant" | "user"; text: string }> | undefined,
+) {
+  const code = productCodeKey(product.code);
+  if (!code) return false;
+  if ((shownProductCodes ?? []).some((shown) => productCodeKey(shown) === code)) return true;
+  // Compatibility during the bridge rollout: older visual replies kept the
+  // product code in the photo caption, so use that trusted outbound history
+  // until the bridge starts supplying explicit shownProductCodes.
+  return assistantHistoryMentionsProductCode(recentMessages, product.code);
 }
 
 function detectGiftOccasionLabel(value: string) {
@@ -1075,7 +1121,10 @@ function createRealRepository(): ShopAssistantRepository {
           AND: [buildRealProductPhotoWhere()],
         },
         orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
-        take: MAX_PRODUCTS,
+        // Continuations can exclude the current visual page, so retain a
+        // bounded candidate set instead of losing every item after the first
+        // four before the assistant can choose the next cards.
+        take: MAX_SEARCH_CANDIDATES,
         select: ASSISTANT_PRODUCT_SELECT,
       });
     },
@@ -1107,17 +1156,21 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     productContextCode?: string | null;
     contextCategorySlug?: string | null;
     recentMessages?: Array<{ role: "assistant" | "user"; text: string }>;
+    /** Product cards the trusted channel already delivered visually. */
+    shownProductCodes?: string[];
   }): Promise<ShopAssistantReply> {
     const trimmedMessage = input.message.trim();
     const normalized = normalizeAssistantText(trimmedMessage);
     const baseData = await repository.getBaseData();
-    const recentConversation = (input.recentMessages ?? [])
+    const recentCustomerConversation = (input.recentMessages ?? [])
+      .filter((item) => item.role === "user")
       .map((item) => normalizeAssistantText(item.text))
       .filter(Boolean)
       .join(" ");
-    const useConversationContext = shouldUseConversationContext(trimmedMessage, recentConversation);
+    const recentCustomerQuery = latestCustomerProductQuery(input.recentMessages);
+    const useConversationContext = shouldUseConversationContext(trimmedMessage, recentCustomerQuery);
     const assistantScope = useConversationContext
-      ? `${trimmedMessage} ${recentConversation}`.trim()
+      ? `${trimmedMessage} ${recentCustomerQuery}`.trim()
       : trimmedMessage;
 
     if (!trimmedMessage) {
@@ -1180,6 +1233,13 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       null;
     const budget = extractBudget(trimmedMessage);
     const quantity = extractQuantity(trimmedMessage);
+    const wantsNextOptions =
+      useConversationContext &&
+      wantsContinuation &&
+      !wantsSimilar &&
+      !wantsCheaper &&
+      budget === null &&
+      quantity === null;
     const allowSensitiveProducts = isAdultIntent(assistantScope);
     const contextProduct = code ? await repository.findProductByCode(code) : null;
     const productSearchInference =
@@ -1222,14 +1282,22 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       };
     }
 
-    if (contextCategory && wantsContinuation && !wantsSupport) {
-      const products = await repository.getCategoryProducts(contextCategory.id);
+    if (contextCategory && wantsContinuation && !wantsSupport && !resolvedSearchTerms) {
+      const categoryProducts = await repository.getCategoryProducts(contextCategory.id);
+      const products = wantsNextOptions
+        ? categoryProducts.filter((product) => !wasProductAlreadyShown(
+          product,
+          input.shownProductCodes,
+          input.recentMessages,
+        ))
+        : categoryProducts;
+      const visibleProducts = products.slice(0, MAX_PRODUCTS);
       return {
-        text: products.length
+        text: visibleProducts.length
           ? `Sigo en ${contextCategory.name}. Estas son más opciones dentro de esa línea.`
           : `Ahora mismo no veo más productos visibles en ${contextCategory.name}.`,
         contextCategorySlug: contextCategory.slug,
-        products: products.map((product) =>
+        products: visibleProducts.map((product) =>
           mapAssistantProduct(product, baseData.settings.currencySymbol),
         ),
         quickActions: buildQuickActions([
@@ -1312,7 +1380,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
 
       const giftQueries = buildGiftSearchQueries(
         trimmedMessage,
-        useConversationContext ? recentConversation : "",
+        useConversationContext ? recentCustomerConversation : "",
         giftIntent,
       );
       const giftProducts = await gatherProductsFromQueries(
@@ -1575,10 +1643,21 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     }
 
     if (resolvedSearchTerms && !contextProduct) {
-      const products = filterSensitiveProducts(
+      const matchedProducts = filterSensitiveProducts(
         await repository.searchVisibleProducts(resolvedSearchTerms),
         allowSensitiveProducts,
       );
+      // The customer explicitly asked for another page. Never repeat cards
+      // whose images the channel has already delivered. `shownProductCodes`
+      // is authoritative; caption matching preserves behavior for a bridge
+      // still finishing its no-caption rollout.
+      const products = wantsNextOptions
+        ? matchedProducts.filter((product) => !wasProductAlreadyShown(
+          product,
+          input.shownProductCodes,
+          input.recentMessages,
+        ))
+        : matchedProducts;
       const focusedProducts =
         productFocus && products.length
           ? products.filter((product) => productMatchesFocus(product, productFocus))
@@ -1710,6 +1789,7 @@ export async function answerShopAssistant(input: {
   productContextCode?: string | null;
   contextCategorySlug?: string | null;
   recentMessages?: Array<{ role: "assistant" | "user"; text: string }>;
+  shownProductCodes?: string[];
 }): Promise<ShopAssistantReply> {
   const reply = await answerWithRealRepository(input);
   if (reply.text.trim() || reply.products?.length || input.productContextCode) return reply;

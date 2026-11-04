@@ -26,6 +26,7 @@ import {
 
 const MAX_BODY_BYTES = 128 * 1024;
 const eventIdSchema = z.string().trim().min(1).max(160).regex(/^[A-Za-z0-9._:-]+$/);
+const productCodeSchema = z.string().trim().min(1).max(64);
 
 const inputSchema = z.object({
   message: z.string().trim().max(1_200).default(""),
@@ -35,6 +36,10 @@ const inputSchema = z.object({
     role: z.enum(["assistant", "user"]),
     text: z.string().trim().max(4_000),
   })).max(6).optional(),
+  // The channel adapter supplies this only after a visual product card was
+  // delivered successfully. It lets a follow-up ask for the next page rather
+  // than repeating the same images.
+  shownProductCodes: z.array(productCodeSchema).max(3).optional(),
   // This comes only from a trusted channel adapter. The model may use it to
   // compose a single first-turn greeting, but it must never infer or change
   // the value from customer content.
@@ -71,7 +76,7 @@ const inputSchema = z.object({
 });
 
 type SuperBotReplyInput = z.infer<typeof inputSchema>;
-type CommercialInput = Pick<SuperBotReplyInput, "message" | "productContextCode" | "contextCategorySlug" | "recentMessages" | "isFirstContact"> & {
+type CommercialInput = Pick<SuperBotReplyInput, "message" | "productContextCode" | "contextCategorySlug" | "recentMessages" | "shownProductCodes" | "isFirstContact"> & {
   hasAttachments: boolean;
 };
 
@@ -188,6 +193,7 @@ function asSuperBotInput(input: SuperBotReplyInput): CommercialInput {
     productContextCode: input.productContextCode,
     contextCategorySlug: input.contextCategorySlug,
     recentMessages: input.recentMessages,
+    ...(input.shownProductCodes ? { shownProductCodes: input.shownProductCodes } : {}),
     ...(typeof input.isFirstContact === "boolean" ? { isFirstContact: input.isFirstContact } : {}),
     hasAttachments: input.hasAttachments || (input.attachmentCount ?? 0) > 0,
   };
@@ -199,6 +205,7 @@ function canonicalEventPayload(input: SuperBotReplyInput) {
     productContextCode: input.productContextCode ?? null,
     contextCategorySlug: input.contextCategorySlug ?? null,
     recentMessages: input.recentMessages ?? [],
+    shownProductCodes: input.shownProductCodes ?? [],
     isFirstContact: input.isFirstContact ?? false,
     hasAttachments: input.hasAttachments || (input.attachmentCount ?? 0) > 0,
   };
