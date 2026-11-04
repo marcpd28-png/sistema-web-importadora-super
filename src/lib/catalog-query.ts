@@ -68,10 +68,16 @@ function needsMainDevice(terms: string[]) {
 // A category is useful context, but cannot turn a stand or walkie-talkie
 // into a speaker. Explicit accessory searches remain available.
 function speakerIdentityTerm(terms: string[]) {
-  if (terms.some(term => /^(tripode|tripodes|soporte|soportes|funda|fundas|cable|cables)$/.test(term))) return undefined;
+  if (terms.some(term => /^(tripode|tripodes|soporte|soportes|funda|fundas|cable|cables|bateria|baterias|battery|batteries)$/.test(term))) return undefined;
   return terms.find(term => productTermAlternatives("parlante").includes(term));
 }
-const SPEAKER_ACCESSORIES = "tripode|tripodes|soporte|soportes|funda|fundas|cable|cables";
+const SPEAKER_ACCESSORIES = "tripode|tripodes|soporte|soportes|funda|fundas|cable|cables|bateria|baterias|battery|batteries";
+// PartyBox and soundbar are speaker product families even though their names
+// do not always contain the generic word "parlante". Keep their identity
+// narrow: an accessory merely compatible with one must not enter a speaker
+// catalog.
+const SPEAKER_VARIANTS = "partybox|soundbar";
+const SPEAKER_VARIANT_ACCESSORIES = `${SPEAKER_ACCESSORIES}|microfono|microfonos|mic`;
 
 export function matchesProductQuery(product: { name: string; code?: string; externalCode?: string | null; brand?: string | null; category?: string | null; technicalSpecs?: string | null }, query: string) {
   const terms = productQueryTerms(query);
@@ -82,9 +88,14 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
     if (!new RegExp(`\\b${measurement[1]} ${measurement[2]}\\b`).test(text)) return false;
   }
   const speaker = speakerIdentityTerm(terms);
+  let isSpeakerProduct = false;
   if (speaker) {
     const name = normalizeProductQuery(product.name).split(" para ")[0];
-    if (!new RegExp(termPattern(speaker)).test(name) || new RegExp(`(^| )(${SPEAKER_ACCESSORIES})( |$)`).test(name)) return false;
+    const explicitSpeaker = new RegExp(termPattern(speaker)).test(name);
+    const speakerVariant = new RegExp(`(^| )(${SPEAKER_VARIANTS})( |$)`).test(name);
+    const accessoryPattern = explicitSpeaker ? SPEAKER_ACCESSORIES : SPEAKER_VARIANT_ACCESSORIES;
+    if ((!explicitSpeaker && !speakerVariant) || new RegExp(`(^| )(${accessoryPattern})( |$)`).test(name)) return false;
+    isSpeakerProduct = true;
   }
   if (needsMainDevice(terms) && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
   if (needsMainDevice(terms)) {
@@ -92,7 +103,11 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
     const device = terms.find(term => ["televisor", "celular", "tablet", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
     if (!new RegExp(termPattern(device)).test(normalizeProductQuery(product.name).split(" para ")[0])) return false;
   }
-  return terms.length > 0 && terms.every(term => new RegExp(termPattern(term)).test(text));
+  return terms.length > 0 && terms.every(term =>
+    speaker && productTermAlternatives("parlante").includes(term)
+      ? isSpeakerProduct
+      : new RegExp(termPattern(term)).test(text),
+  );
 }
 
 export type CatalogIdentity = {
