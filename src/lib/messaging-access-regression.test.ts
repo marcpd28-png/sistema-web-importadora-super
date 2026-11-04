@@ -134,3 +134,17 @@ test("el layout asesor mantiene serializables las props del componente cliente",
   assert.match(mobileDock, /const advisorDestinations/);
   assert.match(mobileDock, /variant === "advisor" \? advisorDestinations : defaultDestinations/);
 });
+
+test("la navegación del asesor expone los canales de atención en escritorio y móvil", () => {
+  const advisorNav = readFileSync(new URL("../components/advisor/advisor-nav.tsx", import.meta.url), "utf8");
+  const mobileDock = readFileSync(new URL("../components/admin/admin-sidebar.tsx", import.meta.url), "utf8");
+
+  for (const channel of ["Telegram", "Messenger", "TikTok"]) {
+    assert.match(advisorNav, new RegExp(channel));
+    assert.match(mobileDock, new RegExp(channel));
+  }
+  assert.match(mobileDock, /advisorMessageDestinations/);
+  assert.match(mobileDock, /pathname\.startsWith\("\/asesor\/mensajes"\)/);
+  assert.match(mobileDock, /isMobileDestinationActive/);
+  assert.match(mobileDock, /channelHref !== href/);
+});

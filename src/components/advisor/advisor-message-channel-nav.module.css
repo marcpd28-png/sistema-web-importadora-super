@@ -1,18 +1,22 @@
 .navigation {
   align-items: center;
+  position: relative;
+  z-index: 12;
   border-bottom: 1px solid color-mix(in srgb, var(--border-color, #dbe3ef) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-strong, #ffffff) 94%, var(--primary, #2563eb) 6%);
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.05);
   display: flex;
   flex: 0 0 auto;
   gap: 12px;
-  min-height: 48px;
-  padding: 6px 14px;
+  min-height: 54px;
+  padding: 8px 14px;
 }
 
 .label {
-  color: var(--text-muted, #64748b);
+  color: var(--primary, #2563eb);
   flex: 0 0 auto;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -20,23 +24,30 @@
 .links {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
   gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+
+.links::-webkit-scrollbar { display: none; }
 
 .link {
   align-items: center;
   border: 1px solid transparent;
   border-radius: 9px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted, #475569);
   display: inline-flex;
+  flex: 0 0 auto;
   font-size: 12px;
-  font-weight: 760;
+  font-weight: 800;
   gap: 6px;
   line-height: 1;
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 12px;
   text-decoration: none;
+  white-space: nowrap;
   transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
 }
 
@@ -46,9 +57,10 @@
 }
 
 .link[data-active="true"] {
-  background: color-mix(in srgb, var(--primary, #2563eb) 13%, white);
-  border-color: color-mix(in srgb, var(--primary, #2563eb) 25%, transparent);
-  color: var(--primary, #2563eb);
+  background: var(--primary, #2563eb);
+  border-color: var(--primary, #2563eb);
+  box-shadow: 0 5px 10px color-mix(in srgb, var(--primary, #2563eb) 25%, transparent);
+  color: #ffffff;
 }
 
 .link:focus-visible {
@@ -65,11 +77,18 @@
   }
 
   .links {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
     width: 100%;
+    overflow: visible;
   }
 
   .link {
-    flex: 1 1 auto;
     justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0 6px;
+    font-size: 11px;
   }
 }

@@ -15,8 +15,8 @@ export function AdvisorMessageChannelNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Canales de atención" className={styles.navigation}>
-      <span className={styles.label}>Canales</span>
+    <nav aria-label="Cambiar canal de atención" className={styles.navigation} data-channel-switcher="advisor">
+      <span className={styles.label}>Cambiar canal</span>
       <div className={styles.links}>
         {channels.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || (href !== "/asesor/mensajes" && pathname.startsWith(`${href}/`));
