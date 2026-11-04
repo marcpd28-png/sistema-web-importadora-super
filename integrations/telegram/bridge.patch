@@ -62,6 +62,8 @@
      def raw_api(method, body):
 +        body = dict(body)
 +        inbox_request_id = body.pop('_inbox_request_id', None)
++        inbox_sender = body.pop('_inbox_sender', None)
++        inbox_protocol = body.pop('_inbox_protocol', None)
 +        automated_send = body.pop('_inbox_automated', False)
 +        explicit_send = body.pop('_inbox_explicit', False)
 +        if inbox and not inbox_request_id and not explicit_send and method.startswith('send') and body.get('business_connection_id') and inbox.paused(body['business_connection_id'], body.get('chat_id')):
@@ -74,7 +76,7 @@
          try: archive.finish(archive_key,'sent',data['result'])
          except Exception as exc: print('archive_result_failed '+type(exc).__name__,flush=True)
 +        if inbox and method.startswith('send') and body.get('business_connection_id') and isinstance(data['result'], dict):
-+            inbox.message(dict(data['result'], business_connection_id=body['business_connection_id']), 'BOT' if automated_send or not inbox_request_id else 'AGENT', local_id=inbox_request_id)
++            inbox.message(dict(data['result'], business_connection_id=body['business_connection_id']), inbox_sender or ('BOT' if automated_send or not inbox_request_id else 'AGENT'), local_id=inbox_request_id, protocol=inbox_protocol)
          return data['result']
 +    from inbox import Inbox, handle as handle_inbox
 +    inbox = Inbox('/data/store-inbox.sqlite', config, raw_api)

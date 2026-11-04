@@ -122,6 +122,8 @@ class InboxTests(unittest.TestCase):
         ids=[call[1]['_inbox_request_id'] for call in self.calls]
         self.assertEqual(len(ids),len(set(ids)))
         self.assertTrue(all(call[1]['_inbox_automated'] for call in self.calls))
+        self.assertTrue(all(call[1]['_inbox_sender'] == 'BOT' for call in self.calls))
+        self.assertTrue(all(call[1]['_inbox_protocol'] == 'super-bot-v1' for call in self.calls))
         self.assertFalse(self.inbox.super_bot_tick(self.adapter))
         self.assertEqual(len(self.calls),4)
 
