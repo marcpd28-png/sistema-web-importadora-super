@@ -2,6 +2,7 @@
 import hashlib
 import hmac
 import json
+import math
 import mimetypes
 import re
 import sqlite3
@@ -15,6 +16,8 @@ from pathlib import Path
 
 
 DEFAULT_SUPER_BOT_SILENCE_SECONDS = 3
+DEFAULT_ADVISOR_TYPING_LEASE_SECONDS = 8
+MAX_ADVISOR_TYPING_LEASE_SECONDS = 30
 MAX_SUPER_BOT_PRODUCT_IMAGES = 3
 STORE_PUBLIC_HOST = 'tiendavirtualsuper.com'
 SUPER_BOT_PROTOCOL = 'super-bot-v1'
@@ -43,18 +46,19 @@ class Inbox:
         self.db.execute('PRAGMA journal_mode=WAL')
         self.db.executescript('''
           CREATE TABLE IF NOT EXISTS inbox_events(id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE, payload TEXT, sent INTEGER DEFAULT 0);
-          CREATE TABLE IF NOT EXISTS inbox_chats(connection TEXT, chat TEXT, last_inbound REAL DEFAULT 0, paused INTEGER DEFAULT 0, revision INTEGER DEFAULT 0, PRIMARY KEY(connection,chat));
+          CREATE TABLE IF NOT EXISTS inbox_chats(connection TEXT, chat TEXT, last_inbound REAL DEFAULT 0, paused INTEGER DEFAULT 0, revision INTEGER DEFAULT 0, typing_until REAL DEFAULT 0, PRIMARY KEY(connection,chat));
           CREATE TABLE IF NOT EXISTS inbox_sends(id TEXT PRIMARY KEY, fingerprint TEXT, state TEXT, response TEXT);
           CREATE TABLE IF NOT EXISTS inbox_super_bot_replies(id TEXT PRIMARY KEY, connection TEXT NOT NULL, chat TEXT NOT NULL, content TEXT NOT NULL, source_event_id TEXT, first_contact INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL DEFAULT 'queued', error TEXT, created REAL NOT NULL, updated REAL NOT NULL);
         ''')
         # The bridge is deployed independently from the store. Keep existing
         # SQLite inboxes compatible when this batching metadata is introduced.
         # `super_bot` remains part of the explicit v1 ownership protocol.
-        try:
-            self.db.execute('ALTER TABLE inbox_chats ADD COLUMN super_bot INTEGER DEFAULT 0')
-        except sqlite3.OperationalError as error:
-            if 'duplicate column name' not in str(error).lower():
-                raise
+        for column in ('super_bot INTEGER DEFAULT 0', 'typing_until REAL DEFAULT 0'):
+            try:
+                self.db.execute('ALTER TABLE inbox_chats ADD COLUMN ' + column)
+            except sqlite3.OperationalError as error:
+                if 'duplicate column name' not in str(error).lower():
+                    raise
         for column in ('source_event_id TEXT', 'first_contact INTEGER NOT NULL DEFAULT 0'):
             try:
                 self.db.execute('ALTER TABLE inbox_super_bot_replies ADD COLUMN ' + column)
@@ -82,6 +86,27 @@ class Inbox:
             return min(30, max(0, float(value)))
         except (TypeError, ValueError):
             return DEFAULT_SUPER_BOT_SILENCE_SECONDS
+
+    def advisor_typing_lease_seconds(self, value=None):
+        """Return a deliberately short expiry for an adviser typing heartbeat."""
+        if value is None:
+            value = self.config.get('advisor_typing_lease_seconds', DEFAULT_ADVISOR_TYPING_LEASE_SECONDS)
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                return DEFAULT_ADVISOR_TYPING_LEASE_SECONDS
+            if not math.isfinite(value):
+                return DEFAULT_ADVISOR_TYPING_LEASE_SECONDS
+            return min(MAX_ADVISOR_TYPING_LEASE_SECONDS, max(1, value))
+        if isinstance(value, bool):
+            raise InboxError('La duración de escritura no es válida.')
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            raise InboxError('La duración de escritura no es válida.') from None
+        if not math.isfinite(value) or not 1 <= value <= MAX_ADVISOR_TYPING_LEASE_SECONDS:
+            raise InboxError('La duración de escritura debe estar entre 1 y 30 segundos.')
+        return value
 
     def enqueue(self, event, key=None):
         if not self.enabled: return False
@@ -265,12 +290,23 @@ class Inbox:
         with self.lock:
             rows = self.db.execute('''SELECT id,connection,chat,content,source_event_id,first_contact,created,updated
                                    FROM inbox_super_bot_replies WHERE state='queued' ORDER BY created,rowid''').fetchall()
+            typing_chats = {
+                (connection, chat)
+                for connection, chat in self.db.execute(
+                    'SELECT connection,chat FROM inbox_chats WHERE typing_until > ?', (now,)
+                ).fetchall()
+            }
             by_chat = {}
             for row in rows:
                 by_chat.setdefault((row[1], row[2]), []).append(row)
 
             candidates = []
-            for chat_rows in by_chat.values():
+            for chat_key, chat_rows in by_chat.items():
+                # Typing is an ephemeral local gate, not a human handoff.
+                # Keep rows queued so the same turn can resume when the
+                # adviser heartbeat expires; never consume or fail it here.
+                if chat_key in typing_chats:
+                    continue
                 batch = [chat_rows[0]]
                 for row in chat_rows[1:]:
                     if float(row[6]) - float(batch[-1][7]) <= silence:
@@ -294,6 +330,47 @@ class Inbox:
                 return None
             self.db.commit()
             return batch
+
+    def advisor_typing_active(self, cid, chat, now=None):
+        """Whether an authenticated adviser typing heartbeat still has time left."""
+        stamp = self.now() if now is None else now
+        with self.lock:
+            row = self.db.execute(
+                'SELECT typing_until FROM inbox_chats WHERE connection=? AND chat=?',
+                (cid, str(chat)),
+            ).fetchone()
+        try:
+            return bool(row and float(row[0] or 0) > stamp)
+        except (TypeError, ValueError):
+            return False
+
+    def set_advisor_typing(self, cid, chat, typing, seconds=None):
+        """Set or clear one local, expiring adviser typing lease.
+
+        This intentionally does not affect ``paused`` or its revision: a
+        transient typing indicator must not transfer conversation ownership.
+        """
+        expires_at = self.now() + seconds if typing else 0
+        with self.lock:
+            self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
+            self.db.execute(
+                'UPDATE inbox_chats SET typing_until=? WHERE connection=? AND chat=?',
+                (expires_at, cid, str(chat)),
+            )
+            self.db.commit()
+        return expires_at if typing else None
+
+    def requeue_super_bot_batch(self, batch):
+        """Release an un-delivered batch after a typing lease races its claim."""
+        with self.lock:
+            ids = [row[0] for row in batch]
+            placeholders = ','.join('?' for _ in ids)
+            self.db.execute(
+                f"UPDATE inbox_super_bot_replies SET state='queued',error=NULL,updated=? "
+                f"WHERE state='sending' AND id IN ({placeholders})",
+                [self.now(), *ids],
+            )
+            self.db.commit()
 
     def super_bot_request(self, batch):
         key, cid, chat = batch[0][0], batch[0][1], batch[0][2]
@@ -402,6 +479,7 @@ class Inbox:
         if not batch:
             return False
         key, cid, chat = batch[0][0], batch[0][1], batch[0][2]
+        delivery_started = False
         try:
             if not self.super_bot_enabled: raise InboxError('Super Bot no está configurado en el puente.',503)
             # Do not disclose conversation context to a model after a human
@@ -409,14 +487,27 @@ class Inbox:
             # to cover a handoff that races the model response.
             if self.paused(cid, chat) or adapter.shopping.support_session(cid, int(chat)):
                 raise InboxError('Un asesor está atendiendo esta conversación.',409)
+            # A typing lease is deliberately weaker than a handoff: do not
+            # mark the customer's turn failed, and do not ask the model until
+            # the adviser has stopped renewing this short-lived heartbeat.
+            if self.advisor_typing_active(cid, chat):
+                self.requeue_super_bot_batch(batch)
+                return False
             reply = self.normalized_super_bot_reply(self.super_bot_reply(self.super_bot_request(batch)))
             text = reply.get('text')
             document = reply.get('document')
             products = reply.get('products')
             if not isinstance(text, str) or not text.strip() or len(text) > 4000:
                 raise InboxError('Super Bot devolvió una respuesta inválida.',502)
+            # The heartbeat can arrive while the model is composing. Requeue
+            # before the first outbound message so a later retry cannot
+            # duplicate a partially delivered visual reply.
+            if self.advisor_typing_active(cid, chat):
+                self.requeue_super_bot_batch(batch)
+                return False
             for index, image in enumerate(self.product_image_messages(products), start=1):
                 try:
+                    delivery_started = True
                     self.command('send', {
                         'connectionId': cid, 'chatId': chat, 'requestId': f'{key}:image:{index}',
                         'type': 'IMAGE', 'content': image['caption'], 'mediaUrl': image['url'], 'automated': True,
@@ -430,11 +521,30 @@ class Inbox:
             payload = {'connectionId':cid,'chatId':chat,'requestId':key,'type':'TEXT','content':text,'automated':True}
             if isinstance(document, dict) and isinstance(document.get('url'),str):
                 payload.update(type='DOCUMENT',mediaUrl=document['url'])
+            delivery_started = True
             self.command('send',payload,adapter)
             state,error = 'sent',None
         except InboxError as failure:
+            # If typing began while the model was working, defer rather than
+            # permanently failing a turn that has not emitted any media/text.
+            if (
+                not delivery_started
+                and self.advisor_typing_active(cid, chat)
+                and not self.paused(cid, chat)
+                and not adapter.shopping.support_session(cid, int(chat))
+            ):
+                self.requeue_super_bot_batch(batch)
+                return False
             state,error = ('uncertain' if failure.uncertain else 'failed'),str(failure)
         except Exception:
+            if (
+                not delivery_started
+                and self.advisor_typing_active(cid, chat)
+                and not self.paused(cid, chat)
+                and not adapter.shopping.support_session(cid, int(chat))
+            ):
+                self.requeue_super_bot_batch(batch)
+                return False
             state,error = 'uncertain','No se pudo confirmar la entrega de Super Bot.'
         with self.lock:
             ids = [row[0] for row in batch]
@@ -464,10 +574,10 @@ class Inbox:
         with self.lock:
             self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
             if advance_revision:
-                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0,revision=revision+1 WHERE connection=? AND chat=?',
+                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0,revision=revision+1 WHERE connection=? AND chat=?',
                                 (bool(value),cid,str(chat)))
             else:
-                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0 WHERE connection=? AND chat=?',
+                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0 WHERE connection=? AND chat=?',
                                 (bool(value),cid,str(chat)))
             self.db.commit()
 
@@ -481,7 +591,7 @@ class Inbox:
             revision = row[0] + 1
             # `paused` keeps legacy automation quiet, while `super_bot`
             # permits only the versioned BOT sender below.
-            self.db.execute('UPDATE inbox_chats SET paused=1,super_bot=1,revision=? WHERE connection=? AND chat=?',
+            self.db.execute('UPDATE inbox_chats SET paused=1,super_bot=1,typing_until=0,revision=? WHERE connection=? AND chat=?',
                             (revision,cid,str(chat)))
             self.db.commit()
         adapter.shopping.leave_support(cid,int(chat))
@@ -511,6 +621,16 @@ class Inbox:
         with adapter.lock:
             connection = adapter.get_connection(cid)
             if not connection or not connection[1] or not connection[2]: raise InboxError('La conexión de Telegram está desactivada o sin permiso para responder.',409)
+            if action == 'typing':
+                sender, protocol = data.get('sender'), data.get('protocol')
+                if sender not in (None,'AGENT') or protocol is not None:
+                    raise InboxError('Remitente inválido.',409)
+                typing = data.get('typing')
+                if not isinstance(typing,bool):
+                    raise InboxError('Estado de escritura inválido.')
+                seconds = self.advisor_typing_lease_seconds(data.get('leaseSeconds')) if typing else None
+                expires_at = self.set_advisor_typing(cid,chat,typing,seconds)
+                return {'typing':typing,'typingUntil':expires_at}
             if action == 'control':
                 sender, protocol = data.get('sender'), data.get('protocol')
                 if sender == 'BOT':
@@ -735,7 +855,7 @@ def handle(inbox, adapter, handler):
     try:
         if handler.command=='GET' and path=='/inbox/status': handler.reply(200,inbox.status(adapter))
         elif handler.command=='GET' and path=='/inbox/media': inbox.media(handler,urllib.parse.parse_qs(urllib.parse.urlsplit(handler.path).query).get('fileId',[''])[0])
-        elif handler.command=='POST' and path in ('/inbox/send','/inbox/control'):
+        elif handler.command=='POST' and path in ('/inbox/send','/inbox/control','/inbox/typing'):
             size=int(handler.headers.get('Content-Length','0'))
             if not 1<=size<=32000: raise InboxError('Solicitud demasiado grande.',413)
             handler.connection.settimeout(40)

@@ -3,10 +3,11 @@ import os
 import sys
 import unittest
 import urllib.error
+from io import BytesIO
 from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent))
-from inbox import Inbox, InboxError
+from inbox import Inbox, InboxError, handle
 
 class Shopping:
     def support_session(self,*args): return None
@@ -193,6 +194,80 @@ class InboxTests(unittest.TestCase):
         self.assertEqual(self.calls,[])
         state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
         self.assertEqual(state,'failed')
+
+    def test_advisor_typing_lease_defers_then_auto_resumes_the_queued_reply(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        result=self.inbox.command('typing',{
+            'connectionId':'linked','chatId':'2','sender':'AGENT','typing':True,'leaseSeconds':8,
+        },self.adapter)
+        self.assertEqual(result,{'typing':True,'typingUntil':self.now+8})
+        self.assertFalse(self.inbox.paused('linked',2))
+        requests=[]
+        self.inbox.super_bot_reply=lambda request: requests.append(request) or {
+            'text':'Tengo estas opciones disponibles.', 'document':None, 'products':[],
+        }
+        self.assertFalse(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(requests,[])
+        self.assertEqual(self.calls,[])
+        self.assertEqual(self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0],'queued')
+        self.now += 8
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(len(requests),1)
+        self.assertEqual(self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0],'sent')
+
+    def test_advisor_typing_started_while_composing_requeues_before_delivery(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        def composing_reply(request):
+            self.inbox.command('typing',{
+                'connectionId':'linked','chatId':'2','sender':'AGENT','typing':True,'leaseSeconds':8,
+            },self.adapter)
+            return {'text':'Tengo estas opciones disponibles.', 'document':None, 'products':[]}
+        self.inbox.super_bot_reply=composing_reply
+        self.assertFalse(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(self.calls,[])
+        row=self.inbox.db.execute('SELECT state,error FROM inbox_super_bot_replies').fetchone()
+        self.assertEqual(row,('queued',None))
+        self.now += 8
+        self.inbox.super_bot_reply=lambda request: {'text':'Tengo estas opciones disponibles.', 'document':None, 'products':[]}
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([call[0] for call in self.calls],['sendMessage'])
+
+    def test_advisor_typing_lease_can_be_cleared_and_rejects_invalid_values(self):
+        self.inbox.command('typing',{
+            'connectionId':'linked','chatId':'2','sender':'AGENT','typing':True,'leaseSeconds':8,
+        },self.adapter)
+        self.assertTrue(self.inbox.advisor_typing_active('linked',2))
+        self.assertEqual(self.inbox.command('typing',{
+            'connectionId':'linked','chatId':'2','sender':'AGENT','typing':False,
+        },self.adapter),{'typing':False,'typingUntil':None})
+        self.assertFalse(self.inbox.advisor_typing_active('linked',2))
+        for invalid in ('yes',0,31,True,float('nan')):
+            with self.assertRaises(InboxError):
+                self.inbox.command('typing',{
+                    'connectionId':'linked','chatId':'2','sender':'AGENT','typing':True,'leaseSeconds':invalid,
+                },self.adapter)
+        with self.assertRaises(InboxError):
+            self.inbox.command('typing',{
+                'connectionId':'linked','chatId':'2','sender':'BOT','typing':True,'leaseSeconds':8,
+            },self.adapter)
+
+    def test_authenticated_typing_endpoint_uses_the_typing_until_contract(self):
+        body=json.dumps({
+            'connectionId':'linked','chatId':'2','sender':'AGENT','typing':True,'leaseSeconds':8,
+        }).encode()
+        class Connection:
+            def settimeout(self, value): self.timeout=value
+        class Handler:
+            command='POST'
+            path='/inbox/typing'
+            headers={'Authorization':'Bearer '+'x'*40,'Content-Length':str(len(body))}
+            rfile=BytesIO(body)
+            connection=Connection()
+            def __init__(self): self.responses=[]
+            def reply(self, status, payload): self.responses.append((status,payload))
+        handler=Handler()
+        self.assertTrue(handle(self.inbox,self.adapter,handler))
+        self.assertEqual(handler.responses,[(200,{'typing':True,'typingUntil':self.now+8})])
 
     def test_super_bot_preserves_catalog_pdf_delivery(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
