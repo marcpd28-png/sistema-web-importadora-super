@@ -2,6 +2,8 @@ import json
 import os
 import sys
 import unittest
+import urllib.error
+from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent))
 from inbox import Inbox, InboxError
@@ -24,7 +26,7 @@ class InboxTests(unittest.TestCase):
         self.now=200000
         def send(method,body):
             self.calls.append((method,body)); return {'message_id':33}
-        self.inbox=Inbox(':memory:',{'inbox_secret':'x'*40,'inbox_url':'https://example.test'},send,now=lambda:self.now)
+        self.inbox=Inbox(':memory:',{'inbox_secret':'x'*40,'inbox_url':'https://example.test','super_bot_silence_seconds':0},send,now=lambda:self.now)
         self.adapter=Adapter()
         self.message={'message_id':7,'business_connection_id':'linked','chat':{'id':2,'type':'private'},'from':{'id':2,'first_name':'Cliente'},'date':self.now,'text':'Hola'}
         self.inbox.observe({'update_id':11,'business_message':self.message},self.adapter)
@@ -48,6 +50,149 @@ class InboxTests(unittest.TestCase):
         self.assertTrue(self.calls[0][1]['_inbox_automated']); self.assertFalse(self.inbox.paused('linked',2))
         state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
         self.assertEqual(state,'sent')
+
+    def test_super_bot_waits_for_silence_and_batches_consecutive_customer_messages(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key',super_bot_silence_seconds=3)
+        self.now += 1
+        second=dict(self.message,message_id=8,date=self.now,text='Necesito un parlante')
+        self.inbox.observe({'update_id':12,'business_message':second},self.adapter)
+        # Repeated provider delivery must not append the same fragment twice.
+        self.inbox.observe({'update_id':12,'business_message':second},self.adapter)
+        requests=[]
+        def reply(request):
+            requests.append(request)
+            return {'text':'Te comparto opciones.', 'document':None, 'products':[]}
+        self.inbox.super_bot_reply=reply
+        self.assertFalse(self.inbox.super_bot_tick(self.adapter))
+        self.now += 3
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(len(requests),1)
+        request=requests[0]
+        self.assertEqual(request['message'],'Hola\nNecesito un parlante')
+        self.assertEqual(request['channel'],'telegram')
+        self.assertTrue(request['eventId'].startswith('tgbot:'))
+        self.assertEqual(request['conversationId'],'telegram:linked:2')
+        self.assertEqual(request['recentMessages'],[])
+        self.assertTrue(request['isFirstContact'])
+        self.assertEqual([call[0] for call in self.calls],['sendMessage'])
+        states=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies ORDER BY created,id').fetchall()
+        self.assertEqual(states,[('sent',),('sent',)])
+
+    def test_super_bot_sends_recent_history_and_marks_later_contact(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {'text':'Primera respuesta', 'document':None, 'products':[]}
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        bot_message=dict(self.message,message_id=70,text='Primera respuesta',**{'from':{'id':1}})
+        self.inbox.message(bot_message,'BOT',event_key='bot:70')
+        self.now += 1
+        next_message=dict(self.message,message_id=8,date=self.now,text='¿Tienes otro modelo?')
+        self.inbox.observe({'update_id':12,'business_message':next_message},self.adapter)
+        requests=[]
+        def reply(request):
+            requests.append(request)
+            return {'text':'Sí, reviso otras opciones.', 'document':None, 'products':[]}
+        self.inbox.super_bot_reply=reply
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertFalse(requests[0]['isFirstContact'])
+        self.assertEqual(requests[0]['recentMessages'],[
+            {'role':'user','text':'Hola'},
+            {'role':'assistant','text':'Primera respuesta'},
+        ])
+
+    def test_super_bot_sends_up_to_three_verified_store_images_before_text(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Estas son las opciones disponibles.', 'document':None,
+            'products':[
+                {'name':'Producto uno','code':'UNO-1','imageUrl':'/uploads/products/uno.webp','outboundImageUrl':'https://tiendavirtualsuper.com/uploads/products/uno.jpg'},
+                {'name':'Producto externo','code':'EXT-1','imageUrl':'https://example.test/no.jpg'},
+                {'name':'Producto dos','code':'DOS-2','imageUrl':'https://tiendavirtualsuper.com/uploads/products/dos.jpg'},
+                {'name':'Producto tres','code':'TRES-3','outboundImageUrl':'https://tiendavirtualsuper.com/uploads/products/tres.png'},
+                {'name':'Producto cuatro','code':'CUATRO-4','imageUrl':'/uploads/products/cuatro.jpg'},
+            ],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([call[0] for call in self.calls],['sendPhoto','sendPhoto','sendPhoto','sendMessage'])
+        photos=[call[1]['photo'] for call in self.calls[:3]]
+        self.assertEqual(photos,[
+            'https://tiendavirtualsuper.com/uploads/products/uno.jpg',
+            'https://tiendavirtualsuper.com/uploads/products/dos.jpg',
+            'https://tiendavirtualsuper.com/uploads/products/tres.png',
+        ])
+        ids=[call[1]['_inbox_request_id'] for call in self.calls]
+        self.assertEqual(len(ids),len(set(ids)))
+        self.assertTrue(all(call[1]['_inbox_automated'] for call in self.calls))
+        self.assertFalse(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(len(self.calls),4)
+
+    def test_rejected_product_photo_does_not_block_the_text_reply(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        attempts=[]
+        def send(method,body):
+            attempts.append((method,body))
+            if method == 'sendPhoto':
+                raise urllib.error.HTTPError('https://api.telegram.org',400,'unsupported photo',{},None)
+            self.calls.append((method,body))
+            return {'message_id':33}
+        self.inbox.raw_api=send
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Te comparto la información solicitada.', 'document':None,
+            'products':[
+                {'name':'URL malformada','code':'BAD-1','imageUrl':'https://tiendavirtualsuper.com:invalid/uploads/products/no.jpg'},
+                {'name':'Producto','code':'P-1','imageUrl':'/uploads/products/compatible.jpg'},
+            ],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual([method for method,_ in attempts],['sendPhoto','sendMessage'])
+        self.assertEqual([call[0] for call in self.calls],['sendMessage'])
+        state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
+        self.assertEqual(state,'sent')
+
+    def test_human_pause_blocks_a_batched_reply_before_model_or_media(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.set_paused('linked',2,True)
+        requested=[]
+        self.inbox.super_bot_reply=lambda request: requested.append(request) or {
+            'text':'No debe enviarse.', 'document':None,
+            'products':[{'name':'Producto','code':'P-1','imageUrl':'/uploads/products/compatible.jpg'}],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(requested,[])
+        self.assertEqual(self.calls,[])
+        state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
+        self.assertEqual(state,'failed')
+
+    def test_super_bot_preserves_catalog_pdf_delivery(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Aquí tienes el catálogo.',
+            'document':{'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes.pdf'},
+            'products':[],
+        }
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(self.calls[0][0],'sendDocument')
+        self.assertEqual(self.calls[0][1]['document'],'https://tiendavirtualsuper.com/uploads/catalogs/catalogo-parlantes.pdf')
+
+    def test_super_bot_http_reply_reads_the_response_once(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        class Response:
+            def __init__(self): self.reads=0
+            def __enter__(self): return self
+            def __exit__(self,*args): return False
+            def read(self):
+                self.reads += 1
+                if self.reads > 1: raise AssertionError('response body read twice')
+                return b'{"reply":{"text":"Respuesta corta","products":[]}}'
+        response=Response()
+        with patch('inbox.urllib.request.urlopen',return_value=response) as urlopen:
+            reply=self.inbox.super_bot_reply({
+                'message':'Hola','channel':'telegram','eventId':'tgbot:test',
+                'conversationId':'telegram:linked:2','recentMessages':[],'isFirstContact':True,
+            })
+        payload=json.loads(urlopen.call_args.args[0].data.decode())
+        self.assertEqual(response.reads,1)
+        self.assertEqual(payload['isFirstContact'],True)
+        self.assertEqual(reply['text'],'Respuesta corta')
     def test_missing_super_bot_configuration_never_falls_back_to_legacy(self):
         self.assertTrue(self.inbox.super_bot_tick(self.adapter))
         self.assertFalse(self.calls)
@@ -113,7 +258,7 @@ class AdapterIntegration(unittest.TestCase):
         def api(method,body):calls.append((method,body));return {'message_id':100+len(calls)}
         adapter=RealAdapter(':memory:',api,lambda update:None,now=lambda:now)
         adapter.connection({'id':'linked','user':{'id':1,'username':'superimportaciones'},'is_enabled':True,'rights':{'can_reply':True}})
-        inbox=Inbox(':memory:',{'inbox_secret':'x'*40,'inbox_url':'https://example.test'},api,now=lambda:now)
+        inbox=Inbox(':memory:',{'inbox_secret':'x'*40,'inbox_url':'https://example.test','super_bot_silence_seconds':0},api,now=lambda:now)
         adapter.inbox=inbox
         m={'message_id':10,'business_connection_id':'linked','chat':{'id':2,'type':'private'},'from':{'id':2},'date':now,'text':'hola'}
         adapter.process({'update_id':1,'business_message':m})

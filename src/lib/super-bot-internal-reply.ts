@@ -35,6 +35,10 @@ const inputSchema = z.object({
     role: z.enum(["assistant", "user"]),
     text: z.string().trim().max(4_000),
   })).max(6).optional(),
+  // This comes only from a trusted channel adapter. The model may use it to
+  // compose a single first-turn greeting, but it must never infer or change
+  // the value from customer content.
+  isFirstContact: z.boolean().optional(),
   // Transport fields are optional while adapters migrate. Only attachment
   // presence reaches Super Bot, solely to request a human review; it never
   // becomes a commercial fact or model instruction.
@@ -67,7 +71,7 @@ const inputSchema = z.object({
 });
 
 type SuperBotReplyInput = z.infer<typeof inputSchema>;
-type CommercialInput = Pick<SuperBotReplyInput, "message" | "productContextCode" | "contextCategorySlug" | "recentMessages"> & {
+type CommercialInput = Pick<SuperBotReplyInput, "message" | "productContextCode" | "contextCategorySlug" | "recentMessages" | "isFirstContact"> & {
   hasAttachments: boolean;
 };
 
@@ -184,6 +188,7 @@ function asSuperBotInput(input: SuperBotReplyInput): CommercialInput {
     productContextCode: input.productContextCode,
     contextCategorySlug: input.contextCategorySlug,
     recentMessages: input.recentMessages,
+    ...(typeof input.isFirstContact === "boolean" ? { isFirstContact: input.isFirstContact } : {}),
     hasAttachments: input.hasAttachments || (input.attachmentCount ?? 0) > 0,
   };
 }
@@ -194,6 +199,7 @@ function canonicalEventPayload(input: SuperBotReplyInput) {
     productContextCode: input.productContextCode ?? null,
     contextCategorySlug: input.contextCategorySlug ?? null,
     recentMessages: input.recentMessages ?? [],
+    isFirstContact: input.isFirstContact ?? false,
     hasAttachments: input.hasAttachments || (input.attachmentCount ?? 0) > 0,
   };
 }

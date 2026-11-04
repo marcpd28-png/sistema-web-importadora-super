@@ -83,6 +83,24 @@ test("an event identifier requires its stable provider scope", async () => {
   assert.deepEqual(await response.json(), { error: "Invalid request payload" });
 });
 
+test("a trusted first-contact marker reaches the commercial responder", async () => {
+  const captured: Record<string, unknown> = {};
+  const post = handler({ capturedInput: captured });
+
+  const response = await post(request({
+    message: "hola, busco un parlante",
+    eventId: "telegram-first-turn",
+    channel: "telegram",
+    conversationId: "telegram:business:customer",
+    isFirstContact: true,
+    recentMessages: [{ role: "user", text: "hola" }],
+  }));
+
+  assert.equal(response.status, 200);
+  assert.equal(captured.isFirstContact, true);
+  assert.deepEqual(captured.recentMessages, [{ role: "user", text: "hola" }]);
+});
+
 test("a paused or unavailable switch never invokes the commercial responder", async () => {
   let calls = 0;
   const paused = handler({ automation: "paused", answer: async () => { calls++; return reply; } });

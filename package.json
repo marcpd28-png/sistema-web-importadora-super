@@ -9,7 +9,7 @@
     "start": "prisma migrate deploy && node prisma/start-production.mjs",
     "start:web": "node prisma/start-web.mjs",
     "lint": "eslint .",
-    "test:assistant": "node --import tsx --test src/lib/shop-assistant.test.ts src/lib/super-bot.test.ts",
+    "test:assistant": "SUPER_BOT_LIVE_AI_ENABLED=false node --import tsx --test src/lib/shop-assistant.test.ts src/lib/super-bot.test.ts src/lib/super-bot-live-ai.test.ts",
     "test:catalog-sync": "node --import tsx --test src/lib/product-image-storage.test.ts src/components/catalog/cart-store.test.ts",
     "postinstall": "prisma generate && node scripts/prepare-pdf-viewer.mjs",
     "prebuild": "node scripts/prepare-pdf-viewer.mjs",
