@@ -376,6 +376,42 @@ test("encuentra repetidores WiFi aunque el cliente escriba la consulta con error
   assert.equal(reply.products?.[0].code, "NET-300");
 });
 
+test("devuelve una opción verificada de power bank para cargador portátil de 20 whats", async () => {
+  const o864: AssistantProductRecord = {
+    ...products[0],
+    id: "o864",
+    slug: "o864-ugreen-20w-power-bank",
+    code: "O864",
+    name: "UGREEN 20W TWO-WAY FAST CHARGING POWER BANK PURPLE PB312 65590B",
+    description: "Batería externa UGREEN.",
+    technicalSpecs: "Tipo de producto: Batería externa. Potencia: 20 W.",
+    category: "Baterías",
+    categoryId: null,
+    sourceImageUrl: "https://tiendavirtualsuper.com/uploads/products/erp-o864-a9bcf84ff152.webp",
+    unitPrice: 119,
+    stockUnits: 4,
+  };
+  const wallCharger: AssistantProductRecord = {
+    ...o864,
+    id: "wall-charger-20w",
+    code: "WALL-20",
+    name: "Cargador USB de pared 20 W",
+    description: "Cargador de pared.",
+    technicalSpecs: "Potencia: 20 W.",
+  };
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return [o864, wallCharger].filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({ message: "hola vi un cargador portail de 20 whats precio" });
+
+  assert.equal(reply.products?.[0]?.code, "O864");
+  assert.equal(reply.products?.[0]?.outboundImageUrl, o864.sourceImageUrl);
+  assert.ok(!reply.products?.some((product) => product.code === "WALL-20"));
+});
+
 test("no responde aunque una consulta sin resultados tenga una posible corrección", async () => {
   const reply = await answerShopAssistant({
     message: "busco mause gamer",

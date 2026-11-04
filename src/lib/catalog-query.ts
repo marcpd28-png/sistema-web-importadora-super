@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 
-const FILLER = new Set(`a al algo alguna alguno algun busco busca buscando como con cual cuanto cuesta cuestan de del el en es esta estan este esto hay habra habran la las los me mi para por precio precios producto productos opcion opciones q que quiero quisiera deseo necesito saber consultar consulta informacion sobre un una unos unas ver tiene tienen tienes tendra tendran favor porfavor xfavor hola ola buenos buenas buen dia dias tardes noches muy gracias saludo saludos puede puedes pueden podria podrias podria dar darme brindar brindarme enviar enviarme mandame mandar pasame pasar mostrar mostrarme muestrame su sus tu ustedes catalogo catalogos catalog catalogo completo general virtual tienda web online pagina link enlace donde acceder entrar stock disponible disponibles disponibilidad costo vale vale cuanto estan ustedes estimado estimada amigo amiga porfa porfis electrico electrica electricos electricas`.split(/\s+/));
+const FILLER = new Set(`a al algo alguna alguno algun busco busca buscando como con cual cuanto cuesta cuestan de del el en es esta estan este esto hay habra habran la las los me mi para por precio precios producto productos opcion opciones q que quiero quisiera deseo necesito saber consultar consulta informacion sobre un una unos unas ver vi tiene tienen tienes tendra tendran favor porfavor xfavor hola ola buenos buenas buen dia dias tardes noches muy gracias saludo saludos puede puedes pueden podria podrias podria dar darme brindar brindarme enviar enviarme mandame mandar pasame pasar mostrar mostrarme muestrame su sus tu ustedes catalogo catalogos catalog catalogo completo general virtual tienda web online pagina link enlace donde acceder entrar stock disponible disponibles disponibilidad costo vale vale cuanto estan ustedes estimado estimada amigo amiga porfa porfis electrico electrica electricos electricas`.split(/\s+/));
 const GROUPS = [
   ["televisor", "televisores", "television", "televisiones", "tv", "tvs"],
   ["celular", "celulares", "telefono", "telefonos", "smartphone", "smartphones"],
@@ -31,6 +31,13 @@ const MEASUREMENT_UNIT_SET = new Set<string>(MEASUREMENT_UNITS);
 
 export function normalizeProductQuery(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    // Keep the portable-charger family precise: this only canonicalizes the
+    // complete phrases, so an ordinary wall charger is never treated as a
+    // power bank.
+    .replace(/\b(?:power\s*bank(?:s)?|cargador(?:es)?\s+porta(?:til|il)(?:es)?|bateria(?:s)?\s+(?:externa(?:s)?|porta(?:til|il)(?:es)?))\b/g, "powerbank")
+    // Customers commonly type "whats" for watts. Keep wattage attached to
+    // its number so both "20 whats" and catalog values such as "20 W" match.
+    .replace(/(\d+(?:[.,]\d+)?)\s*(?:watts?|whats?|w)\b/g, "$1w")
     .replace(/(\d+(?:[.,]\d+)?)\s*(?:["″]|pulg(?:adas?)?\b|inch(?:es)?\b)/g, "$1 pulgadas ")
     .replace(/(\d+(?:[.,]\d+)?)\s*(gb|tb|mb|mah|hz|mm|cm|kg)\b/g, "$1 $2")
     .replace(/range extender/g, "extensor").replace(/wi[ -]fi/g, "wifi").replace(/[^a-z0-9]+/g, " ").trim();

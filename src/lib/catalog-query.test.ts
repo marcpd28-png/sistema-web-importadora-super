@@ -14,6 +14,21 @@ test("informal greetings do not become product constraints", () => {
   assert.deepEqual(productQueryTerms("muy buen día habrá TV"), ["tv"]);
   assert.deepEqual(productQueryTerms("Buenas tardes quisiera saber cuánto está el extensor de pantalla"), ["extensor", "pantalla"]);
 });
+
+test("resuelve cargador portátil y la errata watts como power bank sin incluir cargadores de pared", () => {
+  const query = "hola vi un cargador portail de 20 whats precio";
+  const o864 = {
+    code: "O864",
+    name: "UGREEN 20W TWO-WAY FAST CHARGING POWER BANK PURPLE PB312 65590B",
+    technicalSpecs: "Tipo de producto: Batería externa. Potencia: 20 W.",
+  };
+
+  assert.deepEqual(productQueryTerms(query), ["powerbank", "20w"]);
+  assert.equal(matchesProductQuery(o864, query), true);
+  assert.equal(matchesProductQuery({ name: "Cargador USB de pared 20 W" }, query), false);
+  assert.equal(matchesProductQuery({ name: "Power Bank 30 W" }, query), false);
+});
+
 test("TV, celular and category plurals resolve without losing model numbers", () => {
   assert.equal(matchesProductQuery({ name: "TELEVISOR SMART 43 PULGADAS" }, "tv 43"), true);
   assert.equal(matchesProductQuery({ name: "TELEVISOR SMART 32 PULGADAS" }, "tv 43"), false);
