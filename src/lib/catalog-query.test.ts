@@ -66,6 +66,9 @@ test("speaker catalogs require speaker identity, not an accessory category", () 
   assert.equal(matchesProductQuery({ name: "TRIPODE PARA PARLANTE" }, "tripode parlante"), true);
   assert.equal(matchesProductQuery({ name: "PARLANTE CON MICROFONO KARAOKE" }, "parlantes"), true);
   assert.equal(matchesProductQuery({ name: "MICROFONO + PARLANTE KARAOKE" }, "parlantes"), true);
+  assert.equal(matchesProductQuery({ code: "O891", name: "JBL PARTYBOX ENCORE ESSENTIAL 2", brand: "JBL" }, "parlantes jbl"), true);
+  assert.equal(matchesProductQuery({ code: "O529", name: "SOUNDBAR JBL SB180", brand: "JBL" }, "parlantes jbl"), true);
+  assert.equal(matchesProductQuery({ code: "O362", name: "JBL BATTERY 200 - COMPATIBLE PARTYBOX CLUB 120", brand: "JBL", category: "PARLANTES" }, "parlantes jbl"), false);
 });
 
 const identities = ["LICUADORA", "VENTILADOR", "IMPRESORA", "HERVIDOR", "MAQUINA DE HIELO", "MAQUINA CORTADORA DE CABELLO"].map((name, i) => ({
