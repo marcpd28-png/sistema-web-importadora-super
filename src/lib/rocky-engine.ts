@@ -18,7 +18,7 @@ Encontrarás *14 catálogos en PDF* con nuestros productos. 😉
 📸 Si ya viste un producto, *envíame la foto, nombre o modelo* y un asesor te ayudará con la información.
 🚚 Hacemos *envíos a Lima y a todo el Perú*.
 📍 También puedes visitarnos en *Av. Abancay 752, Cercado de Lima*.
-🕐 Atendemos *todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos*.
+🕐 Atendemos *de lunes a sábado de 8:00 a. m. a 7:00 p. m.*.
 Para atenderte más rápido, indícame:
 *📍 ¿Es para Lima o provincia?*
 *📦 ¿Deseas comprar por unidad o por mayor?*
@@ -26,9 +26,9 @@ Si deseas hablar con una persona, escribe *“solicito asesor”* y te derivamos
 const LIMA_DELIVERY_MESSAGE = "¡Claro! Para coordinar tu delivery en Lima, indícame por favor el distrito y la dirección exacta de entrega.";
 const ADVISOR_MESSAGE = "¡Claro! Te derivé con un asesor. Te atenderemos por este mismo chat lo antes posible.";
 const PRODUCT_PROMPT_MESSAGE = "¡Hola! Puedo compartirte nuestros catálogos, enlaces, horarios y medios de pago. Para precios, disponibilidad o detalles de productos, te atiende un asesor.";
-const LOCATION_MESSAGE = "Nuestra tienda está en Av. Abancay 752, Cercado de Lima. Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
+const LOCATION_MESSAGE = "Nuestra tienda está en Av. Abancay 752, Cercado de Lima. Atendemos de lunes a sábado de 8:00 a. m. a 7:00 p. m.. Ubicación: https://www.google.com/maps/search/?api=1&query=Avenida+Abancay+752%2C+Centro+de+Lima";
 const SHIPPING_MESSAGE = "Hacemos envíos por Shalom a todo el Perú. En Lima también coordinamos delivery por inDrive; indícanos tu distrito y dirección para ayudarte.";
-const HOURS_MESSAGE = "Atendemos todos los días de 8:00 a. m. a 8:00 p. m., incluidos domingos.";
+const HOURS_MESSAGE = "Atendemos de lunes a sábado de 8:00 a. m. a 7:00 p. m..";
 const GENERAL_CATALOG_MESSAGE = "📚 Nuestros catálogos en PDF: https://mc.ht/s/rwQ7BMz\n🛍️ Tienda virtual: https://tiendavirtualsuper.com\nPuedes pedirme un catálogo por categoría. Un asesor te ayudará con precios, disponibilidad y detalles de productos.";
 const WEB_CATALOG_MESSAGE = "Para recibir un catálogo PDF actualizado y completo, escríbenos por WhatsApp con “catálogo general” o una categoría, por ejemplo “catálogo de drones”.";
 const PAYMENT_NOTICE_URL = buildPublicUrl("/uploads/communications/metodos-pago-importaciones-super-20260929-v2.jpeg");

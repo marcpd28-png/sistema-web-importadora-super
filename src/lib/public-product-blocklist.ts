@@ -1,4 +1,4 @@
-export const BLOCKED_PUBLIC_PRODUCT_CODES = ["N00"];
+export const BLOCKED_PUBLIC_PRODUCT_CODES = ["N00", "COMISION"];
 const BLOCKED_PUBLIC_PRODUCT_CODES_SET = new Set(BLOCKED_PUBLIC_PRODUCT_CODES);
 
 function normalizeBlockedProductCode(value: string | null | undefined) {

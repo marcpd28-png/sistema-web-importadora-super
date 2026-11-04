@@ -1,14 +1,17 @@
+import { REVIEWED_STOREFRONT_CATEGORIES } from "./storefront-category-review";
 import { getPublicProductName } from "@/lib/product-name";
 
 // Commercial navigation is independent of ERP category labels and synchronization.
 export const STOREFRONT_FAMILIES = [
-  ["audio", "Audio"], ["moviles", "Celulares y tablets"],
-  ["carga", "Cargadores y accesorios"], ["relojes", "Relojes inteligentes"],
+  ["audio", "Audio"], ["moviles", "Celulares, tablets y dispositivos"],
+  ["carga", "Cargadores y accesorios"], ["relojes", "Relojes y accesorios"],
   ["computacion", "Computación"], ["tv-videojuegos", "TV, proyectores y videojuegos"],
   ["foto-video", "Drones, foto y video"], ["hogar", "Hogar y cocina"],
-  ["seguridad", "Hogar inteligente y seguridad"], ["auto", "Autos y motos"],
+  ["seguridad", "Hogar inteligente y seguridad"], ["auto", "Autos, motos y movilidad"],
   ["cuidado", "Cuidado personal"], ["juguetes-escolares", "Juguetes y escolares"],
   ["bolsos", "Bolsos y accesorios"], ["intimo", "Bienestar íntimo"],
+  ["deporte-ropa", "Deporte y ropa"],
+  ["combos-ofertas", "Combos y ofertas"],
 ] as const;
 
 export const STOREFRONT_CATEGORIES = [
@@ -36,6 +39,26 @@ export const STOREFRONT_CATEGORIES = [
   ["cuidado-personal", "Masajeadores y cuidado personal", "cuidado"],
   ["juguetes", "Juguetes", "juguetes-escolares"], ["escolares", "Útiles escolares", "juguetes-escolares"],
   ["bolsos", "Mochilas, carteras y bolsos", "bolsos"], ["bienestar-intimo", "Bienestar íntimo", "intimo"],
+  ["mezcladoras-audio", "Mezcladoras e interfaces de audio", "audio"],
+  ["accesorios-audio", "Accesorios y repuestos de audio", "audio"],
+  ["reproductores-audio", "Reproductores de CD y cassette", "audio"],
+  ["lentes-inteligentes", "Lentes inteligentes y con cámara", "moviles"],
+  ["traductores", "Traductores electrónicos", "moviles"],
+  ["protectores-celular", "Fundas y protección para celular", "carga"],
+  ["relojes-convencionales", "Relojes de pulsera", "relojes"],
+  ["computadoras", "Computadoras y mini PC", "computacion"],
+  ["impresoras", "Impresoras", "computacion"],
+  ["climatizacion", "Ventiladores y climatización", "hogar"],
+  ["planchado", "Planchas, lavado y cuidado de prendas", "hogar"],
+  ["mascotas", "Productos para mascotas", "hogar"],
+  ["alarmas-sensores", "Alarmas y sensores", "seguridad"],
+  ["cerraduras", "Cerraduras y candados inteligentes", "seguridad"],
+  ["localizadores", "Localizadores de objetos", "seguridad"],
+  ["movilidad-electrica", "Scooters y bicicletas eléctricas", "auto"],
+  ["deporte", "Deporte y ejercicio", "deporte-ropa"],
+  ["ropa", "Ropa y protección contra lluvia", "deporte-ropa"],
+  ["combos", "Combos de productos", "combos-ofertas"],
+  ["lotes-oferta", "Lotes surtidos en oferta", "combos-ofertas"],
   ["otros", "Más productos", "hogar"],
 ] as const;
 
@@ -73,6 +96,8 @@ export function getCuratedRelatedProductCodes(categorySlug: string): readonly st
 
 type Classifiable = { code: string; name: string; category?: string | null };
 export function getStorefrontCategorySlug(product: Classifiable): string {
+  const reviewed = REVIEWED_STOREFRONT_CATEGORIES[product.code.trim().toUpperCase()];
+  if (reviewed && normalizeCatalogText(product.name) === normalizeCatalogText(reviewed[0])) return reviewed[1];
   const override = OVERRIDES[product.code.trim().toUpperCase()];
   if (override) return override;
   const name = normalizeCatalogText(getPublicProductName(product.name));
