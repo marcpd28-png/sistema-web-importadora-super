@@ -12,12 +12,16 @@ class Shopping:
     def support_session(self,*args): return None
     def pause(self,*args): pass
     def leave_support(self,*args): pass
+class Database:
+    def commit(self): pass
+    def execute(self,*args): return self
+    def fetchone(self): return (1,)
 class Adapter:
     def __init__(self):
         import threading
         self.lock=threading.Lock()
         self.shopping=Shopping()
-        self.db=type('DB',(),{'commit':lambda self:None})()
+        self.db=Database()
     def get_connection(self,cid): return (1,1,1) if cid=='linked' else None
 
 class InboxTests(unittest.TestCase):
@@ -200,6 +204,42 @@ class InboxTests(unittest.TestCase):
         self.assertFalse(self.calls)
         row=self.inbox.db.execute('SELECT state,error FROM inbox_super_bot_replies').fetchone()
         self.assertEqual(row[0],'failed'); self.assertIn('Super Bot',row[1])
+    def test_status_keeps_the_versioned_super_bot_capability(self):
+        status=self.inbox.status(self.adapter)
+        self.assertTrue(status['connected'])
+        self.assertEqual(status['capabilities'],{'superBotSendV1':True,'superBotControlV1':True})
+    def test_versioned_super_bot_control_and_send_are_idempotent(self):
+        control=self.inbox.command('control',{
+            'connectionId':'linked','chatId':'2','botEnabled':False,'expectedRevision':0,
+            'sender':'BOT','protocol':'super-bot-v1',
+        },self.adapter)
+        self.assertEqual(control,{'revision':1,'sender':'BOT','protocol':'super-bot-v1'})
+        self.assertTrue(self.inbox.super_bot_claimed('linked',2))
+        request={
+            'connectionId':'linked','chatId':'2','requestId':'ai:verified-reply','type':'TEXT',
+            'content':'Respuesta de Super Bot','sender':'BOT','protocol':'super-bot-v1',
+        }
+        result=self.inbox.command('send',request,self.adapter)
+        self.assertEqual(result,{'messageId':33,'revision':1,'sender':'BOT','protocol':'super-bot-v1'})
+        self.assertEqual(self.inbox.command('send',request,self.adapter),result)
+        self.assertEqual(len(self.calls),1)
+        self.assertEqual(self.calls[0][1]['_inbox_sender'],'BOT')
+        self.assertEqual(self.calls[0][1]['_inbox_protocol'],'super-bot-v1')
+    def test_versioned_super_bot_refuses_stale_or_unclaimed_delivery(self):
+        self.inbox.set_paused('linked',2,True,advance_revision=True)
+        with self.assertRaises(InboxError) as stale:
+            self.inbox.command('control',{
+                'connectionId':'linked','chatId':'2','botEnabled':False,'expectedRevision':0,
+                'sender':'BOT','protocol':'super-bot-v1',
+            },self.adapter)
+        self.assertEqual(stale.exception.status,409)
+        with self.assertRaises(InboxError) as unclaimed:
+            self.inbox.command('send',{
+                'connectionId':'linked','chatId':'2','requestId':'ai:unclaimed','type':'TEXT',
+                'content':'No debe salir','sender':'BOT','protocol':'super-bot-v1',
+            },self.adapter)
+        self.assertEqual(unclaimed.exception.status,409)
+        self.assertFalse(self.calls)
     def test_customer_edits_are_claimed_without_queuing_a_second_reply(self):
         claimed=self.inbox.observe({'update_id':12,'edited_business_message':dict(self.message,text='Hola de nuevo')},self.adapter)
         self.assertTrue(claimed)

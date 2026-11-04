@@ -16,6 +16,7 @@ from pathlib import Path
 DEFAULT_SUPER_BOT_SILENCE_SECONDS = 3
 MAX_SUPER_BOT_PRODUCT_IMAGES = 3
 STORE_PUBLIC_HOST = 'tiendavirtualsuper.com'
+SUPER_BOT_PROTOCOL = 'super-bot-v1'
 # Telegram may reject the optimized WebP files used by the storefront when
 # they are passed to sendPhoto as a URL. Restrict automatic photos to broadly
 # compatible source formats; a rejected photo is still handled defensively.
@@ -45,6 +46,12 @@ class Inbox:
         ''')
         # The bridge is deployed independently from the store. Keep existing
         # SQLite inboxes compatible when this batching metadata is introduced.
+        # `super_bot` remains part of the explicit v1 ownership protocol.
+        try:
+            self.db.execute('ALTER TABLE inbox_chats ADD COLUMN super_bot INTEGER DEFAULT 0')
+        except sqlite3.OperationalError as error:
+            if 'duplicate column name' not in str(error).lower():
+                raise
         for column in ('source_event_id TEXT', 'first_contact INTEGER NOT NULL DEFAULT 0'):
             try:
                 self.db.execute('ALTER TABLE inbox_super_bot_replies ADD COLUMN ' + column)
@@ -82,7 +89,7 @@ class Inbox:
             self.db.commit()
             return inserted
 
-    def message(self, m, sender, kind='message', local_id=None, event_key=None):
+    def message(self, m, sender, kind='message', local_id=None, event_key=None, protocol=None):
         cid, chat = m.get('business_connection_id'), m.get('chat', {}).get('id')
         if not cid or not chat or not m.get('message_id'): return
         person = m.get('from', {}) if sender == 'CUSTOMER' else m.get('chat', {})
@@ -100,6 +107,7 @@ class Inbox:
             break
         if not event['content']: event['content'] = '[Mensaje de Telegram]'
         if local_id: event['localMessageId'] = local_id
+        if protocol: event['protocol'] = protocol
         if m.get('reply_to_message'): event['replyToMessageId'] = m['reply_to_message']['message_id']
         return self.enqueue(event, event_key)
 
@@ -150,7 +158,8 @@ class Inbox:
             # the legacy business bot after this adapter takes ownership.
             return True
         elif kind == 'message' and role == 'AGENT':
-            self.set_paused(cid, chat, True)
+            # A human reply invalidates an optimistic v1 BOT ownership claim.
+            self.set_paused(cid, chat, True, advance_revision=True)
         return False
 
     def enqueue_super_bot_reply(self, message, source_event_id=None, is_first_contact=False):
@@ -383,11 +392,48 @@ class Inbox:
             row = self.db.execute('SELECT paused FROM inbox_chats WHERE connection=? AND chat=?', (cid,str(chat))).fetchone()
             return bool(row and row[0])
 
-    def set_paused(self, cid, chat, value):
+    def super_bot_claimed(self, cid, chat):
+        """Whether the explicit v1 BOT owner currently controls this chat."""
+        with self.lock:
+            row = self.db.execute('SELECT paused,super_bot FROM inbox_chats WHERE connection=? AND chat=?', (cid,str(chat))).fetchone()
+            return bool(row and row[0] and row[1])
+
+    def current_revision(self, cid, chat):
         with self.lock:
             self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
-            self.db.execute('UPDATE inbox_chats SET paused=? WHERE connection=? AND chat=?', (bool(value),cid,str(chat)))
+            row = self.db.execute('SELECT revision FROM inbox_chats WHERE connection=? AND chat=?', (cid,str(chat))).fetchone()
+            return int(row[0]) if row else 0
+
+    def set_paused(self, cid, chat, value, advance_revision=False):
+        with self.lock:
+            self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
+            if advance_revision:
+                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0,revision=revision+1 WHERE connection=? AND chat=?',
+                                (bool(value),cid,str(chat)))
+            else:
+                self.db.execute('UPDATE inbox_chats SET paused=?,super_bot=0 WHERE connection=? AND chat=?',
+                                (bool(value),cid,str(chat)))
             self.db.commit()
+
+    def take_super_bot_control(self, cid, chat, expected_revision, adapter):
+        """CAS ownership for the existing Super Bot v1 bridge contract."""
+        with self.lock:
+            self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
+            row = self.db.execute('SELECT revision FROM inbox_chats WHERE connection=? AND chat=?', (cid,str(chat))).fetchone()
+            if not row or row[0] != expected_revision:
+                raise InboxError('La conversación cambió antes de que Super Bot tomara el control.',409)
+            revision = row[0] + 1
+            # `paused` keeps legacy automation quiet, while `super_bot`
+            # permits only the versioned BOT sender below.
+            self.db.execute('UPDATE inbox_chats SET paused=1,super_bot=1,revision=? WHERE connection=? AND chat=?',
+                            (revision,cid,str(chat)))
+            self.db.commit()
+        adapter.shopping.leave_support(cid,int(chat))
+        adapter.db.commit()
+        self.enqueue(dict(kind='control',connectionId=cid,chatId=str(chat),timestamp=int(self.now()),
+                          botEnabled=False,needsAdvisor=False,revision=revision,
+                          sender='BOT',protocol=SUPER_BOT_PROTOCOL))
+        return revision
 
     def snapshot(self, adapter, cid, chat):
         if not cid or not chat: return 0
@@ -410,6 +456,17 @@ class Inbox:
             connection = adapter.get_connection(cid)
             if not connection or not connection[1] or not connection[2]: raise InboxError('La conexión de Telegram está desactivada o sin permiso para responder.',409)
             if action == 'control':
+                sender, protocol = data.get('sender'), data.get('protocol')
+                if sender == 'BOT':
+                    if protocol != SUPER_BOT_PROTOCOL or data.get('botEnabled') is not False:
+                        raise InboxError('El protocolo de Super Bot no es compatible.',409)
+                    expected = data.get('expectedRevision')
+                    if not isinstance(expected,int) or isinstance(expected,bool) or expected < 0:
+                        raise InboxError('La revisión esperada no es válida.',409)
+                    revision = self.take_super_bot_control(cid,chat,expected,adapter)
+                    return {'revision':revision,'sender':'BOT','protocol':SUPER_BOT_PROTOCOL}
+                if sender not in (None,'AGENT') or protocol is not None:
+                    raise InboxError('Remitente inválido.',409)
                 enabled = data.get('botEnabled')
                 if not isinstance(enabled,bool): raise InboxError('Estado inválido.')
                 self.set_paused(cid,chat,not enabled)
@@ -419,9 +476,23 @@ class Inbox:
                 return {'revision':self.snapshot(adapter,cid,chat)}
             if action != 'send': raise InboxError('Acción inválida.')
             rid, kind, content, automated = data.get('requestId'), data.get('type'), data.get('content'), data.get('automated',False)
+            sender, protocol = data.get('sender'), data.get('protocol')
             if not isinstance(automated,bool): raise InboxError('Solicitud inválida.')
-            valid_prefix = rid.startswith('tgbot:') if automated and isinstance(rid,str) else rid.startswith('tgout:') if isinstance(rid,str) else False
+            if sender not in (None,'AGENT','BOT'):
+                raise InboxError('Remitente inválido.',409)
+            explicit_super_bot = sender == 'BOT'
+            if explicit_super_bot and protocol != SUPER_BOT_PROTOCOL:
+                raise InboxError('El protocolo de Super Bot no es compatible.',409)
+            if not explicit_super_bot and protocol is not None:
+                raise InboxError('El protocolo de Super Bot no es compatible.',409)
+            if automated:
+                valid_prefix = isinstance(rid,str) and rid.startswith('tgbot:')
+            elif explicit_super_bot:
+                valid_prefix = isinstance(rid,str) and rid.startswith('ai:')
+            else:
+                valid_prefix = isinstance(rid,str) and rid.startswith('tgout:')
             if not valid_prefix or len(rid)>120: raise InboxError('Identificador inválido.')
+            super_bot = automated or explicit_super_bot
             fingerprint = hashlib.sha256(json.dumps(data,sort_keys=True).encode()).hexdigest()
             with self.lock:
                 prev = self.db.execute('SELECT fingerprint,state,response FROM inbox_sends WHERE id=?', (rid,)).fetchone()
@@ -453,6 +524,10 @@ class Inbox:
                 if self.paused(cid,chat) or adapter.shopping.support_session(cid,int(chat)):
                     raise InboxError('Un asesor está atendiendo esta conversación.',409)
                 revision = self.snapshot(adapter,cid,chat)
+            elif explicit_super_bot:
+                if not self.super_bot_claimed(cid,chat):
+                    raise InboxError('Super Bot no controla esta conversación.',409)
+                revision = self.current_revision(cid,chat)
             else:
                 self.set_paused(cid,chat,True)
                 adapter.shopping.pause(cid,int(chat)); adapter.db.commit()
@@ -460,17 +535,19 @@ class Inbox:
             with self.lock:
                 self.db.execute('INSERT INTO inbox_sends VALUES (?,?,?,NULL)', (rid,fingerprint,'sending')); self.db.commit()
             try:
-                if automated:
+                if super_bot:
                     # Current bridge deployments use the explicit sender and
                     # protocol markers when archiving outbound messages. Keep
                     # the older automated marker too so both bridge revisions
                     # recognize this as a Super Bot reply rather than a human
                     # adviser reply (which would pause the conversation).
-                    body['_inbox_automated'] = True
+                    if automated: body['_inbox_automated'] = True
                     body['_inbox_sender'] = 'BOT'
-                    body['_inbox_protocol'] = 'super-bot-v1'
+                    body['_inbox_protocol'] = SUPER_BOT_PROTOCOL
                 result = self.raw_api(method,body)
                 response = {'messageId':result['message_id'],'revision':revision}
+                if super_bot:
+                    response.update(sender='BOT',protocol=SUPER_BOT_PROTOCOL)
                 with self.lock:
                     self.db.execute("UPDATE inbox_sends SET state='sent',response=? WHERE id=?", (json.dumps(response),rid)); self.db.commit()
                 return response
@@ -490,7 +567,9 @@ class Inbox:
         with self.lock:
             pending = self.db.execute('SELECT count(*) FROM inbox_events WHERE sent=0').fetchone()[0]
             pending_super_bot = self.db.execute("SELECT count(*) FROM inbox_super_bot_replies WHERE state='queued'").fetchone()[0]
-        return dict(connected=self.enabled and connected,pending=pending,pendingSuperBot=pending_super_bot,superBotConfigured=self.super_bot_enabled)
+        return dict(connected=self.enabled and connected,pending=pending,pendingSuperBot=pending_super_bot,
+                    superBotConfigured=self.super_bot_enabled,
+                    capabilities={'superBotSendV1':True,'superBotControlV1':True})
 
     def tick(self):
         if not self.enabled: return False
