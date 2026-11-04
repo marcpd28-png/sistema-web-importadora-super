@@ -5,6 +5,7 @@ import sharp from "sharp";
 import {
   isGeneralCatalogRequest,
   isProjectorCatalogRequest,
+  MAX_CATALOG_PRODUCTS,
   parseCatalogRequest,
   prepareCatalogImage,
 } from "@/lib/catalog-pdf";
@@ -29,11 +30,18 @@ test("detecta solicitudes explícitas del catálogo de proyectores", () => {
 
 test("acepta plural y errores frecuentes al pedir catálogos por categoría y marca", () => {
   assert.deepEqual(parseCatalogRequest("catalogos audifonos jbl")?.terms, ["audifonos", "jbl"]);
+  assert.deepEqual(parseCatalogRequest("Catálogo de parlantes JBL")?.terms, ["parlantes", "jbl"]);
+  assert.deepEqual(parseCatalogRequest("Catálogo de ventiladores")?.terms, ["ventiladores"]);
+  assert.deepEqual(parseCatalogRequest("Catálogo de celulares")?.terms, ["celulares"]);
   assert.deepEqual(parseCatalogRequest("catalgoo de audifonos")?.terms, ["audifonos"]);
   assert.deepEqual(parseCatalogRequest("cataglafo audifonos jbl")?.terms, ["audifonos", "jbl"]);
   assert.deepEqual(parseCatalogRequest("Hola catálogo de parlantes")?.terms, ["parlantes"]);
   assert.deepEqual(parseCatalogRequest("cata parlantes")?.terms, ["parlantes"]);
   assert.deepEqual(parseCatalogRequest("catallgos específicos de parlantes")?.terms, ["parlantes"]);
+});
+
+test("admite una colección de categoría completa mientras respete el límite de PDF", () => {
+  assert.equal(MAX_CATALOG_PRODUCTS, 60);
 });
 
 test("quita márgenes transparentes sin convertir la foto rectangular en un cuadrado", async () => {

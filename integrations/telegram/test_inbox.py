@@ -354,6 +354,26 @@ class InboxTests(unittest.TestCase):
         self.assertEqual(response.reads,1)
         self.assertEqual(payload['isFirstContact'],True)
         self.assertEqual(reply['text'],'Respuesta corta')
+
+    def test_super_bot_catalog_reply_wait_is_bounded_and_configurable(self):
+        self.inbox.config.update(
+            super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',
+            super_bot_key='shared-key',
+            super_bot_reply_timeout_seconds=75,
+        )
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self,*args): return False
+            def read(self): return b'{"reply":{"text":"Catalogo listo","products":[]}}'
+        with patch('inbox.urllib.request.urlopen',return_value=Response()) as urlopen:
+            self.inbox.super_bot_reply({'message':'Cat\u00e1logo de parlantes','channel':'telegram'})
+        self.assertEqual(urlopen.call_args.kwargs['timeout'],75)
+        self.inbox.config['super_bot_reply_timeout_seconds'] = 999
+        self.assertEqual(self.inbox.super_bot_reply_timeout_seconds(),120)
+        self.inbox.config['super_bot_reply_timeout_seconds'] = 0
+        self.assertEqual(self.inbox.super_bot_reply_timeout_seconds(),5)
+        self.inbox.config['super_bot_reply_timeout_seconds'] = True
+        self.assertEqual(self.inbox.super_bot_reply_timeout_seconds(),90)
     def test_missing_super_bot_configuration_never_falls_back_to_legacy(self):
         self.assertTrue(self.inbox.super_bot_tick(self.adapter))
         self.assertFalse(self.calls)

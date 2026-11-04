@@ -14,7 +14,14 @@ const CATALOG_DIRECTORY = path.join(process.cwd(), "public", "uploads", "catalog
 const MAX_REMOTE_IMAGE_BYTES = 12 * 1024 * 1024;
 const IMAGE_TIMEOUT_MS = 12_000;
 const BRAND_PRIMARY = "#2320DA";
-const MAX_CATALOG_PRODUCTS = 40;
+/**
+ * A category/brand PDF should include the complete matching collection when
+ * it fits under the document-size ceiling. Sixty A4 product pages remain a
+ * bounded render, while covering the current JBL speaker catalog (45 items)
+ * instead of silently truncating it at forty. `MAX_CATALOG_PDF_BYTES` stays
+ * the final delivery guard.
+ */
+export const MAX_CATALOG_PRODUCTS = 60;
 /** Leave headroom below Telegram's 20 MB URL-download ceiling so the same
  * single PDF can be delivered through every supported document channel. */
 export const MAX_CATALOG_PDF_BYTES = 18 * 1024 * 1024;
