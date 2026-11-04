@@ -15,7 +15,6 @@ export const telegramEventSchema = z.object({
   content: z.string().max(20000).default(""), timestamp: z.number().int().nonnegative(),
   fileId: z.string().max(1024).optional(), filename: z.string().max(255).optional(),
   localMessageId: z.string().max(120).optional(), replyToMessageId: z.number().int().positive().optional(),
-  protocol: z.string().max(64).optional(),
   historical: z.boolean().default(false),
   botEnabled: z.boolean().optional(), needsAdvisor: z.boolean().optional(), revision: z.number().int().nonnegative().optional(),
 }).refine(event => !["message", "edit"].includes(event.kind) || Boolean(event.messageId), { message: "messageId is required" });
@@ -43,25 +42,19 @@ export async function receiveTelegramEvent(input: unknown) {
       lastMessageAt: stamp,
     } });
     const externalMessageId = event.messageId ? telegramMessageKey(event.connectionId, event.chatId, event.messageId) : undefined;
-    let customerInbound = false;
     if (event.kind === "delete") {
       await tx.chatMessage.updateMany({ where: { conversationId: conversation.id, externalMessageId: { in: (event.messageIds || []).map(id => telegramMessageKey(event.connectionId, event.chatId, id)) } }, data: { status: "deleted" } });
     } else if (event.kind === "control") {
       if (event.revision !== undefined && event.revision > conversation.telegramRevision && event.botEnabled !== undefined) {
-        const superBotControl = event.sender === "BOT" && event.protocol === "super-bot-v1";
         await tx.conversation.update({ where: { id: conversation.id }, data: {
           telegramRevision: event.revision, botEnabled: event.botEnabled,
-          status: event.botEnabled || superBotControl ? "AUTOMATICO" : event.needsAdvisor ? "REQUIERE_ASESOR" : "ATENDIENDO",
-          ...(event.botEnabled || superBotControl ? { assignedUserId: null } : {}),
+          status: event.botEnabled ? "AUTOMATICO" : event.needsAdvisor ? "REQUIERE_ASESOR" : "ATENDIENDO",
+          ...(event.botEnabled ? { assignedUserId: null } : {}),
         } });
       }
     } else if (externalMessageId) {
       const existing = await tx.chatMessage.findUnique({ where: { externalMessageId } });
-      const local = event.localMessageId ? await tx.chatMessage.findFirst({ where: {
-        id: event.localMessageId,
-        conversationId: conversation.id,
-        senderType: event.sender === "BOT" ? "BOT" : "AGENT",
-      } }) : null;
+      const local = event.localMessageId ? await tx.chatMessage.findFirst({ where: { id: event.localMessageId, conversationId: conversation.id, senderType: "AGENT" } }) : null;
       const replyTarget = event.replyToMessageId ? await tx.chatMessage.findUnique({ where: { externalMessageId: telegramMessageKey(event.connectionId, event.chatId, event.replyToMessageId) } }) : null;
       const metadata: Prisma.InputJsonObject = { provider: "telegram", telegramMessageId: event.messageId!,
         ...(event.fileId ? { telegramFileId: event.fileId } : {}), ...(event.filename ? { filename: event.filename } : {}),
@@ -76,7 +69,6 @@ export async function receiveTelegramEvent(input: unknown) {
         await tx.chatMessage.create({ data: { conversationId: conversation.id, externalMessageId,
           senderType: event.sender, direction: event.sender === "CUSTOMER" ? "INBOUND" : "OUTBOUND", messageType: event.type,
           content: event.content, mediaUrl, metadata, status: "sent", createdAt: stamp } });
-        customerInbound = event.sender === "CUSTOMER" && !event.historical;
       }
       if (event.kind === "message" && !existing) {
         await tx.conversation.update({ where: { id: conversation.id }, data: {
@@ -90,24 +82,8 @@ export async function receiveTelegramEvent(input: unknown) {
       }
     }
     await tx.telegramInboxEvent.create({ data: { id: event.eventId } });
-    return {
-      duplicate: false,
-      conversationId: conversation.id,
-      customerInbound,
-    };
+    return { duplicate: false, conversationId: conversation.id };
   });
   if (result.conversationId) triggerPusherEvent(`chat-${result.conversationId}`, "telegram-update", { conversationId: result.conversationId });
-  if (result.conversationId && result.customerInbound) {
-    // Bound the inline prompt so Telegram's webhook never waits for the
-    // bridge's full transport timeout. The durable inbound row is already
-    // committed and the worker discovers the same eligible chat if this
-    // best-effort prompt is still running after the short budget.
-    const scheduling = import("./rocky-ai/service")
-      .then(({ scheduleTelegramInbound }) => scheduleTelegramInbound(result.conversationId!))
-      .catch(() => console.error("telegram_super_bot_schedule_failed"));
-    let deadline: ReturnType<typeof setTimeout> | undefined;
-    await Promise.race([scheduling, new Promise<void>(resolve => { deadline = setTimeout(resolve, 500); })]);
-    if (deadline) clearTimeout(deadline);
-  }
   return result;
 }

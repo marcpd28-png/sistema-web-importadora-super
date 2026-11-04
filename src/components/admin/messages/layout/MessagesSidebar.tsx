@@ -11,13 +11,11 @@ export function MessagesSidebar() {
     { name: "Bandeja", href: "/admin/mensajes", icon: Inbox, exact: true },
     { name: "Telegram", href: "/admin/mensajes/telegram", icon: Send, exact: true },
     { name: "Messenger", href: "/admin/mensajes/messenger", icon: MessageCircleMore, exact: true },
-    { name: "Instagram", href: "/admin/mensajes/instagram", icon: MessageCircleMore, exact: true },
     { name: "TikTok", href: "/admin/mensajes/tiktok", icon: MessageCircleMore, exact: true },
     { name: "Plantillas", href: "/admin/mensajes/plantillas", icon: FileCode2, exact: false },
     { name: "Contactos", href: "/admin/mensajes/contactos", icon: Users, exact: false },
     { name: "Actividad", href: "/admin/mensajes/actividad", icon: Activity, exact: false },
-    { name: "Pruebas Super Bot", href: "/admin/mensajes/simulador", icon: Bug, exact: false },
-    { name: "Super Bot", href: "/admin/mensajes/ia", icon: Zap, exact: true },
+    { name: "Simulador", href: "/admin/mensajes/simulador", icon: Bug, exact: false },
     { name: "Configuración", href: "/admin/mensajes/configuracion", icon: Settings, exact: false },
   ];
 
