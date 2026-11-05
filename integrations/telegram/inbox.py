@@ -994,6 +994,23 @@ class Inbox:
                     self.db.execute("UPDATE inbox_sends SET state='sent',response=? WHERE id=?", (json.dumps(response),rid)); self.db.commit()
                 return response
             except urllib.error.HTTPError as error:
+                # Keep the customer-facing failure generic, but leave a
+                # sanitized provider reason in the bridge log. This is vital
+                # for diagnosing a rejected remote document without printing
+                # tokens, message bodies, or any customer data.
+                detail = ""
+                try:
+                    payload = json.loads(error.read().decode("utf-8", "replace"))
+                    candidate = payload.get("description") if isinstance(payload, dict) else None
+                    if isinstance(candidate, str):
+                        detail = candidate.replace("\n", " ").strip()[:240]
+                except Exception:
+                    pass
+                print("telegram_send_rejected " + json.dumps({
+                    "method": method,
+                    "status": error.code,
+                    "detail": detail,
+                }), flush=True)
                 with self.lock:
                     self.db.execute("UPDATE inbox_sends SET state=? WHERE id=?", ('failed' if error.code<500 else 'uncertain',rid)); self.db.commit()
                 error.close()
