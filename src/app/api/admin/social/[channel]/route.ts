@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMessagingOwnerSession } from "@/lib/auth";
-import { dedupeSocialMessages, enableSocialBot, parseSocialChannel, socialConversationDisplayName, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
+import { dedupeSocialMessages, enableSocialBot, parseSocialChannel, refreshSocialConversationProfiles, socialConversationDisplayName, socialRequest, socialConversation, socialConnectionStatus, safeSocialMessage, sendSocialReply, SocialInboxError, type SocialPage, type SocialConversation, type SocialMessage } from "@/lib/social-inbox";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -44,8 +44,12 @@ export async function GET(request: NextRequest, context: Context) {
     const keyword = request.nextUrl.searchParams.get("keyword");
     if (keyword) query.set("keyword", keyword.slice(0, 100));
     const page = await socialRequest<SocialPage<SocialConversation>>(`/conversations?${query}`);
+    // Contacts imported before Facebook profile data is available are stored as
+    // "Cliente" by the provider. Refresh only those Messenger profiles; the
+    // adapter applies its own cooldown and the helper caps concurrent calls.
+    const conversations = await refreshSocialConversationProfiles(page.data, channel);
     // Only expose display fields, never provider auth or contact attributes.
-    return NextResponse.json({ data: page.data.filter(c => c.contactInboxes.some(i => i.channel === channel)).map(c => ({
+    return NextResponse.json({ data: conversations.filter(c => c.contactInboxes.some(i => i.channel === channel)).map(c => ({
       id: c.id, name: socialConversationDisplayName(c, channel), botEnabled: c.botEnabled,
       preview: c.messages?.find(m => c.contactInboxes.some(i => i.channel === channel && i.id === m.contactInboxId))?.text || "Conversación",
     })), nextCursor: page.nextCursor }, { headers: { "Cache-Control": "no-store" } });

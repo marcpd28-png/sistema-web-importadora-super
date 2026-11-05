@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { channelInbox, dedupeSocialMessages, enableSocialBot, socialAttachmentKind, socialConnectionStatus, parseSocialChannel, safeSocialMessage, socialConversation, socialConversationDisplayName, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
+import { channelInbox, dedupeSocialMessages, enableSocialBot, socialAttachmentKind, socialConnectionStatus, parseSocialChannel, refreshSocialConversationProfile, refreshSocialConversationProfiles, safeSocialMessage, socialConversation, socialConversationDisplayName, socialConversationNeedsProfileRefresh, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
 
 test("Social channels fail closed and cannot fall through to another transport", () => {
   assert.equal(parseSocialChannel("messenger"), "messenger");
@@ -22,6 +22,46 @@ test("Conversation labels use the provider name fields before a generic fallback
   assert.equal(socialConversationDisplayName({ id: "conversation-2", botEnabled: true, contact: { fullName: "Cliente", firstName: " Ana ", lastName: "Pérez" }, contactInboxes: inboxes }, "messenger"), "Ana Pérez");
   assert.equal(socialConversationDisplayName({ id: "conversation-3", botEnabled: true, contact: null, contactInboxes: inboxes }, "messenger"), "@perfil-messenger");
   assert.equal(socialConversationDisplayName({ id: "conversation-123456", botEnabled: true, contact: { id: "contact-654321" }, contactInboxes: [] }, "messenger"), "Cliente sin nombre · 123456");
+});
+
+test("Messenger refreshes placeholder contacts with the Facebook profile name", async () => {
+  const original = global.fetch;
+  const token = process.env.SOCIAL_INBOX_API_TOKEN;
+  process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  const unnamed = {
+    id: "conversation-123456",
+    botEnabled: true,
+    contact: { id: "456", fullName: "Cliente" },
+    contactInboxes: [{ id: "789", inboxId: "messenger", channel: "messenger", lastIncomingMessageAt: null, inbox: { name: "Messenger" } }],
+  } satisfies SocialConversation;
+  const named = {
+    ...unnamed,
+    id: "conversation-named",
+    contact: { id: "457", fullName: "Ana Pérez" },
+  } satisfies SocialConversation;
+  const calls: { url: string; body?: string }[] = [];
+  try {
+    global.fetch = async (url, options) => {
+      calls.push({ url: String(url), body: options?.body as string | undefined });
+      return Response.json({ status: "updated", contact: { id: "456", firstName: "Ana", lastName: "Pérez", fullName: "Ana Pérez" } });
+    };
+
+    assert.equal(socialConversationNeedsProfileRefresh(unnamed, "messenger"), true);
+    assert.equal(socialConversationNeedsProfileRefresh(named, "messenger"), false);
+    assert.equal(socialConversationNeedsProfileRefresh(unnamed, "tiktok"), false);
+
+    const refreshed = await refreshSocialConversationProfile(unnamed, "messenger");
+    assert.equal(socialConversationDisplayName(refreshed, "messenger"), "Ana Pérez");
+    assert.match(calls[0].url, /\/contacts\/id%3A456\/refresh-profile$/);
+    assert.deepEqual(JSON.parse(calls[0].body!), { contactInboxId: "789" });
+
+    const list = await refreshSocialConversationProfiles([unnamed, named], "messenger");
+    assert.deepEqual(list.map(conversation => socialConversationDisplayName(conversation, "messenger")), ["Ana Pérez", "Ana Pérez"]);
+    assert.equal(calls.length, 2, "no debe consultar de nuevo un contacto que ya tiene nombre");
+  } finally {
+    global.fetch = original;
+    if (token === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = token;
+  }
 });
 
 test("Sending enforces channel and Messenger window before mutation, pauses bot first, and selects the exact inbox", async () => {
