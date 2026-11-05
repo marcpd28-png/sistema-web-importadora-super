@@ -12,6 +12,7 @@ import {
   prepareCatalogImage,
   splitCatalogItemsByRenderedSize,
 } from "@/lib/catalog-pdf";
+import { catalogPresentationGroup } from "@/lib/catalog-query";
 
 test("detecta solicitudes del catálogo general aunque usen lenguaje cortés", () => {
   assert.equal(isGeneralCatalogRequest("¿Me podría brindar el catálogo?"), true);
@@ -41,6 +42,16 @@ test("acepta plural y errores frecuentes al pedir catálogos por categoría y ma
   assert.deepEqual(parseCatalogRequest("Hola catálogo de parlantes")?.terms, ["parlantes"]);
   assert.deepEqual(parseCatalogRequest("cata parlantes")?.terms, ["parlantes"]);
   assert.deepEqual(parseCatalogRequest("catallgos específicos de parlantes")?.terms, ["parlantes"]);
+});
+
+test("ordena el catálogo amplio de ventiladores por tipo de producto", () => {
+  const terms = parseCatalogRequest("Catálogo de ventiladores")!.terms;
+  assert.equal(catalogPresentationGroup({ name: "VENTILADOR INDUSTRIAL 320W" }, terms)?.label, "VENTILADORES GENERALES");
+  assert.equal(catalogPresentationGroup({ name: "MINI VENTILADOR PORTÁTIL" }, terms)?.label, "VENTILADORES DE MESA Y PORTÁTILES");
+  assert.equal(catalogPresentationGroup({ name: "VENTILADOR PARA AUTO" }, terms)?.label, "VENTILADORES PARA AUTO");
+  assert.equal(catalogPresentationGroup({ name: "SOPORTE CON VENTILADOR PARA LAPTOP", category: "ACCESORIOS PARA CELULARES" }, terms)?.label, "VENTILADORES Y COOLERS PARA LAPTOP");
+  assert.equal(catalogPresentationGroup({ name: "COOLER PARA CELULAR" }, terms)?.label, "VENTILADORES Y COOLERS PARA CELULAR");
+  assert.equal(catalogPresentationGroup({ name: "FOCO VENTILADOR" }, terms)?.label, "FOCOS Y CALEFACTORES CON VENTILADOR");
 });
 
 test("quita márgenes transparentes sin convertir la foto rectangular en un cuadrado", async () => {

@@ -12,6 +12,7 @@ const GROUPS = [
   ["pantalla", "pantallas", "monitor", "monitores"],
   ["proyector", "proyectores"], ["scooter", "scoter", "scuter", "patineta"],
   ["alexa", "alexas", "echo"], ["maquina", "maquinas"],
+  ["ventilador", "ventiladores", "fan", "fans"],
 ];
 for (const word of ["y", "si", "estoy", "recomiendas", "recomienda", "recomendame", "presupuesto", "soles", "sol", "veo", "mandas", "unidad", "unidades"]) FILLER.add(word);
 for (const word of ["comprar", "compra", "cotizar", "cotizacion"]) FILLER.add(word);
@@ -79,6 +80,74 @@ const SPEAKER_ACCESSORIES = "tripode|tripodes|soporte|soportes|funda|fundas|cabl
 const SPEAKER_VARIANTS = "partybox|soundbar";
 const SPEAKER_VARIANT_ACCESSORIES = `${SPEAKER_ACCESSORIES}|microfono|microfonos|mic`;
 
+/**
+ * A customer asking for a fan catalogue expects the whole related family,
+ * not only rows whose technical description happens to use the same plural.
+ * The identity deliberately comes from the product name/category, never a
+ * specification: that keeps an unrelated device with a cooling fan out while
+ * retaining real fans, coolers, and supports that belong in this catalogue.
+ */
+const FAN_IDENTITY = "ventilador|ventiladores|fan|fans|cooler|coolers";
+
+function fanIdentityTerm(terms: string[]) {
+  return terms.find((term) => productTermAlternatives("ventilador").includes(term));
+}
+
+function isFanCatalogProduct(product: { name: string; category?: string | null }) {
+  const identity = normalizeProductQuery([product.name, product.category].filter(Boolean).join(" "));
+  return new RegExp(`(^| )(${FAN_IDENTITY})( |$)`).test(identity);
+}
+
+export type CatalogPresentationGroup = {
+  key: string;
+  label: string;
+  order: number;
+};
+
+/**
+ * A fan catalogue is intentionally broad. Every matching sellable item is
+ * retained, then presented in a useful order so customers can distinguish a
+ * regular fan from a car, laptop, cellular, or light/heater variant.
+ */
+export function catalogPresentationGroup(
+  product: { name: string; category?: string | null },
+  terms: string[],
+): CatalogPresentationGroup | null {
+  if (!fanIdentityTerm(terms)) return null;
+
+  const name = normalizeProductQuery(product.name);
+  const category = normalizeProductQuery(product.category ?? "");
+  const text = `${name} ${category}`.trim();
+  // The product name is the more reliable grouping source. Some old ERP
+  // categories are broad (for example, a laptop stand filed under cellular
+  // accessories), so do not let that override the explicit name.
+  if (/\b(?:laptop|notebook)\b/.test(name)) {
+    return { key: "fan-laptop", label: "VENTILADORES Y COOLERS PARA LAPTOP", order: 3 };
+  }
+  if (/\b(?:celular|telefono)\b/.test(name)) {
+    return { key: "fan-cellular", label: "VENTILADORES Y COOLERS PARA CELULAR", order: 4 };
+  }
+  if (/\b(?:laptop|notebook|soporte)\b/.test(text)) {
+    return { key: "fan-laptop", label: "VENTILADORES Y COOLERS PARA LAPTOP", order: 3 };
+  }
+  if (/\b(?:celular|telefono)\b/.test(text)) {
+    return { key: "fan-cellular", label: "VENTILADORES Y COOLERS PARA CELULAR", order: 4 };
+  }
+  if (/\b(?:foco|bombillo|lampara|calefactor)\b/.test(text)) {
+    return { key: "fan-light-heater", label: "FOCOS Y CALEFACTORES CON VENTILADOR", order: 5 };
+  }
+  if (/\b(?:auto|carro|vehiculo)\b/.test(text)) {
+    return { key: "fan-auto", label: "VENTILADORES PARA AUTO", order: 2 };
+  }
+  if (/\b(?:mesa|escritorio|desktop|mini|portatil|mano|flexible)\b/.test(text)) {
+    return { key: "fan-portable", label: "VENTILADORES DE MESA Y PORTÁTILES", order: 1 };
+  }
+  if (/\b(?:cooler|coolers)\b/.test(text)) {
+    return { key: "fan-cooler", label: "COOLERS Y VENTILADORES", order: 3 };
+  }
+  return { key: "fan-general", label: "VENTILADORES GENERALES", order: 0 };
+}
+
 export function matchesProductQuery(product: { name: string; code?: string; externalCode?: string | null; brand?: string | null; category?: string | null; technicalSpecs?: string | null }, query: string) {
   const terms = productQueryTerms(query);
   const text = normalizeProductQuery([product.name, product.code, product.externalCode, product.brand, product.category, product.technicalSpecs].filter(Boolean).join(" "));
@@ -88,6 +157,7 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
     if (!new RegExp(`\\b${measurement[1]} ${measurement[2]}\\b`).test(text)) return false;
   }
   const speaker = speakerIdentityTerm(terms);
+  const fan = fanIdentityTerm(terms);
   let isSpeakerProduct = false;
   if (speaker) {
     const name = normalizeProductQuery(product.name).split(" para ")[0];
@@ -97,8 +167,17 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
     if ((!explicitSpeaker && !speakerVariant) || new RegExp(`(^| )(${accessoryPattern})( |$)`).test(name)) return false;
     isSpeakerProduct = true;
   }
-  if (needsMainDevice(terms) && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
-  if (needsMainDevice(terms)) {
+  // Unlike the narrower conversational product cards, a fan catalogue is
+  // purposely inclusive of coolers and supports. They are grouped in the PDF
+  // so customers can see what type of fan product each result represents.
+  const isFanProduct = fan ? isFanCatalogProduct(product) : false;
+  if (fan && !isFanProduct) return false;
+  // A phone/tablet query normally requires the device itself. A fan/cooler
+  // query is deliberately different: "ventilador para celular" should keep
+  // the verified cooler rather than be treated as a phone accessory mismatch.
+  const requiresMainDevice = needsMainDevice(terms) && !fan;
+  if (requiresMainDevice && new RegExp(`(^| )(${ACCESSORIES})( |$)`).test(normalizeProductQuery(product.name))) return false;
+  if (requiresMainDevice) {
     if (/accesorio/.test(normalizeProductQuery(product.category ?? ""))) return false;
     const device = terms.find(term => ["televisor", "celular", "tablet", "iphone"].some(family => productTermAlternatives(family).includes(term)))!;
     if (!new RegExp(termPattern(device)).test(normalizeProductQuery(product.name).split(" para ")[0])) return false;
@@ -106,6 +185,8 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
   return terms.length > 0 && terms.every(term =>
     speaker && productTermAlternatives("parlante").includes(term)
       ? isSpeakerProduct
+      : fan && productTermAlternatives("ventilador").includes(term)
+        ? isFanProduct
       : new RegExp(termPattern(term)).test(text),
   );
 }

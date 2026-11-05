@@ -71,6 +71,17 @@ test("speaker catalogs require speaker identity, not an accessory category", () 
   assert.equal(matchesProductQuery({ code: "O362", name: "JBL BATTERY 200 - COMPATIBLE PARTYBOX CLUB 120", brand: "JBL", category: "PARLANTES" }, "parlantes jbl"), false);
 });
 
+test("fan catalogs include the full fan family and do not rely on technical-spec mentions", () => {
+  assert.equal(matchesProductQuery({ name: "VENTILADOR INDUSTRIAL 320W" }, "ventiladores"), true);
+  assert.equal(matchesProductQuery({ name: "MINI VENTILADOR PORTÁTIL" }, "ventilador"), true);
+  assert.equal(matchesProductQuery({ name: "COOLER PARA LAPTOP C200" }, "ventiladores"), true);
+  assert.equal(matchesProductQuery({ name: "COOLER PARA CELULAR ARTICO" }, "ventiladores"), true);
+  assert.equal(matchesProductQuery({ name: "COOLER PARA CELULAR ARTICO" }, "ventiladores para celular"), true);
+  assert.equal(matchesProductQuery({ name: "FOCO VENTILADOR CON CONTROL" }, "ventiladores"), true);
+  assert.equal(matchesProductQuery({ name: "SOPORTE CON VENTILADOR PARA LAPTOP" }, "ventiladores"), true);
+  assert.equal(matchesProductQuery({ name: "TABLET ANDROID", technicalSpecs: "Incluye ventilador de enfriamiento" }, "ventiladores"), false);
+});
+
 const identities = ["LICUADORA", "VENTILADOR", "IMPRESORA", "HERVIDOR", "MAQUINA DE HIELO", "MAQUINA CORTADORA DE CABELLO"].map((name, i) => ({
   id: String(i), code: `P${i}`, externalCode: null, name, brand: null, category: null,
   isVisible: true, stockUnits: 1, unitPrice: 10,

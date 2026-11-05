@@ -1,4 +1,4 @@
-import { findAllCatalogProductIds, productQueryTerms } from "./catalog-query";
+import { catalogPresentationGroup, findAllCatalogProductIds, productQueryTerms } from "./catalog-query";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -22,6 +22,11 @@ export type CatalogProductImage = {
   id: string;
   name: string;
   code: string;
+  category?: string | null;
+  /** Human-facing section label shown on every product page when relevant. */
+  catalogGroup?: string;
+  /** Stable order for sections; omitted for ordinary, ungrouped catalogues. */
+  catalogGroupOrder?: number;
   imageUrls: string[];
   updatedAt: Date;
   unitPrice: unknown;
@@ -114,6 +119,7 @@ type ProductWithCatalogImageFields = {
   id: string;
   name: string;
   code: string;
+  category: string | null;
   imageUrl: string | null;
   localImageUrl: string | null;
   media: Array<{ url: string }>;
@@ -155,6 +161,7 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
       id: true,
       name: true,
       code: true,
+      category: true,
       imageUrl: true,
       localImageUrl: true,
       media: {
@@ -181,7 +188,7 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
     where: { id: { in: ids }, isVisible: true, stockUnits: { gt: 0 }, unitPrice: { gt: 0 } },
     orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     select: {
-      id: true, name: true, code: true, imageUrl: true, localImageUrl: true,
+      id: true, name: true, code: true, category: true, imageUrl: true, localImageUrl: true,
       media: { orderBy: { sortOrder: "asc" }, select: { url: true } },
       sourceImageUrl: true, updatedAt: true,
       unitPrice: true, wholesalePrice: true, wholesaleMinQty: true,
@@ -192,9 +199,21 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
   const missingProductIds = ids.filter((id) => !byId.has(id));
   if (missingProductIds.length) throw new CatalogPdfProductCoverageError(missingProductIds);
 
-  // Reapply the identity-search order. The manifest later checks this exact
-  // sequence, which prevents duplicated or omitted pages between parts.
-  return ids.map((id) => byId.get(id)!);
+  // Reapply the identity-search order, then place broad fan catalogues into
+  // meaningful sections. The manifest later checks this exact sequence,
+  // which prevents duplicated or omitted pages between parts.
+  return ids.map((id) => byId.get(id)!).map((product) => {
+    const group = catalogPresentationGroup(product, terms);
+    return group
+      ? { ...product, catalogGroup: group.label, catalogGroupOrder: group.order }
+      : product;
+  }).sort((left, right) => {
+    const groupOrder = (left.catalogGroupOrder ?? 0) - (right.catalogGroupOrder ?? 0);
+    if (groupOrder) return groupOrder;
+    const groupLabel = (left.catalogGroup ?? "").localeCompare(right.catalogGroup ?? "", "es");
+    if (groupLabel) return groupLabel;
+    return left.name.localeCompare(right.name, "es") || left.id.localeCompare(right.id);
+  });
 }
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {
@@ -206,6 +225,9 @@ function getCatalogFingerprint(products: CatalogProductImage[]) {
           product.id,
           product.name,
           product.code,
+          product.category,
+          product.catalogGroup,
+          product.catalogGroupOrder,
           product.imageUrls,
           product.updatedAt.toISOString(),
           product.unitPrice,
@@ -361,7 +383,7 @@ export async function splitCatalogItemsByRenderedSize<T>(
   return [...first, ...second];
 }
 
-export function renderCatalogImagePdf(images: { image: Buffer; name: string; code: string; unitPrice?: unknown; wholesalePrice?: unknown; wholesaleMinQty?: number }[], title = "CATÁLOGO DE PRODUCTOS") {
+export function renderCatalogImagePdf(images: { image: Buffer; name: string; code: string; catalogGroup?: string; unitPrice?: unknown; wholesalePrice?: unknown; wholesaleMinQty?: number }[], title = "CATÁLOGO DE PRODUCTOS") {
   return new Promise<Buffer>((resolve, reject) => {
     const document = new PDFDocument({
       autoFirstPage: false,
@@ -385,7 +407,6 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
     const pageWidth = 595.28;
     const pageHeight = 841.89;
     const marginX = 36;
-    const headerHeight = 82;
     const imageWidth = pageWidth - marginX * 2;
 
     images.forEach((product, index) => {
@@ -398,12 +419,18 @@ export function renderCatalogImagePdf(images: { image: Buffer; name: string; cod
           align: "center",
           width: imageWidth,
         });
-      document.moveTo(marginX, 66).lineTo(pageWidth - marginX, 66)
+      const group = product.catalogGroup?.trim();
+      const headerHeight = group ? 96 : 82;
+      if (group) {
+        document.fillColor("#17172B").font("Helvetica-Bold").fontSize(10)
+          .text(group, marginX, 62, { align: "center", width: imageWidth });
+      }
+      document.moveTo(marginX, group ? 80 : 66).lineTo(pageWidth - marginX, group ? 80 : 66)
         .lineWidth(2).strokeColor(BRAND_PRIMARY).stroke();
-      document.fillColor("#555555").font("Helvetica").fontSize(8).text("Imagen referencial. Consulta los precios vigentes al pie de esta página.", marginX, 71, { width: imageWidth, align: "center" });
+      document.fillColor("#555555").font("Helvetica").fontSize(8).text("Imagen referencial. Consulta los precios vigentes al pie de esta página.", marginX, group ? 85 : 71, { width: imageWidth, align: "center" });
       document.image(product.image, marginX, headerHeight, {
         align: "center",
-        fit: [imageWidth, 555],
+        fit: [imageWidth, group ? 541 : 555],
         valign: "center",
       });
       document.fillColor("#17172B").font("Helvetica-Bold").fontSize(17);
