@@ -11,7 +11,10 @@ export async function uploadSocialFile(file: File) {
   if (!supported.has(mimeType)) throw new SocialInboxError("Usa una imagen JPG/PNG/GIF/WebP, video MP4, audio, PDF, Word, Excel o texto.", 400);
   let bytes = Buffer.from(await file.arrayBuffer());
   let name = file.name.replace(/[\x00-\x1f/\\]/g, "_").slice(0, 180) || "archivo";
-  if (mimeType === "audio/webm") {
+  // Browser voice recordings are normally WebM or OGG/Opus. Normalize both
+  // to MP3 before handing the file to Messenger, which is more interoperable
+  // than relying on the receiving client's Opus support.
+  if (mimeType === "audio/webm" || mimeType === "audio/ogg") {
     bytes = Buffer.from(await convertRecordedAudio(bytes, "mp3"));
     mimeType = "audio/mpeg";
     name = name.replace(/\.[^.]+$/, "") + ".mp3";
