@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { dedupeSocialMessages, type SocialChannel, type SocialMessage } from "@/lib/social-inbox";
+import { dedupeSocialMessages, socialAttachmentKind, type SocialChannel, type SocialMessage } from "@/lib/social-inbox";
 import { ArrowLeft, RefreshCw, MessageCircle } from "lucide-react";
 import { MessageInput } from "./MessageInput";
 import { DynamicAvatar } from "./ConversationItem";
@@ -228,7 +228,7 @@ export function SocialInbox({ channel, authorizationUrl, configured }: { channel
 
 function SocialAttachment({ file }: { file: NonNullable<SocialMessage["attachments"]>[number] }) {
   if (!file.url) return <span>El proveedor no entregó un enlace descargable para este adjunto.</span>;
-  const type = file.fileType?.toLowerCase() || file.mimeType?.split("/")[0];
+  const type = socialAttachmentKind(file);
   if (type === "image") return <a href={file.url} target="_blank" rel="noopener noreferrer" className={styles.image}>{/* Provider media uses signed remote URLs. */}
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img src={file.url} alt={file.name || "Imagen adjunta"} loading="lazy" /></a>;

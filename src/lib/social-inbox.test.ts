@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { channelInbox, dedupeSocialMessages, enableSocialBot, socialConnectionStatus, parseSocialChannel, safeSocialMessage, socialConversation, socialConversationDisplayName, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
+import { channelInbox, dedupeSocialMessages, enableSocialBot, socialAttachmentKind, socialConnectionStatus, parseSocialChannel, safeSocialMessage, socialConversation, socialConversationDisplayName, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
 
 test("Social channels fail closed and cannot fall through to another transport", () => {
   assert.equal(parseSocialChannel("messenger"), "messenger");
@@ -160,6 +160,14 @@ test("Private ChatbotX attachment URLs use the authenticated store proxy", () =>
   assert.equal(JSON.stringify(message).includes("filesystem:9000"), false);
   assert.equal(JSON.stringify(message).includes("signature=private"), false);
   assert.equal(JSON.stringify(message).includes("workspace/foto-enviada.jpg"), false);
+});
+
+test("Media attachment display uses MIME values even when fileType is not a category", () => {
+  assert.equal(socialAttachmentKind({ id: "image", name: "photo.jpg", url: null, fileType: "image/jpeg" }), "image");
+  assert.equal(socialAttachmentKind({ id: "video", name: "clip.mp4", url: null, fileType: "video/mp4" }), "video");
+  assert.equal(socialAttachmentKind({ id: "audio", name: "voice.ogg", url: null, fileType: "application/octet-stream", mimeType: "audio/ogg" }), "audio");
+  assert.equal(socialAttachmentKind({ id: "webm-audio", name: "voice.webm", url: null, mimeType: "audio/webm" }), "audio");
+  assert.equal(socialAttachmentKind({ id: "document", name: "quote.pdf", url: null, fileType: "application/pdf" }), "document");
 });
 
 test("A provider echo or repeated request cannot create two visible social replies", async () => {

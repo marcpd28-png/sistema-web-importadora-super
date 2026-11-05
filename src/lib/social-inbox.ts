@@ -11,6 +11,7 @@ export type SocialAttachment = {
   originPath?: string | null;
   thumbnailPath?: string | null;
 };
+export type SocialAttachmentKind = "image" | "audio" | "video" | "document";
 export type SocialMessage = {
   id: string; text: string | null; createdAt: string; contactInboxId: string;
   messageType: string; deletedAt: string | null; sendError: string | null;
@@ -281,6 +282,33 @@ function safeSocialIdentifier(value: string) {
 export function socialAttachmentProxyPath(channel: SocialChannel, conversationId: string, messageId: string, attachmentId: string) {
   if (!/^\d+$/.test(conversationId) || !safeSocialIdentifier(messageId) || !safeSocialIdentifier(attachmentId)) return null;
   return `/api/admin/social/${channel}/attachments/${encodeURIComponent(conversationId)}/${encodeURIComponent(messageId)}/${encodeURIComponent(attachmentId)}`;
+}
+
+/**
+ * ChatbotX has returned both category values (for example `IMAGE`) and full
+ * MIME values (for example `image/jpeg`) in `fileType`. Prefer a MIME value
+ * wherever it appears so media is rendered with its native browser player
+ * instead of being mistaken for a document.
+ */
+export function socialAttachmentKind(file: SocialAttachment): SocialAttachmentKind {
+  const values = [file.mimeType, file.fileType]
+    .filter((value): value is string => typeof value === "string")
+    .map(value => value.trim().toLowerCase());
+
+  for (const value of values) {
+    if (value.startsWith("image/")) return "image";
+    if (value.startsWith("video/")) return "video";
+    if (value.startsWith("audio/")) return "audio";
+  }
+  if (values.some(value => value === "image")) return "image";
+  if (values.some(value => value === "video")) return "video";
+  if (values.some(value => value === "audio")) return "audio";
+
+  const name = file.name?.trim().toLowerCase() || "";
+  if (/\.(avif|gif|jpe?g|png|webp)$/.test(name)) return "image";
+  if (/\.(m4v|mov|mp4|webm)$/.test(name)) return "video";
+  if (/\.(aac|m4a|mp3|ogg|opus|wav)$/.test(name)) return "audio";
+  return "document";
 }
 
 function browserAttachmentUrl(messageId: string, file: SocialAttachment, context?: SocialAttachmentContext) {
