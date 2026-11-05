@@ -18,21 +18,9 @@ export type SessionUser = {
 };
 
 /**
- * The only administrator permitted to operate customer messaging and channel
- * integrations. Keep this capability separate from the general ADMIN role:
- * catalogue and back-office access intentionally remain governed by
- * requireAdmin().
- */
-export const MESSAGING_OWNER_EMAIL = "mark@importadora.local";
-
-export function normalizeAccountEmail(value: string) {
-  return value.trim().toLowerCase();
-}
-
-/**
- * A narrow, server-side capability for customer messaging. It deliberately
- * rejects sessions that still require a password change, even though they have
- * an ADMIN role.
+ * Customer messaging is available to every active administrator. Keeping the
+ * permission check centralised means its navigation, pages, server actions and
+ * API routes all follow the same role rule.
  */
 export function canManageMessaging(
   session: Pick<SessionUser, "email" | "role" | "requirePasswordChange"> | null | undefined,
@@ -40,15 +28,14 @@ export function canManageMessaging(
   return Boolean(
     session &&
     session.role === "ADMIN" &&
-    !session.requirePasswordChange &&
-    normalizeAccountEmail(session.email) === MESSAGING_OWNER_EMAIL,
+    !session.requirePasswordChange,
   );
 }
 
 /**
  * Advisors can work directly with customer conversations, but must not gain
  * access to message configuration, integrations, automations, or simulations.
- * Those controls remain reserved for canManageMessaging().
+ * Those controls remain reserved for administrators.
  */
 export function canUseMessageCenter(
   session: Pick<SessionUser, "email" | "role" | "requirePasswordChange"> | null | undefined,
@@ -218,8 +205,9 @@ export async function requireAdmin() {
 }
 
 /**
- * Use in Route Handlers that need an API-friendly authorization check. Callers
- * can return a controlled 403 without relying on redirect() control flow.
+ * Use in Route Handlers that need an API-friendly administrator authorization
+ * check. Callers can return a controlled 403 without relying on redirect()
+ * control flow.
  */
 export async function getMessagingOwnerSession(): Promise<SessionUser | null> {
   const session = await getSession();
@@ -237,8 +225,8 @@ export async function getMessageCenterSession(): Promise<SessionUser | null> {
 }
 
 /**
- * Use in pages and Server Actions that manage customer messaging. This keeps
- * the general ADMIN role unchanged while denying access to this sensitive area.
+ * Use in pages and Server Actions that manage customer messaging. All active
+ * administrators have this access; other roles remain outside this area.
  */
 export async function requireMessagingOwner() {
   const session = await requireAdmin();

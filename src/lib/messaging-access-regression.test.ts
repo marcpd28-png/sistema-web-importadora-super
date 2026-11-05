@@ -17,7 +17,7 @@ const advisorInboxHandlers = [
 
 const assignmentHandler = "../app/api/admin/conversations/[id]/assignment/route.ts";
 
-test("los controles sensibles de mensajería continúan bajo el guard de propietario", () => {
+test("los controles sensibles de mensajería continúan bajo el guard de administrador", () => {
   for (const path of ownerOnlyHandlers) {
     const source = readFileSync(new URL(path, import.meta.url), "utf8");
     assert.match(source, /getMessagingOwnerSession/);
@@ -115,7 +115,7 @@ test("la toma y derivación usan una ruta controlada por el propietario actual",
   assert.match(service, /unreadCount:\s*Math\.max\(existing\.unreadCount, 1\)/);
 });
 
-test("la interfaz no expone el centro de mensajes a otros administradores", () => {
+test("la interfaz reserva el centro de mensajes para perfiles con acceso administrativo", () => {
   const messagesLayout = readFileSync(new URL("../app/admin/mensajes/layout.tsx", import.meta.url), "utf8");
   const adminNav = readFileSync(new URL("../components/admin/admin-nav.tsx", import.meta.url), "utf8");
   const mobileDock = readFileSync(new URL("../components/admin/admin-sidebar.tsx", import.meta.url), "utf8");

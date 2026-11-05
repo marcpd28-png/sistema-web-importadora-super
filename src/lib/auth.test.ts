@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canManageMessaging, canUseMessageCenter, MESSAGING_OWNER_EMAIL } from "./auth";
+import { canManageMessaging, canUseMessageCenter } from "./auth";
 
 const messagingOwner = {
   email: "mark@importadora.local",
@@ -8,15 +8,13 @@ const messagingOwner = {
   requirePasswordChange: false,
 };
 
-test("permite mensajería únicamente al propietario normalizado", () => {
-  assert.equal(MESSAGING_OWNER_EMAIL, "mark@importadora.local");
+test("permite mensajería a cualquier administrador activo", () => {
   assert.equal(canManageMessaging(messagingOwner), true);
-  assert.equal(canManageMessaging({ ...messagingOwner, email: " MARK@IMPORTADORA.LOCAL " }), true);
+  assert.equal(canManageMessaging({ ...messagingOwner, email: "admin2@importadora.local" }), true);
 });
 
-test("niega mensajería a otros administradores, roles y sesiones pendientes", () => {
+test("niega mensajería a otros roles y sesiones pendientes", () => {
   assert.equal(canManageMessaging(null), false);
-  assert.equal(canManageMessaging({ ...messagingOwner, email: "adminmark@importadora.com" }), false);
   assert.equal(canManageMessaging({ ...messagingOwner, role: "USERSHOP" }), false);
   assert.equal(canManageMessaging({ ...messagingOwner, requirePasswordChange: true }), false);
 });
