@@ -9,6 +9,7 @@ export function MessagesSidebar() {
 
   const navItems = [
     { name: "Bandeja", href: "/admin/mensajes", icon: Inbox, exact: true },
+    { name: "WhatsApp", href: "/admin/mensajes/whatsapp", icon: MessageCircleMore, exact: true },
     { name: "Telegram", href: "/admin/mensajes/telegram", icon: Send, exact: true },
     { name: "Messenger", href: "/admin/mensajes/messenger", icon: MessageCircleMore, exact: true },
     { name: "TikTok", href: "/admin/mensajes/tiktok", icon: MessageCircleMore, exact: true },

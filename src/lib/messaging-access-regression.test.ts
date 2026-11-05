@@ -125,6 +125,20 @@ test("la interfaz reserva el centro de mensajes para perfiles con acceso adminis
   assert.match(mobileDock, /requiresMessagingAccess/);
 });
 
+test("los paneles administrativo y asesor ofrecen una bandeja de consulta de WhatsApp", () => {
+  const adminNav = readFileSync(new URL("../components/admin/admin-nav.tsx", import.meta.url), "utf8");
+  const advisorNav = readFileSync(new URL("../components/advisor/advisor-nav.tsx", import.meta.url), "utf8");
+  const adminPage = readFileSync(new URL("../app/admin/mensajes/whatsapp/page.tsx", import.meta.url), "utf8");
+  const advisorPage = readFileSync(new URL("../app/asesor/mensajes/whatsapp/page.tsx", import.meta.url), "utf8");
+
+  assert.match(adminNav, /href: "\/admin\/mensajes\/whatsapp"/);
+  assert.match(advisorNav, /href: "\/asesor\/mensajes\/whatsapp"/);
+  assert.match(adminPage, /initialChannel="WHATSAPP"/);
+  assert.match(advisorPage, /initialChannel="WHATSAPP"/);
+  assert.match(adminPage, /readOnly/);
+  assert.match(advisorPage, /readOnly/);
+});
+
 test("el layout asesor mantiene serializables las props del componente cliente", () => {
   const advisorLayout = readFileSync(new URL("../app/asesor/layout.tsx", import.meta.url), "utf8");
   const mobileDock = readFileSync(new URL("../components/admin/admin-sidebar.tsx", import.meta.url), "utf8");

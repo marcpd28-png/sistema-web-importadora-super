@@ -197,12 +197,14 @@ function asMessageType(value: string): MessageType {
 export function MessagesWorkspace({
   initialChannel = "",
   canManageBot = true,
+  readOnly = false,
   uploadEndpoint,
   viewer,
   advisorTargets,
 }: {
   initialChannel?: ConversationFilters["channel"];
   canManageBot?: boolean;
+  readOnly?: boolean;
   uploadEndpoint?: string;
   viewer: AssignmentViewer;
   advisorTargets: AdvisorTarget[];
@@ -827,8 +829,8 @@ export function MessagesWorkspace({
                   <MessageBubble
                     key={message.id}
                     message={message}
-                    onReply={(message) => setReplyTo(createMessageReply(message))}
-                    onRetry={(failed) => void handleSendMessage(failed.content, failed.mediaUrl ?? undefined, failed.messageType, readMessageReply(failed.metadata))}
+                    onReply={readOnly ? undefined : (message) => setReplyTo(createMessageReply(message))}
+                    onRetry={readOnly ? undefined : (failed) => void handleSendMessage(failed.content, failed.mediaUrl ?? undefined, failed.messageType, readMessageReply(failed.metadata))}
                   />
                 ))
               )}
@@ -850,15 +852,21 @@ export function MessagesWorkspace({
                   : 'Telegram: espera un nuevo mensaje del cliente para responder; la ventana de 24 horas terminó.'}
               </p>
             ) : null}
-            <MessageInput
-              key={activeId}
-              disabled={assignmentBusy || (activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000))}
-              onDraftActivity={handleDraftActivity}
-              onSendMessage={handleSendMessage}
-              replyTo={replyTo}
-              onCancelReply={() => setReplyTo(null)}
-              uploadEndpoint={uploadEndpoint}
-            />
+            {readOnly ? (
+              <p className="messages-channel-notice" role="status">
+                Bandeja de consulta: los mensajes de WhatsApp se muestran aquí sin habilitar envíos desde este panel.
+              </p>
+            ) : (
+              <MessageInput
+                key={activeId}
+                disabled={assignmentBusy || (activeConversation.channel === "TELEGRAM" && (!activeConversation.telegramLastInboundAt || clockNow - new Date(activeConversation.telegramLastInboundAt).getTime() >= 86400000))}
+                onDraftActivity={handleDraftActivity}
+                onSendMessage={handleSendMessage}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
+                uploadEndpoint={uploadEndpoint}
+              />
+            )}
           </div>
 
           <CustomerPanel conversation={activeConversation} />

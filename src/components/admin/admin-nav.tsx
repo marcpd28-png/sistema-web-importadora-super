@@ -38,6 +38,7 @@ type AdminNavLink = {
   kind?: "link" | "action";
   badgeKey?: keyof AdminNavBadges;
   requiresMessagingAccess?: boolean;
+  exact?: boolean;
 };
 
 type AdminNavSection = {
@@ -79,7 +80,8 @@ const sections: AdminNavSection[] = [
     title: "Clientes y Atención",
     links: [
       { href: "/admin/users", label: "Usuarios", icon: UsersRound },
-      { href: "/admin/mensajes", label: "Centro Mensajes", icon: MessageCircle, requiresMessagingAccess: true },
+      { href: "/admin/mensajes/whatsapp", label: "Mensajes WhatsApp", icon: MessageCircle, requiresMessagingAccess: true },
+      { href: "/admin/mensajes", label: "Centro Mensajes", icon: MessageCircle, requiresMessagingAccess: true, exact: true },
       { href: "/admin/opiniones", label: "Opiniones", icon: MessageSquareHeart },
       { href: "/admin/reclamos", label: "Libro Reclam.", icon: ShieldAlert, badgeKey: "newComplaintsCount" },
     ],
@@ -205,7 +207,7 @@ export function AdminNav({ badges, canAccessMessaging = false }: AdminNavProps) 
                 const isActive =
                   isLink &&
                   (pathname === link.href ||
-                    (link.href !== "/admin" && link.href !== "/" && pathname.startsWith(`${link.href}/`)));
+                    (!link.exact && link.href !== "/admin" && link.href !== "/" && pathname.startsWith(`${link.href}/`)));
                 const badgeCount = link.badgeKey && badges ? badges[link.badgeKey] : 0;
 
                 if (link.kind === "action") {
