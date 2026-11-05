@@ -36,6 +36,10 @@ export type SocialConversation = {
   }[];
   messages?: SocialMessage[];
 };
+type SocialProfileRefresh = {
+  status?: "updated" | "skipped" | "unavailable" | "failed";
+  contact?: NonNullable<SocialConversation["contact"]>;
+};
 export type SocialPage<T> = { data: T[]; nextCursor: string | null };
 type SocialMediaFile = {
   id: string;
@@ -79,8 +83,8 @@ export function socialConversationDisplayName(conversation: SocialConversation, 
   if (fullName) return fullName;
 
   const contactName = [
-    displayText(conversation.contact?.firstName),
-    displayText(conversation.contact?.lastName),
+    providerDisplayName(conversation.contact?.firstName),
+    providerDisplayName(conversation.contact?.lastName),
   ].filter(Boolean).join(" ");
   if (contactName) return contactName;
 
@@ -92,6 +96,69 @@ export function socialConversationDisplayName(conversation: SocialConversation, 
 
   const identity = displayText(conversation.id);
   return identity ? `Cliente sin nombre · ${identity.slice(-6)}` : "Cliente sin nombre";
+}
+
+/**
+ * Messenger initially creates some contacts with the placeholder "Cliente".
+ * ChatbotX can then ask Facebook for the profile behind that contact inbox.
+ * A username is still useful as a temporary label, but it is not a Facebook
+ * display name, so it must not prevent that profile lookup.
+ */
+export function socialConversationNeedsProfileRefresh(conversation: SocialConversation, channel: SocialChannel) {
+  if (channel !== "messenger") return false;
+
+  return !providerDisplayName(conversation.contact?.fullName) && ![
+    providerDisplayName(conversation.contact?.firstName),
+    providerDisplayName(conversation.contact?.lastName),
+  ].some(Boolean);
+}
+
+/**
+ * Asks the connected Messenger provider to obtain the customer's current
+ * Facebook name. Failures are intentionally non-fatal: a temporary Facebook
+ * or provider issue must never stop the inbox itself from loading.
+ */
+export async function refreshSocialConversationProfile(conversation: SocialConversation, channel: SocialChannel) {
+  if (!socialConversationNeedsProfileRefresh(conversation, channel)) return conversation;
+
+  const contactId = displayText(conversation.contact?.id);
+  const matchingInboxes = conversation.contactInboxes.filter((inbox) => inbox.channel === channel);
+  if (!contactId || contactId.length > 200 || matchingInboxes.length !== 1 || !/^\d+$/.test(matchingInboxes[0].id)) return conversation;
+
+  try {
+    const refreshed = await socialRequest<SocialProfileRefresh>(
+      `/contacts/${encodeURIComponent(`id:${contactId}`)}/refresh-profile`,
+      { contactInboxId: matchingInboxes[0].id },
+    );
+    if (refreshed.status !== "updated" || !refreshed.contact) return conversation;
+
+    return {
+      ...conversation,
+      contact: { ...conversation.contact, ...refreshed.contact },
+    };
+  } catch {
+    return conversation;
+  }
+}
+
+/** Refresh only unresolved names and limit concurrent Facebook lookups. */
+export async function refreshSocialConversationProfiles(conversations: SocialConversation[], channel: SocialChannel) {
+  if (channel !== "messenger") return conversations;
+
+  const refreshed = [...conversations];
+  const pending = conversations
+    .map((conversation, index) => ({ conversation, index }))
+    .filter(({ conversation }) => socialConversationNeedsProfileRefresh(conversation, channel));
+  let cursor = 0;
+
+  await Promise.all(Array.from({ length: Math.min(8, pending.length) }, async () => {
+    while (cursor < pending.length) {
+      const current = pending[cursor++];
+      refreshed[current.index] = await refreshSocialConversationProfile(current.conversation, channel);
+    }
+  }));
+
+  return refreshed;
 }
 
 function socialReplyKey(channel: SocialChannel, conversationId: string, text: string, mediaFileId?: string) {
