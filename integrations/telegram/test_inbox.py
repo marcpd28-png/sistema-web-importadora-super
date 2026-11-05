@@ -416,6 +416,30 @@ class InboxTests(unittest.TestCase):
         self.assertEqual(state,'failed')
         self.assertIn('catálogo inválido',error)
 
+    def test_super_bot_logs_a_sanitized_telegram_document_rejection(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        def reject(method, body):
+            if method == 'sendDocument':
+                raise urllib.error.HTTPError(
+                    'https://api.telegram.org/bot-secret/sendDocument',
+                    400,
+                    'Bad Request',
+                    {},
+                    BytesIO(b'{"ok":false,"description":"Bad Request: failed to get HTTP URL content"}'),
+                )
+            return {'message_id':33}
+        self.inbox.raw_api=reject
+        self.inbox.super_bot_reply=lambda request: {
+            'text':'Aquí tienes el catálogo.',
+            'document':{'url':'https://tiendavirtualsuper.com/uploads/catalogs/catalogo.pdf'},
+            'products':[],
+        }
+
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        state,error=self.inbox.db.execute('SELECT state,error FROM inbox_super_bot_replies').fetchone()
+        self.assertEqual(state,'failed')
+        self.assertIn('Telegram rechazó el envío',error)
+
     def test_super_bot_http_reply_reads_the_response_once(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
         class Response:
