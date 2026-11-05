@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpenText, FileText, MessageCircleMore, MessagesSquare, Music2, Send } from "lucide-react";
+import { BookOpenText, FileText, MessageCircle, MessageCircleMore, MessagesSquare, Music2, Send } from "lucide-react";
 import { usePathname } from "next/navigation";
 import styles from "./advisor-nav.module.css";
 
@@ -13,6 +13,7 @@ const links = [
 ];
 
 const messageChannels = [
+  { href: "/asesor/mensajes/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/asesor/mensajes", label: "Telegram", icon: Send },
   { href: "/asesor/mensajes/messenger", label: "Messenger", icon: MessageCircleMore },
   { href: "/asesor/mensajes/tiktok", label: "TikTok", icon: Music2 },

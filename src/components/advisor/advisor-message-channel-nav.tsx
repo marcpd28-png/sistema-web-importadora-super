@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircleMore, Music2, Send } from "lucide-react";
+import { MessageCircle, MessageCircleMore, Music2, Send } from "lucide-react";
 import { usePathname } from "next/navigation";
 import styles from "./advisor-message-channel-nav.module.css";
 
 const channels = [
+  { href: "/asesor/mensajes/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/asesor/mensajes", label: "Telegram", icon: Send },
   { href: "/asesor/mensajes/messenger", label: "Messenger", icon: MessageCircleMore },
   { href: "/asesor/mensajes/tiktok", label: "TikTok", icon: Music2 },
@@ -22,13 +23,7 @@ export function AdvisorMessageChannelNav() {
           const active = pathname === href || (href !== "/asesor/mensajes" && pathname.startsWith(`${href}/`));
 
           return (
-            <Link
-              aria-current={active ? "page" : undefined}
-              className={styles.link}
-              data-active={active}
-              href={href}
-              key={href}
-            >
+            <Link aria-current={active ? "page" : undefined} className={styles.link} data-active={active} href={href} key={href}>
               <Icon aria-hidden="true" size={15} strokeWidth={2.2} />
               <span>{label}</span>
             </Link>
