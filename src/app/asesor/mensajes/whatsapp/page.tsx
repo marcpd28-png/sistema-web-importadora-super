@@ -24,6 +24,7 @@ export default async function AdvisorWhatsAppInboxPage() {
         <MessagesWorkspace
           advisorTargets={advisors}
           canManageBot={false}
+          conversationApiBase="/api/asesor/mensajes/whatsapp/conversations"
           initialChannel="WHATSAPP"
           readOnly
           viewer={{ id: session.userId, name: session.name, isMessagingOwner: false }}
