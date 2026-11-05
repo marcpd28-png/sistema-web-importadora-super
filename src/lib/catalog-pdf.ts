@@ -130,17 +130,39 @@ type ProductWithCatalogImageFields = {
   wholesaleMinQty: number;
 };
 
-function toCatalogProductImage(product: ProductWithCatalogImageFields): CatalogProductImage {
-  const imageUrls = Array.from(
+/**
+ * ERP uses a real, decodable JPEG for records without a photo. It must never
+ * count as a product photo just because image processing can open the file.
+ * Match the stable placeholder filenames, rather than a broad host rule, so
+ * a legitimate supplier photo can still be used as a fallback.
+ */
+export function isCatalogImagePlaceholder(imageUrl: string) {
+  try {
+    const parsed = new URL(imageUrl, "https://tiendavirtualsuper.com");
+    const filename = decodeURIComponent(parsed.pathname.split("/").pop() ?? "").toLowerCase();
+    return /(?:^|[-_.])(?:imagen[-_ ]?no[-_ ]?disponible|sin[-_ ]?imagen|image[-_ ]?not[-_ ]?available|no[-_ ]?image|noimage|placeholder)(?:[-_.]|$)/.test(filename);
+  } catch {
+    // An invalid URL is left to the strict image loader, which will reject it
+    // rather than risk silently treating it as a usable product photo.
+    return false;
+  }
+}
+
+export function catalogProductImageUrls(product: Pick<ProductWithCatalogImageFields, "localImageUrl" | "media" | "sourceImageUrl" | "imageUrl">) {
+  return Array.from(
     new Set(
       [
         product.localImageUrl,
         ...product.media.map((media) => media.url),
         product.sourceImageUrl,
         product.imageUrl,
-      ].filter((value): value is string => Boolean(value?.trim())),
+      ].filter((value): value is string => typeof value === "string" && Boolean(value.trim()) && !isCatalogImagePlaceholder(value.trim())),
     ),
   );
+}
+
+function toCatalogProductImage(product: ProductWithCatalogImageFields): CatalogProductImage {
+  const imageUrls = catalogProductImageUrls(product);
 
   return { ...product, imageUrls };
 }
@@ -174,9 +196,11 @@ async function findProjectorImages(): Promise<CatalogProductImage[]> {
     },
   });
 
-  // Keep rows with no stored photo. Strict preflight below will fail the
-  // complete request rather than quietly removing them from the PDF.
-  return products.map(toCatalogProductImage);
+  // A visual catalogue must never include a known no-image placeholder. Rows
+  // with no remaining real-photo candidate are intentionally left out; the
+  // strict preflight still prevents broken candidate URLs from producing an
+  // incomplete or blank page.
+  return products.map(toCatalogProductImage).filter((product) => product.imageUrls.length > 0);
 }
 
 async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]> {
@@ -202,11 +226,15 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
   // Reapply the identity-search order, then place broad fan catalogues into
   // meaningful sections. The manifest later checks this exact sequence,
   // which prevents duplicated or omitted pages between parts.
-  return ids.map((id) => byId.get(id)!).map((product) => {
+  return ids.flatMap((id) => {
+    const product = byId.get(id)!;
+    // Products without a real photo are not catalogued: a visual PDF is more
+    // useful without a "sin imagen" card than with every sellable row.
+    if (!product.imageUrls.length) return [];
     const group = catalogPresentationGroup(product, terms);
-    return group
+    return [group
       ? { ...product, catalogGroup: group.label, catalogGroupOrder: group.order }
-      : product;
+      : product];
   }).sort((left, right) => {
     const groupOrder = (left.catalogGroupOrder ?? 0) - (right.catalogGroupOrder ?? 0);
     if (groupOrder) return groupOrder;
@@ -218,7 +246,7 @@ async function findCatalogImages(terms: string[]): Promise<CatalogProductImage[]
 
 function getCatalogFingerprint(products: CatalogProductImage[]) {
   return createHash("sha256")
-    .update("large-product-page-v4-current-prices")
+    .update("large-product-page-v5-real-photos-current-prices")
     .update(
       JSON.stringify(
         products.map((product) => [

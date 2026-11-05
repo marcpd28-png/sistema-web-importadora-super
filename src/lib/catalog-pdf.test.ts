@@ -5,7 +5,9 @@ import sharp from "sharp";
 import {
   CatalogPdfImageCoverageError,
   CatalogPdfSizeLimitError,
+  catalogProductImageUrls,
   isGeneralCatalogRequest,
+  isCatalogImagePlaceholder,
   isProjectorCatalogRequest,
   loadCatalogImagesStrict,
   parseCatalogRequest,
@@ -52,6 +54,24 @@ test("ordena el catálogo amplio de ventiladores por tipo de producto", () => {
   assert.equal(catalogPresentationGroup({ name: "SOPORTE CON VENTILADOR PARA LAPTOP", category: "ACCESORIOS PARA CELULARES" }, terms)?.label, "VENTILADORES Y COOLERS PARA LAPTOP");
   assert.equal(catalogPresentationGroup({ name: "COOLER PARA CELULAR" }, terms)?.label, "VENTILADORES Y COOLERS PARA CELULAR");
   assert.equal(catalogPresentationGroup({ name: "FOCO VENTILADOR" }, terms)?.label, "FOCOS Y CALEFACTORES CON VENTILADOR");
+});
+
+test("excluye el placeholder de ERP y conserva una foto real alternativa", () => {
+  const placeholder = "https://original.negocioserp.com/logo/imagen-no-disponible.jpg";
+  assert.equal(isCatalogImagePlaceholder(placeholder), true);
+  assert.equal(isCatalogImagePlaceholder("/uploads/products/celular-real.webp"), false);
+  assert.deepEqual(catalogProductImageUrls({
+    localImageUrl: null,
+    media: [{ url: placeholder }, { url: "/uploads/products/celular-real.webp" }],
+    sourceImageUrl: placeholder,
+    imageUrl: placeholder,
+  }), ["/uploads/products/celular-real.webp"]);
+  assert.deepEqual(catalogProductImageUrls({
+    localImageUrl: null,
+    media: [],
+    sourceImageUrl: placeholder,
+    imageUrl: placeholder,
+  }), []);
 });
 
 test("quita márgenes transparentes sin convertir la foto rectangular en un cuadrado", async () => {
