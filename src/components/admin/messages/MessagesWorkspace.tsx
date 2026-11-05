@@ -123,10 +123,11 @@ function buildMessageParams(
 async function fetchConversationsPage(
   filters: ConversationFilters,
   page: number,
+  conversationApiBase: string,
   signal?: AbortSignal,
 ) {
   const params = buildConversationParams(filters, page);
-  const response = await fetch(`/api/admin/conversations?${params.toString()}`, {
+  const response = await fetch(`${conversationApiBase}?${params.toString()}`, {
     cache: "no-store",
     signal,
   });
@@ -141,11 +142,12 @@ async function fetchConversationsPage(
 async function fetchMessagesPage(
   conversationId: string,
   filters: ConversationFilters,
+  conversationApiBase: string,
   extra?: { after?: string; afterId?: string; before?: string; beforeId?: string },
   signal?: AbortSignal,
 ) {
   const params = buildMessageParams(filters, extra);
-  const response = await fetch(`/api/admin/conversations/${conversationId}/messages?${params.toString()}`, {
+  const response = await fetch(`${conversationApiBase}/${conversationId}/messages?${params.toString()}`, {
     cache: "no-store",
     signal,
   });
@@ -197,6 +199,7 @@ function asMessageType(value: string): MessageType {
 export function MessagesWorkspace({
   initialChannel = "",
   canManageBot = true,
+  conversationApiBase = "/api/admin/conversations",
   readOnly = false,
   uploadEndpoint,
   viewer,
@@ -204,6 +207,7 @@ export function MessagesWorkspace({
 }: {
   initialChannel?: ConversationFilters["channel"];
   canManageBot?: boolean;
+  conversationApiBase?: string;
   readOnly?: boolean;
   uploadEndpoint?: string;
   viewer: AssignmentViewer;
@@ -333,7 +337,7 @@ export function MessagesWorkspace({
       setConversationPage(1);
 
       try {
-        const data = await fetchConversationsPage(filtersSnapshot, 1, controller.signal);
+        const data = await fetchConversationsPage(filtersSnapshot, 1, conversationApiBase, controller.signal);
         setWorkspaceError(null);
         setConversations(data.items);
         setConversationTotal(data.total);
@@ -354,7 +358,7 @@ export function MessagesWorkspace({
 
     const interval = window.setInterval(async () => {
       try {
-        const data = await fetchConversationsPage(filtersSnapshot, 1);
+        const data = await fetchConversationsPage(filtersSnapshot, 1, conversationApiBase);
         const merged = mergeConversations(conversationsRef.current, data.items);
         setConversations(merged);
         setConversationTotal(data.total);
@@ -369,7 +373,7 @@ export function MessagesWorkspace({
       window.clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedConversationKey, refreshNonce]);
+  }, [conversationApiBase, debouncedConversationKey, refreshNonce]);
 
   useEffect(() => {
     if (!activeId) {
@@ -383,7 +387,7 @@ export function MessagesWorkspace({
       setLoadingMessages(true);
 
       try {
-        const data = await fetchMessagesPage(activeId, filtersSnapshot, undefined, controller.signal);
+        const data = await fetchMessagesPage(activeId, filtersSnapshot, conversationApiBase, undefined, controller.signal);
         setWorkspaceError(null);
         setActiveMessages(data.items);
         setMessageTotal(data.total);
@@ -404,7 +408,7 @@ export function MessagesWorkspace({
     loadInitialMessages();
 
     return () => controller.abort();
-  }, [activeId, messageFilters, scrollToBottom]);
+  }, [activeId, conversationApiBase, messageFilters, scrollToBottom]);
 
   useEffect(() => {
     if (!activeId) {
@@ -420,11 +424,11 @@ export function MessagesWorkspace({
         // Existing messages change state when a delivery is confirmed or
         // rejected by a connected transport. An after-only cursor cannot see these updates.
         const [data, recent] = await Promise.all([
-          fetchMessagesPage(activeId, filtersSnapshot, latestMessage ? {
+          fetchMessagesPage(activeId, filtersSnapshot, conversationApiBase, latestMessage ? {
             afterId: latestMessage.id,
             after: new Date(latestMessage.createdAt).toISOString(),
           } : undefined),
-          fetchMessagesPage(activeId, filtersSnapshot),
+          fetchMessagesPage(activeId, filtersSnapshot, conversationApiBase),
         ]);
         if (pollingCancelled) return;
 
@@ -444,7 +448,7 @@ export function MessagesWorkspace({
     }, MESSAGE_POLL_MS);
 
     return () => { pollingCancelled = true; window.clearInterval(interval); };
-  }, [activeId, messageFilters, scrollToBottom]);
+  }, [activeId, conversationApiBase, messageFilters, scrollToBottom]);
 
   const handleFiltersChange = useCallback((nextFilters: Partial<ConversationFilters>) => {
     setFilters((current) => ({ ...current, ...nextFilters }));
@@ -459,7 +463,7 @@ export function MessagesWorkspace({
     setLoadingMoreConversations(true);
 
     try {
-      const data = await fetchConversationsPage(debouncedFilters, nextPage);
+      const data = await fetchConversationsPage(debouncedFilters, nextPage, conversationApiBase);
       setConversations((current) => mergeConversations(current, data.items));
       setConversationPage(nextPage);
       setConversationTotal(data.total);
@@ -472,6 +476,7 @@ export function MessagesWorkspace({
   }, [
     conversationHasMore,
     conversationPage,
+    conversationApiBase,
     debouncedFilters,
     loadingConversations,
     loadingMoreConversations,
@@ -494,7 +499,7 @@ export function MessagesWorkspace({
     setLoadingOlderMessages(true);
 
     try {
-      const data = await fetchMessagesPage(activeId, messageFilters, {
+      const data = await fetchMessagesPage(activeId, messageFilters, conversationApiBase, {
         beforeId: oldestMessage.id,
         before: new Date(oldestMessage.createdAt).toISOString(),
       });
@@ -515,7 +520,7 @@ export function MessagesWorkspace({
     } finally {
       setLoadingOlderMessages(false);
     }
-  }, [activeId, loadingMessages, loadingOlderMessages, messageFilters, messageHasMore]);
+  }, [activeId, conversationApiBase, loadingMessages, loadingOlderMessages, messageFilters, messageHasMore]);
 
   const handleMessagesScroll = useCallback(() => {
     const container = messagesContainerRef.current;
@@ -562,7 +567,7 @@ export function MessagesWorkspace({
 
   const handleSelectConversation = async (id: string) => {
     if (assignmentBusy) return;
-    if (!viewer.isMessagingOwner && !(await claimConversation(id))) return;
+    if (!readOnly && !viewer.isMessagingOwner && !(await claimConversation(id))) return;
 
     setActiveId(id);
     setReplyTo(null);
@@ -574,6 +579,8 @@ export function MessagesWorkspace({
     setActiveMessages([]);
     setMessageTotal(0);
     setMessageHasMore(false);
+    if (readOnly) return;
+
     void fetch(`/api/admin/conversations/${id}`, {
       body: JSON.stringify({ markAsRead: true }),
       headers: { "Content-Type": "application/json" },
@@ -806,6 +813,7 @@ export function MessagesWorkspace({
               assignmentBusy={assignmentBusy}
               canManageBot={canManageBot}
               conversation={activeConversation}
+              readOnly={readOnly}
               onBack={handleBackToConversations}
               onCloseConversation={handleCloseConversation}
               onTakeConversation={handleTakeConversation}

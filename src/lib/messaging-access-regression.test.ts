@@ -138,8 +138,19 @@ test("los paneles administrativo y asesor ofrecen una bandeja de consulta de Wha
   assert.ok(advisorChannelNav.indexOf('label: "WhatsApp"') < advisorChannelNav.indexOf('label: "Messenger"'));
   assert.match(adminPage, /initialChannel="WHATSAPP"/);
   assert.match(advisorPage, /initialChannel="WHATSAPP"/);
+  assert.match(advisorPage, /conversationApiBase="\/api\/asesor\/mensajes\/whatsapp\/conversations"/);
   assert.match(adminPage, /readOnly/);
   assert.match(advisorPage, /readOnly/);
+});
+
+test("la bandeja de WhatsApp del asesor sólo consulta conversaciones del canal", () => {
+  const list = readFileSync(new URL("../app/api/asesor/mensajes/whatsapp/conversations/route.ts", import.meta.url), "utf8");
+  const messages = readFileSync(new URL("../app/api/asesor/mensajes/whatsapp/conversations/[id]/messages/route.ts", import.meta.url), "utf8");
+
+  assert.match(list, /channel: "WHATSAPP"/);
+  assert.match(list, /session\.role !== "ASESOR"/);
+  assert.match(messages, /conversation\.channel !== "WHATSAPP"/);
+  assert.match(messages, /session\.role !== "ASESOR"/);
 });
 
 test("el layout asesor mantiene serializables las props del componente cliente", () => {

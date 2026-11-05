@@ -22,6 +22,7 @@ interface Props {
   assignmentBusy: boolean;
   canManageBot?: boolean;
   conversation: Conversation;
+  readOnly?: boolean;
   onToggleBot?: () => void;
   onTakeConversation: () => void;
   onCloseConversation: () => void;
@@ -35,6 +36,7 @@ export function ChatHeader({
   assignmentBusy,
   canManageBot = true,
   conversation,
+  readOnly = false,
   onToggleBot,
   onTakeConversation,
   onCloseConversation,
@@ -45,7 +47,7 @@ export function ChatHeader({
   const { contact, botEnabled, assignedUser } = conversation;
   const [targetSelection, setTargetSelection] = useState({ scope: "", advisorId: "" });
   const isCurrentAdvisor = assignedUser?.id === viewer.id;
-  const canTransfer = viewer.isMessagingOwner || isCurrentAdvisor;
+  const canTransfer = !readOnly && (viewer.isMessagingOwner || isCurrentAdvisor);
   const transferScope = `${conversation.id}:${assignedUser?.id ?? "unassigned"}`;
   const targetId = targetSelection.scope === transferScope ? targetSelection.advisorId : "";
   const targets = useMemo(
@@ -109,7 +111,7 @@ export function ChatHeader({
 
       <ConversationStatus conversation={conversation} />
 
-      <div className="chat-header-actions">
+      {!readOnly ? <div className="chat-header-actions">
         {canManageBot && botEnabled ? (
           <button className="btn btn-outline" disabled={assignmentBusy} onClick={onToggleBot} type="button">
             <StopCircle size={14} /> Pausar Bot
@@ -129,7 +131,7 @@ export function ChatHeader({
         <button aria-label="Cerrar conversación" className="btn btn-outline chat-header-close" disabled={assignmentBusy} onClick={onCloseConversation} title="Cerrar conversación" type="button">
           <CheckCircle size={14} />
         </button>
-      </div>
+      </div> : null}
     </div>
   );
 }
