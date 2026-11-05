@@ -128,11 +128,14 @@ test("la interfaz reserva el centro de mensajes para perfiles con acceso adminis
 test("los paneles administrativo y asesor ofrecen una bandeja de consulta de WhatsApp", () => {
   const adminNav = readFileSync(new URL("../components/admin/admin-nav.tsx", import.meta.url), "utf8");
   const advisorNav = readFileSync(new URL("../components/advisor/advisor-nav.tsx", import.meta.url), "utf8");
+  const advisorChannelNav = readFileSync(new URL("../components/advisor/advisor-message-channel-nav.tsx", import.meta.url), "utf8");
   const adminPage = readFileSync(new URL("../app/admin/mensajes/whatsapp/page.tsx", import.meta.url), "utf8");
   const advisorPage = readFileSync(new URL("../app/asesor/mensajes/whatsapp/page.tsx", import.meta.url), "utf8");
 
   assert.match(adminNav, /href: "\/admin\/mensajes\/whatsapp"/);
   assert.match(advisorNav, /href: "\/asesor\/mensajes\/whatsapp"/);
+  assert.match(advisorChannelNav, /href: "\/asesor\/mensajes\/whatsapp"/);
+  assert.ok(advisorChannelNav.indexOf('label: "WhatsApp"') < advisorChannelNav.indexOf('label: "Messenger"'));
   assert.match(adminPage, /initialChannel="WHATSAPP"/);
   assert.match(advisorPage, /initialChannel="WHATSAPP"/);
   assert.match(adminPage, /readOnly/);
