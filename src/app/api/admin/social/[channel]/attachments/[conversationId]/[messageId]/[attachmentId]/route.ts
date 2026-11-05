@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type Context = { params: Promise<{ channel: string; conversationId: string; messageId: string; attachmentId: string }> };
-type MessageResponse = SocialMessage | { data: SocialMessage };
+type MessagePage = { data: SocialMessage[]; nextCursor: string | null };
 
 function failure(error: unknown) {
   return NextResponse.json(
@@ -29,8 +29,29 @@ function validOpaqueId(value: string) {
   return value.length > 0 && value.length <= 200 && !/[\x00-\x1f\x7f\\/]/.test(value) && value !== "." && value !== "..";
 }
 
-function messageFromResponse(value: MessageResponse) {
-  return "data" in value ? value.data : value;
+/**
+ * ChatbotX exposes conversation messages through its paginated collection.
+ * Its individual-message URL is not available to the inbox token, so looking
+ * up an attachment there made every private image, video and audio fail even
+ * though the message was visible in the conversation itself.
+ */
+async function attachmentMessage(conversationId: string, messageId: string) {
+  let cursor: string | null = null;
+  const visitedCursors = new Set<string>();
+
+  for (let pageNumber = 0; pageNumber < 100; pageNumber++) {
+    const query = new URLSearchParams({ perPage: "50" });
+    if (cursor) query.set("cursor", cursor);
+    const page = await socialRequest<MessagePage>(`/conversations/${encodeURIComponent(conversationId)}/messages?${query}`);
+    const message = page.data.find((candidate) => candidate.id === messageId);
+    if (message) return message;
+
+    if (!page.nextCursor || visitedCursors.has(page.nextCursor)) break;
+    visitedCursors.add(page.nextCursor);
+    cursor = page.nextCursor;
+  }
+
+  return null;
 }
 
 function requestedRange(request: NextRequest) {
@@ -206,8 +227,7 @@ async function serve(request: NextRequest, context: Context, headOnly: boolean) 
       throw new SocialInboxError("Adjunto no válido.", 400);
     }
     const { inbox } = await socialConversation(conversationId, channel);
-    const response = await socialRequest<MessageResponse>(`/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`);
-    const message = messageFromResponse(response);
+    const message = await attachmentMessage(conversationId, messageId);
     if (!message || message.deletedAt || message.contactInboxId !== inbox.id) {
       throw new SocialInboxError("Adjunto no disponible.", 404);
     }
