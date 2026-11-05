@@ -16,13 +16,13 @@ const defaultDestinations: SidebarDestination[] = [
   { href: "/admin", label: "Inicio", icon: House },
   { href: "/admin/products", label: "Productos", icon: PackageSearch },
   { href: "/admin/orders", label: "Pedidos", icon: ShoppingBag },
-  { href: "/admin/mensajes", label: "Mensajes", icon: MessageCircle, requiresMessagingAccess: true },
+  { href: "/admin/mensajes/whatsapp", label: "WhatsApp", icon: MessageCircle, requiresMessagingAccess: true },
 ];
 
 const advisorDestinations: SidebarDestination[] = [
   { href: "/asesor/catalogo", label: "Catálogo", icon: BookOpenText },
   { href: "/asesor/cotizaciones", label: "Cotizaciones", icon: FileText },
-  { href: "/asesor/mensajes", label: "Mensajes", icon: MessagesSquare },
+  { href: "/asesor/mensajes/whatsapp", label: "WhatsApp", icon: MessagesSquare },
 ];
 
 export function AdminSidebar({

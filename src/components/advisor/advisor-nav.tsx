@@ -8,6 +8,7 @@ import styles from "./advisor-nav.module.css";
 const links = [
   { href: "/asesor/catalogo", label: "Catálogo", icon: BookOpenText },
   { href: "/asesor/cotizaciones", label: "Cotizaciones", icon: FileText },
+  { href: "/asesor/mensajes/whatsapp", label: "Mensajes WhatsApp", icon: MessagesSquare },
   { href: "/asesor/mensajes", label: "Centro de mensajes", icon: MessagesSquare },
 ];
 
