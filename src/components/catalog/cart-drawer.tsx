@@ -26,6 +26,12 @@ import { getLinePricing } from "@/lib/pricing";
 import type { StoreSettingsView } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/components/catalog/cart-store";
+import {
+  beginMessengerHandoff,
+  cancelMessengerHandoff,
+  completeMessengerHandoff,
+  type MessengerPopup,
+} from "@/lib/messenger-navigation";
 
 type CartDrawerProps = {
   settings: StoreSettingsView;
@@ -691,6 +697,10 @@ export function CartDrawer({
     }
 
     quoteSubmitPendingRef.current = true;
+    // Open the blank target while this is still the direct click gesture.
+    // Navigating it only after the server confirms the reusable request avoids
+    // popup blockers without ever opening an untrusted URL.
+    const messengerPopup: MessengerPopup = beginMessengerHandoff(window.open.bind(window));
     setQuoteState("loading");
     setQuoteMessage("");
     setQuoteMessageTone("neutral");
@@ -730,6 +740,7 @@ export function CartDrawer({
         localQuoteId?: string;
         statusSteps?: QuoteStatusStep[];
         messengerHref?: string | null;
+        messengerConfigurationFallback?: boolean;
       } = {};
 
       if (responseText.trim()) {
@@ -748,12 +759,18 @@ export function CartDrawer({
 
       setQuoteState("success");
       if (payload.localQuoteId) trackStoreEvent("quote_created", { quoteId: payload.localQuoteId });
-      setQuoteMessage(payload.message ?? "Cotización enviada correctamente.");
+      const configurationNote = payload.messengerConfigurationFallback
+        ? " Se abrió el canal de atención predeterminado; la tienda debe confirmar su enlace oficial de Messenger."
+        : "";
+      setQuoteMessage(`${payload.message ?? "Cotización enviada correctamente."}${configurationNote}`);
       setQuoteMessageTone("success");
       setQuoteStatusSteps(payload.statusSteps ?? []);
       setQuoteMessengerHref(payload.messengerHref ?? null);
       setQuoteFormOpen(true);
+      if (payload.messengerHref) completeMessengerHandoff(messengerPopup, payload.messengerHref);
+      else cancelMessengerHandoff(messengerPopup);
     } catch (error) {
+      cancelMessengerHandoff(messengerPopup);
       setQuoteState("error");
       trackStoreEvent("checkout_error");
       setQuoteMessage(

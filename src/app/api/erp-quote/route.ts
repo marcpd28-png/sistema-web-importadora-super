@@ -11,7 +11,10 @@ import {
   QuoteLineValidationError,
 } from "@/lib/quote-pricing";
 import { getStoreSettings } from "@/lib/store";
-import { buildMessengerReferralUrl } from "@/lib/messenger-url";
+import { buildMessengerReferral } from "@/lib/messenger-url";
+import { buildQuoteMessengerHandoff, type QuoteHandoffRecord } from "@/lib/quote-messenger-handoff";
+import { createQuoteMessengerReference } from "@/lib/quote-messenger-reference";
+import { validateQuoteFulfillment } from "@/lib/quote-checkout-intent";
 
 type QuoteRequestItem = {
   code: string;
@@ -28,8 +31,6 @@ type QuoteCustomerPayload = {
 };
 
 export const maxDuration = 120;
-
-const DELIVERY_TYPES = new Set(["DELIVERY", "PICKUP", "PROVINCE"]);
 
 export async function POST(request: Request) {
   let localQuoteId: string | null = null;
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     requestId = payload.requestId;
     if (payload.requestId) {
       const existing = await prisma.quote.findUnique({ where: { id: payload.requestId } });
-      if (existing) return existingQuoteResponse(existing);
+      if (existing) return await existingQuoteResponse(existing);
     }
     const customerAddress = payload.customer?.address?.trim() || payload.address?.trim() || null;
     let requestedItems: QuoteRequestItem[];
@@ -77,13 +78,8 @@ export async function POST(request: Request) {
     }
 
     const deliveryType = payload.deliveryType?.trim() || "DELIVERY";
-    if (!DELIVERY_TYPES.has(deliveryType)) {
-      return NextResponse.json({ message: "Selecciona cómo recibirás tu pedido." }, { status: 400 });
-    }
-
-    if (deliveryType !== "PICKUP" && !customerAddress) {
-      return NextResponse.json({ message: "Ingresa la dirección o ciudad de entrega." }, { status: 400 });
-    }
+    const fulfillmentError = validateQuoteFulfillment(deliveryType, customerAddress);
+    if (fulfillmentError) return NextResponse.json({ message: fulfillmentError }, { status: 400 });
 
     const customerName = payload.customer?.name?.trim() || session?.name?.trim() || "";
     const customerPhone = payload.customer?.phone?.trim() || shopper?.phone?.trim() || "";
@@ -205,6 +201,14 @@ export async function POST(request: Request) {
       },
     });
     localQuoteId = localQuote.id;
+    // Persist a signed, opaque link before ERP work begins. If it times out
+    // after receiving the request, a retry uses this same quote and chat link
+    // rather than risking a second quotation.
+    const pendingMessengerHref = buildMessengerReferral(
+      settings.messengerUrl,
+      createQuoteMessengerReference(localQuote.id),
+    ).href;
+    await prisma.quote.update({ where: { id: localQuote.id }, data: { contactHref: pendingMessengerHref } });
     const client = new FacturadorClient({ ...getFacturadorConfig(), maxRetries: 0, timeoutMs: 10000 });
     const result = await client.createQuotation({
       customer: {
@@ -220,10 +224,11 @@ export async function POST(request: Request) {
     });
 
     const { quoteNumber, externalId: quoteExternalId } = confirmQuotationResponse(result.response);
-    const messengerHref = buildMessengerReferralUrl(
+    const messengerReferral = buildMessengerReferral(
       settings.messengerUrl,
-      `cotizacion-${quoteNumber || localQuote.id}`,
+      createQuoteMessengerReference(localQuote.id),
     );
+    const messengerHref = messengerReferral.href;
     const warnings = result.warnings.filter(Boolean);
     const messageBase = quoteNumber
       ? `Cotización ${quoteNumber} registrada en el ERP.`
@@ -274,12 +279,12 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({
       localQuoteId: localQuote.id, message: messageBase, quoteNumber,
-      statusSteps, messengerHref, warnings,
+      statusSteps, messengerHref, warnings, messengerConfigurationFallback: messengerReferral.usedFallback,
     });
   } catch (error) {
     if (requestId && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const existing = await prisma.quote.findUnique({ where: { id: requestId } });
-      if (existing) return existingQuoteResponse(existing);
+      if (existing) return await existingQuoteResponse(existing);
     }
     if (localQuoteId) {
       await prisma.quote
@@ -290,10 +295,18 @@ export async function POST(request: Request) {
               error instanceof Error
                 ? error.message
                 : "No se pudo registrar la cotización en el ERP.",
-            status: "ERROR",
+            // The customer request already exists locally. It is an adviser
+            // follow-up, not a failed checkout that should be duplicated.
+            status: "IN_REVIEW",
+            statusSteps: toJson([{
+              status: "warning",
+              text: "Solicitud recibida; un asesor confirmará la cotización antes de continuar.",
+            }]),
           },
         })
         .catch(() => null);
+      const storedQuote = await prisma.quote.findUnique({ where: { id: localQuoteId } });
+      if (storedQuote) return await existingQuoteResponse(storedQuote);
     }
 
     return NextResponse.json(
@@ -314,11 +327,18 @@ function toJson(value: unknown): Prisma.InputJsonValue {
 
 import { buildSellableProductWhere } from "@/lib/store-shared";
 
-function existingQuoteResponse(quote: { id: string; status: string; quoteNumber: string | null; erpExternalId: string | null; contactHref: string | null; statusSteps: unknown }) {
-  if (quote.status === "ERP_REGISTERED" && quote.quoteNumber && quote.erpExternalId) {
-    return NextResponse.json({ localQuoteId: quote.id, quoteNumber: quote.quoteNumber,
-      message: `Cotización ${quote.quoteNumber} registrada en el ERP.`, messengerHref: quote.contactHref, statusSteps: quote.statusSteps });
+async function existingQuoteResponse(quote: QuoteHandoffRecord) {
+  const settings = await getStoreSettings();
+  const reference = createQuoteMessengerReference(quote.id);
+  // Rebuild the handoff instead of trusting a legacy stored URL: both old
+  // unsigned refs and malformed historical values become the current signed,
+  // official Messenger link on the next safe retry.
+  const referral = buildMessengerReferral(quote.contactHref ?? settings.messengerUrl, reference);
+  if (quote.contactHref !== referral.href) {
+    await prisma.quote.update({ where: { id: quote.id }, data: { contactHref: referral.href } }).catch(() => null);
   }
-  return NextResponse.json({ localQuoteId: quote.id,
-    message: "Esta solicitud ya fue recibida. Su registro no está confirmado; consulta con un asesor antes de repetirla." }, { status: 409 });
+  return NextResponse.json({
+    ...buildQuoteMessengerHandoff(quote, referral.href),
+    messengerConfigurationFallback: referral.usedFallback,
+  });
 }

@@ -1,6 +1,22 @@
 import { prisma } from "./prisma";
 import { PUBLIC_MESSENGER_URL } from "./utils";
 
+export type MessengerReferral = {
+  href: string;
+  usedFallback: boolean;
+};
+
+function isOfficialMessengerUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return false;
+    const host = url.hostname.toLowerCase();
+    return host === "m.me" || host === "www.messenger.com" || host === "messenger.com" || host === "www.facebook.com" || host === "facebook.com";
+  } catch {
+    return false;
+  }
+}
+
 export async function getConfiguredMessengerUrl() {
   try {
     // Reading through JSON keeps the fallback usable during the rolling
@@ -18,13 +34,18 @@ export async function getConfiguredMessengerUrl() {
 }
 
 export function buildMessengerReferralUrl(messengerUrl: string, reference: string) {
-  try {
+  return buildMessengerReferral(messengerUrl, reference).href;
+}
+
+/** Build only a trusted Messenger/Facebook handoff. A malformed or unrelated
+ * configuration never becomes a customer-facing redirect. */
+export function buildMessengerReferral(messengerUrl: string | null | undefined, reference: string): MessengerReferral {
+  if (messengerUrl && isOfficialMessengerUrl(messengerUrl)) {
     const url = new URL(messengerUrl);
     url.searchParams.set("ref", reference);
-    return url.toString();
-  } catch {
-    const url = new URL(PUBLIC_MESSENGER_URL);
-    url.searchParams.set("ref", reference);
-    return url.toString();
+    return { href: url.toString(), usedFallback: false };
   }
+  const url = new URL(PUBLIC_MESSENGER_URL);
+  url.searchParams.set("ref", reference);
+  return { href: url.toString(), usedFallback: true };
 }
