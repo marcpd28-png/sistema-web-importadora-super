@@ -56,6 +56,22 @@ class InboxTests(unittest.TestCase):
         state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
         self.assertEqual(state,'sent')
 
+    def test_super_bot_handoff_moves_an_unresolved_chat_to_pending_without_sending(self):
+        self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
+        self.inbox.super_bot_reply=lambda content: {
+            'text':'', 'document':None, 'products':[], 'requiresAdvisor':True,
+        }
+
+        self.assertTrue(self.inbox.super_bot_tick(self.adapter))
+        self.assertEqual(self.calls,[])
+        self.assertTrue(self.inbox.paused('linked',2))
+        state=self.inbox.db.execute('SELECT state FROM inbox_super_bot_replies').fetchone()[0]
+        self.assertEqual(state,'paused')
+        event=json.loads(self.inbox.db.execute('SELECT payload FROM inbox_events ORDER BY id DESC LIMIT 1').fetchone()[0])
+        self.assertEqual(event['kind'],'control')
+        self.assertFalse(event['botEnabled'])
+        self.assertTrue(event['needsAdvisor'])
+
     def test_own_super_bot_echo_from_the_owner_does_not_pause_the_chat(self):
         self.inbox.config.update(super_bot_url='https://tiendavirtualsuper.com/api/internal/super-bot/reply',super_bot_key='shared-key')
         self.inbox.super_bot_reply=lambda content: ('Respuesta de Super Bot',None)

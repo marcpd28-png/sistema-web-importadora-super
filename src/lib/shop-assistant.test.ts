@@ -9,6 +9,10 @@ import type {
 import { createShopAssistantService, matchesAllRequiredSearchTerms } from "@/lib/shop-assistant";
 import { buildGiftReply, detectGiftIntent, getGiftKeywords } from "@/lib/shop-gift-intent";
 import { answerSuperBot, isCatalogLinkRequest } from "@/lib/super-bot";
+import {
+  deriveConversationProductState,
+  reconcileConversationProductSelections,
+} from "@/lib/conversation-product-state";
 
 const settings: AssistantSettingsRecord = {
   businessName: "Importaciones Super",
@@ -366,6 +370,136 @@ test("continúa una búsqueda de JBL con nuevas tarjetas y no mezcla captions an
   assert.ok(reply.text.trim());
 });
 
+test("envía cinco recomendaciones verificadas y acciones para continuar o pedir el catálogo", async () => {
+  const speakers = Array.from({ length: 7 }, (_, index) => ({
+    ...products[0],
+    id: `recommendation-speaker-${index + 1}`,
+    slug: `parlante-jbl-recomendacion-${index + 1}`,
+    code: `JBL-R${index + 1}`,
+    name: `Parlante JBL recomendado ${index + 1}`,
+    brand: "JBL",
+    category: "Parlantes",
+    categoryId: null,
+    unitPrice: 90 + index,
+  }));
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return speakers.filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({ message: "Busco parlantes JBL" });
+
+  assert.equal(reply.products?.length, 5);
+  assert.deepEqual(reply.products?.map((product) => product.code), ["JBL-R1", "JBL-R2", "JBL-R3", "JBL-R4", "JBL-R5"]);
+  assert.equal(reply.text, "Tenemos 7 productos JBL en stock. ¿Quieres ver el catálogo completo?");
+  assert.deepEqual(reply.channelActions, [
+    { kind: "show-more", label: "Ver más opciones", message: "Muéstrame más opciones" },
+    { kind: "request-catalog", label: "Solicitar catálogo", message: "Quiero catálogo de parlantes jbl" },
+  ]);
+});
+
+test("mantiene la intersección de categoría y marca sin contaminar audífonos JBL", async () => {
+  const matching = Array.from({ length: 6 }, (_, index) => ({
+    ...products[0], id: `jbl-speaker-${index}`, code: `JBL-S${index}`, name: `Parlante JBL ${index}`,
+    brand: "JBL", category: "Parlantes", categoryId: null,
+  }));
+  const headphones = { ...products[0], id: "jbl-headphones", code: "JBL-AUD", name: "Audífonos JBL", brand: "JBL", category: "Audio", categoryId: null };
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return [...matching, headphones].filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({ message: "Hola, ¿tienen parlantes JBL?" });
+  assert.equal(reply.products?.length, 5);
+  assert.ok(reply.products?.every((product) => /parlante/i.test(product.name)));
+  assert.equal(reply.text, "Tenemos 6 productos JBL en stock. ¿Quieres ver el catálogo completo?");
+});
+
+test("mantiene líneas de compra independientes tras un PDF y abre una nueva búsqueda con también", async () => {
+  const speakers = Array.from({ length: 6 }, (_, index) => ({
+    ...products[0], id: `state-speaker-${index}`, code: `JBL-${index + 1}`,
+    name: index === 0 ? "Parlante JBL Clip 5" : `Parlante JBL modelo ${index + 1}`,
+    brand: "JBL", category: "Parlantes", categoryId: null,
+  }));
+  const fans = Array.from({ length: 6 }, (_, index) => ({
+    ...products[0], id: `state-fan-${index}`, code: index === 0 ? "N368" : `FAN-${index + 1}`,
+    name: index === 0 ? "VENTILADOR DESKTOP FAN AIR FAN" : `VENTILADOR DE MESA ${index + 1}`,
+    brand: null, category: "Ventiladores", categoryId: null,
+  }));
+  const catalog = [...speakers, ...fans];
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return catalog.filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+  const afterPdf = [
+    { role: "user" as const, text: "Busco parlantes JBL" },
+    { role: "assistant" as const, text: "Tenemos 6 productos JBL en stock. ¿Quieres ver el catálogo completo?" },
+    { role: "user" as const, text: "sí" },
+    { role: "assistant" as const, text: "Aquí está el catálogo completo." },
+  ];
+
+  const fanReply = await assistant({ message: "busco también ventiladores", recentMessages: afterPdf });
+  assert.equal(fanReply.products?.length, 5);
+  assert.ok(fanReply.products?.every((product) => /ventilador|fan/i.test(product.name)));
+  assert.equal(fanReply.text, "Tenemos 6 productos en stock. ¿Quieres ver el catálogo completo?");
+
+  const rawState = deriveConversationProductState(
+    [...afterPdf, { role: "user", text: "busco también ventiladores" }, { role: "assistant", text: fanReply.text }],
+    "quiero tres Clip 5 y también un ventilador N368",
+  );
+  const state = reconcileConversationProductSelections(rawState, [
+    { lineId: "line-3", code: "JBL-1", name: "Parlante JBL Clip 5", brand: "JBL", category: "Parlantes" },
+    { lineId: "line-4", code: "N368", name: "VENTILADOR DESKTOP FAN AIR FAN", category: "Ventiladores" },
+  ]);
+  assert.deepEqual(state.lines.map((line) => ({ query: line.query, quantity: line.quantity, code: line.selectedProductCode })), [
+    { query: "parlantes jbl", quantity: 3, code: "JBL-1" },
+    { query: "ventiladores", quantity: 1, code: "N368" },
+  ]);
+});
+
+test("recupera masajeadores por plural y por frase natural sin resultados no sustentados", async () => {
+  const massageProducts = Array.from({ length: 6 }, (_, index) => ({
+    ...products[0], id: `massage-${index}`, code: `MAS-${index + 1}`,
+    name: index === 0 ? "DISPOSITIVO DE CUIDADO" : `MASAJEADOR RECARGABLE ${index + 1}`,
+    description: "Equipo para masaje corporal y cuidado personal.",
+    technicalSpecs: "Tipo de producto: Masajeador",
+    category: "Cuidado personal", categoryId: null,
+  }));
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return massageProducts.filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  for (const message of ["¿tiene masajeadores?", "¿tiene máquinas para hacer masajes?"]) {
+    const reply = await assistant({ message });
+    assert.equal(reply.products?.length, 5, message);
+    assert.ok(reply.products?.every((product) => /masaje|cuidado/i.test(`${product.name} ${product.description}`)), message);
+  }
+});
+
+test("respeta la configuración que limita las tarjetas y oculta acciones opcionales", async () => {
+  const speakers = Array.from({ length: 4 }, (_, index) => ({
+    ...products[0], id: `limited-speaker-${index + 1}`, code: `JBL-L${index + 1}`,
+    name: `Parlante JBL limitado ${index + 1}`, brand: "JBL", category: "Parlantes", categoryId: null,
+  }));
+  const assistant = createShopAssistantService(createMockRepository({
+    async getBaseData() {
+      return { settings: { ...settings, botProductCardLimit: 2, botMoreOptionsEnabled: false, botCatalogActionEnabled: false }, categories };
+    },
+    async searchVisibleProducts(query) {
+      return speakers.filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({ message: "Busco parlantes JBL" });
+  assert.equal(reply.products?.length, 2);
+  assert.equal(reply.channelActions, undefined);
+});
+
 test("usa los captions anteriores como respaldo mientras el bridge migra a shownProductCodes", async () => {
   const speakers = ["JBL-1", "JBL-2", "JBL-3", "JBL-4"].map((code, index) => ({
     ...products[0],
@@ -407,6 +541,17 @@ test("usa memoria para calcular cantidad y precio mayorista", async () => {
   assert.equal(reply.products?.[0].recommendedQuantity, 12);
   assert.ok(containsNormalized(reply.text, "aplica mayorista"));
   assert.ok(containsNormalized(reply.text, "12"));
+});
+
+test("acepta una cantidad sola después de una tarjeta de producto", async () => {
+  const reply = await answerShopAssistant({
+    message: "12",
+    productContextCode: "AGA-100",
+  });
+
+  assert.equal(reply.products?.[0].code, "AGA-100");
+  assert.equal(reply.products?.[0].recommendedQuantity, 12);
+  assert.ok(containsNormalized(reply.text, "total estimado"));
 });
 
 test("ordena recomendaciones por presupuesto cercano", async () => {

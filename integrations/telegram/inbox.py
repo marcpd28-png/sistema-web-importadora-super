@@ -490,8 +490,16 @@ class Inbox:
         except Exception as error:
             raise InboxError('Super Bot no pudo preparar la respuesta automática.',503) from error
         reply = payload.get('reply') if isinstance(payload,dict) else None
+        metadata = reply.get('meta') if isinstance(reply,dict) and isinstance(reply.get('meta'),dict) else {}
+        requires_advisor = (
+            isinstance(payload,dict) and payload.get('requiresAdvisor') is True
+        ) or metadata.get('requiresAdvisor') is True
         raw_text = reply.get('text','') if isinstance(reply,dict) else ''
         text = raw_text.strip() if isinstance(raw_text, str) else ''
+        # A deliberate no-answer is a successful handoff, never a malformed
+        # reply to retry or turn into a generic customer-facing fallback.
+        if requires_advisor:
+            return {'text': '', 'document': None, 'products': [], 'requiresAdvisor': True}
         if not text or len(text)>4000: raise InboxError('Super Bot devolvió una respuesta inválida.',502)
         documents = self.catalog_documents(reply)
         # Keep the older single-document surface available to callers that
@@ -678,6 +686,14 @@ class Inbox:
                 self.requeue_super_bot_batch(batch)
                 return False
             reply = self.normalized_super_bot_reply(self.super_bot_reply(self.super_bot_request(batch)))
+            if reply.get('requiresAdvisor') is True:
+                self.handoff_to_advisor(cid, chat, adapter)
+                with self.lock:
+                    ids = [row[0] for row in batch]
+                    placeholders = ','.join('?' for _ in ids)
+                    self.db.execute(f"UPDATE inbox_super_bot_replies SET state='paused',error=NULL,updated=? WHERE id IN ({placeholders})", [self.now(),*ids])
+                    self.db.commit()
+                return True
             text = reply.get('text')
             catalog_documents = self.catalog_documents(reply)
             # Preserve the legacy single `document` behavior, but when the
@@ -809,6 +825,31 @@ class Inbox:
                 self.db.execute("UPDATE inbox_chats SET paused=?,super_bot=0,typing_until=0,shown_product_codes='[]' WHERE connection=? AND chat=?",
                                 (bool(value),cid,str(chat)))
             self.db.commit()
+
+    def handoff_to_advisor(self, cid, chat, adapter):
+        """Pause automation and publish an explicit human-review control.
+
+        This is not an ordinary BOT ownership claim: no customer message is
+        delivered and the store must show the chat in Pendientes.
+        """
+        with adapter.lock:
+            connection = adapter.get_connection(cid)
+            if not connection or not connection[1] or not connection[2]:
+                raise InboxError('La conexión de Telegram está desactivada o sin permiso para atender.',409)
+            adapter.shopping.pause(cid,int(chat))
+            adapter.db.commit()
+        with self.lock:
+            self.db.execute('INSERT OR IGNORE INTO inbox_chats(connection,chat) VALUES (?,?)', (cid,str(chat)))
+            self.db.execute(
+                "UPDATE inbox_chats SET paused=1,super_bot=0,typing_until=0,shown_product_codes='[]',revision=revision+1 WHERE connection=? AND chat=?",
+                (cid,str(chat)),
+            )
+            revision = self.db.execute('SELECT revision FROM inbox_chats WHERE connection=? AND chat=?', (cid,str(chat))).fetchone()[0]
+            self.db.commit()
+        self.enqueue(dict(kind='control',connectionId=cid,chatId=str(chat),timestamp=int(self.now()),
+                          botEnabled=False,needsAdvisor=True,revision=revision,
+                          sender='BOT',protocol=SUPER_BOT_PROTOCOL))
+        return revision
 
     def take_super_bot_control(self, cid, chat, expected_revision, adapter):
         """CAS ownership for the existing Super Bot v1 bridge contract."""

@@ -18,9 +18,12 @@ interface Props {
   /** A short-lived hold while an adviser is actively composing. It never
    * changes the conversation's permanent bot ownership. */
   onDraftActivity?: (active: boolean) => void;
+  /** Keep the short typing lease during send when the transport has no
+   * durable human handoff (for example the TikTok bridge). */
+  releaseDraftOnSend?: boolean;
 }
 
-export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", uploadEndpoint = "/api/admin/uploads", onUploadFile, onDraftActivity }: Props) {
+export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled = false, maxFileSizeMB = 25, maxLength, attachmentsEnabled = true, accept = "image/*,video/*,audio/*,application/pdf", uploadEndpoint = "/api/admin/uploads", onUploadFile, onDraftActivity, releaseDraftOnSend = true }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const draftActivityRef = useRef(onDraftActivity);
   useEffect(() => { if (replyTo) textareaRef.current?.focus(); }, [replyTo]);
@@ -74,7 +77,7 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled =
     if (disabled || sendingRef.current || isRecording) return;
     // A real send (text or attachment) takes over durably in the message
     // transport. Release the short typing lease before beginning either path.
-    onDraftActivity?.(false);
+    if (releaseDraftOnSend) onDraftActivity?.(false);
     if (attachment) {
       void uploadAndSend(attachment);
       return;
@@ -88,7 +91,10 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled =
         setMessage("");
       }
       catch (error) { setUploadError(error instanceof Error ? error.message : "No se pudo enviar el mensaje."); }
-      finally { sendingRef.current = false; setIsUploading(false); }
+      finally {
+        if (!releaseDraftOnSend) onDraftActivity?.(false);
+        sendingRef.current = false; setIsUploading(false);
+      }
     }
   };
 
@@ -153,6 +159,7 @@ export function MessageInput({ onSendMessage, replyTo, onCancelReply, disabled =
       console.error(err);
       setUploadError(err instanceof Error ? err.message : "No se pudo enviar el archivo. Revisa tu conexión e intenta nuevamente.");
     } finally {
+      if (!releaseDraftOnSend) onDraftActivity?.(false);
       sendingRef.current = false;
       setIsUploading(false);
     }

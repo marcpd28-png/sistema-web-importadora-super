@@ -82,6 +82,21 @@ test("fan catalogs include the full fan family and do not rely on technical-spec
   assert.equal(matchesProductQuery({ name: "TABLET ANDROID", technicalSpecs: "Incluye ventilador de enfriamiento" }, "ventiladores"), false);
 });
 
+test("normaliza consultas naturales de masaje y las sustenta en campos descriptivos", () => {
+  const massageDevice = {
+    name: "DISPOSITIVO DE CUIDADO PERSONAL",
+    category: "BIENESTAR",
+    description: "Equipo recargable para masaje corporal.",
+    technicalSpecs: "Tipo de producto: masajeador",
+  };
+  assert.deepEqual(productQueryTerms("¿tiene masajeadores?"), ["masajeadores"]);
+  assert.deepEqual(productQueryTerms("¿tiene máquinas para hacer masajes?"), ["maquinas", "masajes"]);
+  assert.deepEqual(productQueryTerms("¿tiene un equipo para masaje?"), ["equipo", "masaje"]);
+  assert.equal(matchesProductQuery(massageDevice, "masajeadores"), true);
+  assert.equal(matchesProductQuery(massageDevice, "maquina para hacer masajes"), true);
+  assert.equal(matchesProductQuery({ name: "MÁQUINA DE HIELO" }, "maquina para hacer masajes"), false);
+});
+
 const identities = ["LICUADORA", "VENTILADOR", "IMPRESORA", "HERVIDOR", "MAQUINA DE HIELO", "MAQUINA CORTADORA DE CABELLO"].map((name, i) => ({
   id: String(i), code: `P${i}`, externalCode: null, name, brand: null, category: null,
   isVisible: true, stockUnits: 1, unitPrice: 10,

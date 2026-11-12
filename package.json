@@ -19,6 +19,7 @@
     "db:seed": "prisma db seed",
     "db:seed:test": "tsx scripts/seed-test-data.ts",
     "db:sync-categories": "tsx prisma/sync-categories.ts",
+    "images:index": "tsx scripts/index-product-image-visuals.ts",
     "messages:backfill-phones": "tsx scripts/backfill-message-phones.ts",
     "sync:facturador-product": "tsx prisma/sync-facturador-product.ts",
     "sync:facturador-products": "tsx prisma/sync-facturador-products.ts",

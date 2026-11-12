@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMessageCenterSession } from "@/lib/auth";
-import { getConversation, getConversationMessages, getConversationMessagesSchema } from "@/lib/messages-service";
+import {
+  getConversation,
+  getConversationMessages,
+  getConversationMessagesSchema,
+  isAdvisorConversationAccessible,
+} from "@/lib/messages-service";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +22,7 @@ export async function GET(
   try {
     const { id } = await params;
     const conversation = await getConversation(id);
-    if (!conversation || conversation.channel !== "WHATSAPP") {
+    if (!conversation || conversation.channel !== "WHATSAPP" || !(await isAdvisorConversationAccessible(id, session.userId))) {
       return NextResponse.json({ error: "Conversación no encontrada." }, { status: 404 });
     }
 

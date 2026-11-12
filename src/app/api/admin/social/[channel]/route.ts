@@ -41,6 +41,10 @@ export async function GET(request: NextRequest, context: Context) {
     }
     query.set("channel", channel);
     query.set("botCategory", "all");
+    const view = request.nextUrl.searchParams.get("view") || "inbox";
+    if (view !== "inbox" && view !== "pending") {
+      throw new SocialInboxError("Vista de conversaciones no válida.", 400);
+    }
     const keyword = request.nextUrl.searchParams.get("keyword");
     if (keyword) query.set("keyword", keyword.slice(0, 100));
     const page = await socialRequest<SocialPage<SocialConversation>>(`/conversations?${query}`);
@@ -49,7 +53,12 @@ export async function GET(request: NextRequest, context: Context) {
     // adapter applies its own cooldown and the helper caps concurrent calls.
     const conversations = await refreshSocialConversationProfiles(page.data, channel);
     // Only expose display fields, never provider auth or contact attributes.
-    return NextResponse.json({ data: conversations.filter(c => c.contactInboxes.some(i => i.channel === channel)).map(c => ({
+    return NextResponse.json({ data: conversations
+      .filter(c => c.contactInboxes.some(i => i.channel === channel))
+      // A disabled ChatbotX conversation is a durable human handoff. Keep it
+      // out of the active inbox until an adviser intentionally reactivates it.
+      .filter(c => view === "pending" ? !c.botEnabled : c.botEnabled)
+      .map(c => ({
       id: c.id, name: socialConversationDisplayName(c, channel), botEnabled: c.botEnabled,
       preview: c.messages?.find(m => c.contactInboxes.some(i => i.channel === channel && i.id === m.contactInboxId))?.text || "Conversación",
     })), nextCursor: page.nextCursor }, { headers: { "Cache-Control": "no-store" } });

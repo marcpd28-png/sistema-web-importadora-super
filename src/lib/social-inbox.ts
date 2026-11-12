@@ -40,6 +40,15 @@ type SocialProfileRefresh = {
   status?: "updated" | "skipped" | "unavailable" | "failed";
   contact?: NonNullable<SocialConversation["contact"]>;
 };
+export type SocialProfileSyncSummary = {
+  scanned: number;
+  requested: number;
+  updated: number;
+  skipped: number;
+  unavailable: number;
+  failed: number;
+  nextCursor: string | null;
+};
 export type SocialPage<T> = { data: T[]; nextCursor: string | null };
 type SocialMediaFile = {
   id: string;
@@ -59,6 +68,7 @@ const SOCIAL_REPLY_PENDING_MS = 30_000;
 const SOCIAL_ECHO_FALLBACK_MS = 15_000;
 const SOCIAL_INBOX_DEFAULT_API_URL = "https://chatbot.tiendavirtualsuper.com/api";
 const recentSocialReplies = new Map<string, { expiresAt: number; result: Promise<SocialMessage> }>();
+const SOCIAL_ID_FIELDS = new Set(["id", "contactId", "contactInboxId", "inboxId"]);
 
 function compactText(value: string) {
   return value.trim().replace(/\s+/g, " ");
@@ -118,27 +128,46 @@ export function socialConversationNeedsProfileRefresh(conversation: SocialConver
  * Facebook name. Failures are intentionally non-fatal: a temporary Facebook
  * or provider issue must never stop the inbox itself from loading.
  */
-export async function refreshSocialConversationProfile(conversation: SocialConversation, channel: SocialChannel) {
-  if (!socialConversationNeedsProfileRefresh(conversation, channel)) return conversation;
+type SocialProfileRefreshResult = {
+  conversation: SocialConversation;
+  status: "not_needed" | "skipped" | "updated" | "unavailable" | "failed";
+};
+
+async function refreshSocialConversationProfileResult(
+  conversation: SocialConversation,
+  channel: SocialChannel,
+): Promise<SocialProfileRefreshResult> {
+  if (!socialConversationNeedsProfileRefresh(conversation, channel)) {
+    return { conversation, status: "not_needed" };
+  }
 
   const contactId = displayText(conversation.contact?.id);
   const matchingInboxes = conversation.contactInboxes.filter((inbox) => inbox.channel === channel);
-  if (!contactId || contactId.length > 200 || matchingInboxes.length !== 1 || !/^\d+$/.test(matchingInboxes[0].id)) return conversation;
+  if (!contactId || contactId.length > 200 || matchingInboxes.length !== 1 || !/^\d+$/.test(matchingInboxes[0].id)) {
+    return { conversation, status: "skipped" };
+  }
 
   try {
     const refreshed = await socialRequest<SocialProfileRefresh>(
       `/contacts/${encodeURIComponent(`id:${contactId}`)}/refresh-profile`,
       { contactInboxId: matchingInboxes[0].id },
     );
-    if (refreshed.status !== "updated" || !refreshed.contact) return conversation;
+    const status = refreshed.status === "updated" || refreshed.status === "skipped" || refreshed.status === "unavailable"
+      ? refreshed.status
+      : "failed";
+    if (status !== "updated" || !refreshed.contact) return { conversation, status };
 
     return {
-      ...conversation,
-      contact: { ...conversation.contact, ...refreshed.contact },
+      status,
+      conversation: { ...conversation, contact: { ...conversation.contact, ...refreshed.contact } },
     };
   } catch {
-    return conversation;
+    return { conversation, status: "failed" };
   }
+}
+
+export async function refreshSocialConversationProfile(conversation: SocialConversation, channel: SocialChannel) {
+  return (await refreshSocialConversationProfileResult(conversation, channel)).conversation;
 }
 
 /** Refresh only unresolved names and limit concurrent Facebook lookups. */
@@ -154,11 +183,48 @@ export async function refreshSocialConversationProfiles(conversations: SocialCon
   await Promise.all(Array.from({ length: Math.min(8, pending.length) }, async () => {
     while (cursor < pending.length) {
       const current = pending[cursor++];
-      refreshed[current.index] = await refreshSocialConversationProfile(current.conversation, channel);
+      refreshed[current.index] = (await refreshSocialConversationProfileResult(current.conversation, channel)).conversation;
     }
   }));
 
   return refreshed;
+}
+
+/**
+ * Refresh one bounded page of historic Messenger profiles. The operation never
+ * sends a customer message or changes bot ownership; it only asks the provider
+ * to hydrate the public display name behind an existing PSID.
+ */
+export async function syncSocialProfilePage(channel: SocialChannel, cursor?: string | null): Promise<SocialProfileSyncSummary> {
+  if (channel !== "messenger") {
+    return { scanned: 0, requested: 0, updated: 0, skipped: 0, unavailable: 0, failed: 0, nextCursor: null };
+  }
+
+  const query = new URLSearchParams({ channel, botCategory: "all", perPage: "50" });
+  if (cursor) query.set("cursor", cursor);
+  const page = await socialRequest<SocialPage<SocialConversation>>(`/conversations?${query}`);
+  const pending = page.data.filter((conversation) => socialConversationNeedsProfileRefresh(conversation, channel));
+  const results: SocialProfileRefreshResult[] = [];
+  let index = 0;
+
+  // Facebook profile lookups are provider-rate-limited. Four concurrent
+  // requests keep this operator action responsive without producing a burst.
+  await Promise.all(Array.from({ length: Math.min(4, pending.length) }, async () => {
+    while (index < pending.length) {
+      const conversation = pending[index++];
+      results.push(await refreshSocialConversationProfileResult(conversation, channel));
+    }
+  }));
+
+  return {
+    scanned: page.data.length,
+    requested: pending.length,
+    updated: results.filter((result) => result.status === "updated").length,
+    skipped: results.filter((result) => result.status === "skipped").length,
+    unavailable: results.filter((result) => result.status === "unavailable").length,
+    failed: results.filter((result) => result.status === "failed").length,
+    nextCursor: page.nextCursor,
+  };
 }
 
 function socialReplyKey(channel: SocialChannel, conversationId: string, text: string, mediaFileId?: string) {
@@ -239,6 +305,60 @@ export function socialInboxApiUrl() {
   return process.env.SOCIAL_INBOX_API_URL || SOCIAL_INBOX_DEFAULT_API_URL;
 }
 
+/**
+ * ChatbotX currently serializes its bigint primary keys as JSON numbers.
+ * Messenger IDs exceed JavaScript's safe integer range, so Response.json()
+ * silently changes their final digits before the profile refresh can use them.
+ *
+ * Keep only identifier values as JSON strings while leaving every other value
+ * untouched. This small scanner deliberately recognizes keys only outside of
+ * JSON strings, so a customer's message containing text such as `"id": 123`
+ * cannot be rewritten.
+ */
+export function parseSocialResponse<T>(raw: string): T {
+  let result = "";
+  let index = 0;
+
+  while (index < raw.length) {
+    if (raw[index] !== '"') {
+      result += raw[index++];
+      continue;
+    }
+
+    const keyStart = index++;
+    let escaped = false;
+    while (index < raw.length) {
+      const character = raw[index++];
+      if (!escaped && character === '"') break;
+      escaped = !escaped && character === "\\";
+      if (character !== "\\") escaped = false;
+    }
+
+    const keyEnd = index;
+    result += raw.slice(keyStart, keyEnd);
+    let separator = index;
+    while (/\s/.test(raw[separator] || "")) separator++;
+    if (raw[separator] !== ":") continue;
+
+    let valueStart = separator + 1;
+    while (/\s/.test(raw[valueStart] || "")) valueStart++;
+    const numericValue = raw.slice(valueStart).match(/^-?\d+/)?.[0];
+    let key: string;
+    try {
+      key = JSON.parse(raw.slice(keyStart, keyEnd));
+    } catch {
+      continue;
+    }
+    if (!numericValue || !SOCIAL_ID_FIELDS.has(key)) continue;
+
+    result += raw.slice(index, valueStart);
+    result += `"${numericValue}"`;
+    index = valueStart + numericValue.length;
+  }
+
+  return JSON.parse(result) as T;
+}
+
 export async function socialRequest<T>(path: string, body?: unknown, requestId?: string): Promise<T> {
   const token = process.env.SOCIAL_INBOX_API_TOKEN;
   if (!token) throw new SocialInboxError("La conexión de mensajería necesita configuración.", 503);
@@ -257,7 +377,11 @@ export async function socialRequest<T>(path: string, body?: unknown, requestId?:
       : response.status === 429 ? "Hay demasiadas solicitudes. Espera unos segundos."
       : "El canal rechazó la operación. Revisa la conexión y el plazo para responder.", response.status === 429 ? 429 : 502);
   }
-  return response.json() as Promise<T>;
+  try {
+    return parseSocialResponse<T>(await response.text());
+  } catch {
+    throw new SocialInboxError("El canal devolvió una respuesta no válida.");
+  }
 }
 
 export function channelInbox(conversation: SocialConversation, channel: SocialChannel) {
@@ -412,17 +536,35 @@ export async function socialReplyInbox(channel: SocialChannel, conversationId: s
   return inbox;
 }
 
+async function disableSocialBotAfterVerification(conversationId: string, requestId: string) {
+  const result = await socialRequest<{ success?: boolean }>(
+    `/conversations/${conversationId}/disable-bot`,
+    {},
+    requestId,
+  );
+  // Older ChatbotX deployments acknowledge this mutation with an empty object;
+  // only an explicit negative acknowledgement is considered a failed handoff.
+  if (result?.success === false) {
+    throw new SocialInboxError("El canal no confirmó la derivación a un asesor.");
+  }
+}
+
+/**
+ * Permanently hands one provider conversation to the human queue. This is
+ * used by Super Bot only after it has deliberately decided not to answer.
+ */
+export async function disableSocialBot(channel: SocialChannel, conversationId: string, requestId: string) {
+  await socialConversation(conversationId, channel);
+  await disableSocialBotAfterVerification(conversationId, requestId);
+}
+
 /**
  * Restoring automation is an explicit operator action after a human handoff.
  * It never sends a customer message and must not be called as a side effect of
  * loading a conversation or delivering a manual reply.
  */
 export async function enableSocialBot(channel: SocialChannel, conversationId: string, requestId: string) {
-  if (channel !== "messenger") {
-    throw new SocialInboxError("La reactivación manual de Super Bot solo está disponible para Messenger.", 400);
-  }
-
-  // Verify that this conversation belongs to exactly one Messenger inbox
+  // Verify that this conversation belongs to exactly one matching inbox
   // before changing the provider state. Re-enabling itself is not a reply, so
   // it deliberately does not require an active 24-hour messaging window.
   await socialConversation(conversationId, channel);
@@ -464,9 +606,12 @@ async function sendSocialReplyOnce(channel: SocialChannel, conversationId: strin
   // incomplete upload must not change the conversation's bot state.
   const mediaFile = mediaFileId ? await socialReplyMediaFile(mediaFileId) : undefined;
   const inbox = await socialReplyInbox(channel, conversationId);
-  // A human reply pauses the provider automation before delivery. It stays
-  // paused until the channel is explicitly configured to use Super Bot again.
-  await socialRequest(`/conversations/${conversationId}/disable-bot`, {}, `${requestId}:handoff`);
+  // Messenger is a durable human handoff. TikTok is handled by the dedicated
+  // bridge, where an adviser composing is only a short-lived lease; a manual
+  // TikTok reply must not silence later customer turns indefinitely.
+  if (channel === "messenger") {
+    await disableSocialBotAfterVerification(conversationId, `${requestId}:handoff`);
+  }
   // ChatbotX's message attachment `url` is nullable when only an internal ID
   // is supplied. Resolve the media record and send its documented public file
   // reference so the outgoing message retains a displayable URL after reload.

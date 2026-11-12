@@ -75,6 +75,31 @@ test("entrega un bundle completo y ordenado cuando un catálogo necesita varias 
   assert.equal(reply.quickActions?.[0]?.href, generatedCatalogBundle.documents[0].absoluteUrl);
 });
 
+test("comparte el PDF completo al querer comprar cámaras de seguridad en plural", async () => {
+  let receivedRequest: { terms: string[]; source?: string } | undefined;
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => {
+      throw new Error("La intención comercial debe preparar el PDF antes de buscar tarjetas.");
+    },
+    generateCatalogPdf: async (request) => {
+      receivedRequest = request;
+      return generatedCatalog;
+    },
+  });
+
+  const reply = await answer({ message: "Quisiera adquirir cámaras de seguridad" });
+
+  assert.deepEqual(receivedRequest, {
+    terms: ["camaras", "seguridad"],
+    slug: "camaras-seguridad",
+    title: "CATÁLOGO DE CÁMARAS DE SEGURIDAD",
+    source: "security-camera-purchase",
+  });
+  assert.equal(reply.document?.url, generatedCatalog.absoluteUrl);
+  assert.equal(reply.meta?.intent, "catalog-pdf");
+  assert.match(reply.text, /por supuesto.*catálogo completo de cámaras de seguridad/i);
+});
+
 test("no entrega un catálogo parcial cuando ni una parte cabe dentro del límite", async () => {
   let generationCount = 0;
   const answer = createSuperBotService({
@@ -104,18 +129,114 @@ test("uses the configured Messenger URL when Super Bot needs an adviser", async 
   assert.equal(reply.quickActions?.[0]?.href, "https://m.me/atencion-configurada");
 });
 
-test("pide una identificación breve solo cuando no hay coincidencia en el catálogo", async () => {
+test("prioriza tarjetas visuales y deja solo una pregunta breve después", async () => {
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => ({
+      text: "Esta respuesta extensa no debe acompañar las tarjetas.",
+      products: [
+        {
+          id: "p-1", slug: "parlante-1", code: "PAR-1", name: "Parlante 1", description: "Descripción extensa.",
+          brand: null, category: "Audio", imageUrl: "/producto.jpg", imageAlt: "Parlante 1",
+          unitPrice: "S/ 99.00", unitPriceValue: 99, wholesalePrice: null, wholesalePriceValue: null,
+          wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 4, unitsPerBox: null,
+        },
+        {
+          id: "p-2", slug: "parlante-2", code: "PAR-2", name: "Parlante 2", description: "Otra descripción.",
+          brand: null, category: "Audio", imageUrl: "/producto-2.jpg", imageAlt: "Parlante 2",
+          unitPrice: "S/ 129.00", unitPriceValue: 129, wholesalePrice: null, wholesalePriceValue: null,
+          wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 2, unitsPerBox: null,
+        },
+      ],
+      channelActions: [{ kind: "show-more", label: "Ver más opciones", message: "Muéstrame más opciones" }],
+    }),
+  });
+
+  const reply = await answer({ message: "Busco parlantes" });
+
+  assert.equal(reply.products?.length, 2);
+  assert.equal(reply.text, "Mira las opciones. ¿Cuál buscas o quieres ver más?");
+});
+
+test("conserva una cotización calculada aunque incluya la tarjeta del producto", async () => {
+  const quote = "La mejor opción es Parlante 1. Ya aplica mayorista: S/ 79.00 c/u. Total estimado por 3: S/ 237.00.";
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => ({
+      text: quote,
+      contextProductCode: "PAR-1",
+      products: [{
+        id: "p-1", slug: "parlante-1", code: "PAR-1", name: "Parlante 1", description: null,
+        brand: null, category: "Audio", imageUrl: "/producto.jpg", imageAlt: "Parlante 1",
+        unitPrice: "S/ 99.00", unitPriceValue: 99, wholesalePrice: "S/ 79.00", wholesalePriceValue: 79,
+        wholesaleMinQty: 3, availabilityLabel: "Disponible", stockUnits: 4, unitsPerBox: null,
+      }],
+    }),
+    composeLiveReply: async (input) => input.verifiedReply,
+  });
+
+  const reply = await answer({ message: "3", productContextCode: "PAR-1" });
+
+  assert.equal(reply.text, quote);
+  assert.doesNotMatch(reply.text, /carrito|drawer/i);
+});
+
+test("una confirmación frente al siguiente lote conserva la búsqueda y avanza solo el siguiente lote", async () => {
+  let receivedMessage = "";
+  const answer = createSuperBotService({
+    answerShopAssistant: async (input) => {
+      receivedMessage = input.message;
+      return {
+        text: "Aquí van 2 más. ¿Quieres ver el siguiente lote?",
+        products: [
+          { id: "p-6", slug: "jbl-6", code: "JBL-6", name: "Parlante JBL 6", description: null, brand: "JBL", category: "Parlantes", imageUrl: "/6.jpg", imageAlt: "Parlante JBL 6", unitPrice: "S/ 1", unitPriceValue: 1, wholesalePrice: null, wholesalePriceValue: null, wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 3, unitsPerBox: null },
+          { id: "p-7", slug: "jbl-7", code: "JBL-7", name: "Parlante JBL 7", description: null, brand: "JBL", category: "Parlantes", imageUrl: "/7.jpg", imageAlt: "Parlante JBL 7", unitPrice: "S/ 1", unitPriceValue: 1, wholesalePrice: null, wholesalePriceValue: null, wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 3, unitsPerBox: null },
+        ],
+      };
+    },
+  });
+
+  const reply = await answer({
+    message: "Sí, quiero verlos",
+    shownProductCodes: ["JBL-1", "JBL-2", "JBL-3", "JBL-4", "JBL-5"],
+    recentMessages: [
+      { role: "user", text: "Hola, ¿tienen parlantes JBL?" },
+      { role: "assistant", text: "Aquí van 5 más. ¿Quieres ver el siguiente lote?" },
+    ],
+  });
+
+  assert.equal(receivedMessage, "Muéstrame más opciones");
+  assert.deepEqual(reply.products?.map((product) => product.code), ["JBL-6", "JBL-7"]);
+  assert.doesNotMatch(reply.text, /precio|jbl-6/i);
+});
+
+test("al interesarse por un producto informa pagos y entrega a un asesor", async () => {
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => {
+      throw new Error("Una selección no debe repetir la búsqueda de catálogo.");
+    },
+    getMessengerUrl: async () => "https://m.me/atencion-configurada",
+  });
+
+  const reply = await answer({ message: "Me interesa ese producto" });
+
+  assert.match(reply.text, /tarjeta o Yape.*Interbank o Plin/i);
+  assert.match(reply.text, /asesor continuará/i);
+  assert.equal(reply.quickActions?.[0]?.href, "https://m.me/atencion-configurada");
+  assert.equal(reply.meta?.intent, "payment");
+});
+
+test("deriva una consulta sin coincidencia sin enviar una respuesta automática", async () => {
   const answer = createSuperBotService({
     answerShopAssistant: async () => ({ text: "" }),
   });
 
   const reply = await answer({ message: "busco algo rarisimo" });
 
-  assert.equal(reply.text, "No ubico ese producto. ¿Tienes foto, código o modelo?");
-  assert.doesNotMatch(reply.text, /cantidad|para ayudarte mejor/i);
+  assert.equal(reply.text, "");
+  assert.equal(reply.meta?.intent, "human-assistance");
+  assert.equal(reply.meta?.requiresAdvisor, true);
 });
 
-test("deriva una imagen sin texto a un asesor en lugar de inventar un producto", async () => {
+test("deriva una imagen sin texto a Pendientes sin inventar ni responder", async () => {
   const answer = createSuperBotService({
     answerShopAssistant: async () => {
       throw new Error("Una imagen sin texto no debe buscar ni cotizar productos.");
@@ -125,9 +246,22 @@ test("deriva una imagen sin texto a un asesor en lugar de inventar un producto",
 
   const reply = await answer({ message: "", hasAttachments: true });
 
-  assert.match(reply.text, /código o modelo/i);
+  assert.equal(reply.text, "");
   assert.equal(reply.meta?.intent, "attachment-human-assistance");
-  assert.equal(reply.quickActions?.[0]?.href, "https://m.me/atencion-configurada");
+  assert.equal(reply.meta?.requiresAdvisor, true);
+  assert.equal(reply.quickActions, undefined);
+});
+
+test("una petición explícita de asesor se deriva sin acuse automático", async () => {
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => ({ text: "" }),
+  });
+
+  const reply = await answer({ message: "quiero hablar con un asesor" });
+
+  assert.equal(reply.text, "");
+  assert.equal(reply.meta?.intent, "human-assistance");
+  assert.equal(reply.meta?.requiresAdvisor, true);
 });
 
 test("entrega el estado confiable de primer contacto y la respuesta verificada al compositor en vivo", async () => {

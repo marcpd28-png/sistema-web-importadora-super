@@ -214,6 +214,19 @@
   padding: 30px 24px 48px;
 }
 
+.messaging-settings-inline-link {
+  display: inline-block;
+  margin-top: 7px;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.messaging-settings-inline-link:hover {
+  text-decoration: underline;
+}
+
 .messaging-settings-page-heading {
   display: flex;
   align-items: flex-end;
@@ -341,6 +354,31 @@
 }
 .messaging-settings-field input:focus { border-color: var(--primary); outline: 3px solid color-mix(in srgb, var(--primary) 15%, transparent); }
 .messaging-settings-field p { margin: 0; color: var(--text-muted); font-size: 12px; }
+
+.messaging-recommendation-card { gap: 20px; }
+.messaging-recommendation-preview {
+  display: grid;
+  gap: 5px;
+  padding: 15px 16px;
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border-color));
+  border-radius: 12px;
+  color: var(--text);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--surface-bg)), var(--surface-bg));
+}
+.messaging-recommendation-preview > span { color: var(--primary); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.messaging-recommendation-preview strong { font-size: 14px; }
+.messaging-recommendation-preview > div { display: flex; gap: 7px; margin-top: 5px; }
+.messaging-recommendation-preview i { display: block; width: 34px; height: 42px; border-radius: 7px; background: linear-gradient(145deg, var(--primary), color-mix(in srgb, var(--primary) 38%, #fff)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
+.messaging-recommendation-preview small { color: var(--text-muted); font-size: 11px; }
+.messaging-recommendation-form { display: grid; gap: 14px; }
+.messaging-settings-field label { display: inline-flex; align-items: center; gap: 7px; }
+.messaging-settings-field select { width: 100%; min-height: 44px; border: 1px solid var(--border-color); border-radius: 9px; padding: 10px 12px; color: var(--text); background: var(--bg); font: inherit; font-size: 13px; }
+.messaging-settings-field select:focus { border-color: var(--primary); outline: 3px solid color-mix(in srgb, var(--primary) 15%, transparent); }
+.messaging-recommendation-check { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; }
+.messaging-recommendation-check input { width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--primary); }
+.messaging-recommendation-check span { display: grid; gap: 3px; }
+.messaging-recommendation-check strong { color: var(--text); font-size: 13px; }
+.messaging-recommendation-check small { color: var(--text-muted); font-size: 12px; line-height: 1.4; }
 
 .messaging-settings-card-footer {
   display: flex;

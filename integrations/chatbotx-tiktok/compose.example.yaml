@@ -1,0 +1,44 @@
+# Add this service to /opt/chatbotx/compose.override.yaml only after TikTok
+# approves Business Messaging. Keep TIKTOK_BRIDGE_ENABLED=false for its first
+# deployment so it records a safe baseline without messaging customers.
+services:
+  chatbotx-tiktok-bridge:
+    build:
+      context: /opt/chatbotx/tiktok-bridge
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - main
+    env_file:
+      - /opt/chatbotx/.env
+    environment:
+      TIKTOK_BRIDGE_ENABLED: "false"
+      TIKTOK_BRIDGE_DB: /data/tiktok-bridge.db
+      TIKTOK_BRIDGE_HOST: 0.0.0.0
+      TIKTOK_BRIDGE_PORT: "13125"
+      # The other values come from /opt/chatbotx/.env. They must include
+      # CHATBOTX_API_URL, SOCIAL_INBOX_API_TOKEN, TIKTOK_BRIDGE_SECRET and,
+      # before activation, SUPER_BOT_URL + SUPER_BOT_INTERNAL_API_KEY.
+    # The store runs directly on the VPS, outside this Docker network. Publish
+    # only to loopback so it can renew adviser typing leases without exposing
+    # the control endpoint to the Internet.
+    ports:
+      - "127.0.0.1:13127:13125"
+    volumes:
+      - /opt/chatbotx/tiktok-bridge-data:/data
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:13125/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3

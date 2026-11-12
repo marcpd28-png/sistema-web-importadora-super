@@ -4,6 +4,14 @@ export type ShopAssistantQuickAction = {
   accent?: boolean;
 };
 
+/** A trusted postback action for a channel adapter. It is separate from a
+ * link so Messenger can submit the intended next turn back to Super Bot. */
+export type ShopAssistantChannelAction = {
+  kind: "show-more" | "request-catalog";
+  label: string;
+  message: string;
+};
+
 /** A single generated file that channel adapters may deliver as an attachment.
  * The response text always includes the URL too, so channels without document
  * support can still give the customer access to the same catalogue. */
@@ -59,6 +67,7 @@ export type ShopAssistantReply = {
   contextCategorySlug?: string | null;
   products?: ShopAssistantProductCard[];
   quickActions?: ShopAssistantQuickAction[];
+  channelActions?: ShopAssistantChannelAction[];
   suggestedPrompts?: string[];
   meta?: {
     intent?: string | null;
@@ -66,6 +75,15 @@ export type ShopAssistantReply = {
     ollamaModel?: string | null;
     ollamaLatencyMs?: number | null;
     error?: string | null;
+    /**
+     * The verified responder deliberately produced no customer-facing answer.
+     * A trusted channel adapter must pause automation and place the
+     * conversation in its human-review queue instead of sending a fallback.
+     */
+    requiresAdvisor?: boolean;
+    /** Rebuilt from customer turns so adapters can inspect independent
+     * purchase lines without treating one global query as conversation state. */
+    conversationState?: import("./conversation-product-state").ConversationProductState;
   };
 };
 

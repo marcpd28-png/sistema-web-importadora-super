@@ -4,6 +4,7 @@ import { prisma } from "../src/lib/prisma";
 import { FacturadorClient } from "../src/lib/facturador/client";
 import { buildBrandLookup, buildCategoryLookup, mapFacturadorProduct } from "../src/lib/facturador/mappers";
 import { mirrorProductImageToLocal } from "../src/lib/product-image-storage";
+import { refreshProductVisualImageIndex } from "../src/lib/product-visual-image-index";
 
 loadEnvConfig(process.cwd());
 
@@ -137,6 +138,7 @@ async function main() {
       lastSyncedAt: now,
     },
   });
+  const visualIndex = await refreshProductVisualImageIndex({ codes: [mapped.product.code] });
 
   console.log(
     JSON.stringify(
@@ -147,6 +149,7 @@ async function main() {
         imageUrl,
         localImageUrl: mirror.localUrl ?? null,
         mirrored: mirror.mirrored,
+        visualIndex,
       },
       null,
       2,

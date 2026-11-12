@@ -11,6 +11,7 @@ import {
   isProjectorCatalogRequest,
   loadCatalogImagesStrict,
   parseCatalogRequest,
+  parseSecurityCameraPurchaseCatalogRequest,
   prepareCatalogImage,
   splitCatalogItemsByRenderedSize,
 } from "@/lib/catalog-pdf";
@@ -44,6 +45,20 @@ test("acepta plural y errores frecuentes al pedir catálogos por categoría y ma
   assert.deepEqual(parseCatalogRequest("Hola catálogo de parlantes")?.terms, ["parlantes"]);
   assert.deepEqual(parseCatalogRequest("cata parlantes")?.terms, ["parlantes"]);
   assert.deepEqual(parseCatalogRequest("catallgos específicos de parlantes")?.terms, ["parlantes"]);
+});
+
+test("reconoce una compra plural de cámaras de seguridad como catálogo dedicado", () => {
+  const request = parseSecurityCameraPurchaseCatalogRequest("Quisiera adquirir cámaras de seguridad");
+
+  assert.deepEqual(request, {
+    terms: ["camaras", "seguridad"],
+    slug: "camaras-seguridad",
+    title: "CATÁLOGO DE CÁMARAS DE SEGURIDAD",
+    source: "security-camera-purchase",
+  });
+  assert.equal(parseSecurityCameraPurchaseCatalogRequest("Quisiera adquirir una cámara de seguridad"), null);
+  assert.equal(parseSecurityCameraPurchaseCatalogRequest("¿Instalan cámaras de seguridad?"), null);
+  assert.equal(parseSecurityCameraPurchaseCatalogRequest("Quisiera adquirir cámaras para fotos"), null);
 });
 
 test("ordena el catálogo amplio de ventiladores por tipo de producto", () => {

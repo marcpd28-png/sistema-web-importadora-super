@@ -71,6 +71,17 @@ export type ConversationAccessScope = {
   advisorId?: string;
 };
 
+/**
+ * The primary inbox contains conversations the automation or an active owner
+ * is handling. Human-review work is intentionally isolated in Pendientes so a
+ * bot miss cannot be lost among ordinary incoming chats.
+ */
+export function conversationInboxStatusFilter(status: ConversationState | undefined): Prisma.ConversationWhereInput {
+  return status
+    ? { status }
+    : { status: { not: "REQUIERE_ASESOR" } };
+}
+
 export const getConversationMessagesSchema = z.object({
   conversationId: z.string().min(1),
   q: optionalTrimmedString,
@@ -251,6 +262,8 @@ export async function getConversations(
     and.push(advisorConversationScope(scope.advisorId));
   }
 
+  and.push(conversationInboxStatusFilter(status));
+
   if (search) {
     and.push({
       contact: {
@@ -278,10 +291,6 @@ export async function getConversations(
 
   if (and.length) {
     where.AND = and;
-  }
-
-  if (status) {
-    where.status = status;
   }
 
   if (channel) {
@@ -637,9 +646,6 @@ export async function updateConversation(id: string, input: UpdateConversationIn
 
 export async function processIncomingMessage(input: IncomingMessageInput) {
   const parsed = incomingMessageSchema.parse(input);
-  if (parsed.channel === "WHATSAPP") {
-    throw new MessageTransportError("El canal retirado no acepta mensajes nuevos.");
-  }
   const timestamp = new Date(parsed.timestamp);
   const isSimulator = parsed.externalContactId.startsWith("SIMULATOR:");
   const normalizedPhone = normalizeMessagePhone(parsed.phone ?? (isSimulator ? "" : parsed.externalContactId));
@@ -743,8 +749,11 @@ export async function processIncomingMessage(input: IncomingMessageInput) {
         data: {
           contactId: contact.id,
           channel: parsed.channel,
-          status: "AUTOMATICO",
-          botEnabled: true,
+          // Incoming WhatsApp messages must be surfaced to the shared advisor
+          // queue. The YCloud webhook is receive-only, so never wake an
+          // automation or imply that an automatic reply will be sent.
+          status: parsed.channel === "WHATSAPP" ? "REQUIERE_ASESOR" : "AUTOMATICO",
+          botEnabled: parsed.channel !== "WHATSAPP",
         },
       });
     }

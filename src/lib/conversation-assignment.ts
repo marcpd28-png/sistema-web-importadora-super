@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Channel, Prisma } from "@prisma/client";
 
 /**
  * A controlled error for the advisor-workspace ownership boundary.  Routes use
@@ -9,6 +9,11 @@ export class ConversationAssignmentError extends Error {
     super(message);
     this.name = "ConversationAssignmentError";
   }
+}
+
+/** Channels an advisor can work from the shared message center. */
+export function isAdvisorSupportedChannel(channel: Channel) {
+  return channel === "TELEGRAM" || channel === "WHATSAPP";
 }
 
 /**
@@ -28,7 +33,10 @@ export function isConversationAssignedToAdvisor(
   assignedUserId: string | null,
   advisorId: string,
 ) {
-  return assignedUserId === advisorId;
+  // An unassigned conversation belongs to the shared advisor queue. A user
+  // may open it in order to claim it; only another advisor's assignment is
+  // private.
+  return assignedUserId === null || assignedUserId === advisorId;
 }
 
 export function canTransferConversation({

@@ -7,6 +7,7 @@ interface Props {
 
 export function ConversationStatus({ conversation }: Props) {
   const { botEnabled, status, assignedUser } = conversation;
+  const pendingAdvisor = status === "REQUIERE_ASESOR";
 
   return (
     <div className="conversation-status-bar">
@@ -15,6 +16,11 @@ export function ConversationStatus({ conversation }: Props) {
           <>
             <Bot size={16} color="#25D366" />
             <span>Bot Automático</span>
+          </>
+        ) : pendingAdvisor ? (
+          <>
+            <User size={16} color="#d97706" />
+            <span>Pendiente de asesor</span>
           </>
         ) : (
           <>
@@ -26,7 +32,7 @@ export function ConversationStatus({ conversation }: Props) {
       
       <div className="status-tags">
         <span className={`conversation-badge badge-${status.toLowerCase()}`}>
-          Estado: {status.replace('_', ' ')}
+          Estado: {pendingAdvisor ? "PENDIENTE" : status.replace('_', ' ')}
         </span>
       </div>
     </div>

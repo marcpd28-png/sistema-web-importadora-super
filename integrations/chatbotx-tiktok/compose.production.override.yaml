@@ -1,0 +1,46 @@
+# Production override for the existing /opt/chatbotx Compose project.
+# It preserves the current builder image override and adds a disabled TikTok
+# sidecar. Do not change TIKTOK_BRIDGE_ENABLED to true before approval.
+services:
+  builder:
+    image: rocky-chatbotx-builder:tiktok-dm-scopes-oauth-state-20261105-hotfix
+
+  chatbotx-tiktok-bridge:
+    build:
+      context: /opt/chatbotx/tiktok-bridge
+      dockerfile: Dockerfile
+    container_name: chatbotx-tiktok-bridge
+    restart: unless-stopped
+    networks:
+      - main
+    env_file:
+      - /opt/chatbotx/.env
+    environment:
+      TIKTOK_BRIDGE_ENABLED: "false"
+      TIKTOK_BRIDGE_DB: /data/tiktok-bridge.db
+      TIKTOK_BRIDGE_HOST: 0.0.0.0
+      TIKTOK_BRIDGE_PORT: "13125"
+      PYTHONDONTWRITEBYTECODE: "1"
+    ports:
+      - 127.0.0.1:13127:13125
+    volumes:
+      - /opt/chatbotx/tiktok-bridge-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:13125/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3

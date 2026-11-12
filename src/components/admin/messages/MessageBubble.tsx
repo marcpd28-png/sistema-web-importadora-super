@@ -8,7 +8,14 @@ interface Props { message: ChatMessage; onRetry?: (message: ChatMessage) => void
 
 function getMediaSource(message: ChatMessage) {
   return message.mediaUrl && (() => {
-    try { return message.mediaUrl.startsWith('telegram-file:') ? `/api/admin/messages/${encodeURIComponent(message.id)}/media` : message.mediaUrl; }
+    try {
+      const provider = message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata)
+        ? (message.metadata as Record<string, unknown>).provider
+        : null;
+      return message.mediaUrl.startsWith("telegram-file:") || provider === "ycloud"
+        ? `/api/admin/messages/${encodeURIComponent(message.id)}/media`
+        : message.mediaUrl;
+    }
     catch { return message.mediaUrl; }
   })();
 }

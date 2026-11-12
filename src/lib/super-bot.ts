@@ -5,6 +5,7 @@ import {
   CatalogPdfSizeLimitError,
   generateCatalogPdfBundle,
   parseCatalogRequest,
+  parseSecurityCameraPurchaseCatalogRequest,
   type CatalogRequest,
   type GeneratedCatalogPdf,
   type GeneratedCatalogPdfBundle,
@@ -28,6 +29,8 @@ export type SuperBotInput = {
   /** Set only by a trusted channel adapter or conversation store. */
   isFirstContact?: boolean;
   hasAttachments?: boolean;
+  /** Internal channel policy; never sourced from customer input. */
+  catalogPdfMaxBytes?: number;
 };
 
 function contactAction(href: string) {
@@ -44,7 +47,7 @@ type SuperBotDependencies = {
   answerShopAssistant?: (input: SuperBotInput) => Promise<ShopAssistantReply>;
   composeLiveReply?: (input: SuperBotLiveReplyInput) => Promise<ShopAssistantReply>;
   /** Preferred complete-collection contract. */
-  generateCatalogPdfBundle?: (request: CatalogRequest) => Promise<GeneratedCatalogPdfBundle>;
+  generateCatalogPdfBundle?: (request: CatalogRequest, options?: { maxBytes?: number }) => Promise<GeneratedCatalogPdfBundle>;
   /** Compatibility injection for callers/tests still producing one file. */
   generateCatalogPdf?: (request: CatalogRequest) => Promise<GeneratedCatalogPdf>;
   getMessengerUrl?: () => Promise<string>;
@@ -52,12 +55,66 @@ type SuperBotDependencies = {
 
 function catalogLinkReply(): ShopAssistantReply {
   return {
-    text: `Puedes ver nuestro catálogo completo y actualizado en la tienda virtual: ${VIRTUAL_STORE_URL}`,
+    // With 2,000+ frequently changing SKUs, an encapsulated general PDF
+    // would be stale, large, and hard to browse on mobile. The store is the
+    // canonical complete catalogue; a buying walkthrough can be attached
+    // later only after operations provides an approved, durable video URL.
+    text: `El catálogo completo y actualizado está en la tienda virtual: ${VIRTUAL_STORE_URL}`,
     quickActions: [
       { label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true },
     ],
     meta: { intent: "catalog-link", usedOllama: false },
   };
+}
+
+function paymentAndAdvisorReply(messengerUrl: string): ShopAssistantReply {
+  return {
+    text: "Puedes pagar con tarjeta o Yape por Culqi, transferencia Interbank o Plin. Un asesor continuará la atención para confirmar tu pedido.",
+    quickActions: [contactAction(messengerUrl)],
+    meta: { intent: "payment", usedOllama: false },
+  };
+}
+
+function isProductInterestMessage(message: string) {
+  const text = normalizeAssistantText(message);
+  return /\b(me interesa|me interesan|lo quiero|la quiero|los quiero|las quiero|quiero ese|quiero esa|dame ese|dame esa|voy a llevar|lo llevare|comprar ese|comprar esa)\b/.test(text);
+}
+
+/**
+ * Product facts live in the card. Keep the accompanying copy intentionally
+ * short, whether it came directly from the deterministic catalogue service
+ * or was later refined by the optional live model.
+ */
+function makeProductReplyVisualFirst(reply: ShopAssistantReply): ShopAssistantReply {
+  if (!reply.products?.length) return reply;
+  // A product card paired with a server-calculated quantity quote is not a
+  // discovery carousel. Its amount, wholesale threshold, and total must stay
+  // visible verbatim; replacing it with the generic visual-card prompt loses
+  // the answer the customer explicitly requested.
+  if (
+    reply.contextProductCode &&
+    /\b(?:total estimado|aplica mayorista|para mayorista necesitas|precio unitario)\b/i.test(reply.text)
+  ) return reply;
+  // The catalogue service has already calculated this exact count. Keep it
+  // intact instead of replacing it with generic prose after visual cards.
+  if (/^(?:Tenemos \d+ productos(?: [^.]+)? en stock\. ¿Quieres ver el catálogo completo\?|Aquí van \d+ más\. ¿Quieres ver el siguiente lote\?)$/.test(reply.text)) return reply;
+  const hasMore = reply.channelActions?.some((action) => action.kind === "show-more");
+  return {
+    ...reply,
+    text: hasMore ? "Mira las opciones. ¿Cuál buscas o quieres ver más?" : "Mira las opciones. ¿Cuál buscas?",
+  };
+}
+
+function wantsAllShownProducts(input: SuperBotInput) {
+  if (!input.shownProductCodes?.length) return false;
+  if (!/^(si|claro|dale|ok|okay|de acuerdo|quiero verlos|si quiero verlos)([!. ]|$)/.test(normalizeAssistantText(input.message))) return false;
+  return (input.recentMessages ?? []).some((message) =>
+    // A catalogue-complete confirmation is a distinct document action. It
+    // must never be reinterpreted as pagination merely because its response
+    // is an affirmative word. Pagination is only for the explicit next-lot
+    // prompt emitted after a previous page.
+    message.role === "assistant" && /quieres ver el siguiente lote/.test(normalizeAssistantText(message.text)),
+  );
 }
 
 function catalogPdfReply(
@@ -73,7 +130,11 @@ function catalogPdfReply(
   }));
   const firstDocument = documents[0];
   if (!firstDocument) throw new Error("El catálogo no contiene documentos para entregar.");
-  const text = documents.length === 1
+  const text = request.source === "security-camera-purchase"
+    ? documents.length === 1
+      ? `¡Por supuesto! Te comparto el catálogo completo de cámaras de seguridad (${catalog.productCount} productos): ${firstDocument.url}`
+      : `¡Por supuesto! Te comparto el catálogo completo de cámaras de seguridad (${catalog.productCount} productos) en ${documents.length} PDFs. Te los envío en orden.`
+    : documents.length === 1
     ? `Aquí tienes el PDF ${request.title.toLowerCase()} (${catalog.productCount} productos): ${firstDocument.url}`
     : `Preparé ${request.title.toLowerCase()} completo (${catalog.productCount} productos) en ${documents.length} PDFs. Te los envío en orden.`;
 
@@ -151,11 +212,7 @@ function serviceReply(message: string, messengerUrl: string): ShopAssistantReply
   }
 
   if (hasAnyIntent(text, ["pago", "pagos", "pagar", "transferencia", "yape", "plin", "deposito", "banco"])) {
-    return {
-      text: "Para confirmar un pago, un asesor verificará los datos y el pedido antes de que realices cualquier transferencia.",
-      quickActions: [contactAction(messengerUrl)],
-      meta: { intent: "payment", usedOllama: false },
-    };
+    return paymentAndAdvisorReply(messengerUrl);
   }
 
   if (hasAnyIntent(text, ["asesor", "asesora", "humano", "persona", "representante", "vendedor", "vendedora"])) {
@@ -169,12 +226,13 @@ function serviceReply(message: string, messengerUrl: string): ShopAssistantReply
   return null;
 }
 
-function attachmentOnlyReply(messengerUrl: string): ShopAssistantReply {
+function pendingAdvisorReply(intent: "attachment-human-assistance" | "human-assistance"): ShopAssistantReply {
   return {
-    text: "Recibí tu imagen o archivo. Aún no puedo identificar un producto solo por el adjunto; envíame su código o modelo, o un asesor lo revisará contigo.",
-    quickActions: [contactAction(messengerUrl)],
-    suggestedPrompts: ["Buscar por código", "Tengo el modelo", "Hablar con un asesor"],
-    meta: { intent: "attachment-human-assistance", usedOllama: false },
+    // A missing verified answer must not be turned into a plausible-sounding
+    // response by a channel or an optional model. The transport owns the
+    // durable handoff and intentionally sends nothing to the customer.
+    text: "",
+    meta: { intent, usedOllama: false, requiresAdvisor: true },
   };
 }
 
@@ -192,42 +250,70 @@ function isAttachmentOnlyMessage(message: string) {
 export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
   const getShopAssistantReply = dependencies.answerShopAssistant ?? answerShopAssistant;
   const composeLiveReply = dependencies.composeLiveReply ?? composeLiveSuperBotReply;
-  const createCatalogPdfBundle = dependencies.generateCatalogPdfBundle
+  const createCatalogPdfBundle: (request: CatalogRequest, options?: { maxBytes?: number }) => Promise<GeneratedCatalogPdfBundle> = dependencies.generateCatalogPdfBundle
     ?? (dependencies.generateCatalogPdf
-      ? async (request: CatalogRequest) => {
+      ? async (request: CatalogRequest, options?: { maxBytes?: number }) => {
         const document = await dependencies.generateCatalogPdf!(request);
+        if (options?.maxBytes && document.sizeBytes > options.maxBytes) {
+          throw new CatalogPdfSizeLimitError();
+        }
         return { documents: [document], productCount: document.productCount };
       }
       : generateCatalogPdfBundle);
   const getMessengerUrl = dependencies.getMessengerUrl ?? getConfiguredMessengerUrl;
 
   const finalizeReply = async (input: SuperBotInput, verifiedReply: ShopAssistantReply) => {
+    const visualReply = makeProductReplyVisualFirst(verifiedReply);
     try {
-      return await composeLiveReply({
+      const composed = await composeLiveReply({
         message: input.message,
         recentMessages: input.recentMessages,
         isFirstContact: input.isFirstContact,
-        verifiedReply,
+        verifiedReply: visualReply,
       });
+      const visualComposed = makeProductReplyVisualFirst(composed);
+      return /^(?:Tenemos \d+ productos(?: [^.]+)? en stock\. ¿Quieres ver el catálogo completo\?|Aquí van \d+ más\. ¿Quieres ver el siguiente lote\?)$/.test(visualReply.text)
+        ? { ...visualComposed, text: visualReply.text }
+        : visualComposed;
     } catch {
       // A model or integration failure must never replace verified catalog data.
-      return verifiedReply;
+      return visualReply;
     }
   };
 
   return async function answerSuperBot(input: SuperBotInput): Promise<ShopAssistantReply> {
     if (input.hasAttachments && isAttachmentOnlyMessage(input.message)) {
+      return pendingAdvisorReply("attachment-human-assistance");
+    }
+
+    // An affirmative reply to the bounded visual catalogue means “next page”,
+    // not payment. The original search lives in trusted customer history and
+    // shownProductCodes advances the page without relying on visible captions.
+    if (wantsAllShownProducts(input)) {
+      return finalizeReply(input, await getShopAssistantReply({
+        ...input,
+        message: "Muéstrame más opciones",
+      }));
+    }
+
+    // A positive selection is the handoff moment. It is intentionally handled
+    // before another catalogue lookup so a short "lo quiero" cannot repeat
+    // cards instead of explaining the available payment paths.
+    if (isProductInterestMessage(input.message)) {
       const messengerUrl = await getMessengerUrl().catch(() => PUBLIC_MESSENGER_URL);
-      return finalizeReply(input, attachmentOnlyReply(messengerUrl));
+      return finalizeReply(input, paymentAndAdvisorReply(messengerUrl));
     }
 
     // A specific request always has priority over a generic catalogue link.
     // It returns a manifest-checked complete bundle; the bridge delivers each
     // part idempotently and never selects just the first document.
-    const catalogRequest = parseCatalogRequest(input.message);
+    const catalogRequest = parseCatalogRequest(input.message)
+      ?? parseSecurityCameraPurchaseCatalogRequest(input.message);
     if (catalogRequest) {
       try {
-        return finalizeReply(input, catalogPdfReply(catalogRequest, await createCatalogPdfBundle(catalogRequest)));
+        return finalizeReply(input, catalogPdfReply(catalogRequest, await createCatalogPdfBundle(catalogRequest, {
+          maxBytes: input.catalogPdfMaxBytes,
+        })));
       } catch (error) {
         return finalizeReply(input, catalogPdfFallback(error));
       }
@@ -243,15 +329,15 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     }
 
     const messengerUrl = await getMessengerUrl().catch(() => PUBLIC_MESSENGER_URL);
-    return finalizeReply(input, serviceReply(input.message, messengerUrl) ?? {
-      text: "No ubico ese producto. ¿Tienes foto, código o modelo?",
-      quickActions: [
-        { label: "Explorar catálogo", href: "/?focus=search", accent: true },
-        contactAction(messengerUrl),
-      ],
-      suggestedPrompts: ["Buscar por código", "Ver ofertas", "Hablar con un asesor"],
-      meta: { intent: "human-assistance", usedOllama: false },
-    });
+    const knownServiceReply = serviceReply(input.message, messengerUrl);
+    // Asking directly for a person is also an explicit handoff, not an
+    // automatic acknowledgement that could leave the customer waiting.
+    if (knownServiceReply?.meta?.intent === "human-assistance") {
+      return pendingAdvisorReply("human-assistance");
+    }
+    if (knownServiceReply) return finalizeReply(input, knownServiceReply);
+
+    return pendingAdvisorReply("human-assistance");
   };
 }
 

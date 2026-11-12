@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createSuperBotReplyHandler, type SuperBotTelemetry } from "./super-bot-internal-reply";
+import { createSuperBotReplyHandler, type SuperBotPendingHandoff, type SuperBotTelemetry } from "./super-bot-internal-reply";
 import { createSuperBotEventStore, createSuperBotRateLimiter, type SuperBotInternalLogEvent } from "./super-bot-security";
 import type { ShopAssistantReply } from "./shop-assistant-types";
 
@@ -37,6 +37,7 @@ function handler(options: {
   logs?: SuperBotInternalLogEvent[];
   capturedInput?: Record<string, unknown>;
   telemetry?: Telemetry;
+  handoff?: SuperBotPendingHandoff;
 } = {}) {
   return createSuperBotReplyHandler({
     getConfiguredKey: () => SECRET,
@@ -50,6 +51,7 @@ function handler(options: {
     clientKey: () => "test-client",
     log: (event) => options.logs?.push(event),
     telemetry: options.telemetry ?? noOpTelemetry,
+    handoffPendingConversation: options.handoff,
   });
 }
 
@@ -117,11 +119,34 @@ test("a trusted adapter can pass the visual cards already delivered", async () =
   assert.deepEqual(captured.shownProductCodes, ["JBL-1", "JBL-2", "JBL-3"]);
 });
 
+test("TikTok catalogues receive a server-side five-megabyte PDF policy", async () => {
+  const tiktok: Record<string, unknown> = {};
+  const messenger: Record<string, unknown> = {};
+
+  const tiktokResponse = await handler({ capturedInput: tiktok })(request({
+    message: "catálogo de ventiladores",
+    eventId: "tiktok-catalogue-limit",
+    channel: "tiktok",
+    conversationId: "tiktok-catalogue-conversation",
+  }));
+  const messengerResponse = await handler({ capturedInput: messenger })(request({
+    message: "catálogo de ventiladores",
+    eventId: "messenger-catalogue-limit",
+    channel: "messenger",
+    conversationId: "messenger-catalogue-conversation",
+  }));
+
+  assert.equal(tiktokResponse.status, 200);
+  assert.equal(messengerResponse.status, 200);
+  assert.equal(tiktok.catalogPdfMaxBytes, 5 * 1024 * 1024);
+  assert.equal(messenger.catalogPdfMaxBytes, undefined);
+});
+
 test("the internal responder rejects an oversized visual page marker", async () => {
   const post = handler();
   const response = await post(request({
     message: "tienes otras opciones",
-    shownProductCodes: ["JBL-1", "JBL-2", "JBL-3", "JBL-4"],
+    shownProductCodes: ["JBL-1", "JBL-2", "JBL-3", "JBL-4", "JBL-5", "JBL-6"],
   }));
 
   assert.equal(response.status, 400);
@@ -367,4 +392,30 @@ test("an attachment-only event is accepted and marked for safe human review", as
   assert.equal(response.status, 200);
   assert.equal(capturedInput.message, "");
   assert.equal(capturedInput.hasAttachments, true);
+});
+
+test("an unresolved reply pauses Messenger before returning an empty customer response", async () => {
+  const pendingReply: ShopAssistantReply = {
+    text: "",
+    meta: { intent: "human-assistance", usedOllama: false, requiresAdvisor: true },
+  };
+  const handoffs: Array<Parameters<SuperBotPendingHandoff>[0]> = [];
+  const post = handler({
+    answer: async () => pendingReply,
+    handoff: async (input) => { handoffs.push(input); },
+  });
+
+  const response = await post(request({
+    message: "producto inexistente",
+    eventId: "unresolved-messenger-event",
+    channel: "messenger",
+    conversationId: "123456",
+  }));
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { reply: pendingReply, automated: false, requiresAdvisor: true });
+  assert.equal(handoffs.length, 1);
+  assert.deepEqual(handoffs[0].channel, "messenger");
+  assert.deepEqual(handoffs[0].conversationId, "123456");
+  assert.match(handoffs[0].requestKey, /^[A-Za-z0-9_-]{43}$/);
 });

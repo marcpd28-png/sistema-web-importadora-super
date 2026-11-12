@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   advisorConversationScope,
   canTransferConversation,
+  isAdvisorSupportedChannel,
   isConversationAssignedToAdvisor,
 } from "./conversation-assignment";
 
@@ -13,9 +14,15 @@ test("la cola del asesor incluye chats libres y propios, nunca chats de otro ase
       { assignedUserId: "kimberly" },
     ],
   });
-  assert.equal(isConversationAssignedToAdvisor(null, "kimberly"), false);
+  assert.equal(isConversationAssignedToAdvisor(null, "kimberly"), true);
   assert.equal(isConversationAssignedToAdvisor("kimberly", "kimberly"), true);
   assert.equal(isConversationAssignedToAdvisor("candy", "kimberly"), false);
+});
+
+test("WhatsApp y Telegram son canales atendibles por asesores", () => {
+  assert.equal(isAdvisorSupportedChannel("WHATSAPP"), true);
+  assert.equal(isAdvisorSupportedChannel("TELEGRAM"), true);
+  assert.equal(isAdvisorSupportedChannel("WEB"), false);
 });
 
 test("solo el dueño actual o Mark pueden transferir una conversación", () => {

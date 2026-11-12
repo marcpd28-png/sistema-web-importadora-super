@@ -13,8 +13,14 @@ const GROUPS = [
   ["proyector", "proyectores"], ["scooter", "scoter", "scuter", "patineta"],
   ["alexa", "alexas", "echo"], ["maquina", "maquinas"],
   ["ventilador", "ventiladores", "fan", "fans"],
+  // Natural Spanish requests often name the action ("hacer masajes") rather
+  // than the catalog noun. They remain a single, grounded product family.
+  ["masajeador", "masajeadores", "masaje", "masajes", "massage", "massager"],
 ];
-for (const word of ["y", "si", "estoy", "recomiendas", "recomienda", "recomendame", "presupuesto", "soles", "sol", "veo", "mandas", "unidad", "unidades"]) FILLER.add(word);
+// Connecting words describe the relationship between purchases, not a
+// catalog constraint. In particular, "también" starts a second product line;
+// keeping it here would turn that line into an impossible AND search.
+for (const word of ["y", "si", "estoy", "tambien", "ademas", "hacer", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "recomiendas", "recomienda", "recomendame", "presupuesto", "soles", "sol", "veo", "mandas", "unidad", "unidades"]) FILLER.add(word);
 for (const word of ["comprar", "compra", "cotizar", "cotizacion"]) FILLER.add(word);
 for (const word of ["todavia", "aun", "venta", "venden", "vende", "vender", "siguen", "sigue", "actualmente"]) FILLER.add(word);
 for (const word of ["electrico", "electrica", "electricos", "electricas"]) FILLER.delete(word);
@@ -29,6 +35,11 @@ const CORRECTIONS: Record<string, string> = {
 const MEASUREMENT_UNITS = ["pulgadas", "gb", "tb", "mb", "mah", "hz", "mm", "cm", "kg"] as const;
 type MeasurementUnit = (typeof MEASUREMENT_UNITS)[number];
 const MEASUREMENT_UNIT_SET = new Set<string>(MEASUREMENT_UNITS);
+// Generic heads communicate that the customer wants a product, but are not a
+// product constraint when another identity term is present. Keeping this
+// grammar generic lets "equipo para ...", "máquina de ..." and "aparato de
+// ..." work for catalog families not known when this code was written.
+const GENERIC_PRODUCT_HEADS = new Set(["maquina", "maquinas", "equipo", "equipos", "aparato", "aparatos", "dispositivo", "dispositivos"]);
 
 export function normalizeProductQuery(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
@@ -148,9 +159,17 @@ export function catalogPresentationGroup(
   return { key: "fan-general", label: "VENTILADORES GENERALES", order: 0 };
 }
 
-export function matchesProductQuery(product: { name: string; code?: string; externalCode?: string | null; brand?: string | null; category?: string | null; technicalSpecs?: string | null }, query: string) {
-  const terms = productQueryTerms(query);
-  const text = normalizeProductQuery([product.name, product.code, product.externalCode, product.brand, product.category, product.technicalSpecs].filter(Boolean).join(" "));
+export function matchesProductQuery(product: { name: string; code?: string; externalCode?: string | null; brand?: string | null; category?: string | null; description?: string | null; technicalSpecs?: string | null }, query: string) {
+  const rawTerms = productQueryTerms(query);
+  // Preserve generic heads in a query for explanations and catalog labels,
+  // but do not require them of a row when a more specific identity exists.
+  // This is grammar-wide, not tied to a product family.
+  const withoutGenericHeads = rawTerms.filter((term) => !GENERIC_PRODUCT_HEADS.has(term));
+  const terms = withoutGenericHeads.length ? withoutGenericHeads : rawTerms;
+  // Matching the verified descriptive fields is intentional: the catalog
+  // contains products whose user-facing identity lives in a description or
+  // structured technical attribute rather than the abbreviated ERP title.
+  const text = normalizeProductQuery([product.name, product.code, product.externalCode, product.brand, product.category, product.description, product.technicalSpecs].filter(Boolean).join(" "));
   // Dimensions/capacities are paired constraints: 32 GB is not a 32-inch screen.
   const measurements = normalizeProductQuery(query).matchAll(/\b(\d+(?: \d+)?) (pulgadas|gb|tb|mb|mah|hz|mm|cm|kg)\b/g);
   for (const measurement of measurements) {
@@ -193,7 +212,7 @@ export function matchesProductQuery(product: { name: string; code?: string; exte
 
 export type CatalogIdentity = {
   id: string; name: string; code: string; externalCode: string | null;
-  brand: string | null; category: string | null; technicalSpecs?: string | null;
+  brand: string | null; category: string | null; description?: string | null; technicalSpecs?: string | null;
   isVisible: boolean; stockUnits: number; unitPrice: unknown;
 };
 
@@ -420,6 +439,7 @@ const CATALOG_IDENTITY_SELECT = {
   externalCode: true,
   brand: true,
   category: true,
+  description: true,
   technicalSpecs: true,
   isVisible: true,
   stockUnits: true,

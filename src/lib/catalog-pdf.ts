@@ -1,4 +1,4 @@
-import { catalogPresentationGroup, findAllCatalogProductIds, productQueryTerms } from "./catalog-query";
+import { catalogPresentationGroup, findAllCatalogProductIds, normalizeProductQuery, productQueryTerms } from "./catalog-query";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -17,6 +17,12 @@ const BRAND_PRIMARY = "#2320DA";
 /** Leave headroom below Telegram's 20 MB URL-download ceiling so the same
  * PDF part can be delivered through every supported document channel. */
 export const MAX_CATALOG_PDF_BYTES = 18 * 1024 * 1024;
+
+/** Channel adapters can request a smaller, independently complete bundle.
+ * The default remains Telegram-safe; callers can only lower this limit. */
+export type CatalogPdfBundleOptions = {
+  maxBytes?: number;
+};
 
 export type CatalogProductImage = {
   id: string;
@@ -93,7 +99,49 @@ export type CatalogRequest = {
   slug: string;
   title: string;
   terms: string[];
+  /** The customer asked to buy a whole product family without naming the
+   * catalogue. This is kept on the trusted request so wording can describe
+   * the automatic PDF delivery accurately. */
+  source?: "security-camera-purchase";
 };
+
+const SECURITY_CAMERA_PURCHASE_WORDS = new Set([
+  "adquirir",
+  "adquiere",
+  "adquirirlas",
+  "comprar",
+  "compra",
+  "comprarlas",
+  "quiero",
+  "quisiera",
+  "deseo",
+  "necesito",
+  "busco",
+]);
+
+/**
+ * A plural purchase request for security cameras is a request to browse the
+ * category, not a request for one particular camera. Send its complete PDF
+ * even when the customer does not know to ask for a "catálogo" explicitly.
+ *
+ * This stays intentionally narrow: a singular camera, a photo/video camera,
+ * or a technical/support question keeps the normal product-search flow.
+ */
+export function parseSecurityCameraPurchaseCatalogRequest(content: string): CatalogRequest | null {
+  const words = normalizeProductQuery(content).split(/\s+/).filter(Boolean);
+  const hasPluralCamera = words.includes("camaras");
+  const hasSecurity = words.includes("seguridad");
+  const hasPurchaseIntent = words.some((word) => SECURITY_CAMERA_PURCHASE_WORDS.has(word));
+
+  if (!hasPluralCamera || !hasSecurity || !hasPurchaseIntent) return null;
+
+  return {
+    terms: ["camaras", "seguridad"],
+    slug: "camaras-seguridad",
+    title: "CATÁLOGO DE CÁMARAS DE SEGURIDAD",
+    source: "security-camera-purchase",
+  };
+}
 
 function catalogScope(content: string): string | null {
   const scope = getCatalogRequestScope(content);
@@ -502,6 +550,14 @@ function catalogBundleBaseFilename(slug: string, fingerprint: string) {
   return `catalogo-${slug}-${fingerprint}`;
 }
 
+function catalogBundleMaxBytes(options: CatalogPdfBundleOptions | undefined) {
+  const value = options?.maxBytes ?? MAX_CATALOG_PDF_BYTES;
+  if (!Number.isInteger(value) || value < 1 || value > MAX_CATALOG_PDF_BYTES) {
+    throw new RangeError("El límite del catálogo no es válido.");
+  }
+  return value;
+}
+
 function catalogPartFilename(baseFilename: string, index: number, total: number) {
   if (total === 1) return `${baseFilename}.pdf`;
   const width = String(total).length;
@@ -530,6 +586,7 @@ async function readCachedCatalogBundle(
   products: CatalogProductImage[],
   slug: string,
   fingerprint: string,
+  maxBytes: number,
 ): Promise<GeneratedCatalogPdfBundle | null> {
   const baseFilename = catalogBundleBaseFilename(slug, fingerprint);
   const manifestPath = path.join(CATALOG_DIRECTORY, `${baseFilename}.json`);
@@ -556,7 +613,7 @@ async function readCachedCatalogBundle(
       const outputPath = path.resolve(CATALOG_DIRECTORY, part.filename);
       if (path.dirname(outputPath) !== path.resolve(CATALOG_DIRECTORY)) return null;
       const fileStats = await stat(outputPath);
-      if (!fileStats.isFile() || fileStats.size !== part.sizeBytes || fileStats.size > MAX_CATALOG_PDF_BYTES) return null;
+      if (!fileStats.isFile() || fileStats.size !== part.sizeBytes || fileStats.size > maxBytes) return null;
 
       cachedProductIds.push(...part.productIds);
       documents.push(catalogDocument(part.filename, part.productCount, fileStats.size, false));
@@ -588,16 +645,18 @@ async function createCatalogPdfBundle(
   slug: string,
   title: string,
   fingerprint: string,
+  maxBytes: number,
 ): Promise<GeneratedCatalogPdfBundle> {
   await mkdir(CATALOG_DIRECTORY, { recursive: true });
 
-  const cached = await readCachedCatalogBundle(products, slug, fingerprint);
+  const cached = await readCachedCatalogBundle(products, slug, fingerprint, maxBytes);
   if (cached) return cached;
 
   const images = await loadCatalogImagesStrict(products);
   const renderedParts = await splitCatalogItemsByRenderedSize(
     images,
     (part) => renderCatalogImagePdf(part, title),
+    maxBytes,
   );
   if (!renderedParts.length) throw new CatalogPdfProductCoverageError(products.map((product) => product.id));
 
@@ -633,17 +692,20 @@ async function generateCatalogPdfBundleForProducts(
   products: CatalogProductImage[],
   slug: string,
   title: string,
+  options?: CatalogPdfBundleOptions,
 ): Promise<GeneratedCatalogPdfBundle> {
+  const maxBytes = catalogBundleMaxBytes(options);
   const fingerprint = createHash("sha256")
     .update(slug)
     .update(getCatalogFingerprint(products))
+    .update(`max-bytes:${maxBytes}`)
     .digest("hex")
     .slice(0, 16);
-  const cacheKey = `${slug}-${fingerprint}`;
+  const cacheKey = `${slug}-${fingerprint}-${maxBytes}`;
   const existing = inFlightCatalogBundles.get(cacheKey);
   if (existing) return existing;
 
-  const generation = createCatalogPdfBundle(products, slug, title, fingerprint).finally(() => {
+  const generation = createCatalogPdfBundle(products, slug, title, fingerprint, maxBytes).finally(() => {
     inFlightCatalogBundles.delete(cacheKey);
   });
   inFlightCatalogBundles.set(cacheKey, generation);
@@ -662,12 +724,12 @@ export async function generateProjectorCatalogPdf() {
 /** Generate every matching, saleable product as one or more ordered PDFs.
  * Each document is independently Telegram-safe and the union is manifest-
  * checked to contain every selected product exactly once. */
-export async function generateCatalogPdfBundle(request: CatalogRequest) {
+export async function generateCatalogPdfBundle(request: CatalogRequest, options?: CatalogPdfBundleOptions) {
   const products = await findCatalogImages(request.terms);
   if (!products.length) {
     throw new Error(`No encontramos productos publicados para el catálogo de ${request.terms.join(" ")}.`);
   }
-  return generateCatalogPdfBundleForProducts(products, request.slug, request.title);
+  return generateCatalogPdfBundleForProducts(products, request.slug, request.title, options);
 }
 
 /** Legacy callers that can only deliver one attachment retain their existing

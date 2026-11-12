@@ -53,15 +53,20 @@ El cuerpo debe conservar el identificador original del proveedor. Para el adapta
 
 Conserva el adjunto en ChatbotX, pero no envíes su binario, URL privada, OCR, transcripción ni metadatos al endpoint. Envía sólo `hasAttachments: true` y el número de adjuntos (`attachmentCount`, de 0 a 10). Un evento que sólo contiene un archivo puede usar `message: ""`.
 
-Super Bot no interpreta imágenes, audio ni documentos como hechos comerciales. Para un adjunto sin texto útil responde pidiendo código/modelo o derivando a un asesor. Si el cliente escribió una consulta junto al adjunto, el texto sigue siendo la consulta comercial; el adaptador no debe intentar inferir precio, stock o producto desde el archivo.
+Super Bot no interpreta imágenes, audio ni documentos como hechos comerciales. Para un adjunto sin texto útil no envía una respuesta automática: deriva el chat a **Pendientes** para que lo revise un asesor. Si el cliente escribió una consulta junto al adjunto, el texto sigue siendo la consulta comercial; el adaptador no debe intentar inferir precio, stock o producto desde el archivo.
 
 ### Entrega, reintentos y pausa
 
-La respuesta exitosa es `200 { "reply": ... }`. Entrega exactamente una respuesta de cliente a partir de `reply.text`; traduce `quickActions`, `products` o `document` sólo si el canal los admite. Un `document` con el mismo `deliveryKey` se entrega como máximo una vez. El adaptador también debe guardar su propia marca de entrega por `channel + conversationId + eventId`: un `200` repetido por una entrega del proveedor no autoriza un segundo mensaje saliente.
+La respuesta exitosa normal es `200 { "reply": ... }`. Entrega exactamente una respuesta de cliente a partir de `reply.text`; traduce `quickActions`, `products` o `document` sólo si el canal los admite. Un `document` con el mismo `deliveryKey` se entrega como máximo una vez. El adaptador también debe guardar su propia marca de entrega por `channel + conversationId + eventId`: un `200` repetido por una entrega del proveedor no autoriza un segundo mensaje saliente.
+
+Cuando el cuerpo incluya `requiresAdvisor: true` (también se replica en `reply.meta.requiresAdvisor`), el resultado es una derivación exitosa: **no envíes texto, tarjeta, PDF ni fallback al cliente**. Pausa el bot de esa conversación con `POST /conversations/{conversationId}/disable-bot`, usando una clave de idempotencia estable, y deja el chat en la vista **Pendientes**. El servidor de la tienda hace esa pausa directamente para Messenger; el adaptador debe respetar la señal para no entregar una respuesta vacía ni sustituirla por texto propio.
+
+Cuando `reply.products` incluya varias tarjetas, Messenger debe enviar hasta cinco en el mismo carrusel visual. `reply.channelActions` contiene postbacks de confianza: **Ver más opciones** debe reenviar su `message` junto con los códigos ya entregados en `shownProductCodes`; **Solicitar catálogo** debe reenviar su `message` para que Super Bot genere el PDF de esa búsqueda concreta. Nunca conviertas esas acciones en texto inventado ni dejes que el cliente suministre su payload interno.
 
 | Estado | Acción obligatoria del adaptador |
 | --- | --- |
 | `200` | Entregar una sola vez la respuesta verificada y marcar el evento como entregado. |
+| `200` con `requiresAdvisor: true` | No enviar nada al cliente; pausar el bot y mostrar la conversación en **Pendientes**. |
 | `202` | El mismo evento está siendo procesado. No envíes nada; espera el valor de `Retry-After` (actualmente 1 segundo) y reintenta con el mismo cuerpo y `eventId`. |
 | `409` | No envíes ni reintentes automáticamente. `Automation is paused` significa que la atención automática está detenida; `Conflicting event payload` indica que el mismo evento cambió de contenido y debe revisarse. |
 | `429` | No envíes nada; reintenta de forma limitada después de `Retry-After`, manteniendo el mismo `eventId`. |
@@ -72,7 +77,7 @@ No ejecutes otro modelo, respuestas predefinidas comerciales ni un fallback de p
 
 La telemetría de Super Bot guarda únicamente referencias HMAC de evento/conversación, estado, intención, conteo y latencia; conserva la respuesta verificada necesaria para deduplicar y se purga de forma oportunista después de 30 días. No reemplaza el historial de ChatbotX.
 
-Una respuesta manual desde la bandeja pausa Super Bot para esa conversación antes de enviarse. La reactivación es una acción explícita del operador: en Messenger se hace con **Reactivar Super Bot** en `/admin/mensajes/messenger`, que solicita `enable-bot` a ChatbotX. Nunca la reactives como efecto de una entrega, de un reintento, de cargar la conversación o de que termine la ventana de 24 horas. Reactivar no envía un mensaje al cliente.
+Una respuesta manual desde Messenger pausa Super Bot para esa conversación antes de enviarse. En TikTok, un asesor que redacta crea solamente un lease corto mientras escribe; un envío manual no desactiva el bot de forma permanente. Un handoff real de TikTok se hace explícitamente en ChatbotX con `disable-bot`. La reactivación de una pausa permanente es una acción explícita del operador con **Reactivar Super Bot**; nunca la ejecutes como efecto de una entrega, reintento, carga de conversación o fin de ventana. Reactivar no envía un mensaje al cliente.
 
 El interruptor global se lee del registro único de configuración (`StoreSettings` con `id: 1`). Si ese registro falta o no puede leerse, Super Bot permanece pausado; un propietario debe activarlo explícitamente desde `/admin/mensajes/configuracion` antes de habilitar respuestas automáticas.
 

@@ -13,6 +13,7 @@ import { getTelegramProductImageUrl } from "@/lib/telegram-product-image";
 import { buildRealProductPhotoWhere } from "@/lib/store-shared";
 import { formatCurrency, PUBLIC_MESSENGER_URL } from "@/lib/utils";
 import type {
+  ShopAssistantChannelAction,
   ShopAssistantProductCard,
   ShopAssistantQuickAction,
   ShopAssistantReply,
@@ -26,8 +27,13 @@ import {
   getStrictGiftTerms,
   type GiftIntentResult,
 } from "@/lib/shop-gift-intent";
+import {
+  deriveConversationProductState,
+  reconcileConversationProductSelections,
+} from "@/lib/conversation-product-state";
 
-const MAX_PRODUCTS = 4;
+/** The highest card count supported by the configured conversational package. */
+const MAX_PRODUCTS = 5;
 const MAX_SEARCH_CANDIDATES = 80;
 const STOPWORDS = new Set([
   "a",
@@ -113,6 +119,7 @@ const CATEGORY_FOCUS_ALIASES: Record<string, string[]> = {
   mouse: ["mouse", "mause", "raton"],
   audifonos: ["audifono", "audifonos", "auricular", "auriculares", "headset"],
   auriculares: ["audifono", "audifonos", "auricular", "auriculares", "headset"],
+  masajeador: ["masajeador", "masajeadores", "masaje", "masajes", "massage", "massager"],
   scooter: ["scooter", "scoter", "scuter", "patineta"],
   repetidor_wifi: ["repetidor", "repetidores", "extensor", "extensores", "range extender"],
 };
@@ -126,6 +133,7 @@ const PRODUCT_FOCUS_LABELS: Record<string, string> = {
   mouse: "mouses",
   audifonos: "audífonos",
   auriculares: "auriculares",
+  masajeador: "masajeadores",
   scooter: "scooters",
   repetidor_wifi: "repetidores Wi‑Fi",
 };
@@ -206,6 +214,9 @@ export type AssistantSettingsRecord = {
   currencySymbol: string;
   supportHours: string;
   messengerUrl: string;
+  botProductCardLimit?: number;
+  botMoreOptionsEnabled?: boolean;
+  botCatalogActionEnabled?: boolean;
 };
 
 export type ShopAssistantRepository = {
@@ -281,7 +292,7 @@ function getAssistantProductImage(product: AssistantProductRecord) {
   };
 }
 
-function mapAssistantProduct(
+export function mapAssistantProduct(
   product: AssistantProductRecord,
   currencySymbol: string,
 ): ShopAssistantProductCard {
@@ -406,6 +417,14 @@ function getProductFocusLabel(focus: ProductFocus) {
   return PRODUCT_FOCUS_LABELS[focus.canonical] ?? focus.aliases[0];
 }
 
+function requestedBrandLabel(query: string, products: AssistantProductRecord[]) {
+  const queryTerms = new Set(productQueryTerms(query));
+  for (const brand of products.map((product) => product.brand?.trim()).filter((brand): brand is string => Boolean(brand))) {
+    if (productQueryTerms(brand).some((term) => queryTerms.has(term))) return brand;
+  }
+  return null;
+}
+
 function detectProductFocus(query: string): ProductFocus | null {
   const normalized = normalizeAssistantText(query);
   let selectedFocus: ProductFocus | null = null;
@@ -480,6 +499,7 @@ function extractBudget(message: string) {
 function extractQuantity(message: string) {
   const normalized = normalizeAssistantText(message);
   const matches = [
+    ...normalized.matchAll(/^\s*(\d{1,4})\s*$/g),
     ...normalized.matchAll(/\b(\d{1,4})\s*(?:unidades|unidad|unds|und|piezas|pieza)\b/g),
     ...normalized.matchAll(/\bquiero\s*(\d{1,4})\b/g),
     ...normalized.matchAll(/\bpara\s*(\d{1,4})\b/g),
@@ -501,6 +521,7 @@ function scoreAssistantProduct(
   const normalizedName = normalizeAssistantText(product.name);
   const normalizedBrand = normalizeAssistantText(product.brand ?? "");
   const normalizedCategory = normalizeAssistantText(product.category ?? "");
+  const normalizedDescription = normalizeAssistantText(product.description ?? "");
   const normalizedSpecs = normalizeAssistantText(product.technicalSpecs ?? "");
   let score = 0;
 
@@ -510,6 +531,7 @@ function scoreAssistantProduct(
   if (normalizedName.includes(normalizedQuery)) score += 48;
   if (normalizedBrand.includes(normalizedQuery)) score += 24;
   if (normalizedCategory.includes(normalizedQuery)) score += 20;
+  if (normalizedDescription.includes(normalizedQuery)) score += 14;
   if (normalizedSpecs.includes(normalizedQuery)) score += 10;
   if (product.stockUnits > 0) score += 8;
   if (product.wholesalePrice !== null) score += 5;
@@ -809,6 +831,39 @@ function buildQuickActions(actions: ShopAssistantQuickAction[]) {
   return actions.slice(0, 6);
 }
 
+function productCardLimit(settings: AssistantSettingsRecord) {
+  const requested = Number(settings.botProductCardLimit);
+  if (!Number.isFinite(requested)) return MAX_PRODUCTS;
+  return Math.max(1, Math.min(MAX_PRODUCTS, Math.floor(requested)));
+}
+
+function buildRecommendationChannelActions(
+  settings: AssistantSettingsRecord,
+  query: string,
+  hasMoreOptions: boolean,
+): ShopAssistantChannelAction[] | undefined {
+  const normalizedQuery = extractSearchTerms(query);
+  const actions: ShopAssistantChannelAction[] = [];
+
+  if (settings.botMoreOptionsEnabled !== false && hasMoreOptions) {
+    actions.push({
+      kind: "show-more",
+      label: "Ver más opciones",
+      message: "Muéstrame más opciones",
+    });
+  }
+
+  if (settings.botCatalogActionEnabled !== false && normalizedQuery) {
+    actions.push({
+      kind: "request-catalog",
+      label: "Solicitar catálogo",
+      message: `Quiero catálogo de ${normalizedQuery}`,
+    });
+  }
+
+  return actions.length ? actions : undefined;
+}
+
 function buildDefaultPrompts() {
   return [
     "Algo para regalar por cumpleaños",
@@ -1048,6 +1103,9 @@ function createRealRepository(): ShopAssistantRepository {
           currencySymbol: settings?.currencySymbol ?? "S/",
           supportHours: settings?.supportHours ?? "Lun a sáb 8:00 am - 7:00 pm",
           messengerUrl: settings?.messengerUrl ?? PUBLIC_MESSENGER_URL,
+          botProductCardLimit: settings?.botProductCardLimit ?? MAX_PRODUCTS,
+          botMoreOptionsEnabled: settings?.botMoreOptionsEnabled ?? true,
+          botCatalogActionEnabled: settings?.botCatalogActionEnabled ?? true,
         },
         categories,
       };
@@ -1162,20 +1220,48 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const trimmedMessage = input.message.trim();
     const normalized = normalizeAssistantText(trimmedMessage);
     const baseData = await repository.getBaseData();
+    const maxProducts = productCardLimit(baseData.settings);
     const recentCustomerConversation = (input.recentMessages ?? [])
       .filter((item) => item.role === "user")
       .map((item) => normalizeAssistantText(item.text))
       .filter(Boolean)
       .join(" ");
     const recentCustomerQuery = latestCustomerProductQuery(input.recentMessages);
-    const useConversationContext = shouldUseConversationContext(trimmedMessage, recentCustomerQuery);
-    const assistantScope = useConversationContext
-      ? `${trimmedMessage} ${recentCustomerQuery}`.trim()
-      : trimmedMessage;
+    const priorConversationState = deriveConversationProductState(input.recentMessages, "");
+    const rawConversationState = deriveConversationProductState(input.recentMessages, trimmedMessage);
+    // Resolve only concrete selected lines. This lets a model reference such
+    // as "Clip 5" attach to the earlier JBL-speaker line without pulling that
+    // line's constraints into a fan added with "también".
+    const selectedLines = rawConversationState.lines.filter((line) => line.status === "selected");
+    const resolvedSelections = await Promise.all(selectedLines.map(async (line) => {
+      const product = (await repository.searchVisibleProducts(line.query)).find((candidate) =>
+        candidate.stockUnits > 0 && Number(candidate.unitPrice) > 0 && candidate.isVisible !== false && matchesProductQuery(candidate, line.query),
+      );
+      return product
+        ? { lineId: line.id, code: product.code, name: product.name, brand: product.brand, category: product.category }
+        : null;
+    }));
+    const conversationState = reconcileConversationProductSelections(
+      rawConversationState,
+      resolvedSelections.filter((selection): selection is NonNullable<typeof selection> => Boolean(selection)),
+    );
+    const activeProductLine = conversationState.activeLineId
+      ? conversationState.lines.find((line) => line.id === conversationState.activeLineId) ?? null
+      : null;
+    const useConversationContext =
+      conversationState.turnKind === "line-follow-up" &&
+      shouldUseConversationContext(trimmedMessage, recentCustomerQuery);
+    const hasMultipleNewProductLines = rawConversationState.lines.length > priorConversationState.lines.length + 1;
+    const assistantScope = activeProductLine && hasMultipleNewProductLines &&
+      (conversationState.turnKind === "new-search" || conversationState.turnKind === "product-selection")
+      ? activeProductLine.query
+      : useConversationContext
+        ? `${trimmedMessage} ${recentCustomerQuery}`.trim()
+        : trimmedMessage;
 
     if (!trimmedMessage) {
       return {
-        text: `Puedo ayudarte a buscar productos por código, nombre, categoría, ofertas o compras en ${baseData.settings.businessName}.`,
+        text: `Puedo ayudarte a buscar productos por nombre, categoría, ofertas o compras en ${baseData.settings.businessName}.`,
         quickActions: buildQuickActions([
           { label: "Ver ofertas", href: "/?featured=1", accent: true },
           { label: "Buscar catálogo", href: "/?focus=search" },
@@ -1232,7 +1318,10 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       (rejectsProductContext(trimmedMessage) ? null : input.productContextCode) ??
       null;
     const budget = extractBudget(trimmedMessage);
-    const quantity = extractQuantity(trimmedMessage);
+    // Quantity belongs to the focused purchase line. A prior "tres Clip 5"
+    // must not price a new fan line as three units simply because both were
+    // written in the same message.
+    const quantity = activeProductLine?.quantity ?? extractQuantity(trimmedMessage);
     const wantsNextOptions =
       useConversationContext &&
       wantsContinuation &&
@@ -1257,7 +1346,8 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const inferenceLead = catalogInferenceLead(productSearchInference);
 
     if (matchedCategory && !wantsSupport && !code && matchesProductQuery({ name: matchedCategory.name }, resolvedSearchTerms)) {
-      const products = (await repository.searchVisibleProducts(resolvedSearchTerms)).filter(product => product.stockUnits > 0 && Number(product.unitPrice) > 0 && product.isVisible !== false && matchesProductQuery(product, resolvedSearchTerms)).slice(0, MAX_PRODUCTS);
+      const matchedProducts = (await repository.searchVisibleProducts(resolvedSearchTerms)).filter(product => product.stockUnits > 0 && Number(product.unitPrice) > 0 && product.isVisible !== false && matchesProductQuery(product, resolvedSearchTerms));
+      const products = matchedProducts.slice(0, maxProducts);
       return {
         text: products.length
           ? `${inferenceLead}En ${matchedCategory.name} encontré estas opciones para empezar rápido.`
@@ -1265,6 +1355,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         contextCategorySlug: matchedCategory.slug,
         products: products.map((product) =>
           mapAssistantProduct(product, baseData.settings.currencySymbol),
+        ),
+        channelActions: buildRecommendationChannelActions(
+          baseData.settings,
+          resolvedSearchTerms,
+          matchedProducts.length > products.length,
         ),
         quickActions: buildQuickActions([
           {
@@ -1275,7 +1370,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           { label: "Ver ofertas", href: "/?featured=1" },
         ]),
         suggestedPrompts: [
-          `Busca ${matchedCategory.name} por código`,
+          `Busca ${matchedCategory.name} por nombre`,
           "¿Qué ofertas hay?",
           "¿Cómo envío mi pedido?",
         ],
@@ -1291,7 +1386,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           input.recentMessages,
         ))
         : categoryProducts;
-      const visibleProducts = products.slice(0, MAX_PRODUCTS);
+      const visibleProducts = products.slice(0, maxProducts);
       return {
         text: visibleProducts.length
           ? `Sigo en ${contextCategory.name}. Estas son más opciones dentro de esa línea.`
@@ -1299,6 +1394,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         contextCategorySlug: contextCategory.slug,
         products: visibleProducts.map((product) =>
           mapAssistantProduct(product, baseData.settings.currencySymbol),
+        ),
+        channelActions: buildRecommendationChannelActions(
+          baseData.settings,
+          contextCategory.name,
+          products.length > visibleProducts.length,
         ),
         quickActions: buildQuickActions([
           {
@@ -1309,7 +1409,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           { label: "Ver ofertas", href: "/?featured=1" },
         ]),
         suggestedPrompts: [
-          "Busca por código",
+          "Buscar por nombre",
           "¿Cómo cotizo mi pedido?",
           "Muéstrame ofertas",
         ],
@@ -1329,7 +1429,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         })),
         suggestedPrompts: [
           "Muéstrame ofertas",
-          "Busca por código",
+          "Buscar por nombre",
           "¿Cómo hago mi pedido?",
         ],
       };
@@ -1348,7 +1448,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           { label: "Ver ofertas", href: "/?featured=1" },
         ]),
         suggestedPrompts: [
-          "Busca un producto por código",
+          "Busca un producto por nombre",
           "Muéstrame productos destacados",
           "¿Qué categorías tienes?",
         ],
@@ -1442,8 +1542,8 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         ? sortProductsForBudget(rankedGiftProducts, giftQueries.join(" "), budget)
         : quantity
           ? sortProductsForQuantity(rankedGiftProducts, quantity, giftQueries.join(" "))
-          : rankedGiftProducts.slice(0, MAX_PRODUCTS);
-      const visibleGiftProducts = sortedGiftProducts.slice(0, MAX_PRODUCTS);
+          : rankedGiftProducts.slice(0, maxProducts);
+      const visibleGiftProducts = sortedGiftProducts.slice(0, maxProducts);
       const opening = buildGiftReply(giftIntent, visibleGiftProducts);
       const occasionLabel = detectGiftOccasionLabel(assistantScope);
 
@@ -1453,6 +1553,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           : `${occasionLabel ? `Para ${occasionLabel}, ` : ""}${opening}`,
         products: visibleGiftProducts.map((product) =>
           mapAssistantProduct(product, baseData.settings.currencySymbol),
+        ),
+        channelActions: buildRecommendationChannelActions(
+          baseData.settings,
+          giftQueries[0] ?? trimmedMessage,
+          sortedGiftProducts.length > visibleGiftProducts.length,
         ),
         quickActions: buildQuickActions([
           { label: "Buscar más ideas", href: "/?focus=search", accent: true },
@@ -1550,7 +1655,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         suggestedPrompts: [
           "¿Y por mayor cuánto cuesta?",
           "¿Cómo envío mi pedido?",
-          "Busca por código",
+          "Buscar por nombre",
         ],
       };
     }
@@ -1568,7 +1673,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         .filter((product) => product.id !== contextProduct.id)
         .filter((product) => getProductUnitPrice(product) < getProductUnitPrice(contextProduct))
         .sort((left, right) => getProductUnitPrice(left) - getProductUnitPrice(right))
-        .slice(0, MAX_PRODUCTS);
+        .slice(0, maxProducts);
 
       return {
         text: related.length
@@ -1698,8 +1803,8 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
         ? sortProductsForQuantity(productsForRanking, quantity, resultQuery, productFocus)
         : budget
           ? sortProductsForBudget(productsForRanking, resultQuery, budget, productFocus)
-          : productsForRanking.slice(0, MAX_PRODUCTS);
-      const visibleProducts = sortedProducts.slice(0, MAX_PRODUCTS);
+          : productsForRanking;
+      const visibleProducts = sortedProducts.slice(0, maxProducts);
       const recommendedProducts = applySalesRecommendations(
         visibleProducts,
         { budget, quantity },
@@ -1742,20 +1847,31 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           baseData.settings.currencySymbol,
         );
 
+        const requestedBrand = requestedBrandLabel(resultQuery, sortedProducts);
+        const visualCountText = !budget && !quantity
+          ? wantsNextOptions
+            ? `Aquí van ${visibleProducts.length} más. ¿Quieres ver el siguiente lote?`
+            : `Tenemos ${sortedProducts.length} productos${requestedBrand ? ` ${requestedBrand}` : ""} en stock. ¿Quieres ver el catálogo completo?`
+          : null;
         return {
-          text: broadenedFocus
+          text: visualCountText ?? (broadenedFocus
             ? `${inferenceLead}Sí, tenemos ${getProductFocusLabel(productFocus!)} disponibles.`
             : quantity
             ? `${inferenceLead}La mejor opción para ${quantity} unidades es ${closestProduct.name} a ${closestPrice} c/u. ${closestProduct.wholesalePrice !== null && quantity >= closestProduct.wholesaleMinQty ? "Ya aplica precio mayorista." : "También te dejo alternativas."}`
             : budget
               ? `${inferenceLead}La mejor opción es ${closestProduct.name} a ${closestPrice}: es la más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)}. También puedes considerar estas alternativas.`
-              : `${inferenceLead}La mejor opción es ${closestProduct.name}. También puedes considerar estas alternativas con stock.`,
+              : `${inferenceLead}La mejor opción es ${closestProduct.name}. También puedes considerar estas alternativas con stock.`),
           contextProductCode: closestProduct.code,
           contextCategorySlug: closestProduct.categoryId
             ? baseData.categories.find((category) => category.id === closestProduct.categoryId)?.slug ?? null
             : null,
           products: recommendedProducts.map((product) =>
             mapAssistantProduct(product, baseData.settings.currencySymbol),
+          ),
+          channelActions: buildRecommendationChannelActions(
+            baseData.settings,
+            resultQuery,
+            sortedProducts.length > visibleProducts.length,
           ),
           quickActions: buildQuickActions([
             {
@@ -1768,7 +1884,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
           suggestedPrompts: [
             "Muéstrame algo más barato",
             "Quiero 12 unidades",
-            "Busca por código exacto",
+            "Busca por nombre exacto",
           ],
         };
       }

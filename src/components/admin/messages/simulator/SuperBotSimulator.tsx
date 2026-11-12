@@ -1,27 +1,32 @@
 "use client";
 
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 import {
   Bot,
   CircleAlert,
   FileDown,
   FlaskConical,
+  Paperclip,
   RotateCcw,
   Send,
   ShieldCheck,
   Sparkles,
   UserRound,
+  X,
 } from "lucide-react";
 import type { ChatMessage } from "@/types/messages";
 import { readJsonResponse } from "@/lib/http-json";
 import styles from "./SuperBotSimulator.module.css";
 
-type Connection = "ready" | "openai" | "verified" | "error";
+type Connection = "ready" | "openai" | "verified" | "error" | "disabled";
 
 type Turn = {
   id: string;
   mediaUrl: string | null;
   messageType: ChatMessage["messageType"];
+  paymentMethodsImage: boolean;
+  productCard: boolean;
+  productAlt: string;
   role: "user" | "assistant";
   text: string;
 };
@@ -34,8 +39,11 @@ type SimulatorResponse = {
     provider: "openai" | "verified" | null;
   };
   automationError?: string | null;
+  pendingSince?: string | null;
   messages?: ChatMessage[];
 };
+
+type TurnGroup = { kind: "turn"; turn: Turn } | { kind: "carousel"; id: string; cards: Turn[] };
 
 const examples = [
   "Hola, busco una licuadora.",
@@ -54,6 +62,7 @@ function createSessionKey() {
 }
 
 function connectionLabel(connection: Connection) {
+  if (connection === "disabled") return "Pruebas deshabilitadas";
   if (connection === "openai") return "OpenAI verificado";
   if (connection === "verified") return "Catálogo verificado";
   if (connection === "error") return "Revisa la prueba";
@@ -61,6 +70,7 @@ function connectionLabel(connection: Connection) {
 }
 
 function connectionDetail(connection: Connection, model: string) {
+  if (connection === "disabled") return "Actívalas desde Configuración";
   if (model) return model;
   if (connection === "verified") return "Respuesta basada en datos confirmados";
   if (connection === "error") return "No se enviaron mensajes reales";
@@ -77,13 +87,47 @@ function getTurns(messages: ChatMessage[]) {
       id: message.id,
       mediaUrl: message.mediaUrl,
       messageType: message.messageType,
+      paymentMethodsImage: Boolean(message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata) && (message.metadata as Record<string, unknown>).paymentMethodsImage === true),
+      productCard: Boolean(message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata) && (message.metadata as Record<string, unknown>).productCard === true),
+      productAlt: message.metadata && typeof message.metadata === "object" && !Array.isArray(message.metadata) && typeof (message.metadata as Record<string, unknown>).alt === "string" ? String((message.metadata as Record<string, unknown>).alt) : "Producto del catálogo",
       role: message.senderType === "CUSTOMER" ? "user" : "assistant",
       text: message.content,
     }));
 }
 
+function groupVisualCards(turns: Turn[]): TurnGroup[] {
+  const groups: TurnGroup[] = [];
+  for (const turn of turns) {
+    const current = groups.at(-1);
+    if (turn.role === "assistant" && turn.productCard && current?.kind === "carousel") {
+      current.cards.push(turn);
+    } else if (turn.role === "assistant" && turn.productCard) {
+      groups.push({ kind: "carousel", id: `carousel-${turn.id}`, cards: [turn] });
+    } else {
+      groups.push({ kind: "turn", turn });
+    }
+  }
+  return groups;
+}
+
+function ProductCarousel({ cards, disabled, onSelect, selectedId }: { cards: Turn[]; disabled: boolean; onSelect: (card: Turn) => void; selectedId: string | null }) {
+  const railRef = useRef<HTMLDivElement>(null);
+  const move = (direction: -1 | 1) => railRef.current?.scrollBy({ left: direction * Math.max(220, railRef.current.clientWidth * 0.78), behavior: "smooth" });
+  return <section aria-label={`${cards.length} productos visuales`} className={styles.productCarousel}>
+    <button aria-label="Ver opciones anteriores" className={styles.carouselControl} disabled={disabled} onClick={() => move(-1)} type="button">‹</button>
+    <div className={styles.carouselRail} ref={railRef} tabIndex={0}>
+      {cards.map((card) => <button aria-label={`Seleccionar ${card.productAlt}`} aria-pressed={selectedId === card.id} className={styles.carouselCard} disabled={disabled} key={card.id} onClick={() => onSelect(card)} type="button">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={card.productAlt} className={styles.mediaImage} src={card.mediaUrl ?? ""} />
+      </button>)}
+    </div>
+    <button aria-label="Ver siguientes opciones" className={styles.carouselControl} disabled={disabled} onClick={() => move(1)} type="button">›</button>
+  </section>;
+}
+
 function simulationNotice(payload: SimulatorResponse) {
   if (payload.automationError) return payload.automationError;
+  if (payload.pendingSince) return "Super Bot no envió una respuesta: esta conversación quedó pendiente para un asesor.";
 
   if (payload.aiSimulation?.provider === "openai") {
     return `Respuesta de prueba generada con ${payload.aiSimulation.model ?? "OpenAI"}. No se envió a ningún canal.`;
@@ -96,13 +140,16 @@ function simulationNotice(payload: SimulatorResponse) {
   return "Respuesta generada en el entorno de prueba. No se envió a ningún canal.";
 }
 
-export function SuperBotSimulator() {
+export function SuperBotSimulator({ enabled }: { enabled: boolean }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const [connection, setConnection] = useState<Connection>("ready");
+  const [connection, setConnection] = useState<Connection>(enabled ? "ready" : "disabled");
   const [model, setModel] = useState("");
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageName, setImageName] = useState("");
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [sessionKey, setSessionKey] = useState(() => createSessionKey());
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -110,20 +157,31 @@ export function SuperBotSimulator() {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [busy, turns]);
 
-  async function send(raw: string) {
+  async function send(raw: string, uploadedImage = imageDataUrl) {
     const text = raw.trim();
-    if (!text || busy) return;
+    if ((!text && !uploadedImage) || busy) return;
+    if (!enabled) {
+      setConnection("disabled");
+      setNotice("El entorno de pruebas está deshabilitado. Actívalo en Configuración sin habilitar ningún canal.");
+      return;
+    }
 
     const optimisticTurn: Turn = {
       id: `pending-${Date.now()}`,
-      mediaUrl: null,
-      messageType: "TEXT",
+      mediaUrl: uploadedImage ?? null,
+      messageType: uploadedImage ? "IMAGE" : "TEXT",
+      paymentMethodsImage: false,
+      productCard: false,
+      productAlt: "Imagen compartida por el cliente de prueba",
       role: "user",
       text,
     };
 
     setTurns((current) => [...current, optimisticTurn]);
     setMessage("");
+    setImageDataUrl(null);
+    setImageName("");
+    setSelectedCardId(null);
     setBusy(true);
     setNotice("");
 
@@ -131,6 +189,7 @@ export function SuperBotSimulator() {
       const response = await fetch("/api/admin/conversations/simulate", {
         body: JSON.stringify({
           content: text,
+          imageDataUrl: uploadedImage ?? undefined,
           name: "Cliente de prueba",
           sessionKey,
         }),
@@ -171,14 +230,36 @@ export function SuperBotSimulator() {
     void send(message);
   }
 
+  function selectImage(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!/^(image\/jpeg|image\/png|image\/webp)$/.test(file.type) || !file.size || file.size > 4 * 1024 * 1024) {
+      setNotice("Adjunta una imagen JPG, PNG o WebP de hasta 4 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => setNotice("No se pudo leer la imagen de prueba.");
+    reader.onload = () => {
+      if (typeof reader.result !== "string") return;
+      setImageDataUrl(reader.result);
+      setImageName(file.name || "Imagen de prueba");
+      setNotice("");
+    };
+    reader.readAsDataURL(file);
+  }
+
   function reset() {
     if (busy) return;
 
     setSessionKey(createSessionKey());
     setTurns([]);
     setMessage("");
+    setImageDataUrl(null);
+    setImageName("");
+    setSelectedCardId(null);
     setNotice("");
-    setConnection("ready");
+    setConnection(enabled ? "ready" : "disabled");
     setModel("");
   }
 
@@ -210,7 +291,9 @@ export function SuperBotSimulator() {
             <ShieldCheck size={19} />
           </div>
           <h2>Entorno aislado</h2>
-          <p>Usa las reglas, precios publicados y catálogo real en un hilo marcado solo para simulación.</p>
+          <p>{enabled
+            ? "Usa las reglas, precios publicados y catálogo real en un hilo marcado solo para simulación."
+            : "Está bloqueado hasta que un propietario lo habilite desde Configuración. Ningún canal se activará al hacerlo."}</p>
           <ul>
             <li>Sin activar canales</li>
             <li>Sin contacto real</li>
@@ -220,7 +303,7 @@ export function SuperBotSimulator() {
           <div className={styles.examples}>
             <span>Prueba una situación</span>
             {examples.map((example) => (
-              <button disabled={busy} key={example} onClick={() => setMessage(example)} type="button">
+              <button disabled={busy || !enabled} key={example} onClick={() => setMessage(example)} type="button">
                 {example}
               </button>
             ))}
@@ -232,7 +315,7 @@ export function SuperBotSimulator() {
         </aside>
 
         <section aria-label="Conversación de prueba con Super Bot" className={styles.chat}>
-          <header className={styles.chatHeader}>
+          <header className={`chat-header ${styles.chatHeader}`}>
             <div>
               <span>SUPER BOT</span>
               <h2>Conversación de prueba</h2>
@@ -243,7 +326,7 @@ export function SuperBotSimulator() {
             </div>
           </header>
 
-          <div aria-live="polite" className={styles.messages}>
+          <div aria-live="polite" className={`chat-messages ${styles.messages}`}>
             {!turns.length ? (
               <div className={styles.empty}>
                 <Bot size={42} />
@@ -251,16 +334,19 @@ export function SuperBotSimulator() {
                 <p>Por ejemplo: “Busco un producto” o “¿Cómo puedo pagar?”.</p>
               </div>
             ) : (
-              turns.map((turn) => (
-                <article className={turn.role === "user" ? styles.userTurn : styles.botTurn} key={turn.id}>
-                  <div className={styles.turnLabel}>
+              groupVisualCards(turns).map((group) => group.kind === "carousel" ? <ProductCarousel cards={group.cards} disabled={busy || !enabled} key={group.id} selectedId={selectedCardId} onSelect={(card) => { setSelectedCardId(card.id); setMessage("Me interesa"); }} /> : (() => {
+                const turn = group.turn;
+                return (
+                <article className={`${turn.role === "user" ? "message-bubble message-customer" : "message-bubble message-agent"} ${turn.role === "user" ? styles.userTurn : styles.botTurn} ${turn.productCard ? styles.visualCard : ""}`} key={turn.id}>
+                  {!turn.productCard && !turn.paymentMethodsImage ? <div className={styles.turnLabel}>
                     {turn.role === "user" ? <UserRound size={14} /> : <Bot size={14} />}
                     {turn.role === "user" ? "Cliente de prueba" : "Super Bot"}
-                  </div>
+                  </div> : null}
                   {turn.messageType === "IMAGE" && turn.mediaUrl ? (
-                    // Simulation attachments may come from arbitrary provider URLs, so they cannot use the app's fixed image loader.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img alt={turn.text || "Imagen compartida en la simulación"} className={styles.mediaImage} src={turn.mediaUrl} />
+                    turn.productCard ? null : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt={turn.paymentMethodsImage ? "Métodos de pago" : turn.text || "Imagen compartida en la simulación"} className={styles.mediaImage} src={turn.mediaUrl} />
+                    )
                   ) : null}
                   {turn.messageType === "DOCUMENT" && turn.mediaUrl ? (
                     <a className={styles.document} href={turn.mediaUrl} rel="noreferrer" target="_blank">
@@ -268,9 +354,10 @@ export function SuperBotSimulator() {
                       Abrir documento de prueba
                     </a>
                   ) : null}
-                  {turn.text ? <p>{turn.text}</p> : null}
+                  {turn.text && !turn.productCard && !turn.paymentMethodsImage ? <p>{turn.text}</p> : null}
                 </article>
-              ))
+                );
+              })())
             )}
             {busy ? (
               <article className={styles.typing}>
@@ -290,10 +377,18 @@ export function SuperBotSimulator() {
 
           <form className={styles.composer} onSubmit={submit}>
             <label htmlFor="simulator-message">Mensaje del cliente</label>
+            {imageDataUrl ? <div className={styles.imageAttachment}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="Vista previa de la imagen seleccionada" src={imageDataUrl} />
+              <span>{imageName}</span>
+              <button aria-label="Quitar imagen" onClick={() => { setImageDataUrl(null); setImageName(""); }} type="button"><X size={15} /></button>
+            </div> : null}
             <div>
+              <input accept="image/jpeg,image/png,image/webp" aria-label="Adjuntar captura de producto" className={styles.fileInput} disabled={busy || !enabled} id="simulator-image" onChange={selectImage} type="file" />
+              <label className={styles.attachButton} htmlFor="simulator-image" title="Adjuntar captura"><Paperclip size={17} /></label>
               <textarea
                 autoComplete="off"
-                disabled={busy}
+                disabled={busy || !enabled}
                 id="simulator-message"
                 maxLength={1200}
                 onChange={(event) => setMessage(event.target.value)}
@@ -307,11 +402,13 @@ export function SuperBotSimulator() {
                 rows={3}
                 value={message}
               />
-              <button aria-label="Probar mensaje" disabled={busy || !message.trim()} type="submit">
+              <button aria-label="Probar mensaje" disabled={busy || !enabled || (!message.trim() && !imageDataUrl)} type="submit">
                 <Send size={17} />
               </button>
             </div>
-            <small>La prueba usa el motor real en modo aislado y nunca envía mensajes a un canal.</small>
+            <small>{enabled
+              ? "Adjunta una captura de TikTok, marketing o tienda virtual. La prueba usa IA y catálogo local, sin enviar nada a un canal."
+              : "Para iniciar una prueba, habilita primero este entorno desde Configuración."}</small>
           </form>
         </section>
       </section>

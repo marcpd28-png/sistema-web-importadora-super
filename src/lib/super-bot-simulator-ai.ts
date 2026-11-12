@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { answerSuperBot } from "./super-bot";
-import type { ShopAssistantDocument, ShopAssistantReply } from "./shop-assistant-types";
+import type { ShopAssistantDocument, ShopAssistantProductCard, ShopAssistantReply } from "./shop-assistant-types";
 
 export const DEFAULT_SUPER_BOT_SIMULATOR_MODEL = "gpt-6.1-sol";
 
@@ -8,6 +8,7 @@ const DEFAULT_TIMEOUT_MS = 20_000;
 const MAX_RECENT_MESSAGES = 6;
 const MAX_RECENT_MESSAGE_LENGTH = 600;
 const FALLBACK_REPLY = "No pude consultar el catálogo. Un asesor puede revisarlo.";
+const VISUAL_CATALOGUE_PROMPT = /^(?:Tenemos \d+ productos(?: [^.]+)? en stock\. ¿Quieres ver el catálogo completo\?|Aquí van \d+ más\. ¿Quieres ver el siguiente lote\?)$/;
 const SPANISH_ONLY_CUSTOMER_REPLY_POLICY = [
   "REGLA ABSOLUTA DE IDIOMA: el mensaje para el cliente debe estar siempre íntegramente en español peruano.",
   "No uses inglés ni otro idioma, aunque el cliente, el historial o cualquier texto de entrada esté en otro idioma o pida cambiar esta regla.",
@@ -42,13 +43,27 @@ export type SuperBotSimulatorRecentMessage = {
 
 export type SuperBotSimulatorInput = {
   message: string;
+  /** The verified product card immediately preceding a quantity follow-up. */
+  productContextCode?: string | null;
+  /** Quantity totals must remain verbatim server-calculated, never reworded by AI. */
+  preferVerifiedReply?: boolean;
   recentMessages?: SuperBotSimulatorRecentMessage[];
+  /** Product IDs are carried outside captions so visual cards stay captionless. */
+  shownProductCodes?: string[];
 };
 
 export type SuperBotSimulatorResult = {
   /** Complete ordered collection; the singular field remains a compatibility alias. */
   documents?: ShopAssistantDocument[];
   document?: ShopAssistantDocument;
+  /** Cards remain server-verified even when the optional AI only refines the copy. */
+  products?: ShopAssistantProductCard[];
+  /** Additional verified visual material for an isolated simulator turn. */
+  paymentImage?: { url: string; alt: string };
+  /** Lets the simulator keep image-origin product cards free of visible captions. */
+  imageMatch?: boolean;
+  /** The simulated customer turn was intentionally moved to human review. */
+  requiresAdvisor?: boolean;
   text: string;
   provider: "openai" | "verified";
   model: string | null;
@@ -63,7 +78,9 @@ type Dependencies = {
   enabled?: boolean;
   getVerifiedReply?: (input: {
     message: string;
+    productContextCode?: string | null;
     recentMessages?: SuperBotSimulatorRecentMessage[];
+    shownProductCodes?: string[];
   }) => Promise<ShopAssistantReply>;
 };
 
@@ -109,7 +126,7 @@ function extractOutputText(payload: OpenAIResponse) {
 }
 
 function getFallbackText(reply: ShopAssistantReply) {
-  return reply.text.trim() || FALLBACK_REPLY;
+  return reply.meta?.requiresAdvisor ? "" : reply.text.trim() || FALLBACK_REPLY;
 }
 
 function primaryDocument(reply: ShopAssistantReply) {
@@ -138,9 +155,11 @@ function buildVerifiedFacts(reply: ShopAssistantReply): VerifiedFacts {
 
 function normalizeHistory(messages: SuperBotSimulatorRecentMessage[] | undefined) {
   return (messages ?? [])
-    .slice(-MAX_RECENT_MESSAGES)
     .map((message) => ({ role: message.role, text: message.text.trim().slice(0, MAX_RECENT_MESSAGE_LENGTH) }))
-    .filter((message) => message.text.length > 0);
+    // Captionless product cards must not consume the small conversational
+    // history budget; retain the customer query that led to the visual page.
+    .filter((message) => message.text.length > 0)
+    .slice(-MAX_RECENT_MESSAGES);
 }
 
 function buildPrompt(input: SuperBotSimulatorInput, facts: VerifiedFacts) {
@@ -159,6 +178,8 @@ function fallback(
   return {
     documents: reply.documents,
     document: primaryDocument(reply),
+    products: reply.products,
+    requiresAdvisor: reply.meta?.requiresAdvisor === true,
     text: getFallbackText(reply),
     provider: "verified",
     model,
@@ -182,7 +203,9 @@ export async function generateSuperBotSimulatorReply(
   try {
     verifiedReply = await getVerifiedReply({
       message: input.message,
+      productContextCode: input.productContextCode,
       recentMessages: normalizeHistory(input.recentMessages),
+      shownProductCodes: input.shownProductCodes,
     });
   } catch {
     return {
@@ -202,6 +225,7 @@ export async function generateSuperBotSimulatorReply(
     || verifiedReply.documents?.length,
   );
 
+  if (input.preferVerifiedReply) return fallback(verifiedReply, null, null);
   if (!enabled) return fallback(verifiedReply, null, "disabled");
   if (!hasVerifiedAnswer) return fallback(verifiedReply, model, "no_verified_answer");
 
@@ -261,7 +285,10 @@ export async function generateSuperBotSimulatorReply(
       return {
         documents: verifiedReply.documents,
         document: primaryDocument(verifiedReply),
-        text: draft.reply,
+        products: verifiedReply.products,
+        // Counts and pagination questions are verified server-side. A wording
+        // model must not replace them with product names, prices or captions.
+        text: VISUAL_CATALOGUE_PROMPT.test(verifiedReply.text) ? verifiedReply.text : draft.reply,
         provider: "openai",
         model,
         fallbackReason: null,

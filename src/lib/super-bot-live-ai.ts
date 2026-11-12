@@ -13,7 +13,7 @@ const DEFAULT_TIMEOUT_MS = 8_000;
 const MAX_RECENT_MESSAGES = 6;
 const MAX_RECENT_MESSAGE_LENGTH = 600;
 const MAX_REPLY_LENGTH = 280;
-const MAX_SELECTED_PRODUCTS = 3;
+const MAX_SELECTED_PRODUCTS = 5;
 
 const draftSchema = z.object({
   language: z.literal("es-PE"),
@@ -159,19 +159,20 @@ function selectVerifiedProducts(
 
   const byCode = new Map(products.map((product) => [product.code.trim().toLocaleLowerCase(), product]));
   const seen = new Set<string>();
-  const selected: ShopAssistantProductCard[] = [];
 
   for (const value of productCodes) {
     const code = value.trim().toLocaleLowerCase();
     const product = byCode.get(code);
     if (!product || seen.has(code)) return null;
     seen.add(code);
-    selected.push(product);
   }
 
   // When the model writes a valid short answer but omits the selector, keep
   // the visual-first default without allowing it to invent a product.
-  return selected.length ? selected : products.slice(0, MAX_SELECTED_PRODUCTS);
+  // Product cards are one verified commercial package. The live composer may
+  // improve wording, but it must not silently drop cards selected by the
+  // server for a five-item channel carousel.
+  return products.slice(0, MAX_SELECTED_PRODUCTS);
 }
 
 function withControlledGreeting(text: string, isFirstContact: boolean | undefined) {
@@ -189,7 +190,7 @@ function buildInstructions() {
     "Usa exclusivamente verifiedStoreFacts como fuente comercial.",
     "No inventes, confirmes ni cambies productos, precios, stock, especificaciones, descuentos, políticas, pedidos, pagos, enlaces, archivos o documentos.",
     "No incluyas URL, nombre de archivo ni enlace en text. Los enlaces, las imágenes y el PDF se adjuntan únicamente por el servidor.",
-    "Si hay productos verificados, productCodes debe contener hasta tres códigos exactos de esa lista; si no hay productos, debe ser una lista vacía.",
+    "Si hay productos verificados, productCodes debe contener los códigos exactos de las tarjetas recibidas; si no hay productos, debe ser una lista vacía.",
     "Cuando falte un dato, dilo de forma breve o deriva a un asesor; no completes datos por intuición.",
   ].join(" ");
 }

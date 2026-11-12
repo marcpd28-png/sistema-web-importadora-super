@@ -1,7 +1,7 @@
 import { request as httpRequest } from "node:http";
 import { Readable } from "node:stream";
 import { NextRequest, NextResponse } from "next/server";
-import { getMessagingOwnerSession } from "@/lib/auth";
+import { getMessageCenterSession } from "@/lib/auth";
 import {
   parseSocialChannel,
   socialConversation,
@@ -217,7 +217,7 @@ function outputHeaders(response: Response, file: SocialAttachment) {
 }
 
 async function serve(request: NextRequest, context: Context, headOnly: boolean) {
-  const session = await getMessagingOwnerSession();
+  const session = await getMessageCenterSession();
   if (!session) return NextResponse.json({ error: "No autorizado." }, { status: 403 });
 
   try {

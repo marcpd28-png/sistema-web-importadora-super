@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get("limit") || undefined,
     });
 
-    return NextResponse.json(await getConversations(query));
+    return NextResponse.json(await getConversations(query, { advisorId: session.userId }));
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Parámetros inválidos.", details: error.issues }, { status: 400 });

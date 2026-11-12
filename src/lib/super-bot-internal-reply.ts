@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getSuperBotAutomationState, type SuperBotAutomationState } from "@/lib/super-bot-automation";
+import { disableSocialBot } from "@/lib/social-inbox";
 import { answerSuperBot } from "@/lib/super-bot";
 import type { ShopAssistantReply } from "@/lib/shop-assistant-types";
 import {
@@ -39,7 +40,7 @@ const inputSchema = z.object({
   // The channel adapter supplies this only after a visual product card was
   // delivered successfully. It lets a follow-up ask for the next page rather
   // than repeating the same images.
-  shownProductCodes: z.array(productCodeSchema).max(3).optional(),
+  shownProductCodes: z.array(productCodeSchema).max(5).optional(),
   // This comes only from a trusted channel adapter. The model may use it to
   // compose a single first-turn greeting, but it must never infer or change
   // the value from customer content.
@@ -78,7 +79,16 @@ const inputSchema = z.object({
 type SuperBotReplyInput = z.infer<typeof inputSchema>;
 type CommercialInput = Pick<SuperBotReplyInput, "message" | "productContextCode" | "contextCategorySlug" | "recentMessages" | "shownProductCodes" | "isFirstContact"> & {
   hasAttachments: boolean;
+  /** Policy derived from the trusted transport, never supplied by a client. */
+  catalogPdfMaxBytes?: number;
 };
+
+export type SuperBotPendingHandoff = (input: {
+  channel: SuperBotReplyInput["channel"];
+  conversationId: string | undefined;
+  /** Stable HMAC-derived idempotency material; never a raw provider event. */
+  requestKey: string;
+}) => Promise<void>;
 
 export type SuperBotTelemetry = {
   reserve: (input: {
@@ -109,6 +119,7 @@ export type SuperBotReplyHandlerDependencies = {
   clientKey?: (request: Request) => string;
   log?: (event: SuperBotInternalLogEvent) => void;
   telemetry?: SuperBotTelemetry;
+  handoffPendingConversation?: SuperBotPendingHandoff;
   now?: () => number;
 };
 
@@ -178,6 +189,26 @@ function safeIntent(value: unknown) {
   return typeof value === "string" && /^[a-z0-9_-]{1,64}$/i.test(value) ? value : undefined;
 }
 
+function requiresAdvisor(reply: ShopAssistantReply) {
+  return reply.meta?.requiresAdvisor === true;
+}
+
+/** Preserve the existing success payload for ordinary answers while making a
+ * handoff explicit enough that a transport can safely suppress delivery. */
+function replyResponse(reply: ShopAssistantReply) {
+  return requiresAdvisor(reply)
+    ? { reply, automated: false, requiresAdvisor: true }
+    : { reply };
+}
+
+/** Messenger conversations live in ChatbotX, so the store can make the
+ * durable ownership change before returning a no-reply result to its adapter.
+ * Telegram and TikTok retain their own bridge-local handoff protocols. */
+const handoffPendingConversation: SuperBotPendingHandoff = async ({ channel, conversationId, requestKey }) => {
+  if (channel !== "messenger" || !conversationId) return;
+  await disableSocialBot("messenger", conversationId, `super-bot:${requestKey}`);
+};
+
 function logEvent(
   log: (event: SuperBotInternalLogEvent) => void,
   startedAt: number,
@@ -195,6 +226,7 @@ function asSuperBotInput(input: SuperBotReplyInput): CommercialInput {
     recentMessages: input.recentMessages,
     ...(input.shownProductCodes ? { shownProductCodes: input.shownProductCodes } : {}),
     ...(typeof input.isFirstContact === "boolean" ? { isFirstContact: input.isFirstContact } : {}),
+    ...(input.channel === "tiktok" ? { catalogPdfMaxBytes: 5 * 1024 * 1024 } : {}),
     hasAttachments: input.hasAttachments || (input.attachmentCount ?? 0) > 0,
   };
 }
@@ -246,6 +278,7 @@ export function createSuperBotReplyHandler(dependencies: SuperBotReplyHandlerDep
   const clientKey = dependencies.clientKey ?? superBotRateLimitClientKey;
   const log = dependencies.log ?? recordSuperBotInternalLog;
   const telemetry = dependencies.telemetry ?? durableSuperBotTelemetry;
+  const handoff = dependencies.handoffPendingConversation ?? handoffPendingConversation;
   const now = dependencies.now ?? Date.now;
 
   return async function post(request: Request) {
@@ -289,6 +322,7 @@ export function createSuperBotReplyHandler(dependencies: SuperBotReplyHandlerDep
     const input = parsed.data;
     const fingerprint = fingerprintSuperBotEvent(canonicalEventPayload(input), eventHashKey);
     const scopedEventId = eventStoreKey(input, eventHashKey);
+    const handoffRequestKey = scopedEventId ?? fingerprint;
     const reservation = await telemetry.reserve({
       externalEventId: scopedEventId,
       requestFingerprint: fingerprint,
@@ -341,7 +375,7 @@ export function createSuperBotReplyHandler(dependencies: SuperBotReplyHandlerDep
         intent: safeIntent(reservation.reply.meta?.intent),
         productsCount: reservation.reply.products?.length ?? 0,
       }, now);
-      return response({ reply: reservation.reply }, 200);
+      return response(replyResponse(reservation.reply), 200);
     }
     if (reservation.kind === "processing") {
       logEvent(log, startedAt, {
@@ -380,6 +414,16 @@ export function createSuperBotReplyHandler(dependencies: SuperBotReplyHandlerDep
         }, now);
         return response({ error: "Automation unavailable", automated: false }, 503);
       }
+      // Do this before committing the durable reply. If the provider cannot
+      // pause Messenger, the adapter receives a retryable failure instead of
+      // an empty answer that leaves the bot active.
+      if (requiresAdvisor(result.value)) {
+        await handoff({
+          channel: input.channel,
+          conversationId: input.conversationId,
+          requestKey: handoffRequestKey,
+        });
+      }
       const committed = await telemetry.responded(
         reservation.id,
         result.value,
@@ -404,7 +448,7 @@ export function createSuperBotReplyHandler(dependencies: SuperBotReplyHandlerDep
         intent: safeIntent(result.value.meta?.intent),
         productsCount,
       }, now);
-      return response({ reply: result.value }, 200);
+      return response(replyResponse(result.value), 200);
     } catch (error) {
       if (error instanceof SuperBotEventConflictError) {
         logEvent(log, startedAt, {

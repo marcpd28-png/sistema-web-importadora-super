@@ -56,6 +56,7 @@ test("does not call OpenAI when simulator AI is disabled", async () => {
   assert.equal(result.provider, "verified");
   assert.equal(result.fallbackReason, "disabled");
   assert.equal(result.text, verifiedReply.text);
+  assert.equal(result.products?.[0]?.code, "JBL-GO4");
 });
 
 test("keeps the simulator on verified data when the OpenAI key is absent", async () => {
@@ -79,6 +80,32 @@ test("keeps the simulator on verified data when the OpenAI key is absent", async
   assert.equal(result.fallbackReason, "not_configured");
 });
 
+test("keeps a quantity quote verbatim and does not offer an unsolicited cart link", async () => {
+  let calls = 0;
+  let productContextCode: string | null | undefined;
+  const result = await generateSuperBotSimulatorReply(
+    { message: "3 unidades", productContextCode: "JBL-GO4", preferVerifiedReply: true },
+    {
+      enabled: true,
+      apiKey: "test-key",
+      getVerifiedReply: async (input) => {
+        productContextCode = input.productContextCode;
+        return { ...verifiedReply, text: "Para 3 unidades: S/ 199.00 c/u. Total estimado: S/ 597.00." };
+      },
+      fetchImpl: (async () => {
+        calls += 1;
+        return Response.json(completedResponse("Puedes continuar en el carrito."));
+      }) as typeof fetch,
+    },
+  );
+
+  assert.equal(calls, 0);
+  assert.equal(productContextCode, "JBL-GO4");
+  assert.equal(result.provider, "verified");
+  assert.equal(result.fallbackReason, null);
+  assert.equal(result.text, "Para 3 unidades: S/ 199.00 c/u. Total estimado: S/ 597.00.");
+});
+
 test("uses gpt-6.1-sol through Responses with a verified catalog context", async () => {
   let requestUrl = "";
   let requestInit: RequestInit | undefined;
@@ -99,6 +126,7 @@ test("uses gpt-6.1-sol through Responses with a verified catalog context", async
   assert.equal(result.provider, "openai");
   assert.equal(result.model, DEFAULT_SUPER_BOT_SIMULATOR_MODEL);
   assert.equal(result.text, "Claro, el JBL GO 4 está disponible.");
+  assert.equal(result.products?.[0]?.code, "JBL-GO4");
   assert.equal(requestUrl, "https://api.openai.com/v1/responses");
   assert.equal(requestInit?.method, "POST");
   assert.equal(new Headers(requestInit?.headers).get("Authorization"), "Bearer test-key");
@@ -139,6 +167,21 @@ test("accepts typed output messages from Responses", async () => {
 
   assert.equal(result.provider, "openai");
   assert.equal(result.text, "Respuesta tipada");
+});
+
+test("conserva el contador verificado y la pregunta de paginación tras tarjetas visuales", async () => {
+  const result = await generateSuperBotSimulatorReply(
+    { message: "Busco parlantes JBL" },
+    {
+      enabled: true,
+      apiKey: "test-key",
+      getVerifiedReply: async () => ({ ...verifiedReply, text: "Tenemos 27 productos JBL en stock. ¿Quieres ver el catálogo completo?" }),
+      fetchImpl: (async () => Response.json(completedResponse("El JBL GO 4 cuesta S/ 199.00."))) as typeof fetch,
+    },
+  );
+
+  assert.equal(result.provider, "openai");
+  assert.equal(result.text, "Tenemos 27 productos JBL en stock. ¿Quieres ver el catálogo completo?");
 });
 
 test("falls back to the verified Spanish reply when the draft declares another language", async () => {

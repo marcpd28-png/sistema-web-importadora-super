@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { channelInbox, dedupeSocialMessages, enableSocialBot, socialAttachmentKind, socialConnectionStatus, parseSocialChannel, refreshSocialConversationProfile, refreshSocialConversationProfiles, safeSocialMessage, socialConversation, socialConversationDisplayName, socialConversationNeedsProfileRefresh, socialRequest, sendSocialReply, type SocialConversation, type SocialMessage } from "./social-inbox";
+import { channelInbox, dedupeSocialMessages, disableSocialBot, enableSocialBot, socialAttachmentKind, socialConnectionStatus, parseSocialChannel, parseSocialResponse, refreshSocialConversationProfile, refreshSocialConversationProfiles, safeSocialMessage, socialConversation, socialConversationDisplayName, socialConversationNeedsProfileRefresh, socialRequest, sendSocialReply, syncSocialProfilePage, type SocialConversation, type SocialMessage } from "./social-inbox";
 
 test("Social channels fail closed and cannot fall through to another transport", () => {
   assert.equal(parseSocialChannel("messenger"), "messenger");
@@ -22,6 +22,17 @@ test("Conversation labels use the provider name fields before a generic fallback
   assert.equal(socialConversationDisplayName({ id: "conversation-2", botEnabled: true, contact: { fullName: "Cliente", firstName: " Ana ", lastName: "Pérez" }, contactInboxes: inboxes }, "messenger"), "Ana Pérez");
   assert.equal(socialConversationDisplayName({ id: "conversation-3", botEnabled: true, contact: null, contactInboxes: inboxes }, "messenger"), "@perfil-messenger");
   assert.equal(socialConversationDisplayName({ id: "conversation-123456", botEnabled: true, contact: { id: "contact-654321" }, contactInboxes: [] }, "messenger"), "Cliente sin nombre · 123456");
+});
+
+test("preserva IDs bigint de ChatbotX sin reescribir el texto del cliente", () => {
+  const response = parseSocialResponse<{ id: string; contact: { id: string }; messages: { id: string; text: string }[] }>(
+    '{"id":11768974802431157,"contact":{"id":11768974802251185},"messages":[{"id":42,"text":"El texto literal contiene \\\"id\\\": 11768974802251185"}]}',
+  );
+
+  assert.equal(response.id, "11768974802431157");
+  assert.equal(response.contact.id, "11768974802251185");
+  assert.equal(response.messages[0].id, "42");
+  assert.equal(response.messages[0].text, 'El texto literal contiene "id": 11768974802251185');
 });
 
 test("Messenger refreshes placeholder contacts with the Facebook profile name", async () => {
@@ -58,6 +69,34 @@ test("Messenger refreshes placeholder contacts with the Facebook profile name", 
     const list = await refreshSocialConversationProfiles([unnamed, named], "messenger");
     assert.deepEqual(list.map(conversation => socialConversationDisplayName(conversation, "messenger")), ["Ana Pérez", "Ana Pérez"]);
     assert.equal(calls.length, 2, "no debe consultar de nuevo un contacto que ya tiene nombre");
+  } finally {
+    global.fetch = original;
+    if (token === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = token;
+  }
+});
+
+test("sincroniza un lote histórico de Messenger sin enviar mensajes", async () => {
+  const original = global.fetch;
+  const token = process.env.SOCIAL_INBOX_API_TOKEN;
+  process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  const calls: string[] = [];
+  const unnamed = {
+    id: "conversation-900", botEnabled: true, contact: { id: "900", fullName: "Cliente" },
+    contactInboxes: [{ id: "901", inboxId: "messenger", channel: "messenger", lastIncomingMessageAt: null, inbox: { name: "Messenger" } }],
+  } satisfies SocialConversation;
+  try {
+    global.fetch = async (url) => {
+      const value = String(url); calls.push(value);
+      if (value.includes("/conversations?")) return Response.json({ data: [unnamed], nextCursor: "next-page" });
+      if (value.endsWith("/refresh-profile")) return Response.json({ status: "updated", contact: { id: "900", fullName: "Ana Pérez" } });
+      throw new Error(`Unexpected request: ${value}`);
+    };
+
+    const result = await syncSocialProfilePage("messenger");
+    assert.deepEqual(result, { scanned: 1, requested: 1, updated: 1, skipped: 0, unavailable: 0, failed: 0, nextCursor: "next-page" });
+    assert.equal(calls.length, 2);
+    assert.match(calls[0], /channel=messenger/);
+    assert.match(calls[1], /\/contacts\/id%3A900\/refresh-profile$/);
   } finally {
     global.fetch = original;
     if (token === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = token;
@@ -112,6 +151,31 @@ test("Sending enforces channel and Messenger window before mutation, pauses bot 
   }
 });
 
+test("TikTok manual replies preserve automation instead of taking a permanent handoff", async () => {
+  const original = global.fetch;
+  const originalToken = process.env.SOCIAL_INBOX_API_TOKEN;
+  process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  const urls: string[] = [];
+  try {
+    global.fetch = async (url) => {
+      urls.push(String(url));
+      if (String(url).endsWith("/messages")) return Response.json({ id: "reply", text: "respuesta", attachments: [] });
+      return Response.json({
+        data: {
+          id: "123",
+          contactInboxes: [{ id: "tiktok-contact", inboxId: "tiktok-inbox", channel: "tiktok", lastIncomingMessageAt: new Date().toISOString(), inbox: { name: "TikTok" } }],
+        },
+      });
+    };
+    await sendSocialReply("tiktok", "123", "respuesta", "request-tiktok");
+    assert.equal(urls.some(url => url.endsWith("/disable-bot")), false);
+    assert.ok(urls.at(-1)?.endsWith("/messages"));
+  } finally {
+    global.fetch = original;
+    if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = originalToken;
+  }
+});
+
 test("An incomplete uploaded media record never pauses the bot", async () => {
   const original = global.fetch;
   const originalToken = process.env.SOCIAL_INBOX_API_TOKEN;
@@ -134,7 +198,7 @@ test("An incomplete uploaded media record never pauses the bot", async () => {
   }
 });
 
-test("La reactivación de Super Bot es una acción explícita de Messenger y valida la conversación", async () => {
+test("La reactivación de Super Bot es una acción explícita y valida el canal de la conversación", async () => {
   const original = global.fetch;
   const originalToken = process.env.SOCIAL_INBOX_API_TOKEN;
   process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
@@ -160,8 +224,50 @@ test("La reactivación de Super Bot es una acción explícita de Messenger y val
     assert.deepEqual(JSON.parse(calls[1].body!), {});
     assert.equal((calls[1].headers as Record<string, string>)["Idempotency-Key"], "enable-request");
 
-    await assert.rejects(enableSocialBot("tiktok", "123", "enable-other"), /solo está disponible para Messenger/);
-    assert.equal(calls.length, 2, "un canal fuera de alcance no debe mutar el proveedor");
+    calls.length = 0;
+    global.fetch = async (url, options) => {
+      calls.push({ url: String(url), body: options?.body as string | undefined, headers: options?.headers });
+      if (String(url).endsWith("/enable-bot")) return Response.json({ success: true });
+      return Response.json({
+        data: {
+          id: "123", botEnabled: false,
+          contactInboxes: [{ id: "tiktok-contact", inboxId: "tiktok-inbox", channel: "tiktok", lastIncomingMessageAt: null, inbox: { name: "TikTok" } }],
+        },
+      });
+    };
+    await enableSocialBot("tiktok", "123", "enable-tiktok");
+    assert.equal(calls.length, 2);
+    assert.ok(calls[1].url.endsWith("/conversations/123/enable-bot"));
+  } finally {
+    global.fetch = original;
+    if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = originalToken;
+  }
+});
+
+test("una derivación automática de Messenger pausa el bot antes de exponer Pendientes", async () => {
+  const original = global.fetch;
+  const originalToken = process.env.SOCIAL_INBOX_API_TOKEN;
+  process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  const calls: Array<{ url: string; headers?: HeadersInit }> = [];
+  try {
+    global.fetch = async (url, options) => {
+      calls.push({ url: String(url), headers: options?.headers });
+      if (String(url).endsWith("/disable-bot")) return Response.json({ success: true });
+      return Response.json({
+        data: {
+          id: "123",
+          botEnabled: true,
+          contactInboxes: [{ id: "messenger-contact", inboxId: "messenger-inbox", channel: "messenger", lastIncomingMessageAt: null, inbox: { name: "Messenger" } }],
+        },
+      });
+    };
+
+    await disableSocialBot("messenger", "123", "super-bot:stable-handoff");
+
+    assert.equal(calls.length, 2);
+    assert.ok(calls[0].url.endsWith("/conversations/123"));
+    assert.ok(calls[1].url.endsWith("/conversations/123/disable-bot"));
+    assert.equal((calls[1].headers as Record<string, string>)["Idempotency-Key"], "super-bot:stable-handoff");
   } finally {
     global.fetch = original;
     if (originalToken === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = originalToken;

@@ -15,6 +15,7 @@ import type {
   SyncableProduct,
 } from "@/lib/facturador/types";
 import { mirrorProductImageToLocal } from "@/lib/product-image-storage";
+import { refreshProductVisualImageIndex } from "@/lib/product-visual-image-index";
 import { isBlockedPublicProductCode } from "@/lib/public-product-blocklist";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
@@ -612,6 +613,7 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
     const seenExternalKeys = new Set<string>();
     const seenCodes = new Set<string>();
     const syncedExternalIds = new Set<string>();
+    const visualIndexCodes = new Set<string>();
 
     for (const item of products) {
       const mapped = mapFacturadorProduct(
@@ -922,6 +924,9 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
       summary.created += result.created;
       summary.updated += result.updated;
       summary.skipped.push(...result.skipped);
+      if (!isStockOnlyMode) {
+        for (const product of resolvedProducts) visualIndexCodes.add(product.code);
+      }
       processedCount += chunk.length;
       errorCount += result.skipped.length;
 
@@ -972,6 +977,17 @@ export async function syncFacturadorProducts(options: FacturadorSyncOptions = {}
 
     if (completed.count === 0) {
       throw new ErpSyncCancelledError();
+    }
+
+    // Keep the visual lookup current after an ERP image changes. Failure here
+    // must not invalidate an otherwise successful stock/catalogue sync: the
+    // next scheduled run will retry the same source key.
+    if (visualIndexCodes.size) {
+      try {
+        await refreshProductVisualImageIndex({ codes: [...visualIndexCodes] });
+      } catch (error) {
+        console.error("[PRODUCT_VISUAL_INDEX_ERROR]", normalizeErrorMessage(error));
+      }
     }
 
     try {

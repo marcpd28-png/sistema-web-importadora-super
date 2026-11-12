@@ -57,7 +57,7 @@ function getPreview(conversation: Conversation) {
 }
 
 function getStatusLabel(status: Conversation["status"]) {
-  return status === "REQUIERE_ASESOR" ? "Derivado" : status.replace("_", " ");
+  return status === "REQUIERE_ASESOR" ? "Pendiente" : status.replace("_", " ");
 }
 
 export function getInitials(name: string) {

@@ -129,7 +129,7 @@ test("keeps the verified reply when live AI is disabled", async () => {
   assert.equal(result, verifiedReply);
 });
 
-test("uses Responses with verified facts and only returns selected verified products", async () => {
+test("uses Responses with verified facts while preserving the verified product package", async () => {
   let requestUrl = "";
   let requestInit: RequestInit | undefined;
   const result = await composeLiveSuperBotReply(
@@ -159,7 +159,7 @@ test("uses Responses with verified facts and only returns selected verified prod
   assert.equal(requestInit?.method, "POST");
   assert.equal(new Headers(requestInit?.headers).get("Authorization"), "Bearer test-key");
   assert.equal(result.text, "¡Hola! Soy Super Bot de Importaciones Super. Te comparto dos opciones que podrían servirte.");
-  assert.deepEqual(result.products?.map((product) => product.code), ["PAR-002", "PAR-001"]);
+  assert.deepEqual(result.products?.map((product) => product.code), ["PAR-001", "PAR-002", "PAR-003", "PAR-004"]);
   assert.equal(result.document?.url, verifiedReply.document?.url);
 
   const body = JSON.parse(String(requestInit?.body)) as Record<string, unknown>;
@@ -170,7 +170,7 @@ test("uses Responses with verified facts and only returns selected verified prod
   assert.equal(format.type, "json_schema");
   assert.deepEqual(format.schema.properties.productCodes, {
     type: "array",
-    maxItems: 3,
+    maxItems: 5,
     items: { type: "string", minLength: 1, maxLength: 64 },
   });
   assert.match(String(body.instructions), /No te presentes ni saludes/);
@@ -200,7 +200,7 @@ test("uses the default model and does not add an introduction outside first cont
 
   assert.equal(body?.model, DEFAULT_SUPER_BOT_LIVE_MODEL);
   assert.equal(result.text, "Te muestro las opciones disponibles.");
-  assert.deepEqual(result.products?.map((product) => product.code), ["PAR-001", "PAR-002", "PAR-003"]);
+  assert.deepEqual(result.products?.map((product) => product.code), ["PAR-001", "PAR-002", "PAR-003", "PAR-004"]);
 });
 
 test("falls back unchanged when the model selects an unknown product or emits a URL", async () => {

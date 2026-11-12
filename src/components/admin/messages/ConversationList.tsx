@@ -36,7 +36,7 @@ const FILTERS: Array<{
 }> = [
   { id: "all", label: "Todos", status: "" },
   { id: "unread", label: "No leídos", status: "", unreadOnly: true },
-  { id: "requiere_asesor", label: "Derivados", status: "REQUIERE_ASESOR" },
+  { id: "pending", label: "Pendientes", status: "REQUIERE_ASESOR" },
 ];
 
 function getActiveFilter(filters: ConversationFilters) {

@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "25mb",
   },
   output: "standalone",
-  serverExternalPackages: ["ffmpeg-static"],
+  // Both packages are only used by Node.js server routes. Keeping them out of
+  // the web bundle avoids Webpack trying to emit PDFKit's ICC profile as a
+  // browser asset during the production build.
+  serverExternalPackages: ["ffmpeg-static", "pdfkit"],
   outputFileTracingIncludes: {
     "/api/admin/uploads": ["./node_modules/ffmpeg-static/ffmpeg", "./node_modules/ffmpeg-static/ffmpeg.exe"],
   },
