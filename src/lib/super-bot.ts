@@ -15,8 +15,14 @@ import type { ShopAssistantReply } from "./shop-assistant-types";
 import { getConfiguredMessengerUrl } from "./messenger-url";
 import {
   composeLiveSuperBotReply,
+  isSuperBotLiveAiEnabled,
   type SuperBotLiveReplyInput,
 } from "./super-bot-live-ai";
+import {
+  matchSimulatorProductImage,
+  simulatorImageMatchFallbackText,
+  type SimulatorImageMatch,
+} from "./super-bot-simulator-image-match";
 import { PUBLIC_MESSENGER_URL } from "./utils";
 
 export type SuperBotInput = {
@@ -29,6 +35,8 @@ export type SuperBotInput = {
   /** Set only by a trusted channel adapter or conversation store. */
   isFirstContact?: boolean;
   hasAttachments?: boolean;
+  /** One channel-validated image, never sourced from arbitrary customer text. */
+  imageDataUrl?: string;
   /** Internal channel policy; never sourced from customer input. */
   catalogPdfMaxBytes?: number;
 };
@@ -38,6 +46,7 @@ function contactAction(href: string) {
 }
 
 const VIRTUAL_STORE_URL = "https://tiendavirtualsuper.com/";
+const CATALOG_VIDEO_URL = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super.mp4";
 
 export function isCatalogLinkRequest(message: string) {
   return isCatalogRequest(message);
@@ -51,18 +60,24 @@ type SuperBotDependencies = {
   /** Compatibility injection for callers/tests still producing one file. */
   generateCatalogPdf?: (request: CatalogRequest) => Promise<GeneratedCatalogPdf>;
   getMessengerUrl?: () => Promise<string>;
+  matchProductImage?: (imageDataUrl: string) => Promise<SimulatorImageMatch>;
 };
 
-function catalogLinkReply(): ShopAssistantReply {
+function catalogLinkReply(isFirstContact: boolean): ShopAssistantReply {
+  const firstContact = isFirstContact === true;
   return {
-    // With 2,000+ frequently changing SKUs, an encapsulated general PDF
-    // would be stale, large, and hard to browse on mobile. The store is the
-    // canonical complete catalogue; a buying walkthrough can be attached
-    // later only after operations provides an approved, durable video URL.
-    text: `El catálogo completo y actualizado está en la tienda virtual: ${VIRTUAL_STORE_URL}`,
-    quickActions: [
-      { label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true },
-    ],
+    // The general catalogue is the live store, not a stale all-products PDF.
+    // The short welcome/video bundle belongs only to a new conversation;
+    // repeat visitors get the direct catalogue link without a second greeting.
+    text: firstContact
+      ? `¡Hola! Claro. Mira cómo recorrer nuestro catálogo:\n🎬 Video: ${CATALOG_VIDEO_URL}\n🛍️ Tienda virtual: ${VIRTUAL_STORE_URL}`
+      : `El catálogo completo y actualizado está en la tienda virtual: ${VIRTUAL_STORE_URL}`,
+    quickActions: firstContact
+      ? [
+        { label: "Ver video del catálogo", href: CATALOG_VIDEO_URL, accent: true },
+        { label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true },
+      ]
+      : [{ label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true }],
     meta: { intent: "catalog-link", usedOllama: false },
   };
 }
@@ -87,6 +102,10 @@ function isProductInterestMessage(message: string) {
  */
 function makeProductReplyVisualFirst(reply: ShopAssistantReply): ShopAssistantReply {
   if (!reply.products?.length) return reply;
+  // An image-match card must explicitly confirm what was recognized; replacing
+  // it with a generic visual prompt makes the customer unsure whether their
+  // photo was actually understood.
+  if (reply.meta?.intent === "image-match") return reply;
   // A product card paired with a server-calculated quantity quote is not a
   // discovery carousel. Its amount, wholesale threshold, and total must stay
   // visible verbatim; replacing it with the generic visual-card prompt loses
@@ -236,6 +255,21 @@ function pendingAdvisorReply(intent: "attachment-human-assistance" | "human-assi
   };
 }
 
+function imageMatchReply(match: SimulatorImageMatch): ShopAssistantReply {
+  if (match.status === "matched" && match.product && match.productIsSellable) {
+    return {
+      text: `Identifiqué ${match.product.name}. ¿Qué detalle deseas confirmar?`,
+      products: [match.product],
+      meta: { intent: "image-match", usedOllama: false },
+    };
+  }
+
+  return {
+    text: simulatorImageMatchFallbackText(match.status),
+    meta: { intent: "image-match-unmatched", usedOllama: false },
+  };
+}
+
 function isAttachmentOnlyMessage(message: string) {
   const normalized = normalizeAssistantText(message);
   return !normalized || /^(imagen|foto|archivo|adjunto|media|documento|video|audio)$/.test(normalized);
@@ -261,9 +295,15 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
       }
       : generateCatalogPdfBundle);
   const getMessengerUrl = dependencies.getMessengerUrl ?? getConfiguredMessengerUrl;
+  const matchProductImage = dependencies.matchProductImage
+    ?? ((imageDataUrl: string) => matchSimulatorProductImage(imageDataUrl, { enabled: isSuperBotLiveAiEnabled() }));
 
   const finalizeReply = async (input: SuperBotInput, verifiedReply: ShopAssistantReply) => {
     const visualReply = makeProductReplyVisualFirst(verifiedReply);
+    // A request for the general catalogue has an explicitly approved greeting
+    // and two navigation links. Letting a language model rewrite it could
+    // remove either link or the required short greeting, so deliver it as-is.
+    if (visualReply.meta?.intent === "catalog-link") return visualReply;
     try {
       const composed = await composeLiveReply({
         message: input.message,
@@ -282,6 +322,12 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
   };
 
   return async function answerSuperBot(input: SuperBotInput): Promise<ShopAssistantReply> {
+    if (input.imageDataUrl) {
+      // The visual matcher only returns a catalog card after local candidate
+      // validation. An uncertain match never becomes an invented product.
+      return finalizeReply(input, imageMatchReply(await matchProductImage(input.imageDataUrl)));
+    }
+
     if (input.hasAttachments && isAttachmentOnlyMessage(input.message)) {
       return pendingAdvisorReply("attachment-human-assistance");
     }
@@ -320,7 +366,7 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     }
 
     if (isCatalogLinkRequest(input.message)) {
-      return finalizeReply(input, catalogLinkReply());
+      return finalizeReply(input, catalogLinkReply(input.isFirstContact === true));
     }
 
     const catalogReply = await getShopAssistantReply(input);

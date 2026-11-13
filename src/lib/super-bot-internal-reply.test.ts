@@ -69,7 +69,9 @@ test("a chunked oversized body is rejected before JSON parsing", async () => {
     headers: { "Content-Type": "application/json", "x-super-bot-key": SECRET },
     // A string Request does not require Content-Length, so this exercises the
     // bounded body stream rather than only the advisory header check.
-    body: JSON.stringify({ message: "x".repeat(129 * 1024) }),
+    // The authenticated image-matching path accepts one 4 MiB image data URL,
+    // so this remains beyond the explicit request-body limit.
+    body: JSON.stringify({ message: "x".repeat(6 * 1024 * 1024) }),
   });
 
   assert.equal(oversized.headers.get("content-length"), null);
@@ -119,7 +121,7 @@ test("a trusted adapter can pass the visual cards already delivered", async () =
   assert.deepEqual(captured.shownProductCodes, ["JBL-1", "JBL-2", "JBL-3"]);
 });
 
-test("TikTok catalogues receive a server-side five-megabyte PDF policy", async () => {
+test("social catalogues receive a server-side five-megabyte PDF policy", async () => {
   const tiktok: Record<string, unknown> = {};
   const messenger: Record<string, unknown> = {};
 
@@ -139,7 +141,7 @@ test("TikTok catalogues receive a server-side five-megabyte PDF policy", async (
   assert.equal(tiktokResponse.status, 200);
   assert.equal(messengerResponse.status, 200);
   assert.equal(tiktok.catalogPdfMaxBytes, 5 * 1024 * 1024);
-  assert.equal(messenger.catalogPdfMaxBytes, undefined);
+  assert.equal(messenger.catalogPdfMaxBytes, 5 * 1024 * 1024);
 });
 
 test("the internal responder rejects an oversized visual page marker", async () => {
@@ -355,7 +357,7 @@ test("the endpoint limits authenticated callers and emits no customer content in
   assert.equal(logs[1]?.outcome, "rate_limited");
 });
 
-test("transport metadata is optional and never reaches the commercial decision engine", async () => {
+test("transport metadata is optional and only trusted channel policy reaches the commercial decision engine", async () => {
   const capturedInput: Record<string, unknown> = {};
   const post = handler({ capturedInput });
   const response = await post(request({
@@ -372,6 +374,7 @@ test("transport metadata is optional and never reaches the commercial decision e
     productContextCode: undefined,
     contextCategorySlug: undefined,
     recentMessages: undefined,
+    catalogPdfMaxBytes: 5 * 1024 * 1024,
     hasAttachments: true,
   });
 });

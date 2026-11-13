@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import base64
 import mimetypes
 import os
 import sqlite3
@@ -57,6 +58,7 @@ MAX_TEXT = 1200
 MAX_HISTORY = 6
 MAX_PRODUCT_IMAGES = 3
 MAX_MEDIA_BYTES = 5 * 1024 * 1024
+MAX_VISION_IMAGE_BYTES = 4 * 1024 * 1024
 DEFAULT_CONVERSATION_PAGES = 1
 STORE_HOST = "tiendavirtualsuper.com"
 PRODUCT_IMAGE_PATH_PREFIX = "/api/telegram/product-image/"
@@ -231,13 +233,62 @@ class ChatbotXApi:
             cursor = next_cursor
         return messages
 
+    def download_image_attachment(self, attachment: dict[str, Any]) -> str | None:
+        """Return one bounded private Messenger image as a data URL.
+
+        ChatbotX serves inbound media from its internal ``filesystem`` host.
+        The URL originates in a provider payload, so accept only its expected
+        host/path and validate the declared MIME, size and magic bytes before
+        a customer photo reaches the vision matcher.
+        """
+        mime_type = attachment.get("mimeType")
+        size = attachment.get("size")
+        url = attachment.get("url")
+        if mime_type not in ("image/jpeg", "image/png", "image/webp") or not isinstance(url, str):
+            return None
+        try:
+            parsed_size = int(size)
+            parsed = urllib.parse.urlsplit(url)
+        except (TypeError, ValueError):
+            return None
+        if (
+            parsed_size <= 0
+            or parsed_size > MAX_VISION_IMAGE_BYTES
+            or parsed.scheme != "http"
+            or parsed.hostname != "filesystem"
+            or parsed.port is not None
+            or parsed.username
+            or parsed.password
+            or parsed.query
+            or parsed.fragment
+            or not parsed.path.startswith("/chatbotx/public/ws/")
+        ):
+            return None
+        response = self.transport.request("GET", url, {
+            "Authorization": f"Bearer {self.token}",
+            "Accept": mime_type,
+        }, timeout=30)
+        content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        data = response.body
+        valid_magic = (
+            (mime_type == "image/jpeg" and data[:2] == b"\xff\xd8")
+            or (mime_type == "image/png" and data[:8] == b"\x89PNG\r\n\x1a\n")
+            or (mime_type == "image/webp" and data[:4] == b"RIFF" and data[8:12] == b"WEBP")
+        )
+        if response.status != 200 or content_type != mime_type or not data or len(data) > MAX_VISION_IMAGE_BYTES or not valid_magic:
+            return None
+        return f"data:{mime_type};base64,{base64.b64encode(data).decode('ascii')}"
+
     def send_text(self, conversation_id: str, inbox_id: str, text: str, key: str) -> None:
-        status, _, _ = self._request("POST", f"/conversations/{conversation_id}/messages", {"text": text, "inboxId": inbox_id, "clientId": key}, idempotency_key=key)
+        # ChatbotX's optional clientId accepts numeric values only. The
+        # durable delivery key intentionally contains channel-safe separators,
+        # so rely on its documented Idempotency-Key header instead.
+        status, _, _ = self._request("POST", f"/conversations/{conversation_id}/messages", {"text": text, "inboxId": inbox_id}, idempotency_key=key)
         if not 200 <= status < 300:
             raise BridgeError("ChatbotX no confirmó el mensaje saliente.", status, status >= 500)
 
     def send_media(self, conversation_id: str, inbox_id: str, media_file_id: str, key: str) -> None:
-        status, _, _ = self._request("POST", f"/conversations/{conversation_id}/messages", {"mediaFileId": media_file_id, "inboxId": inbox_id, "clientId": key}, idempotency_key=key)
+        status, _, _ = self._request("POST", f"/conversations/{conversation_id}/messages", {"mediaFileId": media_file_id, "inboxId": inbox_id}, idempotency_key=key)
         if not 200 <= status < 300:
             raise BridgeError("ChatbotX no confirmó el archivo saliente.", status, status >= 500)
 
@@ -248,7 +299,13 @@ class ChatbotXApi:
 
     def upload_public_file(self, url: str, name: str, mime_type: str, maximum: int = MAX_MEDIA_BYTES) -> str:
         """Download a verified public store asset, then register it in Media Library."""
-        asset = self.transport.request("GET", url, {"Accept": "*/*"}, timeout=45)
+        asset = self.transport.request("GET", url, {
+            "Accept": "*/*",
+            # The store's edge protects media from anonymous scrapers. Use the
+            # same stable transport identity as the authenticated Super Bot
+            # request so this private adapter can fetch the verified asset.
+            "User-Agent": f"SuperBot{CHANNEL.title()}Adapter/1.0",
+        }, timeout=45)
         if asset.status != 200 or not asset.body or len(asset.body) > maximum:
             raise BridgeError("El archivo visual no se pudo preparar para el canal.", 502)
         status, _, upload = self._request("POST", "/media-library/files/upload-url", {"fileName": name, "mimeType": mime_type})
@@ -258,8 +315,13 @@ class ChatbotXApi:
         if not 200 <= put.status < 300:
             raise BridgeError("ChatbotX rechazó el archivo visual.", 502)
         status, _, media = self._request("POST", "/media-library/files", {"name": name, "path": upload["path"], "mimeType": mime_type, "size": len(asset.body), "folderId": None})
-        media_id = media.get("id") if isinstance(media, dict) else None
-        if status not in (200, 201) or not isinstance(media_id, str) or not media_id.isdigit():
+        raw_media_id = media.get("id") if isinstance(media, dict) else None
+        # ChatbotX serializes bigint primary keys as JSON numbers in this
+        # private API. Normalize that transport detail before passing the
+        # reference back to its message endpoint; accepting anything else
+        # would still risk a malformed attachment destination.
+        media_id = str(raw_media_id) if isinstance(raw_media_id, (str, int)) and not isinstance(raw_media_id, bool) else ""
+        if status not in (200, 201) or not media_id.isdigit():
             raise BridgeError("ChatbotX no confirmó el archivo visual.", 502)
         return media_id
 
@@ -281,6 +343,62 @@ class SuperBotApi:
 
 def _clean_text(value: Any, maximum: int = MAX_TEXT) -> str:
     return " ".join(value.strip().split())[:maximum] if isinstance(value, str) else ""
+
+
+def _store_action_links(reply: dict[str, Any]) -> list[str]:
+    """Render verified storefront actions in channels without button support.
+
+    ChatbotX's message API carries plain text/media only. A Super Bot reply
+    can include trusted quick actions for the web UI, so preserve storefront
+    navigation by placing the approved HTTPS URL in the outgoing text. Do
+    not relay arbitrary action URLs into a customer conversation.
+    """
+    actions = reply.get("quickActions")
+    if not isinstance(actions, list):
+        return []
+    links: list[str] = []
+    seen: set[str] = set()
+    for action in actions:
+        if not isinstance(action, dict):
+            continue
+        href = action.get("href")
+        if not isinstance(href, str) or len(href) > 2048:
+            continue
+        try:
+            parsed = urllib.parse.urlsplit(href.strip())
+        except ValueError:
+            continue
+        if (
+            parsed.scheme != "https"
+            or parsed.hostname != STORE_HOST
+            or parsed.username
+            or parsed.password
+            or parsed.port not in (None, 443)
+        ):
+            continue
+        url = href.strip()
+        if url in seen:
+            continue
+        seen.add(url)
+        label = _clean_text(action.get("label"), 80)
+        links.append(f"{label}: {url}" if label else url)
+    return links
+
+
+def _text_with_store_actions(text: str, reply: dict[str, Any]) -> str:
+    """Append store actions without truncating their clickable URL."""
+    for link in _store_action_links(reply):
+        url = link.rsplit(": ", 1)[-1]
+        if url in text:
+            continue
+        separator = "\n" if text else ""
+        available = MAX_TEXT - len(separator) - len(link)
+        if available < 0:
+            # The link is more useful than a long generic sentence, but the
+            # strict allow-list above ensures this can only be a store URL.
+            return link[:MAX_TEXT]
+        text = f"{text[:available]}{separator}{link}"
+    return text
 
 
 def _stable_id(conversation_id: str, first_id: str, last_id: str) -> str:
@@ -667,6 +785,10 @@ class Bridge:
             "recentMessages": self._history(conversation_id, chat[0], {str(row[2]) for row in events}),
             "hasAttachments": any(bool(row[5]) for row in events),
             "attachmentCount": min(sum(int(row[6]) for row in events), 10),
+            # Only stable provider message IDs are persisted. Private media
+            # URLs and photo bytes are re-fetched just-in-time and never saved
+            # in bridge SQLite or logs.
+            "imageMessageIds": [str(row[2]) for row in events if bool(row[5])],
             "shownProductCodes": self._shown_codes(conversation_id),
             "isFirstContact": any(bool(row[7]) for row in events),
         }
@@ -732,6 +854,49 @@ class Bridge:
         self.db.commit()
         return claimed
 
+    def _batch_image_data_url(self, payload: dict[str, Any]) -> str | None:
+        """Fetch at most one current customer image without persisting it."""
+        conversation_id = payload.get("conversationId")
+        message_ids = payload.get("imageMessageIds")
+        if not isinstance(conversation_id, str) or not isinstance(message_ids, list):
+            return None
+        expected_ids = {value for value in message_ids if isinstance(value, str) and value}
+        if not expected_ids:
+            return None
+        with self.lock:
+            row = self.db.execute("SELECT contact_inbox_id FROM chats WHERE conversation_id=?", (conversation_id,)).fetchone()
+        contact_inbox_id = row[0] if row and isinstance(row[0], str) else ""
+        if not contact_inbox_id:
+            return None
+        download = getattr(self.chatbot, "download_image_attachment", None)
+        if not callable(download):
+            return None
+        try:
+            for message in self.chatbot.list_messages(conversation_id):
+                if (
+                    message.get("contactInboxId") != contact_inbox_id
+                    or message.get("senderType") != "contact"
+                    or message.get("messageType") != "incoming"
+                    or message.get("deletedAt")
+                ):
+                    continue
+                message_id = str(message.get("sourceId") or message.get("id") or "")
+                if message_id not in expected_ids:
+                    continue
+                attachments = message.get("attachments")
+                if not isinstance(attachments, list):
+                    continue
+                for attachment in attachments:
+                    if isinstance(attachment, dict):
+                        image_data_url = download(attachment)
+                        if isinstance(image_data_url, str) and image_data_url:
+                            return image_data_url
+        except Exception:
+            # Image matching is optional. The store's normal attachment policy
+            # safely handles a photo that can no longer be fetched.
+            return None
+        return None
+
     def process_due(self) -> int:
         # Claim work atomically, then make network requests outside the SQLite
         # critical section so a typing lease can still arrive promptly.
@@ -770,7 +935,11 @@ class Bridge:
         if self.typing_active(payload["conversationId"]):
             self._mark_batch(batch_id, "queued", retry_after=self.config.silence_seconds)
             return
-        status, headers, response = self.super_bot.reply(payload)
+        request_payload = dict(payload)
+        image_data_url = self._batch_image_data_url(payload)
+        if image_data_url:
+            request_payload["imageDataUrl"] = image_data_url
+        status, headers, response = self.super_bot.reply(request_payload)
         if status == 202:
             self._mark_batch(batch_id, "queued", retry_after=_retry_after(headers, 1))
             return
@@ -879,7 +1048,7 @@ class Bridge:
                 self.chatbot.send_media(conversation_id, inbox_id, media_id, key)
                 self._remember_delivery(batch_id, key)
 
-        text = _clean_text(reply.get("text"), 1000)
+        text = _text_with_store_actions(_clean_text(reply.get("text"), 1000), reply)
         batch_text = _clean_text(payload.get("message"))
         if document_delivery_unavailable:
             if CHANNEL == "tiktok":

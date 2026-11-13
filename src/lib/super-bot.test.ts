@@ -118,6 +118,34 @@ test("no entrega un catálogo parcial cuando ni una parte cabe dentro del límit
   assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\//);
 });
 
+test("el catálogo general saluda y entrega el video junto con la tienda virtual", async () => {
+  let composeCalls = 0;
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => {
+      throw new Error("El catálogo general no debe pasar por una búsqueda de productos.");
+    },
+    composeLiveReply: async () => {
+      composeCalls += 1;
+      throw new Error("Los enlaces aprobados del catálogo general no deben reescribirse.");
+    },
+  });
+
+  for (const message of ["catálogo", "catálogo general", "Quiero el catálogo completo, por favor", "catalgo virtual"]) {
+    const reply = await answer({ message, isFirstContact: true });
+    assert.equal(reply.meta?.intent, "catalog-link", message);
+    assert.match(reply.text, /^¡Hola! Claro\./, message);
+    assert.match(reply.text, /recorrido-tienda-virtual-importaciones-super\.mp4/, message);
+    assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\/$/, message);
+    assert.deepEqual(reply.quickActions?.map((action) => action.label), ["Ver video del catálogo", "Ver tienda virtual"], message);
+  }
+  assert.equal(composeCalls, 0);
+
+  const repeatReply = await answer({ message: "catálogo", isFirstContact: false });
+  assert.doesNotMatch(repeatReply.text, /¡Hola!/, "no debe volver a saludar en una conversación existente");
+  assert.doesNotMatch(repeatReply.text, /recorrido-tienda-virtual-importaciones-super\.mp4/);
+  assert.deepEqual(repeatReply.quickActions?.map((action) => action.label), ["Ver tienda virtual"]);
+});
+
 test("uses the configured Messenger URL when Super Bot needs an adviser", async () => {
   const answer = createSuperBotService({
     answerShopAssistant: async () => ({ text: "" }),
@@ -250,6 +278,32 @@ test("deriva una imagen sin texto a Pendientes sin inventar ni responder", async
   assert.equal(reply.meta?.intent, "attachment-human-assistance");
   assert.equal(reply.meta?.requiresAdvisor, true);
   assert.equal(reply.quickActions, undefined);
+});
+
+test("una imagen validada identifica solo una tarjeta verificada del catálogo", async () => {
+  const answer = createSuperBotService({
+    matchProductImage: async (imageDataUrl) => {
+      assert.match(imageDataUrl, /^data:image\/jpeg;base64,/);
+      return {
+        status: "matched",
+        productIsSellable: true,
+        confidence: 0.94,
+        reason: null,
+        product: {
+          id: "p-jbl-go4", slug: "jbl-go-4", code: "JBL-GO4", name: "Parlante JBL GO 4", description: null,
+          brand: "JBL", category: "Parlantes", imageUrl: "/jbl-go4.jpg", imageAlt: "Parlante JBL GO 4",
+          unitPrice: "S/ 199.00", unitPriceValue: 199, wholesalePrice: null, wholesalePriceValue: null,
+          wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 8, unitsPerBox: null,
+        },
+      };
+    },
+    composeLiveReply: async (input) => input.verifiedReply,
+  });
+
+  const reply = await answer({ message: "", hasAttachments: true, imageDataUrl: "data:image/jpeg;base64,/9j/" });
+  assert.equal(reply.meta?.intent, "image-match");
+  assert.equal(reply.products?.[0]?.code, "JBL-GO4");
+  assert.match(reply.text, /identifiqué parlante jbl go 4/i);
 });
 
 test("una petición explícita de asesor se deriva sin acuse automático", async () => {

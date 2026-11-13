@@ -7,7 +7,8 @@ import type { ShopAssistantProductCard } from "@/lib/shop-assistant-types";
 import { createVisualImageHash, rankVisualImageMatches } from "@/lib/product-visual-image-index";
 
 export const SIMULATOR_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
-const MAX_DATA_URL_LENGTH = Math.ceil(SIMULATOR_IMAGE_MAX_BYTES / 3) * 4 + 128;
+/** Largest accepted data URL after the trusted channel base64-encodes 4 MiB. */
+export const SUPER_BOT_IMAGE_DATA_URL_MAX_LENGTH = Math.ceil(SIMULATOR_IMAGE_MAX_BYTES / 3) * 4 + 128;
 const MIN_MATCH_CONFIDENCE = 0.72;
 const MAX_CANDIDATES = 8;
 // A re-encoded screenshot of the same ERP artwork commonly differs by seven
@@ -87,7 +88,7 @@ function isWebp(bytes: Buffer) {
 
 /** Parses only the image formats accepted by the isolated simulator. */
 export function parseSimulatorImageDataUrl(value: string) {
-  if (value.length > MAX_DATA_URL_LENGTH) return null;
+  if (value.length > SUPER_BOT_IMAGE_DATA_URL_MAX_LENGTH) return null;
   const match = value.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/i);
   if (!match || match[2].length % 4 !== 0) return null;
   const bytes = Buffer.from(match[2], "base64");

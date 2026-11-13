@@ -24,8 +24,12 @@ import {
   type SuperBotInternalLogEvent,
   type SuperBotRateLimiter,
 } from "@/lib/super-bot-security";
+import { SUPER_BOT_IMAGE_DATA_URL_MAX_LENGTH } from "@/lib/super-bot-simulator-image-match";
 
-const MAX_BODY_BYTES = 128 * 1024;
+// A trusted Messenger adapter may provide one validated image as a data URL.
+// Keep a small allowance for the surrounding JSON while retaining a firm
+// bound before Node buffers the request body.
+const MAX_BODY_BYTES = SUPER_BOT_IMAGE_DATA_URL_MAX_LENGTH + 128 * 1024;
 const eventIdSchema = z.string().trim().min(1).max(160).regex(/^[A-Za-z0-9._:-]+$/);
 const productCodeSchema = z.string().trim().min(1).max(64);
 
@@ -53,6 +57,8 @@ const inputSchema = z.object({
   conversationId: z.string().trim().min(1).max(160).optional(),
   attachmentCount: z.number().int().min(0).max(10).optional(),
   hasAttachments: z.boolean().optional(),
+  /** Data URL created only by a trusted channel adapter after private-media validation. */
+  imageDataUrl: z.string().trim().max(SUPER_BOT_IMAGE_DATA_URL_MAX_LENGTH).optional(),
 }).superRefine((value, context) => {
   if (value.message || value.hasAttachments || (value.attachmentCount ?? 0) > 0) return;
   context.addIssue({ code: "custom", message: "A message or attachment is required." });
@@ -79,6 +85,7 @@ const inputSchema = z.object({
 type SuperBotReplyInput = z.infer<typeof inputSchema>;
 type CommercialInput = Pick<SuperBotReplyInput, "message" | "productContextCode" | "contextCategorySlug" | "recentMessages" | "shownProductCodes" | "isFirstContact"> & {
   hasAttachments: boolean;
+  imageDataUrl?: string;
   /** Policy derived from the trusted transport, never supplied by a client. */
   catalogPdfMaxBytes?: number;
 };
@@ -226,7 +233,12 @@ function asSuperBotInput(input: SuperBotReplyInput): CommercialInput {
     recentMessages: input.recentMessages,
     ...(input.shownProductCodes ? { shownProductCodes: input.shownProductCodes } : {}),
     ...(typeof input.isFirstContact === "boolean" ? { isFirstContact: input.isFirstContact } : {}),
-    ...(input.channel === "tiktok" ? { catalogPdfMaxBytes: 5 * 1024 * 1024 } : {}),
+    ...(input.imageDataUrl ? { imageDataUrl: input.imageDataUrl } : {}),
+    // Both social adapters use ChatbotX's 5 MB media limit. Supplying it to
+    // the generator makes a complete catalogue split into ordered parts
+    // before delivery, rather than producing one oversized PDF that the
+    // transport must reject.
+    ...(input.channel === "tiktok" || input.channel === "messenger" ? { catalogPdfMaxBytes: 5 * 1024 * 1024 } : {}),
     hasAttachments: input.hasAttachments || (input.attachmentCount ?? 0) > 0,
   };
 }

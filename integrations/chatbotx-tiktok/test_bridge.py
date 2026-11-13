@@ -24,6 +24,7 @@ class FakeChatbot:
         self.bot_enabled = True
         self.channel = bridge_module.CHANNEL
         self.list_message_calls = 0
+        self.image_data_url = None
 
     def list_conversations(self):
         incoming = [message.get("createdAt") for message in self.messages if message.get("senderType") == "contact" and message.get("messageType") == "incoming"]
@@ -47,6 +48,9 @@ class FakeChatbot:
     def disable_bot(self, conversation_id, key):
         self.handoffs.append((conversation_id, key))
         self.bot_enabled = False
+
+    def download_image_attachment(self, attachment):
+        return self.image_data_url if attachment.get("id") == "image-1" else None
 
 
 class FakeSuperBot:
@@ -190,6 +194,24 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual([row[0] for row in self.chatbot.sent], ["text"])
         self.assertIn("límite de archivo de TikTok", self.chatbot.sent[-1][3])
 
+    def test_store_quick_action_is_rendered_as_a_clickable_link(self):
+        self.superbot.reply_value = {
+            "text": "Puedes revisar el catálogo completo y actualizado en nuestra tienda virtual.",
+            "products": [],
+            "quickActions": [
+                {"label": "Ver tienda virtual", "href": "https://tiendavirtualsuper.com/", "accent": True},
+            ],
+        }
+        self.bridge.poll_once()
+        self.clock[0] += 4
+        self.bridge.process_due()
+        self.assertEqual([row[0] for row in self.chatbot.sent], ["text"])
+        self.assertEqual(
+            self.chatbot.sent[-1][3],
+            "Puedes revisar el catálogo completo y actualizado en nuestra tienda virtual.\n"
+            "Ver tienda virtual: https://tiendavirtualsuper.com/",
+        )
+
     def test_disabled_bridge_observes_without_enqueuing_or_sending(self):
         config = bridge_module.Config(False, os.path.join(self.temp.name, "disabled.db"), "https://chatbot.test/api", "token", "", "", "x" * 32, silence_seconds=3)
         disabled = bridge_module.Bridge(config, self.chatbot, self.superbot, now=lambda: self.clock[0])
@@ -253,6 +275,22 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(payload["message"], "")
         self.assertTrue(payload["hasAttachments"])
         self.assertEqual(payload["attachmentCount"], 1)
+
+    def test_private_customer_image_reaches_super_bot_without_being_persisted(self):
+        self.chatbot.messages = [{
+            "id": "image-message", "sourceId": "image-message", "contactInboxId": "contact-1",
+            "senderType": "contact", "messageType": "incoming", "text": "",
+            "createdAt": "2026-11-05T12:00:00Z", "attachments": [{"id": "image-1"}],
+        }]
+        self.chatbot.image_data_url = "data:image/jpeg;base64,/9j/"
+        self.bridge.poll_once()
+        self.clock[0] += 4
+        self.bridge.process_due()
+        payload = self.superbot.calls[0]
+        self.assertEqual(payload["imageDataUrl"], self.chatbot.image_data_url)
+        serialized = self.bridge.db.execute("SELECT payload FROM batches").fetchone()[0]
+        self.assertNotIn(self.chatbot.image_data_url, serialized)
+        self.assertIn("image-message", serialized)
 
     def test_unchanged_conversation_does_not_reload_its_message_history(self):
         self.bridge.poll_once()
