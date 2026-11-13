@@ -170,7 +170,7 @@ test("el catálogo general saluda y entrega el video junto con la tienda virtual
     assert.doesNotMatch(reply.text, /recorrido-tienda-virtual-importaciones-super/);
     assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\/$/, message);
     assert.deepEqual(reply.quickActions?.map((action) => action.label), ["🛍️ Ver tienda virtual"], message);
-    assert.equal(reply.videos?.[0]?.url, "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger.mp4", message);
+    assert.equal(reply.videos?.[0]?.url, "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger-v2.mp4", message);
     assert.equal(reply.videos?.[0]?.mimeType, "video/mp4", message);
   }
   assert.equal(composeCalls, 0);

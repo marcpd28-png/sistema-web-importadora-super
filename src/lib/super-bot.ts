@@ -46,8 +46,8 @@ function contactAction(href: string) {
 }
 
 const VIRTUAL_STORE_URL = "https://tiendavirtualsuper.com/";
-const CATALOG_VIDEO_URL = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger.mp4";
-const CATALOG_VIDEO_SIZE_BYTES = 2_326_312;
+const CATALOG_VIDEO_URL = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger-v2.mp4";
+const CATALOG_VIDEO_SIZE_BYTES = 2_604_399;
 
 export function isCatalogLinkRequest(message: string) {
   return isCatalogRequest(message);
@@ -76,7 +76,7 @@ function catalogLinkReply(isFirstContact: boolean): ShopAssistantReply {
     videos: firstContact
       ? [{
         deliveryKey: "catalog-walkthrough",
-        filename: "recorrido-tienda-virtual-importaciones-super-messenger.mp4",
+        filename: "recorrido-tienda-virtual-importaciones-super-messenger-v2.mp4",
         mimeType: "video/mp4",
         sizeBytes: CATALOG_VIDEO_SIZE_BYTES,
         url: CATALOG_VIDEO_URL,

@@ -123,13 +123,13 @@ class BridgeTests(unittest.TestCase):
         ])
 
     def test_catalog_welcome_sends_verified_video_before_clear_store_text(self):
-        video_url = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger.mp4"
+        video_url = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger-v2.mp4"
         self.superbot.reply_value = {
             "text": "👋 ¡Hola! Bienvenido.\n\n🎬 Te comparto un video corto.\n\n🛍️ Tienda virtual:\n👉 https://tiendavirtualsuper.com/",
             "products": [],
             "videos": [{
                 "deliveryKey": "catalog-walkthrough",
-                "filename": "recorrido-tienda-virtual-importaciones-super-messenger.mp4",
+                "filename": "recorrido-tienda-virtual-importaciones-super-messenger-v2.mp4",
                 "mimeType": "video/mp4",
                 "sizeBytes": 4_000_000,
                 "url": video_url,
