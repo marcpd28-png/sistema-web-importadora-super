@@ -25,6 +25,13 @@ x-super-bot-key: <SUPER_BOT_INTERNAL_API_KEY>
 
 No uses `Authorization: Bearer`, parámetros de URL ni un secreto expuesto al cliente: la ruta acepta la clave sólo en `x-super-bot-key`.
 
+En producción, Messenger se transporta mediante el servicio
+`chatbotx-messenger-bridge`, definido junto al puente de ChatbotX. El servicio
+consulta exclusivamente `channel=messenger`, conserva sus marcas de entrega en
+una base SQLite aislada y no publica un puerto de control. Su primer arranque
+debe permanecer con `CHATBOTX_BRIDGE_ENABLED=false` para establecer línea base;
+sólo los mensajes recibidos después de activarlo pueden llegar a Super Bot.
+
 El cuerpo debe conservar el identificador original del proveedor. Para el adaptador de producción de ChatbotX, `eventId`, `channel` y `conversationId` son obligatorios; la compatibilidad temporal sin canal sólo existe para puentes heredados y no debe usarse en Messenger:
 
 ```json

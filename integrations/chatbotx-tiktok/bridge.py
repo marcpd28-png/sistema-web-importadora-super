@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Durable standby bridge between ChatbotX TikTok and Super Bot.
+"""Durable standby bridge between ChatbotX and Super Bot.
 
-TikTok Business Messaging is an external approval gate.  This process is
-therefore deliberately *off* unless TIKTOK_BRIDGE_ENABLED=true.  While off it
-only records the current conversation history as observed; it never calls the
-model or sends a customer message.  That makes a safe baseline before TikTok
-approves the Business Messaging connector.
+The service defaults to TikTok, but can run a second isolated instance for
+Messenger with ``CHATBOTX_BRIDGE_CHANNEL=messenger``. It remains deliberately
+*off* until its explicit bridge flag is enabled. While off it only records the
+current conversation history as observed; it never calls the model or sends a
+customer message. That creates a safe baseline before a channel is activated.
 
 The bridge uses the documented ChatbotX public API rather than patching its
 compiled worker.  All secrets are read only from environment variables and
@@ -31,7 +31,24 @@ from pathlib import PurePosixPath
 from typing import Any, Callable, Iterable
 
 
-CHANNEL = "tiktok"
+SUPPORTED_CHANNELS = {"messenger", "tiktok"}
+
+
+def _environment(*names: str, default: str = "") -> str:
+    """Return the first explicitly configured environment value.
+
+    ``TIKTOK_BRIDGE_*`` remains the backwards-compatible default. The generic
+    names let a Messenger container reuse this reviewed transport without
+    duplicating its delivery and idempotency logic.
+    """
+    for name in names:
+        value = os.environ.get(name)
+        if value is not None:
+            return value
+    return default
+
+
+CHANNEL = _environment("CHATBOTX_BRIDGE_CHANNEL", default="tiktok").strip().lower() or "tiktok"
 DEFAULT_POLL_SECONDS = 2.0
 DEFAULT_SILENCE_SECONDS = 3.0
 DEFAULT_TYPING_LEASE_SECONDS = 8.0
@@ -65,23 +82,23 @@ class Config:
 
     @classmethod
     def from_env(cls) -> "Config":
-        def positive(name: str, default: float, maximum: float) -> float:
+        def positive(generic_name: str, legacy_name: str, default: float, maximum: float) -> float:
             try:
-                value = float(os.environ.get(name, default))
+                value = float(_environment(generic_name, legacy_name, default=str(default)))
             except ValueError:
                 return default
             return min(maximum, max(0.1, value))
 
         return cls(
-            enabled=os.environ.get("TIKTOK_BRIDGE_ENABLED", "false").lower() == "true",
-            database_path=os.environ.get("TIKTOK_BRIDGE_DB", "/data/tiktok-bridge.db"),
+            enabled=_environment("CHATBOTX_BRIDGE_ENABLED", "TIKTOK_BRIDGE_ENABLED", default="false").lower() == "true",
+            database_path=_environment("CHATBOTX_BRIDGE_DB", "TIKTOK_BRIDGE_DB", default="/data/tiktok-bridge.db"),
             chatbot_url=os.environ.get("CHATBOTX_API_URL", "").rstrip("/"),
             chatbot_token=os.environ.get("SOCIAL_INBOX_API_TOKEN", ""),
             super_bot_url=os.environ.get("SUPER_BOT_URL", "").rstrip("/"),
             super_bot_key=os.environ.get("SUPER_BOT_INTERNAL_API_KEY", ""),
-            bridge_secret=os.environ.get("TIKTOK_BRIDGE_SECRET", ""),
-            poll_seconds=positive("TIKTOK_BRIDGE_POLL_SECONDS", DEFAULT_POLL_SECONDS, 30),
-            silence_seconds=positive("TIKTOK_BRIDGE_SILENCE_SECONDS", DEFAULT_SILENCE_SECONDS, 30),
+            bridge_secret=_environment("CHATBOTX_BRIDGE_SECRET", "TIKTOK_BRIDGE_SECRET"),
+            poll_seconds=positive("CHATBOTX_BRIDGE_POLL_SECONDS", "TIKTOK_BRIDGE_POLL_SECONDS", DEFAULT_POLL_SECONDS, 30),
+            silence_seconds=positive("CHATBOTX_BRIDGE_SILENCE_SECONDS", "TIKTOK_BRIDGE_SILENCE_SECONDS", DEFAULT_SILENCE_SECONDS, 30),
         )
 
     def require_runtime_secrets(self) -> None:
@@ -95,7 +112,7 @@ class Config:
         required = [
             ("CHATBOTX_API_URL", self.chatbot_url),
             ("SOCIAL_INBOX_API_TOKEN", self.chatbot_token),
-            ("TIKTOK_BRIDGE_SECRET", self.bridge_secret),
+            ("CHATBOTX_BRIDGE_SECRET", self.bridge_secret),
         ]
         if self.enabled:
             required.extend([
@@ -105,6 +122,8 @@ class Config:
         missing = [name for name, value in required if not value]
         if missing:
             raise BridgeError("Faltan variables de configuración del puente.", 503)
+        if CHANNEL not in SUPPORTED_CHANNELS:
+            raise BridgeError("El canal del puente no es válido.", 503)
         if len(self.bridge_secret) < 32:
             raise BridgeError("La clave del puente debe tener al menos 32 caracteres.", 503)
         for value in (self.chatbot_url, *([self.super_bot_url] if self.enabled else [])):
@@ -224,7 +243,7 @@ class ChatbotXApi:
         """Download a verified public store asset, then register it in Media Library."""
         asset = self.transport.request("GET", url, {"Accept": "*/*"}, timeout=45)
         if asset.status != 200 or not asset.body or len(asset.body) > maximum:
-            raise BridgeError("El archivo visual no se pudo preparar para TikTok.", 502)
+            raise BridgeError("El archivo visual no se pudo preparar para el canal.", 502)
         status, _, upload = self._request("POST", "/media-library/files/upload-url", {"fileName": name, "mimeType": mime_type})
         if status not in (200, 201) or not isinstance(upload, dict) or not isinstance(upload.get("path"), str) or not isinstance(upload.get("uploadUrl"), str):
             raise BridgeError("ChatbotX no pudo preparar el archivo visual.", 502)
@@ -245,7 +264,11 @@ class SuperBotApi:
         self.transport = transport or UrllibTransport()
 
     def reply(self, payload: dict[str, Any]) -> tuple[int, dict[str, str], Any]:
-        response = self.transport.request("POST", self.url, {"Content-Type": "application/json", "x-super-bot-key": self.key, "User-Agent": "SuperBotTikTokAdapter/1.0"}, json.dumps(payload, separators=(",", ":")).encode("utf-8"), timeout=120)
+        response = self.transport.request("POST", self.url, {
+            "Content-Type": "application/json",
+            "x-super-bot-key": self.key,
+            "User-Agent": f"SuperBot{CHANNEL.title()}Adapter/1.0",
+        }, json.dumps(payload, separators=(",", ":")).encode("utf-8"), timeout=120)
         return response.status, response.headers, _json(response.body)
 
 
@@ -255,7 +278,7 @@ def _clean_text(value: Any, maximum: int = MAX_TEXT) -> str:
 
 def _stable_id(conversation_id: str, first_id: str, last_id: str) -> str:
     digest = hashlib.sha256(f"{CHANNEL}\x1f{conversation_id}\x1f{first_id}\x1f{last_id}".encode()).hexdigest()[:32]
-    return f"tiktok:{conversation_id}:{digest}"
+    return f"{CHANNEL}:{conversation_id}:{digest}"
 
 
 def _store_url(value: Any, *, suffixes: tuple[str, ...], path_prefixes: tuple[str, ...]) -> str | None:
@@ -468,10 +491,15 @@ class Bridge:
                     continue
                 created = _message_time(message.get("createdAt"), self.now())
                 attachments = message.get("attachments") if isinstance(message.get("attachments"), list) else []
+                text = _clean_text(message.get("text"))
+                # Reactions and provider placeholders have neither customer
+                # text nor an attachment for Super Bot to evaluate.
+                if not text and not attachments:
+                    continue
                 state = "queued" if queue and bot_enabled else "observed"
                 inserted = self.db.execute(
                     "INSERT OR IGNORE INTO inbound_events(conversation_id,message_id,inbox_id,created,text,has_attachments,attachment_count,first_contact,state) VALUES (?,?,?,?,?,?,?,?,?)",
-                    (conversation_id, message_id, inbox_id, created, _clean_text(message.get("text")), int(bool(attachments)), min(len(attachments), 10), int(not seen_before), state),
+                    (conversation_id, message_id, inbox_id, created, text, int(bool(attachments)), min(len(attachments), 10), int(not seen_before), state),
                 ).rowcount
                 if inserted:
                     added += 1
@@ -546,7 +574,10 @@ class Bridge:
             return None
         first_id, last_id = str(events[0][2]), str(events[-1][2])
         batch_id = _stable_id(conversation_id, first_id, last_id)
-        content = "\n".join(row[4] for row in events if row[4]).strip()[:MAX_TEXT] or "[Mensaje de TikTok]"
+        # An attachment-only payload deliberately carries an empty message.
+        # The server then follows its attachment policy instead of treating a
+        # fabricated transport label as a commercial customer request.
+        content = "\n".join(row[4] for row in events if row[4]).strip()[:MAX_TEXT]
         chat = self.db.execute("SELECT contact_inbox_id FROM chats WHERE conversation_id=?", (conversation_id,)).fetchone()
         if not chat or not isinstance(chat[0], str) or not chat[0]:
             return None
@@ -757,7 +788,7 @@ class Bridge:
             valid_documents.append(asset)
         # The document collection is all-or-nothing. Sending only the parts
         # that happen to fit would claim a complete catalogue while silently
-        # omitting products. Super Bot normally pre-splits TikTok bundles to
+        # omitting products. Super Bot normally pre-splits channel bundles to
         # this limit; this is a final fail-closed guard for stale/invalid data.
         if document_delivery_unavailable:
             valid_documents = []
@@ -773,7 +804,10 @@ class Bridge:
         text = _clean_text(reply.get("text"), 1000)
         batch_text = _clean_text(payload.get("message"))
         if document_delivery_unavailable:
-            text = "No puedo adjuntar ese catálogo completo por el límite de archivo de TikTok. Puedes verlo actualizado aquí: https://tiendavirtualsuper.com/"
+            if CHANNEL == "tiktok":
+                text = "No puedo adjuntar ese catálogo completo por el límite de archivo de TikTok. Puedes verlo actualizado aquí: https://tiendavirtualsuper.com/"
+            else:
+                text = "No puedo adjuntar ese catálogo completo por el límite de archivo del canal. Puedes verlo actualizado aquí: https://tiendavirtualsuper.com/"
         elif len(images) >= 2 and not valid_documents and not _technical_question(batch_text):
             text = "¿Cuál de estas opciones te interesa?"
         if not text:
@@ -833,7 +867,7 @@ class ControlHandler(BaseHTTPRequestHandler):
         if self.path != "/typing":
             self._send(404, {"error": "No encontrado."})
             return
-        if not self.secret or not hmac.compare_digest(self.headers.get("x-tiktok-bridge-key", ""), self.secret):
+        if not self.secret or not hmac.compare_digest(self.headers.get(f"x-{CHANNEL}-bridge-key", ""), self.secret):
             self._send(401, {"error": "No autorizado."})
             return
         try:
@@ -858,7 +892,8 @@ def run() -> None:
     super_bot = SuperBotApi(config.super_bot_url, config.super_bot_key)
     bridge = Bridge(config, chatbot, super_bot)
     ControlHandler.bridge, ControlHandler.secret = bridge, config.bridge_secret
-    host, port = os.environ.get("TIKTOK_BRIDGE_HOST", "127.0.0.1"), int(os.environ.get("TIKTOK_BRIDGE_PORT", "13125"))
+    host = _environment("CHATBOTX_BRIDGE_HOST", "TIKTOK_BRIDGE_HOST", default="127.0.0.1")
+    port = int(_environment("CHATBOTX_BRIDGE_PORT", "TIKTOK_BRIDGE_PORT", default="13125"))
     server = ThreadingHTTPServer((host, port), ControlHandler)
 
     def poll() -> None:

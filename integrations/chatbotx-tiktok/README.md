@@ -52,3 +52,24 @@ python3 -m unittest integrations/chatbotx-tiktok/test_bridge.py
 Con el contenedor levantado en modo de espera, verifica además que `curl -fsS http://127.0.0.1:13127/health` responda `{"ok":true,"enabled":false}`. El proceso escucha el puerto `13125` dentro del contenedor; `13127` es el puerto de loopback libre del VPS. No cambies `TIKTOK_BRIDGE_ENABLED` a `true` hasta tener la aprobación de Business Messaging, el conector autorizado y una conversación de prueba consentida.
 
 Antes de producción valida: primer contacto, tres mensajes agrupados, repetición del mismo evento, lease de escritura, dos imágenes + cierre, PDF menor de 5 MiB, 202/409/429 y handoff humano.
+
+## Instancia Messenger
+
+El mismo ejecutable puede ejecutarse como una segunda instancia aislada para
+Messenger. La definición de producción en
+`compose.production.override.yaml` la crea como `chatbotx-messenger-bridge`
+con `CHATBOTX_BRIDGE_CHANNEL=messenger`, una base SQLite propia y sin puerto
+publicado.
+
+Su interruptor persistente no contiene secretos:
+
+```dotenv
+# /opt/chatbotx/messenger-bridge.env
+CHATBOTX_BRIDGE_ENABLED=false
+```
+
+El primer arranque se mantiene en `false` para registrar todo el historial ya
+existente como observado. Sólo tras comprobar la salud y elegir una conversación
+de prueba se cambia a `true`; de ese modo nunca se responde automáticamente a
+mensajes anteriores. Las credenciales privadas de ChatbotX y Super Bot se leen
+desde el archivo privado de entorno ya usado por el sidecar.

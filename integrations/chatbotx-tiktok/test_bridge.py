@@ -22,9 +22,10 @@ class FakeChatbot:
         self.uploaded = []
         self.handoffs = []
         self.bot_enabled = True
+        self.channel = bridge_module.CHANNEL
 
     def list_conversations(self):
-        return [{"id": "123", "botEnabled": self.bot_enabled, "contactInboxes": [{"id": "contact-1", "inboxId": "inbox-1", "channel": "tiktok"}]}]
+        return [{"id": "123", "botEnabled": self.bot_enabled, "contactInboxes": [{"id": "contact-1", "inboxId": "inbox-1", "channel": self.channel}]}]
 
     def list_messages(self, _conversation_id):
         return list(self.messages)
@@ -196,6 +197,34 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(self.superbot.calls, [])
         finally:
             disabled.close()
+
+    def test_messenger_instance_uses_its_own_event_scope(self):
+        original_channel = bridge_module.CHANNEL
+        bridge_module.CHANNEL = "messenger"
+        self.chatbot.channel = "messenger"
+        try:
+            self.bridge.poll_once()
+            self.clock[0] += 4
+            self.bridge.process_due()
+            self.assertEqual(self.superbot.calls[0]["channel"], "messenger")
+            self.assertTrue(self.superbot.calls[0]["eventId"].startswith("messenger:123:"))
+            self.assertEqual([row[0] for row in self.chatbot.sent], ["text"])
+        finally:
+            bridge_module.CHANNEL = original_channel
+
+    def test_attachment_only_message_preserves_empty_customer_text(self):
+        self.chatbot.messages = [{
+            "id": "image-only", "sourceId": "image-only", "contactInboxId": "contact-1",
+            "senderType": "contact", "messageType": "incoming", "text": "",
+            "createdAt": "2026-11-05T12:00:00Z", "attachments": [{"id": "attachment-1"}],
+        }]
+        self.bridge.poll_once()
+        self.clock[0] += 4
+        self.bridge.process_due()
+        payload = self.superbot.calls[0]
+        self.assertEqual(payload["message"], "")
+        self.assertTrue(payload["hasAttachments"])
+        self.assertEqual(payload["attachmentCount"], 1)
 
 
 if __name__ == "__main__":

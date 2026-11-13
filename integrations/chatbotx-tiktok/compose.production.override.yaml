@@ -44,3 +44,49 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+
+  # Same reviewed bridge, isolated state and no public control port. Its first
+  # startup is deliberately disabled so it records existing Messenger history
+  # as a baseline. Set CHATBOTX_BRIDGE_ENABLED=true in the separate
+  # /opt/chatbotx/messenger-bridge.env only after its health check and a
+  # consented test conversation.
+  chatbotx-messenger-bridge:
+    build:
+      context: /opt/chatbotx/tiktok-bridge
+      dockerfile: Dockerfile
+    container_name: chatbotx-messenger-bridge
+    restart: unless-stopped
+    networks:
+      - main
+    env_file:
+      - /opt/chatbotx/.env
+      - /opt/chatbotx/messenger-bridge.env
+    environment:
+      CHATBOTX_BRIDGE_CHANNEL: messenger
+      CHATBOTX_BRIDGE_DB: /data/messenger-bridge.db
+      CHATBOTX_BRIDGE_HOST: 127.0.0.1
+      CHATBOTX_BRIDGE_PORT: "13126"
+      CHATBOTX_BRIDGE_POLL_SECONDS: "3"
+      CHATBOTX_BRIDGE_SILENCE_SECONDS: "3"
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - /opt/chatbotx/messenger-bridge-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid,nodev
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:13126/health', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
