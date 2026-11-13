@@ -122,6 +122,28 @@ class BridgeTests(unittest.TestCase):
             "https://tiendavirtualsuper.com/api/telegram/product-image/A2",
         ])
 
+    def test_catalog_welcome_sends_verified_video_before_clear_store_text(self):
+        video_url = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger.mp4"
+        self.superbot.reply_value = {
+            "text": "👋 ¡Hola! Bienvenido.\n\n🎬 Te comparto un video corto.\n\n🛍️ Tienda virtual:\n👉 https://tiendavirtualsuper.com/",
+            "products": [],
+            "videos": [{
+                "deliveryKey": "catalog-walkthrough",
+                "filename": "recorrido-tienda-virtual-importaciones-super-messenger.mp4",
+                "mimeType": "video/mp4",
+                "sizeBytes": 4_000_000,
+                "url": video_url,
+            }],
+            "quickActions": [{"label": "🛍️ Ver tienda virtual", "href": "https://tiendavirtualsuper.com/"}],
+        }
+        self.bridge.poll_once()
+        self.clock[0] += 4
+        self.bridge.process_due()
+        self.assertEqual([row[0] for row in self.chatbot.sent], ["media", "text"])
+        self.assertEqual(self.chatbot.uploaded, [video_url])
+        self.assertIn("🎬 Te comparto un video corto.", self.chatbot.sent[-1][3])
+        self.assertIn("🛍️ Tienda virtual:", self.chatbot.sent[-1][3])
+
     def test_newer_turn_waits_for_silence_and_is_not_lost_with_the_older_turn(self):
         self.chatbot.messages = [
             {"id": "old", "sourceId": "old", "contactInboxId": "contact-1", "senderType": "contact", "messageType": "incoming", "text": "Primero", "createdAt": self.clock[0] - 4, "attachments": []},

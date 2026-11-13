@@ -133,17 +133,21 @@ test("el catálogo general saluda y entrega el video junto con la tienda virtual
   for (const message of ["catálogo", "catálogo general", "Quiero el catálogo completo, por favor", "catalgo virtual"]) {
     const reply = await answer({ message, isFirstContact: true });
     assert.equal(reply.meta?.intent, "catalog-link", message);
-    assert.match(reply.text, /^¡Hola! Claro\./, message);
-    assert.match(reply.text, /recorrido-tienda-virtual-importaciones-super\.mp4/, message);
+    assert.match(reply.text, /^👋 ¡Hola!/, message);
+    assert.match(reply.text, /🎬 Te comparto un video corto/, message);
+    assert.doesNotMatch(reply.text, /recorrido-tienda-virtual-importaciones-super/);
     assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\/$/, message);
-    assert.deepEqual(reply.quickActions?.map((action) => action.label), ["Ver video del catálogo", "Ver tienda virtual"], message);
+    assert.deepEqual(reply.quickActions?.map((action) => action.label), ["🛍️ Ver tienda virtual"], message);
+    assert.equal(reply.videos?.[0]?.url, "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger.mp4", message);
+    assert.equal(reply.videos?.[0]?.mimeType, "video/mp4", message);
   }
   assert.equal(composeCalls, 0);
 
   const repeatReply = await answer({ message: "catálogo", isFirstContact: false });
   assert.doesNotMatch(repeatReply.text, /¡Hola!/, "no debe volver a saludar en una conversación existente");
   assert.doesNotMatch(repeatReply.text, /recorrido-tienda-virtual-importaciones-super\.mp4/);
-  assert.deepEqual(repeatReply.quickActions?.map((action) => action.label), ["Ver tienda virtual"]);
+  assert.equal(repeatReply.videos, undefined);
+  assert.deepEqual(repeatReply.quickActions?.map((action) => action.label), ["🛍️ Ver tienda virtual"]);
 });
 
 test("uses the configured Messenger URL when Super Bot needs an adviser", async () => {

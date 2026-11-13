@@ -46,7 +46,8 @@ function contactAction(href: string) {
 }
 
 const VIRTUAL_STORE_URL = "https://tiendavirtualsuper.com/";
-const CATALOG_VIDEO_URL = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super.mp4";
+const CATALOG_VIDEO_URL = "https://tiendavirtualsuper.com/uploads/communications/recorrido-tienda-virtual-importaciones-super-messenger.mp4";
+const CATALOG_VIDEO_SIZE_BYTES = 2_326_312;
 
 export function isCatalogLinkRequest(message: string) {
   return isCatalogRequest(message);
@@ -70,14 +71,18 @@ function catalogLinkReply(isFirstContact: boolean): ShopAssistantReply {
     // The short welcome/video bundle belongs only to a new conversation;
     // repeat visitors get the direct catalogue link without a second greeting.
     text: firstContact
-      ? `¡Hola! Claro. Mira cómo recorrer nuestro catálogo:\n🎬 Video: ${CATALOG_VIDEO_URL}\n🛍️ Tienda virtual: ${VIRTUAL_STORE_URL}`
-      : `El catálogo completo y actualizado está en la tienda virtual: ${VIRTUAL_STORE_URL}`,
-    quickActions: firstContact
-      ? [
-        { label: "Ver video del catálogo", href: CATALOG_VIDEO_URL, accent: true },
-        { label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true },
-      ]
-      : [{ label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true }],
+      ? `👋 ¡Hola! Bienvenido a Importaciones Super.\n\n🎬 Te comparto un video corto para recorrer nuestro catálogo.\n\n🛍️ Para ver productos, precios y stock actualizados, entra a nuestra tienda virtual:\n👉 ${VIRTUAL_STORE_URL}`
+      : `🛍️ Catálogo, precios y stock actualizados:\n👉 ${VIRTUAL_STORE_URL}`,
+    videos: firstContact
+      ? [{
+        deliveryKey: "catalog-walkthrough",
+        filename: "recorrido-tienda-virtual-importaciones-super-messenger.mp4",
+        mimeType: "video/mp4",
+        sizeBytes: CATALOG_VIDEO_SIZE_BYTES,
+        url: CATALOG_VIDEO_URL,
+      }]
+      : undefined,
+    quickActions: [{ label: "🛍️ Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true }],
     meta: { intent: "catalog-link", usedOllama: false },
   };
 }

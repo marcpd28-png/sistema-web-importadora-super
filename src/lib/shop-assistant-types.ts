@@ -23,6 +23,16 @@ export type ShopAssistantDocument = {
   url: string;
 };
 
+/** A short verified video that a channel adapter may deliver as an attachment.
+ * Unlike a quick action, this is sent directly in channels that support video. */
+export type ShopAssistantVideo = {
+  deliveryKey: string;
+  filename: string;
+  mimeType: "video/mp4";
+  sizeBytes: number;
+  url: string;
+};
+
 export type ShopAssistantProductCard = {
   id: string;
   slug: string;
@@ -62,6 +72,8 @@ export type ShopAssistantReply = {
   documents?: ShopAssistantDocument[];
   /** Compatibility alias for channels that can still send only one file. */
   document?: ShopAssistantDocument;
+  /** Ordered video attachments for channels that support native video. */
+  videos?: ShopAssistantVideo[];
   searchClarification?: Array<{ code: string; name: string }>;
   contextProductCode?: string | null;
   contextCategorySlug?: string | null;

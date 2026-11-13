@@ -479,6 +479,22 @@ def _document_asset(document: dict[str, Any]) -> tuple[str, str, int] | None:
     return url, "application/pdf", size
 
 
+def _video_asset(video: dict[str, Any]) -> tuple[str, str, int, str] | None:
+    """Accept only a small first-party MP4 from the communications folder.
+
+    The size is declared by the trusted store response and the upload client
+    checks the downloaded body again before ChatbotX receives it.
+    """
+    url = _store_url(video.get("url"), suffixes=(".mp4",), path_prefixes=("/uploads/communications/",))
+    size = video.get("sizeBytes")
+    filename = _clean_text(video.get("filename"), 180)
+    if not url or video.get("mimeType") != "video/mp4" or not isinstance(size, int) or isinstance(size, bool) or not 0 < size <= MAX_MEDIA_BYTES:
+        return None
+    if not filename or "/" in filename or "\\" in filename or not filename.lower().endswith(".mp4"):
+        return None
+    return url, "video/mp4", size, filename
+
+
 def _technical_question(text: str) -> bool:
     words = ("especific", "técnic", "tecnic", "compatib", "watt", "volt", "amper", "mah", "medida", "pulgada", "ram", "memoria")
     lowered = text.lower()
@@ -1053,6 +1069,22 @@ class Bridge:
             key = f"{batch_id}:document:{index}"
             if not self._delivered(batch_id, key):
                 media_id = self.chatbot.upload_public_file(url, f"catalogo-{index}.pdf", mime_type)
+                self.chatbot.send_media(conversation_id, inbox_id, media_id, key)
+                self._remember_delivery(batch_id, key)
+
+        raw_videos = reply.get("videos")
+        valid_videos: list[tuple[str, str, int, str]] = []
+        if isinstance(raw_videos, list):
+            for item in raw_videos[:1]:
+                asset = _video_asset(item) if isinstance(item, dict) else None
+                if asset:
+                    valid_videos.append(asset)
+        for index, (url, mime_type, _size, filename) in enumerate(valid_videos, start=1):
+            if self.typing_active(conversation_id):
+                raise BridgeError("Un asesor está escribiendo.", 409)
+            key = f"{batch_id}:video:{index}"
+            if not self._delivered(batch_id, key):
+                media_id = self.chatbot.upload_public_file(url, filename, mime_type)
                 self.chatbot.send_media(conversation_id, inbox_id, media_id, key)
                 self._remember_delivery(batch_id, key)
 
