@@ -805,6 +805,33 @@ test("responde soporte y flujo de compra", async () => {
   assert.ok(reply.quickActions?.some((action) => action.href === "https://m.me/importacionessuperoficial"));
 });
 
+test("prioriza el producto y aclara que un asesor cotiza el delivery", async () => {
+  const cooler: AssistantProductRecord = {
+    ...products[0],
+    id: "cooler-glacier",
+    code: "PC31-SQ",
+    slug: "cooler-para-laptop-glacier-pc31",
+    name: "Cooler para Laptop Glacier 6 en 1",
+    category: "Accesorios PC",
+    categoryId: null,
+    unitPrice: 79,
+    stockUnits: 34,
+  };
+  const assistant = createShopAssistantService(createMockRepository({
+    async searchVisibleProducts(query) {
+      return [cooler].filter((product) => matchesAllRequiredSearchTerms(product, query));
+    },
+  }));
+
+  const reply = await assistant({
+    message: "Hola, quisiera saber si hacen delivery. Estoy interesada en Cooler para laptop Glacier",
+  });
+
+  assert.equal(reply.products?.[0]?.code, "PC31-SQ");
+  assert.match(reply.text, /Cooler para Laptop Glacier/i);
+  assert.match(reply.text, /costo de delivery.*asesor/i);
+});
+
 test("no responde cuando no entiende la consulta", async () => {
   const reply = await answerShopAssistant({ message: "necesito algo rarisimo sin contexto" });
 

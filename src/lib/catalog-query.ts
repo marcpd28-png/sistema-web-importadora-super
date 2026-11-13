@@ -21,6 +21,10 @@ const GROUPS = [
 // catalog constraint. In particular, "también" starts a second product line;
 // keeping it here would turn that line into an impossible AND search.
 for (const word of ["y", "si", "estoy", "tambien", "ademas", "hacer", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "recomiendas", "recomienda", "recomendame", "presupuesto", "soles", "sol", "veo", "mandas", "unidad", "unidades"]) FILLER.add(word);
+// Service questions often accompany an otherwise precise product request.
+// They must not become catalog constraints: “¿hacen delivery del cooler
+// Glacier?” still needs to find the cooler, then answer delivery separately.
+for (const word of ["delivery", "envio", "envios", "entrega", "entregas", "despacho", "despachos", "provincia", "provincias", "agencia", "agencias", "hacen", "hace", "realizan", "realiza", "interesado", "interesada", "interesados", "interesadas", "confirmar", "confirman", "cobertura", "costo", "costos", "zona", "zonas", "pedido", "pedidos", "messenger", "contacto", "horario", "hora", "comprar", "compra", "pago", "pagos", "cotizacion", "cotizar"]) FILLER.add(word);
 for (const word of ["comprar", "compra", "cotizar", "cotizacion"]) FILLER.add(word);
 for (const word of ["todavia", "aun", "venta", "venden", "vende", "vender", "siguen", "sigue", "actualmente"]) FILLER.add(word);
 for (const word of ["electrico", "electrica", "electricos", "electricas"]) FILLER.delete(word);

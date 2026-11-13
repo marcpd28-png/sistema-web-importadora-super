@@ -15,6 +15,13 @@ test("informal greetings do not become product constraints", () => {
   assert.deepEqual(productQueryTerms("Buenas tardes quisiera saber cuánto está el extensor de pantalla"), ["extensor", "pantalla"]);
 });
 
+test("separa delivery del producto solicitado", () => {
+  assert.deepEqual(
+    productQueryTerms("Hola, quisiera saber si hacen delivery. Estoy interesada en Cooler para laptop Glacier"),
+    ["cooler", "laptop", "glacier"],
+  );
+});
+
 test("resuelve cargador portátil y la errata watts como power bank sin incluir cargadores de pared", () => {
   const query = "hola vi un cargador portail de 20 whats precio";
   const o864 = {

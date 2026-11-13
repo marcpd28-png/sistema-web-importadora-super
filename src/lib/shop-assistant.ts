@@ -1298,11 +1298,19 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
     const wantsCategories = /(categoria|categorias|rubro|rubros|seccion|secciones)/.test(
       normalized,
     );
+    const deliveryRequested = /\b(envio|envios|delivery|entrega|despacho|shalom|provincia|agencia)\b/.test(normalized);
+    // A delivery or payment question only becomes a service-only answer when
+    // no catalog identity remains.  A message such as “hacen delivery del
+    // cooler Glacier” must find the product first and answer both concerns.
     const wantsSupport =
       !productFocus &&
+      productSearchTerms.length === 0 &&
       /\b(messenger|contacto|horario|hora|pedido|comprar|compra|envio|entrega|delivery|pago|cotizacion|cotizar)\b/.test(
         normalized,
       );
+    const deliveryAdvisorNote = deliveryRequested
+      ? " Hacemos delivery en Lima y envíos a todo el Perú. El costo de delivery a tu zona lo cotiza un asesor."
+      : "";
     const wantsGift = !productFocus && giftIntent.isGiftIntent;
     const wantsSimilar = /(similar|parecid|alternativ|relacionad)/.test(normalized);
     const wantsCheaper = /(barat|econom|menor precio|menos precio|mas barato|más barato)/.test(
@@ -1725,7 +1733,7 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
             : " Ojo: el stock está bajo, conviene confirmar antes de cerrar el pedido."
           : "";
       return {
-        text: `${formatProductAnswer(contextProduct, baseData.settings.currencySymbol)}${stockWarning}`,
+        text: `${formatProductAnswer(contextProduct, baseData.settings.currencySymbol)}${stockWarning}${deliveryAdvisorNote}`,
         contextProductCode: contextProduct.code,
         contextCategorySlug: contextProduct.categoryId
           ? baseData.categories.find((category) => category.id === contextProduct.categoryId)?.slug ?? null
@@ -1814,11 +1822,11 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
       if (visibleProducts.length === 1) {
         const product = visibleProducts[0];
         return {
-          text: broadenedFocus
+          text: `${broadenedFocus
             ? `${inferenceLead}Sí, tenemos ${getProductFocusLabel(productFocus!)} disponibles.`
             : budget
             ? `${inferenceLead}La opción más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)} es: ${formatProductAnswer(product, baseData.settings.currencySymbol)}`
-            : `${inferenceLead}${formatProductAnswer(product, baseData.settings.currencySymbol)}`,
+            : `${inferenceLead}${formatProductAnswer(product, baseData.settings.currencySymbol)}`}${deliveryAdvisorNote}`,
           contextProductCode: product.code,
           contextCategorySlug: product.categoryId
             ? baseData.categories.find((category) => category.id === product.categoryId)?.slug ?? null
@@ -1854,13 +1862,13 @@ export function createShopAssistantService(repository: ShopAssistantRepository) 
             : `Tenemos ${sortedProducts.length} productos${requestedBrand ? ` ${requestedBrand}` : ""} en stock. ¿Quieres ver el catálogo completo?`
           : null;
         return {
-          text: visualCountText ?? (broadenedFocus
+          text: `${visualCountText ?? (broadenedFocus
             ? `${inferenceLead}Sí, tenemos ${getProductFocusLabel(productFocus!)} disponibles.`
             : quantity
             ? `${inferenceLead}La mejor opción para ${quantity} unidades es ${closestProduct.name} a ${closestPrice} c/u. ${closestProduct.wholesalePrice !== null && quantity >= closestProduct.wholesaleMinQty ? "Ya aplica precio mayorista." : "También te dejo alternativas."}`
             : budget
               ? `${inferenceLead}La mejor opción es ${closestProduct.name} a ${closestPrice}: es la más cercana a ${formatCurrency(budget, baseData.settings.currencySymbol)}. También puedes considerar estas alternativas.`
-              : `${inferenceLead}La mejor opción es ${closestProduct.name}. También puedes considerar estas alternativas con stock.`),
+              : `${inferenceLead}La mejor opción es ${closestProduct.name}. También puedes considerar estas alternativas con stock.`)}${deliveryAdvisorNote}`,
           contextProductCode: closestProduct.code,
           contextCategorySlug: closestProduct.categoryId
             ? baseData.categories.find((category) => category.id === closestProduct.categoryId)?.slug ?? null
