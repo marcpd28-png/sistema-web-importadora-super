@@ -202,6 +202,30 @@ class BridgeTests(unittest.TestCase):
         finally:
             disabled.close()
 
+    def test_enabling_after_standby_only_queues_new_customer_turns(self):
+        path = os.path.join(self.temp.name, "activation-guard.db")
+        standby_config = bridge_module.Config(False, path, "https://chatbot.test/api", "token", "", "", "x" * 32, silence_seconds=3)
+        standby = bridge_module.Bridge(standby_config, self.chatbot, self.superbot, now=lambda: self.clock[0])
+        try:
+            standby.poll_once()
+        finally:
+            standby.close()
+
+        live_config = bridge_module.Config(True, path, "https://chatbot.test/api", "token", "https://store.test/reply", "key", "x" * 32, silence_seconds=3)
+        live = bridge_module.Bridge(live_config, self.chatbot, self.superbot, now=lambda: self.clock[0])
+        try:
+            self.chatbot.messages.append({
+                "id": "m3", "sourceId": "source-3", "contactInboxId": "contact-1", "senderType": "contact", "messageType": "incoming",
+                "text": "Mensaje nuevo", "createdAt": "2026-11-05T12:00:02Z", "attachments": [],
+            })
+            live.poll_once()
+            states = dict(live.db.execute("SELECT message_id,state FROM inbound_events").fetchall())
+            self.assertEqual(states["source-1"], "observed")
+            self.assertEqual(states["source-2"], "observed")
+            self.assertEqual(states["source-3"], "queued")
+        finally:
+            live.close()
+
     def test_messenger_instance_uses_its_own_event_scope(self):
         original_channel = bridge_module.CHANNEL
         bridge_module.CHANNEL = "messenger"

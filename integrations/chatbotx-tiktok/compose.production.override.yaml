@@ -68,6 +68,7 @@ services:
       CHATBOTX_BRIDGE_PORT: "13126"
       CHATBOTX_BRIDGE_POLL_SECONDS: "3"
       CHATBOTX_BRIDGE_SILENCE_SECONDS: "3"
+      CHATBOTX_BRIDGE_MAX_CONVERSATION_PAGES: "1"
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - /opt/chatbotx/messenger-bridge-data:/data

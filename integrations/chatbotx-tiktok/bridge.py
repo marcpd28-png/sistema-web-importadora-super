@@ -57,6 +57,7 @@ MAX_TEXT = 1200
 MAX_HISTORY = 6
 MAX_PRODUCT_IMAGES = 3
 MAX_MEDIA_BYTES = 5 * 1024 * 1024
+DEFAULT_CONVERSATION_PAGES = 1
 STORE_HOST = "tiendavirtualsuper.com"
 PRODUCT_IMAGE_PATH_PREFIX = "/api/telegram/product-image/"
 
@@ -79,6 +80,10 @@ class Config:
     bridge_secret: str
     poll_seconds: float = DEFAULT_POLL_SECONDS
     silence_seconds: float = DEFAULT_SILENCE_SECONDS
+    # New customer messages surface at the top of ChatbotX's conversation
+    # feed. Scanning the complete historical inbox on every short poll makes
+    # a busy Messenger channel unhealthy before it can react to that new turn.
+    conversation_pages: int = DEFAULT_CONVERSATION_PAGES
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -99,6 +104,7 @@ class Config:
             bridge_secret=_environment("CHATBOTX_BRIDGE_SECRET", "TIKTOK_BRIDGE_SECRET"),
             poll_seconds=positive("CHATBOTX_BRIDGE_POLL_SECONDS", "TIKTOK_BRIDGE_POLL_SECONDS", DEFAULT_POLL_SECONDS, 30),
             silence_seconds=positive("CHATBOTX_BRIDGE_SILENCE_SECONDS", "TIKTOK_BRIDGE_SILENCE_SECONDS", DEFAULT_SILENCE_SECONDS, 30),
+            conversation_pages=int(positive("CHATBOTX_BRIDGE_MAX_CONVERSATION_PAGES", "TIKTOK_BRIDGE_MAX_CONVERSATION_PAGES", DEFAULT_CONVERSATION_PAGES, 10)),
         )
 
     def require_runtime_secrets(self) -> None:
@@ -170,10 +176,11 @@ def _json(body: bytes) -> Any:
 
 
 class ChatbotXApi:
-    def __init__(self, base_url: str, token: str, transport: UrllibTransport | None = None):
+    def __init__(self, base_url: str, token: str, transport: UrllibTransport | None = None, max_conversation_pages: int = DEFAULT_CONVERSATION_PAGES):
         self.base_url = base_url.rstrip("/")
         self.token = token
         self.transport = transport or UrllibTransport()
+        self.max_conversation_pages = max(1, min(10, int(max_conversation_pages)))
 
     def _request(self, method: str, path: str, payload: dict[str, Any] | None = None, *, idempotency_key: str | None = None) -> tuple[int, dict[str, str], Any]:
         headers = {"Authorization": f"Bearer {self.token}", "Accept": "application/json"}
@@ -189,7 +196,7 @@ class ChatbotXApi:
     def list_conversations(self) -> list[dict[str, Any]]:
         conversations: list[dict[str, Any]] = []
         cursor: str | None = None
-        for _ in range(100):
+        for _ in range(self.max_conversation_pages):
             query = {"channel": CHANNEL, "botCategory": "all", "perPage": "50"}
             if cursor:
                 query["cursor"] = cursor
@@ -394,6 +401,9 @@ class Bridge:
             batch_id TEXT NOT NULL, delivery_key TEXT NOT NULL, state TEXT NOT NULL,
             PRIMARY KEY (batch_id, delivery_key)
           );
+          CREATE TABLE IF NOT EXISTS bridge_state (
+            key TEXT PRIMARY KEY, value TEXT NOT NULL
+          );
         """)
         # Keep databases created by an earlier standby version usable.  The
         # contact-inbox id is distinct from the outbound inbox id and is
@@ -416,9 +426,51 @@ class Bridge:
         # next poll can retry it with the same deterministic delivery keys.
         self.db.execute("UPDATE batches SET state='queued' WHERE state='sending'")
         self.db.execute("UPDATE inbound_events SET state='queued' WHERE state='sending'")
+        self._activation_cutoff = self._sync_activation_guard()
         self.db.commit()
         self._last_poll_success = 0.0
         self._last_poll_failure = 0.0
+
+    def _sync_activation_guard(self) -> float | None:
+        """Prevent a standby-to-live switch from answering old transcripts.
+
+        A disabled instance leaves a durable marker. When it is later enabled,
+        a conversation that only now reaches the newest page may contain a
+        long prior transcript. Only customer turns received after the switch
+        may be queued; earlier turns stay observed.
+        """
+        row = self.db.execute("SELECT value FROM bridge_state WHERE key='enabled'").fetchone()
+        previous = row[0] if row else None
+        if not self.config.enabled:
+            self.db.execute(
+                "INSERT INTO bridge_state(key,value) VALUES ('enabled','false') "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value"
+            )
+            self.db.execute("DELETE FROM bridge_state WHERE key='queue_after'")
+            return None
+
+        cutoff_row = self.db.execute("SELECT value FROM bridge_state WHERE key='queue_after'").fetchone()
+        if previous == "false":
+            cutoff = self.now()
+            self.db.execute(
+                "INSERT INTO bridge_state(key,value) VALUES ('queue_after',?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (str(cutoff),),
+            )
+        elif cutoff_row:
+            try:
+                cutoff = float(cutoff_row[0])
+            except (TypeError, ValueError):
+                cutoff = self.now()
+        else:
+            # Do not silently change delivery semantics for an existing bridge
+            # that had already been running enabled before this safeguard.
+            cutoff = None
+        self.db.execute(
+            "INSERT INTO bridge_state(key,value) VALUES ('enabled','true') "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value"
+        )
+        return cutoff
 
     def close(self) -> None:
         self.db.close()
@@ -459,7 +511,9 @@ class Bridge:
             # A successful poll proves the sidecar can read its source. A
             # recent failed poll makes the endpoint fail closed even if an old
             # successful one exists.
-            freshness = max(self.config.poll_seconds * 3, 10)
+            # A single ChatbotX page can legitimately approach the HTTP
+            # timeout. Docker must not restart a poller while it is waiting.
+            freshness = max(self.config.poll_seconds * 3, 45)
             healthy = self._last_poll_success > 0 and self.now() - self._last_poll_success <= freshness
             if self._last_poll_failure > self._last_poll_success:
                 healthy = False
@@ -515,7 +569,8 @@ class Bridge:
                     # text nor an attachment for Super Bot to evaluate.
                     if not text and not attachments:
                         continue
-                    state = "queued" if queue and bot_enabled else "observed"
+                    after_activation = self._activation_cutoff is None or created >= self._activation_cutoff
+                    state = "queued" if queue and bot_enabled and after_activation else "observed"
                     inserted = self.db.execute(
                         "INSERT OR IGNORE INTO inbound_events(conversation_id,message_id,inbox_id,created,text,has_attachments,attachment_count,first_contact,state) VALUES (?,?,?,?,?,?,?,?,?)",
                         (conversation_id, message_id, inbox_id, created, text, int(bool(attachments)), min(len(attachments), 10), int(not seen_before), state),
@@ -911,7 +966,7 @@ class ControlHandler(BaseHTTPRequestHandler):
 def run() -> None:
     config = Config.from_env()
     config.require_runtime_secrets()
-    chatbot = ChatbotXApi(config.chatbot_url, config.chatbot_token)
+    chatbot = ChatbotXApi(config.chatbot_url, config.chatbot_token, max_conversation_pages=config.conversation_pages)
     super_bot = SuperBotApi(config.super_bot_url, config.super_bot_key)
     bridge = Bridge(config, chatbot, super_bot)
     ControlHandler.bridge, ControlHandler.secret = bridge, config.bridge_secret
@@ -923,10 +978,11 @@ def run() -> None:
         while True:
             try:
                 bridge.poll_once()
+            except BridgeError as error:
+                # Keep logs useful without exposing contents, URLs, or tokens.
+                print(json.dumps({"event": "poll_failed", "status": error.status, "retryable": error.retryable}), flush=True)
             except Exception:
-                # Errors are retried next cycle; do not emit potentially
-                # sensitive request payloads or secrets in logs.
-                pass
+                print(json.dumps({"event": "poll_failed", "status": "unexpected"}), flush=True)
             time.sleep(config.poll_seconds)
 
     threading.Thread(target=poll, daemon=True).start()

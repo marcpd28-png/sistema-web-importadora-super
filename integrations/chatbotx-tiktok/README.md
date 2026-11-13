@@ -73,3 +73,9 @@ existente como observado. Sólo tras comprobar la salud y elegir una conversaci�
 de prueba se cambia a `true`; de ese modo nunca se responde automáticamente a
 mensajes anteriores. Las credenciales privadas de ChatbotX y Super Bot se leen
 desde el archivo privado de entorno ya usado por el sidecar.
+
+El sondeo usa la primera página, que ChatbotX ordena por actividad más reciente:
+un mensaje nuevo sube al conjunto revisado sin recorrer toda la historia cada
+pocos segundos. Al cambiar de `false` a `true`, el puente además guarda un corte
+de activación; mensajes previos siguen como observados aunque una conversación
+antigua aparezca por primera vez después de activar el bot.
