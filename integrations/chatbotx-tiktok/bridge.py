@@ -653,6 +653,11 @@ class Bridge:
         with self.lock:
             try:
                 existing = self.db.execute("SELECT inbox_id,last_incoming_marker FROM chats WHERE conversation_id=?", (conversation_id,)).fetchone()
+                # A tightly scoped operator test can make just the next unseen
+                # customer turn behave like a first contact. It never deletes
+                # transcript state and is consumed atomically by that one turn.
+                force_key = f"force_first_contact:{conversation_id}"
+                force_first_contact = self.db.execute("SELECT 1 FROM bridge_state WHERE key=?", (force_key,)).fetchone() is not None
                 needs_history = existing is None or existing[0] == "pending" or existing[1] != incoming_marker
                 # Do not advance the marker before the message page has been
                 # persisted. A transient ChatbotX failure must be retried, not
@@ -691,11 +696,14 @@ class Bridge:
                     state = "queued" if queue and bot_enabled and after_activation else "observed"
                     inserted = self.db.execute(
                         "INSERT OR IGNORE INTO inbound_events(conversation_id,message_id,inbox_id,created,text,has_attachments,attachment_count,first_contact,state) VALUES (?,?,?,?,?,?,?,?,?)",
-                        (conversation_id, message_id, inbox_id, created, text, int(bool(attachments)), min(len(attachments), 10), int(not seen_before), state),
+                        (conversation_id, message_id, inbox_id, created, text, int(bool(attachments)), min(len(attachments), 10), int(force_first_contact or not seen_before), state),
                     ).rowcount
                     if inserted:
                         added += 1
                         seen_before = True
+                        if force_first_contact:
+                            self.db.execute("DELETE FROM bridge_state WHERE key=?", (force_key,))
+                            force_first_contact = False
                 self.db.execute("UPDATE chats SET last_incoming_marker=? WHERE conversation_id=?", (incoming_marker, conversation_id))
                 self.db.commit()
                 return added

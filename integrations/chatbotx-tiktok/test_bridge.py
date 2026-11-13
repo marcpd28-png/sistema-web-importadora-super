@@ -306,6 +306,21 @@ class BridgeTests(unittest.TestCase):
         self.bridge.poll_once()
         self.assertEqual(self.chatbot.list_message_calls, 2)
 
+    def test_one_time_first_contact_override_preserves_history_and_marks_only_the_next_turn(self):
+        self.bridge.poll_once()
+        self.clock[0] += 4
+        self.bridge.process_due()
+        self.bridge.db.execute("INSERT INTO bridge_state(key,value) VALUES (?,?)", ("force_first_contact:123", "true"))
+        self.bridge.db.commit()
+        self.chatbot.messages.append({
+            "id": "fresh", "sourceId": "fresh", "contactInboxId": "contact-1",
+            "senderType": "contact", "messageType": "incoming", "text": "Catálogo",
+            "createdAt": "2026-11-05T12:00:05Z", "attachments": [],
+        })
+        self.bridge.poll_once()
+        self.assertEqual(self.bridge.db.execute("SELECT first_contact FROM inbound_events WHERE message_id='fresh'").fetchone()[0], 1)
+        self.assertIsNone(self.bridge.db.execute("SELECT 1 FROM bridge_state WHERE key='force_first_contact:123'").fetchone())
+
 
 if __name__ == "__main__":
     unittest.main()
