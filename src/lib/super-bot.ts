@@ -107,6 +107,10 @@ function isProductInterestMessage(message: string) {
  */
 function makeProductReplyVisualFirst(reply: ShopAssistantReply): ShopAssistantReply {
   if (!reply.products?.length) return reply;
+  // A numeric catalogue miss has a deliberately written explanation and a
+  // price list of verified alternatives; the generic visual prompt would
+  // hide both facts after the product images.
+  if (reply.meta?.intent === "catalog-alternatives") return reply;
   // An image-match card must explicitly confirm what was recognized; replacing
   // it with a generic visual prompt makes the customer unsure whether their
   // photo was actually understood.
@@ -192,6 +196,31 @@ function catalogPdfFallback(error: unknown): ShopAssistantReply {
       { label: "Ver tienda virtual", href: VIRTUAL_STORE_URL, accent: true },
     ],
     meta: { intent: "catalog-link", usedOllama: false },
+  };
+}
+
+function relaxedNumericCatalogTerms(request: CatalogRequest) {
+  const relaxedTerms = request.terms.filter((term) => !/^\d+(?:[.,]\d+)?w(?:h)?$/i.test(term));
+  return relaxedTerms.length && relaxedTerms.length < request.terms.length ? relaxedTerms : null;
+}
+
+function displayCatalogTerm(term: string) {
+  const power = term.match(/^(\d+(?:[.,]\d+)?)(w|wh)$/i);
+  return power ? `${power[1]} ${power[2].toUpperCase()}` : term;
+}
+
+function catalogAlternativesReply(request: CatalogRequest, alternatives: ShopAssistantReply): ShopAssistantReply | null {
+  const products = (alternatives.products ?? []).slice(0, 5);
+  if (!products.length) return null;
+  const requested = request.terms.map(displayCatalogTerm).join(" ");
+  const priceLines = products
+    .map((product) => `• ${product.name.slice(0, 120)}: ${product.unitPrice}`)
+    .join("\n");
+  return {
+    ...alternatives,
+    products,
+    text: `No tenemos disponible una opción que cumpla exactamente con ${requested}. Te muestro alternativas verificadas de la misma línea:\n${priceLines}\n¿Deseas que un asesor confirme cuál se ajusta mejor a lo que necesitas?`,
+    meta: { intent: "catalog-alternatives", usedOllama: false },
   };
 }
 
@@ -311,7 +340,7 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     // A request for the general catalogue has an explicitly approved greeting
     // and two navigation links. Letting a language model rewrite it could
     // remove either link or the required short greeting, so deliver it as-is.
-    if (visualReply.meta?.intent === "catalog-link") return visualReply;
+    if (visualReply.meta?.intent === "catalog-link" || visualReply.meta?.intent === "catalog-alternatives") return visualReply;
     // Delivery pricing is deliberately assigned to a human adviser. A wording
     // model must not weaken or contradict that policy after the verified
     // catalog has found the requested product.
@@ -376,6 +405,22 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
           maxBytes: input.catalogPdfMaxBytes,
         })));
       } catch (error) {
+        // A measured request can be unavailable even when the family has
+        // other live products.  Show those grounded options instead of
+        // hiding the reason behind a generic PDF failure.
+        if (!(error instanceof CatalogPdfImageCoverageError) && !(error instanceof CatalogPdfProductCoverageError) && !(error instanceof CatalogPdfSizeLimitError)) {
+          const relaxedTerms = relaxedNumericCatalogTerms(catalogRequest);
+          if (relaxedTerms) {
+            try {
+              const alternatives = await getShopAssistantReply({ ...input, message: relaxedTerms.join(" ") });
+              const alternativeReply = catalogAlternativesReply(catalogRequest, alternatives);
+              if (alternativeReply) return finalizeReply(input, alternativeReply);
+            } catch {
+              // Preserve the original PDF fallback if an alternative lookup
+              // cannot be grounded in the live catalog.
+            }
+          }
+        }
         return finalizeReply(input, catalogPdfFallback(error));
       }
     }

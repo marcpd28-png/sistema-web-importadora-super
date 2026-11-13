@@ -118,6 +118,38 @@ test("no entrega un catálogo parcial cuando ni una parte cabe dentro del límit
   assert.match(reply.text, /https:\/\/tiendavirtualsuper\.com\//);
 });
 
+test("ofrece alternativas verificadas cuando no hay stock de la potencia exacta", async () => {
+  let alternativeQuery = "";
+  const answer = createSuperBotService({
+    generateCatalogPdfBundle: async () => {
+      throw new Error("No encontramos productos publicados para el catálogo de estaciones energia 2500w.");
+    },
+    answerShopAssistant: async (input) => {
+      alternativeQuery = input.message;
+      return {
+        text: "Tenemos alternativas.",
+        products: [{
+          id: "cp600", slug: "ecoflow-delta-3-max", code: "CP600", name: "Estación de Energía EcoFlow Delta 3 Max 2400 W", description: null,
+          brand: "EcoFlow", category: "Estaciones de energía", imageUrl: "/cp600.jpg", imageAlt: "EcoFlow Delta 3 Max",
+          unitPrice: "S/ 6,999.00", unitPriceValue: 6999, wholesalePrice: null, wholesalePriceValue: null,
+          wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 2, unitsPerBox: null,
+        }],
+      };
+    },
+    composeLiveReply: async () => {
+      throw new Error("Las alternativas verificadas no deben reescribirse.");
+    },
+  });
+
+  const reply = await answer({ message: "Me podría mostrar el catálogo de estaciones de energía de 2500 watts y sus costos" });
+
+  assert.equal(alternativeQuery, "estaciones energia");
+  assert.equal(reply.document, undefined);
+  assert.equal(reply.products?.[0]?.code, "CP600");
+  assert.match(reply.text, /no tenemos disponible.*2500 W/i);
+  assert.match(reply.text, /EcoFlow Delta 3 Max 2400 W.*S\/ 6,999.00/i);
+});
+
 test("el catálogo general saluda y entrega el video junto con la tienda virtual", async () => {
   let composeCalls = 0;
   const answer = createSuperBotService({
