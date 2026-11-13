@@ -66,8 +66,19 @@ export class SocialInboxError extends Error {
 const SOCIAL_REPLY_DEDUPLICATION_MS = 10_000;
 const SOCIAL_REPLY_PENDING_MS = 30_000;
 const SOCIAL_ECHO_FALLBACK_MS = 15_000;
+const SOCIAL_PROFILE_REFRESH_SUCCESS_COOLDOWN_MS = 30 * 60_000;
+const SOCIAL_PROFILE_REFRESH_UNAVAILABLE_COOLDOWN_MS = 5 * 60_000;
+const SOCIAL_PROFILE_REFRESH_FAILURE_COOLDOWN_MS = 30_000;
+const MAX_SOCIAL_PROFILE_REFRESH_CACHE_ENTRIES = 1_000;
 const SOCIAL_INBOX_DEFAULT_API_URL = "https://chatbot.tiendavirtualsuper.com/api";
 const recentSocialReplies = new Map<string, { expiresAt: number; result: Promise<SocialMessage> }>();
+type CachedSocialProfileRefresh = {
+  expiresAt: number;
+  status: SocialProfileRefreshResult["status"];
+  contact: SocialConversation["contact"];
+};
+const socialProfileRefreshCache = new Map<string, CachedSocialProfileRefresh>();
+const socialProfileRefreshInFlight = new Map<string, Promise<CachedSocialProfileRefresh>>();
 const SOCIAL_ID_FIELDS = new Set(["id", "contactId", "contactInboxId", "inboxId"]);
 
 function compactText(value: string) {
@@ -133,6 +144,37 @@ type SocialProfileRefreshResult = {
   status: "not_needed" | "skipped" | "updated" | "unavailable" | "failed";
 };
 
+function socialProfileRefreshKey(conversation: SocialConversation, channel: SocialChannel) {
+  const contactId = displayText(conversation.contact?.id);
+  const matchingInboxes = conversation.contactInboxes.filter((inbox) => inbox.channel === channel);
+  if (!contactId || matchingInboxes.length !== 1 || !/^\d+$/.test(matchingInboxes[0].id)) return null;
+  return `${channel}\u0000${contactId}\u0000${matchingInboxes[0].id}`;
+}
+
+function socialProfileRefreshCooldown(status: SocialProfileRefreshResult["status"]) {
+  if (status === "updated") return SOCIAL_PROFILE_REFRESH_SUCCESS_COOLDOWN_MS;
+  if (status === "failed") return SOCIAL_PROFILE_REFRESH_FAILURE_COOLDOWN_MS;
+  return SOCIAL_PROFILE_REFRESH_UNAVAILABLE_COOLDOWN_MS;
+}
+
+function pruneSocialProfileRefreshCache(now: number) {
+  for (const [key, cached] of socialProfileRefreshCache) {
+    if (cached.expiresAt <= now) socialProfileRefreshCache.delete(key);
+  }
+  if (socialProfileRefreshCache.size < MAX_SOCIAL_PROFILE_REFRESH_CACHE_ENTRIES) return;
+  for (const key of socialProfileRefreshCache.keys()) {
+    socialProfileRefreshCache.delete(key);
+    if (socialProfileRefreshCache.size < MAX_SOCIAL_PROFILE_REFRESH_CACHE_ENTRIES) return;
+  }
+}
+
+function applyCachedSocialProfileRefresh(conversation: SocialConversation, cached: CachedSocialProfileRefresh): SocialProfileRefreshResult {
+  return {
+    conversation: cached.contact ? { ...conversation, contact: { ...conversation.contact, ...cached.contact } } : conversation,
+    status: cached.status,
+  };
+}
+
 async function refreshSocialConversationProfileResult(
   conversation: SocialConversation,
   channel: SocialChannel,
@@ -170,6 +212,38 @@ export async function refreshSocialConversationProfile(conversation: SocialConve
   return (await refreshSocialConversationProfileResult(conversation, channel)).conversation;
 }
 
+/**
+ * The inbox polls for fresh conversations, while Facebook profile lookups are
+ * much more tightly rate-limited. Share both successful lookups and in-flight
+ * work across those polls so a placeholder name cannot cause a burst of calls.
+ */
+async function refreshSocialConversationProfileForInbox(conversation: SocialConversation, channel: SocialChannel) {
+  const key = socialProfileRefreshKey(conversation, channel);
+  if (!key) return refreshSocialConversationProfileResult(conversation, channel);
+
+  const now = Date.now();
+  pruneSocialProfileRefreshCache(now);
+  const cached = socialProfileRefreshCache.get(key);
+  if (cached && cached.expiresAt > now) return applyCachedSocialProfileRefresh(conversation, cached);
+
+  let request = socialProfileRefreshInFlight.get(key);
+  if (!request) {
+    request = refreshSocialConversationProfileResult(conversation, channel).then((result) => {
+      const value: CachedSocialProfileRefresh = {
+        expiresAt: Date.now() + socialProfileRefreshCooldown(result.status),
+        status: result.status,
+        contact: result.conversation.contact,
+      };
+      socialProfileRefreshCache.set(key, value);
+      return value;
+    }).finally(() => {
+      socialProfileRefreshInFlight.delete(key);
+    });
+    socialProfileRefreshInFlight.set(key, request);
+  }
+  return applyCachedSocialProfileRefresh(conversation, await request);
+}
+
 /** Refresh only unresolved names and limit concurrent Facebook lookups. */
 export async function refreshSocialConversationProfiles(conversations: SocialConversation[], channel: SocialChannel) {
   if (channel !== "messenger") return conversations;
@@ -183,7 +257,7 @@ export async function refreshSocialConversationProfiles(conversations: SocialCon
   await Promise.all(Array.from({ length: Math.min(8, pending.length) }, async () => {
     while (cursor < pending.length) {
       const current = pending[cursor++];
-      refreshed[current.index] = (await refreshSocialConversationProfileResult(current.conversation, channel)).conversation;
+      refreshed[current.index] = (await refreshSocialConversationProfileForInbox(current.conversation, channel)).conversation;
     }
   }));
 

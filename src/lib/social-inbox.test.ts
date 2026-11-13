@@ -75,6 +75,39 @@ test("Messenger refreshes placeholder contacts with the Facebook profile name", 
   }
 });
 
+test("la bandeja comparte la actualización de perfil de Messenger entre sondeos repetidos", async () => {
+  const original = global.fetch;
+  const token = process.env.SOCIAL_INBOX_API_TOKEN;
+  process.env.SOCIAL_INBOX_API_TOKEN = "test-secret";
+  const unnamed = {
+    id: "conversation-cooldown",
+    botEnabled: true,
+    contact: { id: "cooldown-contact", fullName: "Cliente" },
+    contactInboxes: [{ id: "987654", inboxId: "messenger", channel: "messenger", lastIncomingMessageAt: null, inbox: { name: "Messenger" } }],
+  } satisfies SocialConversation;
+  let calls = 0;
+  try {
+    global.fetch = async () => {
+      calls++;
+      return Response.json({ status: "updated", contact: { id: "cooldown-contact", fullName: "Ana Pérez" } });
+    };
+
+    const [first, second] = await Promise.all([
+      refreshSocialConversationProfiles([unnamed], "messenger"),
+      refreshSocialConversationProfiles([unnamed], "messenger"),
+    ]);
+    const third = await refreshSocialConversationProfiles([unnamed], "messenger");
+
+    assert.equal(calls, 1, "un contacto sin nombre no debe provocar una ráfaga de consultas a Meta");
+    for (const result of [first, second, third]) {
+      assert.equal(socialConversationDisplayName(result[0], "messenger"), "Ana Pérez");
+    }
+  } finally {
+    global.fetch = original;
+    if (token === undefined) delete process.env.SOCIAL_INBOX_API_TOKEN; else process.env.SOCIAL_INBOX_API_TOKEN = token;
+  }
+});
+
 test("sincroniza un lote histórico de Messenger sin enviar mensajes", async () => {
   const original = global.fetch;
   const token = process.env.SOCIAL_INBOX_API_TOKEN;
