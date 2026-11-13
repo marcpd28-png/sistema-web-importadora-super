@@ -378,7 +378,7 @@ class Bridge:
         self.db.executescript("""
           CREATE TABLE IF NOT EXISTS chats (
             conversation_id TEXT PRIMARY KEY, inbox_id TEXT NOT NULL, contact_inbox_id TEXT NOT NULL DEFAULT '', bot_enabled INTEGER NOT NULL DEFAULT 0,
-            typing_until REAL NOT NULL DEFAULT 0, shown_codes TEXT NOT NULL DEFAULT '[]'
+            typing_until REAL NOT NULL DEFAULT 0, shown_codes TEXT NOT NULL DEFAULT '[]', last_incoming_marker TEXT NOT NULL DEFAULT ''
           );
           CREATE TABLE IF NOT EXISTS inbound_events (
             conversation_id TEXT NOT NULL, message_id TEXT NOT NULL, inbox_id TEXT NOT NULL,
@@ -400,6 +400,15 @@ class Bridge:
         # required to prevent cross-channel history leaking into TikTok.
         try:
             self.db.execute("ALTER TABLE chats ADD COLUMN contact_inbox_id TEXT NOT NULL DEFAULT ''")
+        except sqlite3.OperationalError as error:
+            if "duplicate column name" not in str(error).lower():
+                raise
+        # Polling every message page on every cycle turns a healthy busy inbox
+        # into its own rate-limit source. The provider's last incoming marker
+        # lets the bridge re-read a conversation only when the customer sent a
+        # new turn. Existing standby databases are upgraded in place.
+        try:
+            self.db.execute("ALTER TABLE chats ADD COLUMN last_incoming_marker TEXT NOT NULL DEFAULT ''")
         except sqlite3.OperationalError as error:
             if "duplicate column name" not in str(error).lower():
                 raise
@@ -456,56 +465,70 @@ class Bridge:
                 healthy = False
             return healthy, self.config.enabled
 
-    def _matching_inbox(self, conversation: dict[str, Any]) -> tuple[str, str] | None:
+    def _matching_inbox(self, conversation: dict[str, Any]) -> tuple[str, str, str, str] | None:
         conversation_id = str(conversation.get("id") or "")
         matches = [item for item in conversation.get("contactInboxes", []) if isinstance(item, dict) and item.get("channel") == CHANNEL and str(item.get("id") or "") and str(item.get("inboxId") or "")]
         if not conversation_id.isdigit() or len(matches) != 1:
             return None
-        return conversation_id, str(matches[0]["id"]), str(matches[0]["inboxId"])
+        return conversation_id, str(matches[0]["id"]), str(matches[0]["inboxId"]), str(matches[0].get("lastIncomingMessageAt") or "")
 
     def observe(self, conversation: dict[str, Any], queue: bool) -> int:
         matched = self._matching_inbox(conversation)
         if not matched:
             return 0
-        conversation_id, contact_inbox_id, inbox_id = matched
+        conversation_id, contact_inbox_id, inbox_id, incoming_marker = matched
         bot_enabled = bool(conversation.get("botEnabled"))
         with self.lock:
-            existing = self.db.execute("SELECT inbox_id FROM chats WHERE conversation_id=?", (conversation_id,)).fetchone()
-            if existing and existing[0] == "pending":
-                self.db.execute("UPDATE chats SET inbox_id=?,contact_inbox_id=?,bot_enabled=? WHERE conversation_id=?", (inbox_id, contact_inbox_id, int(bot_enabled), conversation_id))
-            else:
-                self.db.execute("INSERT INTO chats(conversation_id,inbox_id,contact_inbox_id,bot_enabled) VALUES (?,?,?,?) ON CONFLICT(conversation_id) DO UPDATE SET inbox_id=excluded.inbox_id,contact_inbox_id=excluded.contact_inbox_id,bot_enabled=excluded.bot_enabled", (conversation_id, inbox_id, contact_inbox_id, int(bot_enabled)))
-            if not bot_enabled:
-                # A durable ChatbotX handoff wins over any unprocessed
-                # automatic work. The short adviser typing lease never uses
-                # this path, so it simply expires instead of changing owner.
-                self.db.execute("UPDATE inbound_events SET state='paused' WHERE conversation_id=? AND state='queued'", (conversation_id,))
-                self.db.execute("UPDATE batches SET state='paused' WHERE conversation_id=? AND state='queued'", (conversation_id,))
-            seen_before = self.db.execute("SELECT 1 FROM inbound_events WHERE conversation_id=? LIMIT 1", (conversation_id,)).fetchone() is not None
-            added = 0
-            for message in sorted(self.chatbot.list_messages(conversation_id), key=lambda item: str(item.get("createdAt") or "")):
-                if message.get("contactInboxId") != contact_inbox_id or message.get("senderType") != "contact" or message.get("messageType") != "incoming" or message.get("deletedAt"):
-                    continue
-                message_id = str(message.get("sourceId") or message.get("id") or "")
-                if not message_id:
-                    continue
-                created = _message_time(message.get("createdAt"), self.now())
-                attachments = message.get("attachments") if isinstance(message.get("attachments"), list) else []
-                text = _clean_text(message.get("text"))
-                # Reactions and provider placeholders have neither customer
-                # text nor an attachment for Super Bot to evaluate.
-                if not text and not attachments:
-                    continue
-                state = "queued" if queue and bot_enabled else "observed"
-                inserted = self.db.execute(
-                    "INSERT OR IGNORE INTO inbound_events(conversation_id,message_id,inbox_id,created,text,has_attachments,attachment_count,first_contact,state) VALUES (?,?,?,?,?,?,?,?,?)",
-                    (conversation_id, message_id, inbox_id, created, text, int(bool(attachments)), min(len(attachments), 10), int(not seen_before), state),
-                ).rowcount
-                if inserted:
-                    added += 1
-                    seen_before = True
-            self.db.commit()
-        return added
+            try:
+                existing = self.db.execute("SELECT inbox_id,last_incoming_marker FROM chats WHERE conversation_id=?", (conversation_id,)).fetchone()
+                needs_history = existing is None or existing[0] == "pending" or existing[1] != incoming_marker
+                # Do not advance the marker before the message page has been
+                # persisted. A transient ChatbotX failure must be retried, not
+                # mistaken for a fully observed customer turn.
+                self.db.execute(
+                    "INSERT INTO chats(conversation_id,inbox_id,contact_inbox_id,bot_enabled) VALUES (?,?,?,?) "
+                    "ON CONFLICT(conversation_id) DO UPDATE SET inbox_id=excluded.inbox_id,contact_inbox_id=excluded.contact_inbox_id,bot_enabled=excluded.bot_enabled",
+                    (conversation_id, inbox_id, contact_inbox_id, int(bot_enabled)),
+                )
+                if not bot_enabled:
+                    # A durable ChatbotX handoff wins over any unprocessed
+                    # automatic work. The short adviser typing lease never uses
+                    # this path, so it simply expires instead of changing owner.
+                    self.db.execute("UPDATE inbound_events SET state='paused' WHERE conversation_id=? AND state='queued'", (conversation_id,))
+                    self.db.execute("UPDATE batches SET state='paused' WHERE conversation_id=? AND state='queued'", (conversation_id,))
+                if not needs_history:
+                    self.db.commit()
+                    return 0
+
+                seen_before = self.db.execute("SELECT 1 FROM inbound_events WHERE conversation_id=? LIMIT 1", (conversation_id,)).fetchone() is not None
+                added = 0
+                for message in sorted(self.chatbot.list_messages(conversation_id), key=lambda item: str(item.get("createdAt") or "")):
+                    if message.get("contactInboxId") != contact_inbox_id or message.get("senderType") != "contact" or message.get("messageType") != "incoming" or message.get("deletedAt"):
+                        continue
+                    message_id = str(message.get("sourceId") or message.get("id") or "")
+                    if not message_id:
+                        continue
+                    created = _message_time(message.get("createdAt"), self.now())
+                    attachments = message.get("attachments") if isinstance(message.get("attachments"), list) else []
+                    text = _clean_text(message.get("text"))
+                    # Reactions and provider placeholders have neither customer
+                    # text nor an attachment for Super Bot to evaluate.
+                    if not text and not attachments:
+                        continue
+                    state = "queued" if queue and bot_enabled else "observed"
+                    inserted = self.db.execute(
+                        "INSERT OR IGNORE INTO inbound_events(conversation_id,message_id,inbox_id,created,text,has_attachments,attachment_count,first_contact,state) VALUES (?,?,?,?,?,?,?,?,?)",
+                        (conversation_id, message_id, inbox_id, created, text, int(bool(attachments)), min(len(attachments), 10), int(not seen_before), state),
+                    ).rowcount
+                    if inserted:
+                        added += 1
+                        seen_before = True
+                self.db.execute("UPDATE chats SET last_incoming_marker=? WHERE conversation_id=?", (incoming_marker, conversation_id))
+                self.db.commit()
+                return added
+            except Exception:
+                self.db.rollback()
+                raise
 
     def poll_once(self) -> int:
         try:

@@ -23,11 +23,15 @@ class FakeChatbot:
         self.handoffs = []
         self.bot_enabled = True
         self.channel = bridge_module.CHANNEL
+        self.list_message_calls = 0
 
     def list_conversations(self):
-        return [{"id": "123", "botEnabled": self.bot_enabled, "contactInboxes": [{"id": "contact-1", "inboxId": "inbox-1", "channel": self.channel}]}]
+        incoming = [message.get("createdAt") for message in self.messages if message.get("senderType") == "contact" and message.get("messageType") == "incoming"]
+        marker = max((value for value in incoming if isinstance(value, str)), default=None)
+        return [{"id": "123", "botEnabled": self.bot_enabled, "contactInboxes": [{"id": "contact-1", "inboxId": "inbox-1", "channel": self.channel, "lastIncomingMessageAt": marker}]}]
 
     def list_messages(self, _conversation_id):
+        self.list_message_calls += 1
         return list(self.messages)
 
     def send_text(self, conversation_id, inbox_id, text, key):
@@ -225,6 +229,20 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(payload["message"], "")
         self.assertTrue(payload["hasAttachments"])
         self.assertEqual(payload["attachmentCount"], 1)
+
+    def test_unchanged_conversation_does_not_reload_its_message_history(self):
+        self.bridge.poll_once()
+        self.assertEqual(self.chatbot.list_message_calls, 1)
+        self.bridge.poll_once()
+        self.assertEqual(self.chatbot.list_message_calls, 1)
+
+        self.chatbot.messages.append({
+            "id": "m3", "sourceId": "source-3", "contactInboxId": "contact-1",
+            "senderType": "contact", "messageType": "incoming", "text": "Uno más",
+            "createdAt": "2026-11-05T12:00:05Z", "attachments": [],
+        })
+        self.bridge.poll_once()
+        self.assertEqual(self.chatbot.list_message_calls, 2)
 
 
 if __name__ == "__main__":
