@@ -119,6 +119,9 @@ function makeProductReplyVisualFirst(reply: ShopAssistantReply): ShopAssistantRe
     reply.contextProductCode &&
     /\b(?:total estimado|aplica mayorista|para mayorista necesitas|precio unitario)\b/i.test(reply.text)
   ) return reply;
+  // Delivery is a separate service fact: product cards should not erase the
+  // instruction that an adviser calculates the destination-specific cost.
+  if (/\b(?:delivery|envios?)\b.*\basesor\b/i.test(reply.text)) return reply;
   // The catalogue service has already calculated this exact count. Keep it
   // intact instead of replacing it with generic prose after visual cards.
   if (/^(?:Tenemos \d+ productos(?: [^.]+)? en stock\. ¿Quieres ver el catálogo completo\?|Aquí van \d+ más\. ¿Quieres ver el siguiente lote\?)$/.test(reply.text)) return reply;
@@ -309,6 +312,13 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     // and two navigation links. Letting a language model rewrite it could
     // remove either link or the required short greeting, so deliver it as-is.
     if (visualReply.meta?.intent === "catalog-link") return visualReply;
+    // Delivery pricing is deliberately assigned to a human adviser. A wording
+    // model must not weaken or contradict that policy after the verified
+    // catalog has found the requested product.
+    if (
+      visualReply.products?.length &&
+      /\b(envio|envios|delivery|entrega|despacho|shalom|provincia|agencia)\b/.test(normalizeAssistantText(input.message))
+    ) return visualReply;
     try {
       const composed = await composeLiveReply({
         message: input.message,

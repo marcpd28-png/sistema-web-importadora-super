@@ -189,6 +189,31 @@ test("prioriza tarjetas visuales y deja solo una pregunta breve después", async
   assert.equal(reply.text, "Mira las opciones. ¿Cuál buscas o quieres ver más?");
 });
 
+test("conserva la respuesta verificada cuando un producto incluye delivery", async () => {
+  let composerCalled = false;
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => ({
+      text: "Cooler Glacier disponible. El costo de delivery a tu zona lo cotiza un asesor.",
+      products: [{
+        id: "pc31", slug: "cooler-glacier", code: "PC31-SQ", name: "Cooler para Laptop Glacier", description: null,
+        brand: null, category: "Accesorios PC", imageUrl: "/cooler.jpg", imageAlt: "Cooler Glacier",
+        unitPrice: "S/ 79.00", unitPriceValue: 79, wholesalePrice: null, wholesalePriceValue: null,
+        wholesaleMinQty: 1, availabilityLabel: "Disponible", stockUnits: 34, unitsPerBox: null,
+      }],
+    }),
+    composeLiveReply: async () => {
+      composerCalled = true;
+      throw new Error("La IA no debe reescribir la política de delivery.");
+    },
+  });
+
+  const reply = await answer({ message: "¿Hacen delivery del Cooler para laptop Glacier?" });
+
+  assert.equal(composerCalled, false);
+  assert.equal(reply.products?.[0]?.code, "PC31-SQ");
+  assert.match(reply.text, /costo de delivery.*asesor/i);
+});
+
 test("conserva una cotización calculada aunque incluya la tarjeta del producto", async () => {
   const quote = "La mejor opción es Parlante 1. Ya aplica mayorista: S/ 79.00 c/u. Total estimado por 3: S/ 237.00.";
   const answer = createSuperBotService({
