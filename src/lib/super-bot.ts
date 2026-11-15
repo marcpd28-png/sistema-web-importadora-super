@@ -100,6 +100,17 @@ function isProductInterestMessage(message: string) {
   return /\b(me interesa|me interesan|lo quiero|la quiero|los quiero|las quiero|quiero ese|quiero esa|dame ese|dame esa|voy a llevar|lo llevare|comprar ese|comprar esa)\b/.test(text);
 }
 
+function isWarrantyQuestion(message: string) {
+  return /\bgarantia(?:s)?\b/.test(normalizeAssistantText(message));
+}
+
+function warrantyReply(): ShopAssistantReply {
+  return {
+    text: "✅ Sí, todos nuestros productos cuentan con garantía por falla de fábrica.\n\n🛡️ Políticas de garantía\n⏳ Garantía por falla de fábrica: 30 días o más, según la marca.\n🚫 No cubre daños por mal uso o manipulación.\n🧾 Es necesario presentar el comprobante de compra.\n🕘 Atención de garantías: lunes a viernes, de 9:00 a. m. a 5:00 p. m.\n🔄 No realizamos devoluciones de dinero; únicamente cambios por garantía aprobada.\n\n🙏 Muchas gracias por su preferencia.",
+    meta: { intent: "warranty", usedOllama: false },
+  };
+}
+
 /**
  * Product facts live in the card. Keep the accompanying copy intentionally
  * short, whether it came directly from the deterministic catalogue service
@@ -340,7 +351,7 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     // A request for the general catalogue has an explicitly approved greeting
     // and two navigation links. Letting a language model rewrite it could
     // remove either link or the required short greeting, so deliver it as-is.
-    if (visualReply.meta?.intent === "catalog-link" || visualReply.meta?.intent === "catalog-alternatives") return visualReply;
+    if (visualReply.meta?.intent === "catalog-link" || visualReply.meta?.intent === "catalog-alternatives" || visualReply.meta?.intent === "warranty") return visualReply;
     // Delivery pricing is deliberately assigned to a human adviser. A wording
     // model must not weaken or contradict that policy after the verified
     // catalog has found the requested product.
@@ -375,6 +386,11 @@ export function createSuperBotService(dependencies: SuperBotDependencies = {}) {
     if (input.hasAttachments && isAttachmentOnlyMessage(input.message)) {
       return pendingAdvisorReply("attachment-human-assistance");
     }
+
+    // Warranty always refers to the item the customer is discussing. It is a
+    // store policy, not a fresh product discovery request, so never generate
+    // product cards or offers from this turn.
+    if (isWarrantyQuestion(input.message)) return finalizeReply(input, warrantyReply());
 
     // An affirmative reply to the bounded visual catalogue means “next page”,
     // not payment. The original search lives in trusted customer history and

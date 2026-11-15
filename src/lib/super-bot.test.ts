@@ -193,6 +193,31 @@ test("uses the configured Messenger URL when Super Bot needs an adviser", async 
   assert.equal(reply.quickActions?.[0]?.href, "https://m.me/atencion-configurada");
 });
 
+test("responde la garantía como política y no como una búsqueda de ofertas", async () => {
+  let composerCalled = false;
+  const answer = createSuperBotService({
+    answerShopAssistant: async () => {
+      throw new Error("Una pregunta de garantía no debe buscar productos.");
+    },
+    composeLiveReply: async () => {
+      composerCalled = true;
+      throw new Error("La política de garantía no debe reescribirse.");
+    },
+  });
+
+  const reply = await answer({
+    message: "¿Tiene garantía?",
+    productContextCode: "GAME-STICK-ULTRA-X2",
+    recentMessages: [{ role: "user", text: "Quiero el Game Stick Ultra X2" }],
+  });
+
+  assert.equal(composerCalled, false);
+  assert.equal(reply.products, undefined);
+  assert.match(reply.text, /^✅ Sí, todos nuestros productos cuentan con garantía/i);
+  assert.match(reply.text, /30 días o más, según la marca/i);
+  assert.match(reply.text, /Lunes a viernes, de 9:00 a\. m\. a 5:00 p\. m\./i);
+});
+
 test("prioriza tarjetas visuales y deja solo una pregunta breve después", async () => {
   const answer = createSuperBotService({
     answerShopAssistant: async () => ({
